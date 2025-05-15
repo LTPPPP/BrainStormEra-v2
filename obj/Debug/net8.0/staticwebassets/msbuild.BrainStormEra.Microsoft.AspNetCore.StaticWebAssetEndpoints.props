@@ -12,6 +12,18 @@
       <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"ikdrtcktyg"},{"Name":"integrity","Value":"sha256-cuoWivvYIit87/sLvzYim8O7R9X\u002B1OO09fvv3kRCPlQ="},{"Name":"label","Value":"_content/BrainStormEra/BrainStormEra.bundle.scp.css"}]]]></EndpointProperties>
       <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"1131"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022cuoWivvYIit87/sLvzYim8O7R9X\u002B1OO09fvv3kRCPlQ=\u0022"},{"Name":"Last-Modified","Value":"Wed, 14 May 2025 09:53:40 GMT"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
+    <StaticWebAssetEndpoint Include="_content/BrainStormEra/css/Error/Error.0u2wnn1pja.css">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\Error\Error.css'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"0u2wnn1pja"},{"Name":"integrity","Value":"sha256-WFlXkdlbmow5ycmAMCQE13SE1QuCI25TJeyuVtLw2B8="},{"Name":"label","Value":"_content/BrainStormEra/css/Error/Error.css"}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"1218"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022WFlXkdlbmow5ycmAMCQE13SE1QuCI25TJeyuVtLw2B8=\u0022"},{"Name":"Last-Modified","Value":"Thu, 15 May 2025 06:26:20 GMT"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
+    <StaticWebAssetEndpoint Include="_content/BrainStormEra/css/Error/Error.css">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\Error\Error.css'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-WFlXkdlbmow5ycmAMCQE13SE1QuCI25TJeyuVtLw2B8="}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"1218"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022WFlXkdlbmow5ycmAMCQE13SE1QuCI25TJeyuVtLw2B8=\u0022"},{"Name":"Last-Modified","Value":"Thu, 15 May 2025 06:26:20 GMT"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="_content/BrainStormEra/css/site.c2tiyv64ts.css">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\site.css'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>

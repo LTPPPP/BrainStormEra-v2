@@ -286,3 +286,4 @@ E:\CN\SU25_K7\PRN222\Final\BrainStormEra\bin\Debug\net8.0\runtimes\win\lib\net7.
 E:\CN\SU25_K7\PRN222\Final\BrainStormEra\bin\Debug\net8.0\runtimes\win\lib\net7.0\System.Security.Cryptography.ProtectedData.dll
 E:\CN\SU25_K7\PRN222\Final\BrainStormEra\bin\Debug\net8.0\runtimes\win\lib\net7.0\System.Windows.Extensions.dll
 E:\CN\SU25_K7\PRN222\Final\BrainStormEra\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+E:\CN\SU25_K7\PRN222\Final\BrainStormEra\obj\Debug\net8.0\BrainStormEra.sourcelink.json
