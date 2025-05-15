@@ -32,6 +32,31 @@ BrainStormEra is a modern e-learning platform designed to facilitate online cour
    ```
 5. Access the app at `https://localhost:5001` (or as configured).
 
+## Running with Docker
+
+You can run BrainStormEra and its SQL Server database using Docker Compose for easy local development:
+
+1. Ensure you have [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed.
+2. Build and start the containers:
+   ```powershell
+   docker-compose up -d
+   ```
+3. The web app will be available at `http://localhost:5000`.
+4. The SQL Server database will be accessible at `localhost:1433` (see `docker-compose.yml` for credentials).
+
+### Environment Variables
+
+- The database connection string is set via the `ConnectionStrings__DefaultConnection` environment variable in `docker-compose.yml`.
+- Update the `SA_PASSWORD` in `docker-compose.yml` as needed for security.
+
+### Stopping the Containers
+
+To stop the containers, press `Ctrl+C` in the terminal or run:
+
+```powershell
+docker-compose down
+```
+
 ## Project Structure
 
 - `Controllers/` - MVC controllers
