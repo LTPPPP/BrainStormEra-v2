@@ -39,6 +39,41 @@ BrainStormEra is a modern e-learning platform designed to facilitate online cour
 - `Views/` - Razor views
 - `wwwroot/` - Static files (CSS, JS, images)
 
+## Commit Message Guidelines
+
+To keep the project history clean and meaningful, use the following commit message types:
+
+- **feat:** Add a new feature to the project.
+  - _Example:_ `feat: add user registration functionality`
+- **fix:** Fix a minor bug, logic error, or make a small update that does not significantly affect the system.
+  - _Example:_ `fix: correct user name display bug`
+- **bug:** Fix a critical bug that affects core functionality.
+  - _Example:_ `bug: resolve login failure issue`
+- **hot-fix:** Apply an urgent fix, usually for production issues.
+  - _Example:_ `hot-fix: patch login security vulnerability`
+- **refactor:** Refactor code without changing its external behavior.
+  - _Example:_ `refactor: optimize controller structure`
+- **docs:** Update documentation, README, or usage guides.
+  - _Example:_ `docs: update installation instructions`
+- **style:** Code style changes (formatting, missing semi-colons, etc.) that do not affect logic.
+  - _Example:_ `style: standardize code style in models`
+- **test:** Add or update tests, unit tests, or test infrastructure.
+  - _Example:_ `test: add tests for login functionality`
+- **chore:** Maintenance tasks, dependency updates, configuration changes, not affecting main source code.
+  - _Example:_ `chore: update EntityFramework package`
+
+## Contributing
+
+We welcome contributions from the community! To contribute:
+
+1. Fork this repository.
+2. Create a new branch for your feature or fix.
+3. Make your changes and commit them using the commit message guidelines above.
+4. Push your branch and open a Pull Request (PR) with a clear description of your changes.
+5. Wait for review and feedback.
+
+Please ensure your code follows the project's coding standards and passes all tests before submitting a PR.
+
 ## License
 
 See [LICENSE](LICENSE) for details.
