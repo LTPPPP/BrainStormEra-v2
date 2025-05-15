@@ -1,0 +1,217 @@
+-- Base tables
+CREATE TABLE status (
+    status_id INT PRIMARY KEY,
+    status_name NVARCHAR(255) NOT NULL
+);
+GO
+
+CREATE TABLE role (
+    user_role INT PRIMARY KEY,
+    role_name NVARCHAR(255) NOT NULL
+);
+GO
+
+CREATE TABLE account (
+    user_id VARCHAR(36) PRIMARY KEY,
+    user_role INT,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    user_email VARCHAR(255) NOT NULL UNIQUE,
+    full_name NVARCHAR(255),
+    payment_point DECIMAL(10,2) DEFAULT 0,
+    date_of_birth DATE,
+    gender SMALLINT,
+    phone_number VARCHAR(15),
+    user_address NVARCHAR(MAX),
+    user_image NVARCHAR(MAX),
+    account_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    account_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (user_role) REFERENCES role(user_role) ON DELETE SET NULL
+);
+GO
+
+CREATE TABLE course_category (
+    course_category_id VARCHAR(36) PRIMARY KEY,
+    course_category_name NVARCHAR(255) NOT NULL
+);
+GO
+
+CREATE TABLE course (
+    course_id VARCHAR(36) PRIMARY KEY,
+    author_id VARCHAR(36) NOT NULL,
+    course_name NVARCHAR(255) NOT NULL,
+    course_description NVARCHAR(MAX),
+    course_status INT,
+    course_image NVARCHAR(MAX),
+    price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    course_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    course_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (course_status) REFERENCES status(status_id) ON DELETE SET NULL,
+    FOREIGN KEY (author_id) REFERENCES account(user_id) ON DELETE CASCADE
+);
+GO
+
+-- Linking tables
+CREATE TABLE course_category_mapping (
+    course_id VARCHAR(36),
+    course_category_id VARCHAR(36),
+    PRIMARY KEY (course_id, course_category_id),
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE,
+    FOREIGN KEY (course_category_id) REFERENCES course_category(course_category_id) ON DELETE CASCADE
+);
+GO
+
+-- Changed ON DELETE CASCADE to ON DELETE NO ACTION for course_id
+CREATE TABLE enrollment (
+    enrollment_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    course_id VARCHAR(36) NULL,
+    enrollment_status INT,
+    approved BIT DEFAULT 0,
+    certificate_issued_date DATE,
+    enrollment_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    enrollment_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE NO ACTION,
+    FOREIGN KEY (enrollment_status) REFERENCES status(status_id) ON DELETE SET NULL
+);
+GO
+
+CREATE TABLE chapter (
+    chapter_id VARCHAR(36) PRIMARY KEY,
+    course_id VARCHAR(36),
+    chapter_name NVARCHAR(255) NOT NULL,
+    chapter_description NVARCHAR(MAX),
+    chapter_order INT,
+    chapter_status INT,
+    chapter_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    chapter_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE,
+    FOREIGN KEY (chapter_status) REFERENCES status(status_id) ON DELETE SET NULL,
+    CONSTRAINT unique_chapter_order_per_course UNIQUE (course_id, chapter_order)
+);
+GO
+
+CREATE TABLE lesson_type (
+    lesson_type_id INT PRIMARY KEY,
+    lesson_type_name NVARCHAR(255) NOT NULL
+);
+GO
+
+CREATE TABLE lesson (
+    lesson_id VARCHAR(36) PRIMARY KEY,
+    chapter_id VARCHAR(36),
+    lesson_name NVARCHAR(255) NOT NULL,
+    lesson_description NVARCHAR(MAX),
+    lesson_content NVARCHAR(MAX) NOT NULL,
+    lesson_order INT NOT NULL,
+    lesson_type_id INT,
+    lesson_status INT,
+    lesson_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    lesson_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (chapter_id) REFERENCES chapter(chapter_id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_type_id) REFERENCES lesson_type(lesson_type_id) ON DELETE SET NULL,
+    FOREIGN KEY (lesson_status) REFERENCES status(status_id) ON DELETE SET NULL,
+    CONSTRAINT unique_lesson_order_per_chapter UNIQUE (chapter_id, lesson_order)
+);
+GO
+
+-- Changed ON DELETE CASCADE to ON DELETE NO ACTION for lesson_id
+CREATE TABLE user_progress (
+    user_id VARCHAR(36),
+    lesson_id VARCHAR(36),
+    is_completed BIT DEFAULT 0,
+    completed_at DATETIME,
+    PRIMARY KEY (user_id, lesson_id),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION
+);
+GO
+
+CREATE TABLE chatbot_conversation (
+    conversation_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36),
+    conversation_time DATETIME NOT NULL DEFAULT GETDATE(),
+    conversation_content NVARCHAR(MAX) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE
+);
+GO
+
+-- Changed ON DELETE CASCADE to ON DELETE NO ACTION for user_id
+CREATE TABLE feedback (
+    feedback_id VARCHAR(36) PRIMARY KEY,
+    course_id VARCHAR(36),
+    user_id VARCHAR(36),
+    star_rating TINYINT CHECK (star_rating BETWEEN 1 AND 5),
+    comment NVARCHAR(MAX),
+    feedback_date DATE NOT NULL,
+    hidden_status BIT DEFAULT 0,
+    feedback_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    feedback_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE NO ACTION
+);
+GO
+
+CREATE TABLE achievement (
+    achievement_id VARCHAR(36) PRIMARY KEY,
+    achievement_name NVARCHAR(255) NOT NULL,
+    achievement_description NVARCHAR(MAX),
+    achievement_icon VARCHAR(255),
+    achievement_created_at DATETIME NOT NULL DEFAULT GETDATE()
+);
+GO
+
+CREATE TABLE user_achievement (
+    user_id VARCHAR(36),
+    achievement_id VARCHAR(36),
+    received_date DATE NOT NULL,
+    enrollment_id VARCHAR(36),
+    PRIMARY KEY (user_id, achievement_id),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (achievement_id) REFERENCES achievement(achievement_id) ON DELETE CASCADE,
+    FOREIGN KEY (enrollment_id) REFERENCES enrollment(enrollment_id) ON DELETE NO ACTION
+);
+GO
+
+-- Changed ON DELETE SET NULL to ON DELETE NO ACTION for course_id
+CREATE TABLE notification (
+    notification_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36),
+    course_id VARCHAR(36),
+    notification_title NVARCHAR(255) NOT NULL,
+    notification_content NVARCHAR(MAX) NOT NULL,
+    notification_type VARCHAR(50) CHECK (notification_type IN ('info', 'warning', 'reminder')),
+    notification_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(36),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE NO ACTION,
+    FOREIGN KEY (created_by) REFERENCES account(user_id) ON DELETE NO ACTION
+);
+GO
+
+-- Changed ON DELETE SET NULL to ON DELETE NO ACTION for course_id
+CREATE TABLE [transaction] (
+    transaction_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36),
+    course_id VARCHAR(36),
+    transaction_type VARCHAR(50) CHECK (transaction_type IN ('payment', 'refund', 'topup')),
+    amount DECIMAL(10,2) NOT NULL,
+    transaction_time DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE NO ACTION
+);
+GO
+
+-- Changed ON DELETE CASCADE to ON DELETE NO ACTION for lesson_id
+CREATE TABLE comment (
+    comment_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36),
+    lesson_id VARCHAR(36),
+    comment_text NVARCHAR(MAX),
+    comment_created_at DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION
+);
+
+
