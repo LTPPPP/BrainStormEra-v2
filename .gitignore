@@ -1,0 +1,6 @@
+*.json
+.env
+venv/
+*.txt
+logs/
+.vs/
