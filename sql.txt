@@ -1,0 +1,461 @@
+-- =============================================
+-- LOOKUP TABLES (Create these first)
+-- =============================================
+
+-- Status lookup table
+CREATE TABLE status (
+    status_id INT PRIMARY KEY,
+    status_name NVARCHAR(255) NOT NULL
+);
+GO
+
+-- Lesson type lookup table
+CREATE TABLE lesson_type (
+    lesson_type_id INT PRIMARY KEY,
+    lesson_type_name NVARCHAR(255) NOT NULL
+);
+GO
+
+-- Payment method lookup table
+CREATE TABLE payment_method (
+    payment_method_id INT PRIMARY KEY,
+    method_name NVARCHAR(100) NOT NULL,
+    is_active BIT DEFAULT 1
+);
+GO
+
+-- =============================================
+-- CORE TABLES (Create in dependency order)
+-- =============================================
+
+-- User accounts table (No dependencies)
+CREATE TABLE account (
+    user_id VARCHAR(36) PRIMARY KEY,
+    user_role VARCHAR(36) NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    user_email VARCHAR(255) NOT NULL UNIQUE,
+    full_name NVARCHAR(255),
+    payment_point DECIMAL(10,2) DEFAULT 0,
+    date_of_birth DATE,
+    gender SMALLINT CHECK (gender IN (0, 1, 2)), -- 0: Other, 1: Male, 2: Female
+    phone_number VARCHAR(15),
+    user_address NVARCHAR(MAX),
+    user_image NVARCHAR(MAX),
+    is_banned BIT DEFAULT 0,
+    last_login DATETIME,
+    account_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    account_updated_at DATETIME NOT NULL DEFAULT GETDATE()
+);
+GO
+
+-- Course categories (No dependencies)
+CREATE TABLE course_category (
+    course_category_id VARCHAR(36) PRIMARY KEY,
+    course_category_name NVARCHAR(255) NOT NULL,
+    category_description NVARCHAR(MAX),
+    category_icon NVARCHAR(255),
+    is_active BIT DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    update_at DATETIME DEFAULT GETDATE()
+);
+GO
+
+-- Courses table (Depends on account and status)
+CREATE TABLE course (
+    course_id VARCHAR(36) PRIMARY KEY,
+    author_id VARCHAR(36) NOT NULL,
+    course_name NVARCHAR(255) NOT NULL,
+    course_description NVARCHAR(MAX),
+    course_status INT,
+    course_image NVARCHAR(MAX),
+    price DECIMAL(10, 2) NOT NULL DEFAULT 0.00 CHECK (price >= 0),
+    estimated_duration INT, -- in minutes
+    difficulty_level TINYINT CHECK (difficulty_level IN (1, 2, 3, 4, 5)), -- 1: Beginner, 5: Expert
+    is_featured BIT DEFAULT 0,
+    approval_status VARCHAR(20) DEFAULT 'pending' CHECK (approval_status IN ('pending', 'approved', 'rejected')),
+    approved_by VARCHAR(36),
+    approved_at DATETIME,
+    enforce_sequential_access BIT DEFAULT 1, -- Whether this course requires lessons to be completed in order
+    allow_lesson_preview BIT DEFAULT 0, -- Allow previewing locked lessons without completing
+    course_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    course_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (course_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION,
+    FOREIGN KEY (author_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (approved_by) REFERENCES account(user_id) ON DELETE SET NULL ON UPDATE NO ACTION
+);
+GO
+
+-- Course category mapping (many-to-many)
+CREATE TABLE course_category_mapping (
+    course_id VARCHAR(36),
+    course_category_id VARCHAR(36),
+    PRIMARY KEY (course_id, course_category_id),
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (course_category_id) REFERENCES course_category(course_category_id) ON DELETE CASCADE ON UPDATE NO ACTION
+);
+GO
+
+-- Course chapters (Depends on course)
+CREATE TABLE chapter (
+    chapter_id VARCHAR(36) PRIMARY KEY,
+    course_id VARCHAR(36) NOT NULL,
+    chapter_name NVARCHAR(255) NOT NULL,
+    chapter_description NVARCHAR(MAX),
+    chapter_order INT,
+    chapter_status INT,
+    -- Chapter prerequisites
+    is_locked BIT DEFAULT 0, -- Whether this chapter is initially locked
+    unlock_after_chapter_id VARCHAR(36), -- Previous chapter that must be completed
+    chapter_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    chapter_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (chapter_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION,
+    CONSTRAINT unique_chapter_order_per_course UNIQUE (course_id, chapter_order)
+);
+GO
+
+-- Add self-referencing foreign key for chapters after table creation
+ALTER TABLE chapter ADD CONSTRAINT FK_chapter_unlock_after 
+    FOREIGN KEY (unlock_after_chapter_id) REFERENCES chapter(chapter_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
+GO
+
+-- Lessons (Depends on chapter)
+CREATE TABLE lesson (
+    lesson_id VARCHAR(36) PRIMARY KEY,
+    chapter_id VARCHAR(36) NOT NULL,
+    lesson_name NVARCHAR(255) NOT NULL,
+    lesson_description NVARCHAR(MAX),
+    lesson_content NVARCHAR(MAX) NOT NULL,
+    lesson_order INT NOT NULL,
+    lesson_type_id INT,
+    lesson_status INT,
+    is_locked BIT DEFAULT 0, -- Whether this lesson is initially locked
+    unlock_after_lesson_id VARCHAR(36), -- Previous lesson that must be completed
+    min_completion_percentage DECIMAL(5,2) DEFAULT 100.00, -- Minimum percentage to consider completed
+    min_time_spent INT DEFAULT 0, -- Minimum time (seconds) before lesson can be marked complete
+    access_time DATETIME NULL, -- Time when lesson was unlocked (when is_locked changed from 1 to 0)
+    is_mandatory BIT DEFAULT 1, -- Whether this lesson must be completed to progress
+    -- Lesson completion requirements
+    requires_quiz_pass BIT DEFAULT 0, -- Whether user must pass associated quiz
+    min_quiz_score DECIMAL(5,2) DEFAULT 70.00, -- Minimum quiz score required
+    lesson_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    lesson_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (chapter_id) REFERENCES chapter(chapter_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (lesson_type_id) REFERENCES lesson_type(lesson_type_id) ON DELETE SET NULL ON UPDATE NO ACTION,
+    FOREIGN KEY (lesson_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION,
+    CONSTRAINT unique_lesson_order_per_chapter UNIQUE (chapter_id, lesson_order)
+);
+GO
+
+-- Add self-referencing foreign key for lessons after table creation
+ALTER TABLE lesson ADD CONSTRAINT FK_lesson_unlock_after 
+    FOREIGN KEY (unlock_after_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
+GO
+
+-- Course enrollments (Depends on account and course)
+-- NOTE: lesson references added later to avoid circular dependencies
+CREATE TABLE enrollment (
+    enrollment_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    course_id VARCHAR(36) NOT NULL,
+    enrollment_status INT,
+    approved BIT DEFAULT 0,
+    progress_percentage DECIMAL(5,2) DEFAULT 0 CHECK (progress_percentage >= 0 AND progress_percentage <= 100),
+    certificate_issued_date DATE,
+    current_lesson_id VARCHAR(36), -- The next lesson the user should take
+    last_accessed_lesson_id VARCHAR(36), -- The last lesson the user accessed
+    enrollment_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    enrollment_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (enrollment_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION
+);
+GO
+
+-- Lesson Prerequisites Table (for complex prerequisite relationships)
+CREATE TABLE lesson_prerequisite (
+    lesson_id VARCHAR(36),
+    prerequisite_lesson_id VARCHAR(36),
+    prerequisite_type VARCHAR(20) DEFAULT 'completion' CHECK (prerequisite_type IN ('completion', 'quiz_pass', 'time_spent')),
+    required_score DECIMAL(5,2), -- For quiz_pass type
+    required_time INT, -- For time_spent type (in seconds)
+    created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    PRIMARY KEY (lesson_id, prerequisite_lesson_id),
+    FOREIGN KEY (lesson_id) REFERENCES lesson(lesson_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (prerequisite_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+GO
+
+-- Quiz table (Depends on lesson and course)
+CREATE TABLE quiz (
+    quiz_id VARCHAR(36) PRIMARY KEY,
+    lesson_id VARCHAR(36),
+    course_id VARCHAR(36), -- For course-level quizzes
+    quiz_name NVARCHAR(255) NOT NULL,
+    quiz_description NVARCHAR(MAX),
+    time_limit INT, -- in minutes, NULL = no time limit
+    passing_score DECIMAL(5,2) DEFAULT 70.00,
+    max_attempts INT DEFAULT 3,
+    quiz_status INT,
+    is_final_quiz BIT DEFAULT 0, -- Course completion quiz
+    -- Quiz as prerequisite
+    is_prerequisite_quiz BIT DEFAULT 0, -- Whether passing this quiz is required for progression
+    blocks_lesson_completion BIT DEFAULT 0, -- Whether lesson can't be completed without passing quiz
+    quiz_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    quiz_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (quiz_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION
+);
+GO
+
+-- Quiz questions (Depends on quiz)
+CREATE TABLE question (
+    question_id VARCHAR(36) PRIMARY KEY,
+    quiz_id VARCHAR(36) NOT NULL,
+    question_text NVARCHAR(MAX) NOT NULL,
+    question_type VARCHAR(20) CHECK (question_type IN ('multiple_choice', 'true_false', 'essay', 'fill_blank')),
+    points DECIMAL(5,2) DEFAULT 1.00,
+    question_order INT,
+    explanation NVARCHAR(MAX), -- Explanation for correct answer
+    question_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (quiz_id) REFERENCES quiz(quiz_id) ON DELETE CASCADE ON UPDATE NO ACTION
+);
+GO
+
+-- Answer options for questions (Depends on question)  
+CREATE TABLE answer_option (
+    option_id VARCHAR(36) PRIMARY KEY,
+    question_id VARCHAR(36) NOT NULL,
+    option_text NVARCHAR(MAX) NOT NULL,
+    is_correct BIT DEFAULT 0,
+    option_order INT,
+    FOREIGN KEY (question_id) REFERENCES question(question_id) ON DELETE CASCADE ON UPDATE NO ACTION
+);
+GO
+
+-- Quiz attempts (Depends on account and quiz)
+CREATE TABLE quiz_attempt (
+    attempt_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    quiz_id VARCHAR(36) NOT NULL,
+    score DECIMAL(5,2),
+    total_points DECIMAL(5,2),
+    percentage_score DECIMAL(5,2),
+    start_time DATETIME,
+    end_time DATETIME,
+    is_passed BIT DEFAULT 0,
+    attempt_number INT DEFAULT 1,
+    time_spent INT, -- in seconds
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (quiz_id) REFERENCES quiz(quiz_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+GO
+
+-- User answers for quiz questions (Depends on account, question, quiz_attempt, answer_option)
+-- FIXED: Changed CASCADE to NO ACTION to avoid cycles
+CREATE TABLE user_answer (
+    user_id VARCHAR(36),
+    question_id VARCHAR(36),
+    attempt_id VARCHAR(36),
+    selected_option_id VARCHAR(36),
+    answer_text NVARCHAR(MAX), -- For essay/fill_blank questions
+    is_correct BIT,
+    points_earned DECIMAL(5,2) DEFAULT 0,
+    PRIMARY KEY (user_id, question_id, attempt_id),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (question_id) REFERENCES question(question_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (attempt_id) REFERENCES quiz_attempt(attempt_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (selected_option_id) REFERENCES answer_option(option_id) ON DELETE SET NULL ON UPDATE NO ACTION
+);
+GO
+
+-- Payment transactions (Depends on account, course, payment_method)
+CREATE TABLE payment_transaction (
+    transaction_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    course_id VARCHAR(36) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL CHECK (amount >= 0),
+    payment_method_id INT,
+    transaction_status VARCHAR(20) DEFAULT 'pending' CHECK (transaction_status IN ('pending', 'completed', 'failed', 'refunded', 'cancelled')),
+    payment_gateway VARCHAR(50), -- PayPal, Stripe, VNPay, etc.
+    payment_gateway_ref VARCHAR(255), -- Reference from payment gateway
+    gateway_transaction_id VARCHAR(255), -- Transaction ID from gateway
+    payment_date DATETIME,
+    refund_date DATETIME,
+    refund_amount DECIMAL(10,2),
+    refund_reason NVARCHAR(500),
+    currency_code VARCHAR(3) DEFAULT 'VND',
+    exchange_rate DECIMAL(10,4) DEFAULT 1.0000,
+    transaction_fee DECIMAL(10,2) DEFAULT 0,
+    net_amount DECIMAL(10,2), -- Amount after fees
+    transaction_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    transaction_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (payment_method_id) REFERENCES payment_method(payment_method_id) ON DELETE SET NULL ON UPDATE NO ACTION
+);
+GO
+
+-- User Progress Table (Depends on account and lesson)
+CREATE TABLE user_progress (
+    user_id VARCHAR(36),
+    lesson_id VARCHAR(36),
+    is_completed BIT DEFAULT 0,
+    progress_percentage DECIMAL(5,2) DEFAULT 0,
+    time_spent INT DEFAULT 0, -- in seconds
+    last_accessed_at DATETIME,
+    completed_at DATETIME,
+    -- Enhanced tracking
+    access_count INT DEFAULT 0, -- Number of times lesson was accessed
+    first_accessed_at DATETIME, -- When lesson was first accessed
+    is_unlocked BIT DEFAULT 0, -- Whether lesson is currently unlocked for this user
+    unlocked_at DATETIME, -- When lesson was unlocked
+    -- Completion validation
+    meets_time_requirement BIT DEFAULT 0, -- Whether minimum time was spent
+    meets_percentage_requirement BIT DEFAULT 0, -- Whether minimum completion percentage reached
+    meets_quiz_requirement BIT DEFAULT 1, -- Whether quiz requirements are met (default true for non-quiz lessons)
+    PRIMARY KEY (user_id, lesson_id),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (lesson_id) REFERENCES lesson(lesson_id) ON DELETE CASCADE ON UPDATE NO ACTION
+);
+GO
+
+-- Certificates (Depends on enrollment, account, course)
+CREATE TABLE certificate (
+    certificate_id VARCHAR(36) PRIMARY KEY,
+    enrollment_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    course_id VARCHAR(36) NOT NULL,
+    certificate_code VARCHAR(50) UNIQUE NOT NULL,
+    certificate_name NVARCHAR(255) NOT NULL,
+    certificate_template NVARCHAR(MAX), -- Template used
+    certificate_url NVARCHAR(MAX), -- URL to download PDF
+    issue_date DATE NOT NULL,
+    expiry_date DATE,
+    is_valid BIT DEFAULT 1,
+    verification_url NVARCHAR(MAX), -- Public verification URL
+    final_score DECIMAL(5,2),
+    certificate_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (enrollment_id) REFERENCES enrollment(enrollment_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+GO
+
+-- Chatbot conversations (Depends on account)
+CREATE TABLE chatbot_conversation (
+    conversation_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    conversation_time DATETIME NOT NULL DEFAULT GETDATE(),
+    user_message NVARCHAR(MAX) NOT NULL,
+    bot_response NVARCHAR(MAX) NOT NULL,
+    conversation_context NVARCHAR(MAX), -- JSON context
+    feedback_rating TINYINT CHECK (feedback_rating BETWEEN 1 AND 5),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE ON UPDATE NO ACTION
+);
+GO
+
+-- Course feedback and ratings (Depends on course and account)
+CREATE TABLE feedback (
+    feedback_id VARCHAR(36) PRIMARY KEY,
+    course_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    star_rating TINYINT CHECK (star_rating BETWEEN 1 AND 5),
+    comment NVARCHAR(MAX),
+    feedback_date DATE NOT NULL,
+    hidden_status BIT DEFAULT 0,
+    is_verified_purchase BIT DEFAULT 0,
+    helpful_count INT DEFAULT 0,
+    feedback_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    feedback_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+GO
+
+-- Achievements (No dependencies)
+CREATE TABLE achievement (
+    achievement_id VARCHAR(36) PRIMARY KEY,
+    achievement_name NVARCHAR(255) NOT NULL,
+    achievement_description NVARCHAR(MAX),
+    achievement_icon VARCHAR(255),
+    achievement_type VARCHAR(50) CHECK (achievement_type IN ('course_completion', 'quiz_master', 'streak', 'first_course', 'instructor', 'student_engagement')),
+    points_reward INT DEFAULT 0,
+    achievement_created_at DATETIME NOT NULL DEFAULT GETDATE()
+);
+GO
+
+-- User achievements (Depends on account, achievement, enrollment, course)
+CREATE TABLE user_achievement (
+    user_id VARCHAR(36),
+    achievement_id VARCHAR(36),
+    received_date DATE NOT NULL,
+    enrollment_id VARCHAR(36),
+    related_course_id VARCHAR(36),
+    points_earned INT DEFAULT 0,
+    PRIMARY KEY (user_id, achievement_id),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (achievement_id) REFERENCES achievement(achievement_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (enrollment_id) REFERENCES enrollment(enrollment_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (related_course_id) REFERENCES course(course_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+GO
+
+-- Notifications (Depends on account and course)
+CREATE TABLE notification (
+    notification_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    course_id VARCHAR(36),
+    notification_title NVARCHAR(255) NOT NULL,
+    notification_content NVARCHAR(MAX) NOT NULL,
+    notification_type VARCHAR(50) CHECK (notification_type IN ('info', 'warning', 'reminder', 'achievement', 'course_update', 'payment', 'system')),
+    is_read BIT DEFAULT 0,
+    read_at DATETIME,
+    notification_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    created_by VARCHAR(36),
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE SET NULL ON UPDATE NO ACTION,
+    FOREIGN KEY (created_by) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+GO
+
+-- =============================================
+-- ADD LESSON REFERENCES TO ENROLLMENT TABLE
+-- (Added after lesson table is created to avoid cycles)
+-- =============================================
+
+-- Add foreign keys to enrollment table for lesson references with NO ACTION to avoid cycles
+ALTER TABLE enrollment ADD CONSTRAINT FK_enrollment_current_lesson 
+    FOREIGN KEY (current_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
+GO
+
+ALTER TABLE enrollment ADD CONSTRAINT FK_enrollment_last_accessed_lesson 
+    FOREIGN KEY (last_accessed_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
+GO
+
+-- =============================================
+-- INDEXES FOR PERFORMANCE
+-- =============================================
+
+-- Indexes for sequential access queries
+CREATE INDEX IX_lesson_chapter_order ON lesson(chapter_id, lesson_order);
+CREATE INDEX IX_chapter_course_order ON chapter(course_id, chapter_order);
+CREATE INDEX IX_user_progress_user_lesson ON user_progress(user_id, lesson_id);
+CREATE INDEX IX_user_progress_completion ON user_progress(user_id, is_completed, completed_at);
+CREATE INDEX IX_enrollment_user_course ON enrollment(user_id, course_id);
+CREATE INDEX IX_lesson_prerequisite_lookup ON lesson_prerequisite(lesson_id, prerequisite_lesson_id);
+
+-- Indexes for unlock status
+CREATE INDEX IX_lesson_unlock_status ON lesson(is_locked, unlock_after_lesson_id);
+CREATE INDEX IX_chapter_unlock_status ON chapter(is_locked, unlock_after_chapter_id);
+CREATE INDEX IX_user_progress_unlock ON user_progress(user_id, is_unlocked, unlocked_at);
+
+-- Additional performance indexes
+CREATE INDEX IX_course_author ON course(author_id);
+CREATE INDEX IX_enrollment_status ON enrollment(enrollment_status, user_id);
+CREATE INDEX IX_quiz_attempt_user_quiz ON quiz_attempt(user_id, quiz_id);
+CREATE INDEX IX_feedback_course_rating ON feedback(course_id, star_rating);
+CREATE INDEX IX_notification_user_unread ON notification(user_id, is_read);
+GO

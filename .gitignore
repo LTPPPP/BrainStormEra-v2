@@ -1,0 +1,8 @@
+#IDE
+.vs
+.idea
+*.sublime-project
+*.sublime-workspace
+
+# Environment
+.env
