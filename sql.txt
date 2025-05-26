@@ -1,34 +1,20 @@
--- =============================================
--- LOOKUP TABLES (Create these first)
--- =============================================
 
--- Status lookup table
 CREATE TABLE status (
     status_id INT PRIMARY KEY,
     status_name NVARCHAR(255) NOT NULL
 );
-GO
 
--- Lesson type lookup table
 CREATE TABLE lesson_type (
     lesson_type_id INT PRIMARY KEY,
     lesson_type_name NVARCHAR(255) NOT NULL
 );
-GO
 
--- Payment method lookup table
 CREATE TABLE payment_method (
     payment_method_id INT PRIMARY KEY,
     method_name NVARCHAR(100) NOT NULL,
     is_active BIT DEFAULT 1
 );
-GO
 
--- =============================================
--- CORE TABLES (Create in dependency order)
--- =============================================
-
--- User accounts table (No dependencies)
 CREATE TABLE account (
     user_id VARCHAR(36) PRIMARY KEY,
     user_role VARCHAR(36) NOT NULL,
@@ -47,9 +33,7 @@ CREATE TABLE account (
     account_created_at DATETIME NOT NULL DEFAULT GETDATE(),
     account_updated_at DATETIME NOT NULL DEFAULT GETDATE()
 );
-GO
 
--- Course categories (No dependencies)
 CREATE TABLE course_category (
     course_category_id VARCHAR(36) PRIMARY KEY,
     course_category_name NVARCHAR(255) NOT NULL,
@@ -59,9 +43,7 @@ CREATE TABLE course_category (
     created_at DATETIME NOT NULL DEFAULT GETDATE(),
     update_at DATETIME DEFAULT GETDATE()
 );
-GO
 
--- Courses table (Depends on account and status)
 CREATE TABLE course (
     course_id VARCHAR(36) PRIMARY KEY,
     author_id VARCHAR(36) NOT NULL,
@@ -84,9 +66,7 @@ CREATE TABLE course (
     FOREIGN KEY (author_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
     FOREIGN KEY (approved_by) REFERENCES account(user_id) ON DELETE SET NULL ON UPDATE NO ACTION
 );
-GO
 
--- Course category mapping (many-to-many)
 CREATE TABLE course_category_mapping (
     course_id VARCHAR(36),
     course_category_id VARCHAR(36),
@@ -94,9 +74,8 @@ CREATE TABLE course_category_mapping (
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE ON UPDATE NO ACTION,
     FOREIGN KEY (course_category_id) REFERENCES course_category(course_category_id) ON DELETE CASCADE ON UPDATE NO ACTION
 );
-GO
 
--- Course chapters (Depends on course)
+
 CREATE TABLE chapter (
     chapter_id VARCHAR(36) PRIMARY KEY,
     course_id VARCHAR(36) NOT NULL,
@@ -113,14 +92,11 @@ CREATE TABLE chapter (
     FOREIGN KEY (chapter_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION,
     CONSTRAINT unique_chapter_order_per_course UNIQUE (course_id, chapter_order)
 );
-GO
 
--- Add self-referencing foreign key for chapters after table creation
+
 ALTER TABLE chapter ADD CONSTRAINT FK_chapter_unlock_after 
     FOREIGN KEY (unlock_after_chapter_id) REFERENCES chapter(chapter_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
-GO
 
--- Lessons (Depends on chapter)
 CREATE TABLE lesson (
     lesson_id VARCHAR(36) PRIMARY KEY,
     chapter_id VARCHAR(36) NOT NULL,
@@ -146,15 +122,9 @@ CREATE TABLE lesson (
     FOREIGN KEY (lesson_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION,
     CONSTRAINT unique_lesson_order_per_chapter UNIQUE (chapter_id, lesson_order)
 );
-GO
-
--- Add self-referencing foreign key for lessons after table creation
 ALTER TABLE lesson ADD CONSTRAINT FK_lesson_unlock_after 
     FOREIGN KEY (unlock_after_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
-GO
 
--- Course enrollments (Depends on account and course)
--- NOTE: lesson references added later to avoid circular dependencies
 CREATE TABLE enrollment (
     enrollment_id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
@@ -171,9 +141,8 @@ CREATE TABLE enrollment (
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE ON UPDATE NO ACTION,
     FOREIGN KEY (enrollment_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION
 );
-GO
 
--- Lesson Prerequisites Table (for complex prerequisite relationships)
+
 CREATE TABLE lesson_prerequisite (
     lesson_id VARCHAR(36),
     prerequisite_lesson_id VARCHAR(36),
@@ -185,9 +154,7 @@ CREATE TABLE lesson_prerequisite (
     FOREIGN KEY (lesson_id) REFERENCES lesson(lesson_id) ON DELETE CASCADE ON UPDATE NO ACTION,
     FOREIGN KEY (prerequisite_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
-GO
 
--- Quiz table (Depends on lesson and course)
 CREATE TABLE quiz (
     quiz_id VARCHAR(36) PRIMARY KEY,
     lesson_id VARCHAR(36),
@@ -208,9 +175,6 @@ CREATE TABLE quiz (
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
     FOREIGN KEY (quiz_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION
 );
-GO
-
--- Quiz questions (Depends on quiz)
 CREATE TABLE question (
     question_id VARCHAR(36) PRIMARY KEY,
     quiz_id VARCHAR(36) NOT NULL,
@@ -222,9 +186,7 @@ CREATE TABLE question (
     question_created_at DATETIME NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (quiz_id) REFERENCES quiz(quiz_id) ON DELETE CASCADE ON UPDATE NO ACTION
 );
-GO
 
--- Answer options for questions (Depends on question)  
 CREATE TABLE answer_option (
     option_id VARCHAR(36) PRIMARY KEY,
     question_id VARCHAR(36) NOT NULL,
@@ -233,9 +195,7 @@ CREATE TABLE answer_option (
     option_order INT,
     FOREIGN KEY (question_id) REFERENCES question(question_id) ON DELETE CASCADE ON UPDATE NO ACTION
 );
-GO
 
--- Quiz attempts (Depends on account and quiz)
 CREATE TABLE quiz_attempt (
     attempt_id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
@@ -251,10 +211,7 @@ CREATE TABLE quiz_attempt (
     FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
     FOREIGN KEY (quiz_id) REFERENCES quiz(quiz_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
-GO
 
--- User answers for quiz questions (Depends on account, question, quiz_attempt, answer_option)
--- FIXED: Changed CASCADE to NO ACTION to avoid cycles
 CREATE TABLE user_answer (
     user_id VARCHAR(36),
     question_id VARCHAR(36),
@@ -269,9 +226,7 @@ CREATE TABLE user_answer (
     FOREIGN KEY (attempt_id) REFERENCES quiz_attempt(attempt_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
     FOREIGN KEY (selected_option_id) REFERENCES answer_option(option_id) ON DELETE SET NULL ON UPDATE NO ACTION
 );
-GO
 
--- Payment transactions (Depends on account, course, payment_method)
 CREATE TABLE payment_transaction (
     transaction_id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
@@ -296,9 +251,6 @@ CREATE TABLE payment_transaction (
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
     FOREIGN KEY (payment_method_id) REFERENCES payment_method(payment_method_id) ON DELETE SET NULL ON UPDATE NO ACTION
 );
-GO
-
--- User Progress Table (Depends on account and lesson)
 CREATE TABLE user_progress (
     user_id VARCHAR(36),
     lesson_id VARCHAR(36),
@@ -320,9 +272,7 @@ CREATE TABLE user_progress (
     FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE ON UPDATE NO ACTION,
     FOREIGN KEY (lesson_id) REFERENCES lesson(lesson_id) ON DELETE CASCADE ON UPDATE NO ACTION
 );
-GO
 
--- Certificates (Depends on enrollment, account, course)
 CREATE TABLE certificate (
     certificate_id VARCHAR(36) PRIMARY KEY,
     enrollment_id VARCHAR(36) NOT NULL,
@@ -342,9 +292,7 @@ CREATE TABLE certificate (
     FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
-GO
 
--- Chatbot conversations (Depends on account)
 CREATE TABLE chatbot_conversation (
     conversation_id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
@@ -355,9 +303,7 @@ CREATE TABLE chatbot_conversation (
     feedback_rating TINYINT CHECK (feedback_rating BETWEEN 1 AND 5),
     FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE ON UPDATE NO ACTION
 );
-GO
 
--- Course feedback and ratings (Depends on course and account)
 CREATE TABLE feedback (
     feedback_id VARCHAR(36) PRIMARY KEY,
     course_id VARCHAR(36) NOT NULL,
@@ -373,9 +319,7 @@ CREATE TABLE feedback (
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE ON UPDATE NO ACTION,
     FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
-GO
 
--- Achievements (No dependencies)
 CREATE TABLE achievement (
     achievement_id VARCHAR(36) PRIMARY KEY,
     achievement_name NVARCHAR(255) NOT NULL,
@@ -385,9 +329,6 @@ CREATE TABLE achievement (
     points_reward INT DEFAULT 0,
     achievement_created_at DATETIME NOT NULL DEFAULT GETDATE()
 );
-GO
-
--- User achievements (Depends on account, achievement, enrollment, course)
 CREATE TABLE user_achievement (
     user_id VARCHAR(36),
     achievement_id VARCHAR(36),
@@ -401,9 +342,7 @@ CREATE TABLE user_achievement (
     FOREIGN KEY (enrollment_id) REFERENCES enrollment(enrollment_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
     FOREIGN KEY (related_course_id) REFERENCES course(course_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
-GO
 
--- Notifications (Depends on account and course)
 CREATE TABLE notification (
     notification_id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
@@ -419,27 +358,13 @@ CREATE TABLE notification (
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE SET NULL ON UPDATE NO ACTION,
     FOREIGN KEY (created_by) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
-GO
 
--- =============================================
--- ADD LESSON REFERENCES TO ENROLLMENT TABLE
--- (Added after lesson table is created to avoid cycles)
--- =============================================
-
--- Add foreign keys to enrollment table for lesson references with NO ACTION to avoid cycles
 ALTER TABLE enrollment ADD CONSTRAINT FK_enrollment_current_lesson 
     FOREIGN KEY (current_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
-GO
 
 ALTER TABLE enrollment ADD CONSTRAINT FK_enrollment_last_accessed_lesson 
     FOREIGN KEY (last_accessed_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
-GO
 
--- =============================================
--- INDEXES FOR PERFORMANCE
--- =============================================
-
--- Indexes for sequential access queries
 CREATE INDEX IX_lesson_chapter_order ON lesson(chapter_id, lesson_order);
 CREATE INDEX IX_chapter_course_order ON chapter(course_id, chapter_order);
 CREATE INDEX IX_user_progress_user_lesson ON user_progress(user_id, lesson_id);
@@ -447,15 +372,12 @@ CREATE INDEX IX_user_progress_completion ON user_progress(user_id, is_completed,
 CREATE INDEX IX_enrollment_user_course ON enrollment(user_id, course_id);
 CREATE INDEX IX_lesson_prerequisite_lookup ON lesson_prerequisite(lesson_id, prerequisite_lesson_id);
 
--- Indexes for unlock status
 CREATE INDEX IX_lesson_unlock_status ON lesson(is_locked, unlock_after_lesson_id);
 CREATE INDEX IX_chapter_unlock_status ON chapter(is_locked, unlock_after_chapter_id);
 CREATE INDEX IX_user_progress_unlock ON user_progress(user_id, is_unlocked, unlocked_at);
 
--- Additional performance indexes
 CREATE INDEX IX_course_author ON course(author_id);
 CREATE INDEX IX_enrollment_status ON enrollment(enrollment_status, user_id);
 CREATE INDEX IX_quiz_attempt_user_quiz ON quiz_attempt(user_id, quiz_id);
 CREATE INDEX IX_feedback_course_rating ON feedback(course_id, star_rating);
 CREATE INDEX IX_notification_user_unread ON notification(user_id, is_read);
-GO
