@@ -41,6 +41,10 @@ public partial class Account
 
     public virtual ICollection<ChatbotConversation> ChatbotConversations { get; set; } = new List<ChatbotConversation>();
 
+    public virtual ICollection<ConversationParticipant> ConversationParticipants { get; set; } = new List<ConversationParticipant>();
+
+    public virtual ICollection<Conversation> Conversations { get; set; } = new List<Conversation>();
+
     public virtual ICollection<Course> CourseApprovedByNavigations { get; set; } = new List<Course>();
 
     public virtual ICollection<Course> CourseAuthors { get; set; } = new List<Course>();
@@ -48,6 +52,10 @@ public partial class Account
     public virtual ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
 
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
+
+    public virtual ICollection<MessageEntity> MessageEntityReceivers { get; set; } = new List<MessageEntity>();
+
+    public virtual ICollection<MessageEntity> MessageEntitySenders { get; set; } = new List<MessageEntity>();
 
     public virtual ICollection<Notification> NotificationCreatedByNavigations { get; set; } = new List<Notification>();
 

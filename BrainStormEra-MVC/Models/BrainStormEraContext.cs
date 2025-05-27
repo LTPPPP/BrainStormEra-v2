@@ -27,6 +27,10 @@ public partial class BrainStormEraContext : DbContext
 
     public virtual DbSet<ChatbotConversation> ChatbotConversations { get; set; }
 
+    public virtual DbSet<Conversation> Conversations { get; set; }
+
+    public virtual DbSet<ConversationParticipant> ConversationParticipants { get; set; }
+
     public virtual DbSet<Course> Courses { get; set; }
 
     public virtual DbSet<CourseCategory> CourseCategories { get; set; }
@@ -40,6 +44,8 @@ public partial class BrainStormEraContext : DbContext
     public virtual DbSet<LessonPrerequisite> LessonPrerequisites { get; set; }
 
     public virtual DbSet<LessonType> LessonTypes { get; set; }
+
+    public virtual DbSet<MessageEntity> MessageEntities { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
@@ -61,17 +67,21 @@ public partial class BrainStormEraContext : DbContext
 
     public virtual DbSet<UserProgress> UserProgresses { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=LTP; Database=BrainStormEra;User ID=sa;Password=01654460072ltp;Trust Server Certificate=True");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__account__B9BE370F6E0666DE");
+            entity.HasKey(e => e.UserId).HasName("PK__account__B9BE370FB87C7C29");
 
             entity.ToTable("account");
 
-            entity.HasIndex(e => e.UserEmail, "UQ__account__B0FBA212EFEA1122").IsUnique();
+            entity.HasIndex(e => e.UserEmail, "UQ__account__B0FBA212A4ACF4F4").IsUnique();
 
-            entity.HasIndex(e => e.Username, "UQ__account__F3DBC57213E7EFD6").IsUnique();
+            entity.HasIndex(e => e.Username, "UQ__account__F3DBC572AE042B5C").IsUnique();
 
             entity.Property(e => e.UserId)
                 .HasMaxLength(36)
@@ -126,7 +136,7 @@ public partial class BrainStormEraContext : DbContext
 
         modelBuilder.Entity<Achievement>(entity =>
         {
-            entity.HasKey(e => e.AchievementId).HasName("PK__achievem__3C492E83BC1F75D3");
+            entity.HasKey(e => e.AchievementId).HasName("PK__achievem__3C492E83CFFD004A");
 
             entity.ToTable("achievement");
 
@@ -157,7 +167,7 @@ public partial class BrainStormEraContext : DbContext
 
         modelBuilder.Entity<AnswerOption>(entity =>
         {
-            entity.HasKey(e => e.OptionId).HasName("PK__answer_o__F4EACE1B7FB0FEB7");
+            entity.HasKey(e => e.OptionId).HasName("PK__answer_o__F4EACE1B5B9F61F1");
 
             entity.ToTable("answer_option");
 
@@ -177,16 +187,16 @@ public partial class BrainStormEraContext : DbContext
 
             entity.HasOne(d => d.Question).WithMany(p => p.AnswerOptions)
                 .HasForeignKey(d => d.QuestionId)
-                .HasConstraintName("FK__answer_op__quest__17036CC0");
+                .HasConstraintName("FK__answer_op__quest__29221CFB");
         });
 
         modelBuilder.Entity<Certificate>(entity =>
         {
-            entity.HasKey(e => e.CertificateId).HasName("PK__certific__E2256D3122DF0B33");
+            entity.HasKey(e => e.CertificateId).HasName("PK__certific__E2256D31CA75D648");
 
             entity.ToTable("certificate");
 
-            entity.HasIndex(e => e.CertificateCode, "UQ__certific__2283DB566A541CB7").IsUnique();
+            entity.HasIndex(e => e.CertificateCode, "UQ__certific__2283DB568A8248D4").IsUnique();
 
             entity.Property(e => e.CertificateId)
                 .HasMaxLength(36)
@@ -230,21 +240,21 @@ public partial class BrainStormEraContext : DbContext
             entity.HasOne(d => d.Course).WithMany(p => p.Certificates)
                 .HasForeignKey(d => d.CourseId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__certifica__cours__42E1EEFE");
+                .HasConstraintName("FK__certifica__cours__55009F39");
 
             entity.HasOne(d => d.Enrollment).WithMany(p => p.Certificates)
                 .HasForeignKey(d => d.EnrollmentId)
-                .HasConstraintName("FK__certifica__enrol__40F9A68C");
+                .HasConstraintName("FK__certifica__enrol__531856C7");
 
             entity.HasOne(d => d.User).WithMany(p => p.Certificates)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__certifica__user___41EDCAC5");
+                .HasConstraintName("FK__certifica__user___540C7B00");
         });
 
         modelBuilder.Entity<Chapter>(entity =>
         {
-            entity.HasKey(e => e.ChapterId).HasName("PK__chapter__745EFE87B5A84519");
+            entity.HasKey(e => e.ChapterId).HasName("PK__chapter__745EFE87A2B1A813");
 
             entity.ToTable("chapter");
 
@@ -287,11 +297,11 @@ public partial class BrainStormEraContext : DbContext
             entity.HasOne(d => d.ChapterStatusNavigation).WithMany(p => p.Chapters)
                 .HasForeignKey(d => d.ChapterStatus)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__chapter__chapter__628FA481");
+                .HasConstraintName("FK__chapter__chapter__74AE54BC");
 
             entity.HasOne(d => d.Course).WithMany(p => p.Chapters)
                 .HasForeignKey(d => d.CourseId)
-                .HasConstraintName("FK__chapter__course___619B8048");
+                .HasConstraintName("FK__chapter__course___73BA3083");
 
             entity.HasOne(d => d.UnlockAfterChapter).WithMany(p => p.InverseUnlockAfterChapter)
                 .HasForeignKey(d => d.UnlockAfterChapterId)
@@ -300,7 +310,7 @@ public partial class BrainStormEraContext : DbContext
 
         modelBuilder.Entity<ChatbotConversation>(entity =>
         {
-            entity.HasKey(e => e.ConversationId).HasName("PK__chatbot___311E7E9AB6236A96");
+            entity.HasKey(e => e.ConversationId).HasName("PK__chatbot___311E7E9AA555FB96");
 
             entity.ToTable("chatbot_conversation");
 
@@ -323,12 +333,129 @@ public partial class BrainStormEraContext : DbContext
 
             entity.HasOne(d => d.User).WithMany(p => p.ChatbotConversations)
                 .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__chatbot_c__user___47A6A41B");
+                .HasConstraintName("FK__chatbot_c__user___59C55456");
+        });
+
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.HasKey(e => e.ConversationId).HasName("PK__conversa__311E7E9A6C6C27D7");
+
+            entity.ToTable("conversation");
+
+            entity.HasIndex(e => e.LastMessageAt, "IX_conversation_last_message").IsDescending();
+
+            entity.Property(e => e.ConversationId)
+                .HasMaxLength(36)
+                .IsUnicode(false)
+                .HasColumnName("conversation_id");
+            entity.Property(e => e.ConversationCreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("conversation_created_at");
+            entity.Property(e => e.ConversationName)
+                .HasMaxLength(255)
+                .HasColumnName("conversation_name");
+            entity.Property(e => e.ConversationType)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("private")
+                .HasColumnName("conversation_type");
+            entity.Property(e => e.ConversationUpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("conversation_updated_at");
+            entity.Property(e => e.CourseId)
+                .HasMaxLength(36)
+                .IsUnicode(false)
+                .HasColumnName("course_id");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(36)
+                .IsUnicode(false)
+                .HasColumnName("created_by");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.LastMessageAt)
+                .HasColumnType("datetime")
+                .HasColumnName("last_message_at");
+            entity.Property(e => e.LastMessageId)
+                .HasMaxLength(36)
+                .IsUnicode(false)
+                .HasColumnName("last_message_id");
+
+            entity.HasOne(d => d.Course).WithMany(p => p.Conversations)
+                .HasForeignKey(d => d.CourseId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK__conversat__cours__0B5CAFEA");
+
+            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.Conversations)
+                .HasForeignKey(d => d.CreatedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__conversat__creat__0A688BB1");
+
+            entity.HasOne(d => d.LastMessage).WithMany(p => p.Conversations)
+                .HasForeignKey(d => d.LastMessageId)
+                .HasConstraintName("FK__conversat__last___0C50D423");
+        });
+
+        modelBuilder.Entity<ConversationParticipant>(entity =>
+        {
+            entity.HasKey(e => new { e.ConversationId, e.UserId }).HasName("PK__conversa__DA859DEA7A64ABCF");
+
+            entity.ToTable("conversation_participant");
+
+            entity.HasIndex(e => new { e.UserId, e.IsActive }, "IX_conversation_participants");
+
+            entity.Property(e => e.ConversationId)
+                .HasMaxLength(36)
+                .IsUnicode(false)
+                .HasColumnName("conversation_id");
+            entity.Property(e => e.UserId)
+                .HasMaxLength(36)
+                .IsUnicode(false)
+                .HasColumnName("user_id");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.IsMuted)
+                .HasDefaultValue(false)
+                .HasColumnName("is_muted");
+            entity.Property(e => e.JoinedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("joined_at");
+            entity.Property(e => e.LastReadAt)
+                .HasColumnType("datetime")
+                .HasColumnName("last_read_at");
+            entity.Property(e => e.LastReadMessageId)
+                .HasMaxLength(36)
+                .IsUnicode(false)
+                .HasColumnName("last_read_message_id");
+            entity.Property(e => e.LeftAt)
+                .HasColumnType("datetime")
+                .HasColumnName("left_at");
+            entity.Property(e => e.ParticipantRole)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("member")
+                .HasColumnName("participant_role");
+
+            entity.HasOne(d => d.Conversation).WithMany(p => p.ConversationParticipants)
+                .HasForeignKey(d => d.ConversationId)
+                .HasConstraintName("FK__conversat__conve__13F1F5EB");
+
+            entity.HasOne(d => d.LastReadMessage).WithMany(p => p.ConversationParticipants)
+                .HasForeignKey(d => d.LastReadMessageId)
+                .HasConstraintName("FK__conversat__last___15DA3E5D");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ConversationParticipants)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK__conversat__user___14E61A24");
         });
 
         modelBuilder.Entity<Course>(entity =>
         {
-            entity.HasKey(e => e.CourseId).HasName("PK__course__8F1EF7AEC5B9682D");
+            entity.HasKey(e => e.CourseId).HasName("PK__course__8F1EF7AE8E6D31FA");
 
             entity.ToTable("course");
 
@@ -386,30 +513,30 @@ public partial class BrainStormEraContext : DbContext
             entity.HasOne(d => d.ApprovedByNavigation).WithMany(p => p.CourseApprovedByNavigations)
                 .HasForeignKey(d => d.ApprovedBy)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__course__approved__571DF1D5");
+                .HasConstraintName("FK__course__approved__693CA210");
 
             entity.HasOne(d => d.Author).WithMany(p => p.CourseAuthors)
                 .HasForeignKey(d => d.AuthorId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__course__author_i__5629CD9C");
+                .HasConstraintName("FK__course__author_i__68487DD7");
 
             entity.HasOne(d => d.CourseStatusNavigation).WithMany(p => p.Courses)
                 .HasForeignKey(d => d.CourseStatus)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__course__course_s__5535A963");
+                .HasConstraintName("FK__course__course_s__6754599E");
 
             entity.HasMany(d => d.CourseCategories).WithMany(p => p.Courses)
                 .UsingEntity<Dictionary<string, object>>(
                     "CourseCategoryMapping",
                     r => r.HasOne<CourseCategory>().WithMany()
                         .HasForeignKey("CourseCategoryId")
-                        .HasConstraintName("FK__course_ca__cours__5AEE82B9"),
+                        .HasConstraintName("FK__course_ca__cours__6D0D32F4"),
                     l => l.HasOne<Course>().WithMany()
                         .HasForeignKey("CourseId")
-                        .HasConstraintName("FK__course_ca__cours__59FA5E80"),
+                        .HasConstraintName("FK__course_ca__cours__6C190EBB"),
                     j =>
                     {
-                        j.HasKey("CourseId", "CourseCategoryId").HasName("PK__course_c__10F922209EC8546A");
+                        j.HasKey("CourseId", "CourseCategoryId").HasName("PK__course_c__10F92220593CE068");
                         j.ToTable("course_category_mapping");
                         j.IndexerProperty<string>("CourseId")
                             .HasMaxLength(36)
@@ -424,7 +551,7 @@ public partial class BrainStormEraContext : DbContext
 
         modelBuilder.Entity<CourseCategory>(entity =>
         {
-            entity.HasKey(e => e.CourseCategoryId).HasName("PK__course_c__FE7D58E8FB89006D");
+            entity.HasKey(e => e.CourseCategoryId).HasName("PK__course_c__FE7D58E81D526588");
 
             entity.ToTable("course_category");
 
@@ -454,7 +581,7 @@ public partial class BrainStormEraContext : DbContext
 
         modelBuilder.Entity<Enrollment>(entity =>
         {
-            entity.HasKey(e => e.EnrollmentId).HasName("PK__enrollme__6D24AA7A973F8AAE");
+            entity.HasKey(e => e.EnrollmentId).HasName("PK__enrollme__6D24AA7A9F2698DA");
 
             entity.ToTable("enrollment");
 
@@ -502,7 +629,7 @@ public partial class BrainStormEraContext : DbContext
 
             entity.HasOne(d => d.Course).WithMany(p => p.Enrollments)
                 .HasForeignKey(d => d.CourseId)
-                .HasConstraintName("FK__enrollmen__cours__7A672E12");
+                .HasConstraintName("FK__enrollmen__cours__0C85DE4D");
 
             entity.HasOne(d => d.CurrentLesson).WithMany(p => p.EnrollmentCurrentLessons)
                 .HasForeignKey(d => d.CurrentLessonId)
@@ -511,7 +638,7 @@ public partial class BrainStormEraContext : DbContext
             entity.HasOne(d => d.EnrollmentStatusNavigation).WithMany(p => p.Enrollments)
                 .HasForeignKey(d => d.EnrollmentStatus)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__enrollmen__enrol__7B5B524B");
+                .HasConstraintName("FK__enrollmen__enrol__0D7A0286");
 
             entity.HasOne(d => d.LastAccessedLesson).WithMany(p => p.EnrollmentLastAccessedLessons)
                 .HasForeignKey(d => d.LastAccessedLessonId)
@@ -519,12 +646,12 @@ public partial class BrainStormEraContext : DbContext
 
             entity.HasOne(d => d.User).WithMany(p => p.Enrollments)
                 .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__enrollmen__user___797309D9");
+                .HasConstraintName("FK__enrollmen__user___0B91BA14");
         });
 
         modelBuilder.Entity<Feedback>(entity =>
         {
-            entity.HasKey(e => e.FeedbackId).HasName("PK__feedback__7A6B2B8C533897E0");
+            entity.HasKey(e => e.FeedbackId).HasName("PK__feedback__7A6B2B8C7B5F4325");
 
             entity.ToTable("feedback");
 
@@ -565,17 +692,17 @@ public partial class BrainStormEraContext : DbContext
 
             entity.HasOne(d => d.Course).WithMany(p => p.Feedbacks)
                 .HasForeignKey(d => d.CourseId)
-                .HasConstraintName("FK__feedback__course__503BEA1C");
+                .HasConstraintName("FK__feedback__course__625A9A57");
 
             entity.HasOne(d => d.User).WithMany(p => p.Feedbacks)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__feedback__user_i__51300E55");
+                .HasConstraintName("FK__feedback__user_i__634EBE90");
         });
 
         modelBuilder.Entity<Lesson>(entity =>
         {
-            entity.HasKey(e => e.LessonId).HasName("PK__lesson__6421F7BE3A268BD6");
+            entity.HasKey(e => e.LessonId).HasName("PK__lesson__6421F7BEB53BDADC");
 
             entity.ToTable("lesson");
 
@@ -639,17 +766,17 @@ public partial class BrainStormEraContext : DbContext
 
             entity.HasOne(d => d.Chapter).WithMany(p => p.Lessons)
                 .HasForeignKey(d => d.ChapterId)
-                .HasConstraintName("FK__lesson__chapter___6EF57B66");
+                .HasConstraintName("FK__lesson__chapter___01142BA1");
 
             entity.HasOne(d => d.LessonStatusNavigation).WithMany(p => p.Lessons)
                 .HasForeignKey(d => d.LessonStatus)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__lesson__lesson_s__70DDC3D8");
+                .HasConstraintName("FK__lesson__lesson_s__02FC7413");
 
             entity.HasOne(d => d.LessonType).WithMany(p => p.Lessons)
                 .HasForeignKey(d => d.LessonTypeId)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__lesson__lesson_t__6FE99F9F");
+                .HasConstraintName("FK__lesson__lesson_t__02084FDA");
 
             entity.HasOne(d => d.UnlockAfterLesson).WithMany(p => p.InverseUnlockAfterLesson)
                 .HasForeignKey(d => d.UnlockAfterLessonId)
@@ -658,7 +785,7 @@ public partial class BrainStormEraContext : DbContext
 
         modelBuilder.Entity<LessonPrerequisite>(entity =>
         {
-            entity.HasKey(e => new { e.LessonId, e.PrerequisiteLessonId }).HasName("PK__lesson_p__ABB204EBA6ABE28A");
+            entity.HasKey(e => new { e.LessonId, e.PrerequisiteLessonId }).HasName("PK__lesson_p__ABB204EBBEB9E5DA");
 
             entity.ToTable("lesson_prerequisite");
 
@@ -688,17 +815,17 @@ public partial class BrainStormEraContext : DbContext
 
             entity.HasOne(d => d.Lesson).WithMany(p => p.LessonPrerequisiteLessons)
                 .HasForeignKey(d => d.LessonId)
-                .HasConstraintName("FK__lesson_pr__lesso__01142BA1");
+                .HasConstraintName("FK__lesson_pr__lesso__1332DBDC");
 
             entity.HasOne(d => d.PrerequisiteLesson).WithMany(p => p.LessonPrerequisitePrerequisiteLessons)
                 .HasForeignKey(d => d.PrerequisiteLessonId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__lesson_pr__prere__02084FDA");
+                .HasConstraintName("FK__lesson_pr__prere__14270015");
         });
 
         modelBuilder.Entity<LessonType>(entity =>
         {
-            entity.HasKey(e => e.LessonTypeId).HasName("PK__lesson_t__F5960D1E30F01547");
+            entity.HasKey(e => e.LessonTypeId).HasName("PK__lesson_t__F5960D1E20DA2AC3");
 
             entity.ToTable("lesson_type");
 
@@ -710,9 +837,97 @@ public partial class BrainStormEraContext : DbContext
                 .HasColumnName("lesson_type_name");
         });
 
+        modelBuilder.Entity<MessageEntity>(entity =>
+        {
+            entity.HasKey(e => e.MessageId).HasName("PK__message___0BBF6EE6BCD71717");
+
+            entity.ToTable("message_entity");
+
+            entity.HasIndex(e => new { e.ConversationId, e.MessageCreatedAt }, "IX_message_conversation");
+
+            entity.HasIndex(e => e.ReplyToMessageId, "IX_message_reply_to");
+
+            entity.HasIndex(e => new { e.SenderId, e.ReceiverId }, "IX_message_sender_receiver");
+
+            entity.HasIndex(e => new { e.ReceiverId, e.IsRead, e.MessageCreatedAt }, "IX_message_unread");
+
+            entity.Property(e => e.MessageId)
+                .HasMaxLength(36)
+                .IsUnicode(false)
+                .HasColumnName("message_id");
+            entity.Property(e => e.AttachmentName)
+                .HasMaxLength(255)
+                .HasColumnName("attachment_name");
+            entity.Property(e => e.AttachmentSize).HasColumnName("attachment_size");
+            entity.Property(e => e.AttachmentUrl).HasColumnName("attachment_url");
+            entity.Property(e => e.ConversationId)
+                .HasMaxLength(36)
+                .IsUnicode(false)
+                .HasColumnName("conversation_id");
+            entity.Property(e => e.EditedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("edited_at");
+            entity.Property(e => e.IsDeletedByReceiver)
+                .HasDefaultValue(false)
+                .HasColumnName("is_deleted_by_receiver");
+            entity.Property(e => e.IsDeletedBySender)
+                .HasDefaultValue(false)
+                .HasColumnName("is_deleted_by_sender");
+            entity.Property(e => e.IsEdited)
+                .HasDefaultValue(false)
+                .HasColumnName("is_edited");
+            entity.Property(e => e.IsRead)
+                .HasDefaultValue(false)
+                .HasColumnName("is_read");
+            entity.Property(e => e.MessageContent).HasColumnName("message_content");
+            entity.Property(e => e.MessageCreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("message_created_at");
+            entity.Property(e => e.MessageType)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("text")
+                .HasColumnName("message_type");
+            entity.Property(e => e.MessageUpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("message_updated_at");
+            entity.Property(e => e.OriginalContent).HasColumnName("original_content");
+            entity.Property(e => e.ReadAt)
+                .HasColumnType("datetime")
+                .HasColumnName("read_at");
+            entity.Property(e => e.ReceiverId)
+                .HasMaxLength(36)
+                .IsUnicode(false)
+                .HasColumnName("receiver_id");
+            entity.Property(e => e.ReplyToMessageId)
+                .HasMaxLength(36)
+                .IsUnicode(false)
+                .HasColumnName("reply_to_message_id");
+            entity.Property(e => e.SenderId)
+                .HasMaxLength(36)
+                .IsUnicode(false)
+                .HasColumnName("sender_id");
+
+            entity.HasOne(d => d.Receiver).WithMany(p => p.MessageEntityReceivers)
+                .HasForeignKey(d => d.ReceiverId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__message_e__recei__01D345B0");
+
+            entity.HasOne(d => d.ReplyToMessage).WithMany(p => p.InverseReplyToMessage)
+                .HasForeignKey(d => d.ReplyToMessageId)
+                .HasConstraintName("FK__message_e__reply__02C769E9");
+
+            entity.HasOne(d => d.Sender).WithMany(p => p.MessageEntitySenders)
+                .HasForeignKey(d => d.SenderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__message_e__sende__00DF2177");
+        });
+
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__notifica__E059842F5F162AF4");
+            entity.HasKey(e => e.NotificationId).HasName("PK__notifica__E059842F0F3A73A4");
 
             entity.ToTable("notification");
 
@@ -756,20 +971,20 @@ public partial class BrainStormEraContext : DbContext
             entity.HasOne(d => d.Course).WithMany(p => p.Notifications)
                 .HasForeignKey(d => d.CourseId)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__notificat__cours__634EBE90");
+                .HasConstraintName("FK__notificat__cours__756D6ECB");
 
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.NotificationCreatedByNavigations)
                 .HasForeignKey(d => d.CreatedBy)
-                .HasConstraintName("FK__notificat__creat__6442E2C9");
+                .HasConstraintName("FK__notificat__creat__76619304");
 
             entity.HasOne(d => d.User).WithMany(p => p.NotificationUsers)
                 .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__notificat__user___625A9A57");
+                .HasConstraintName("FK__notificat__user___74794A92");
         });
 
         modelBuilder.Entity<PaymentMethod>(entity =>
         {
-            entity.HasKey(e => e.PaymentMethodId).HasName("PK__payment___8A3EA9EB2B478CF5");
+            entity.HasKey(e => e.PaymentMethodId).HasName("PK__payment___8A3EA9EBB53AB20C");
 
             entity.ToTable("payment_method");
 
@@ -786,7 +1001,7 @@ public partial class BrainStormEraContext : DbContext
 
         modelBuilder.Entity<PaymentTransaction>(entity =>
         {
-            entity.HasKey(e => e.TransactionId).HasName("PK__payment___85C600AF37DC91CE");
+            entity.HasKey(e => e.TransactionId).HasName("PK__payment___85C600AFA91EEA9B");
 
             entity.ToTable("payment_transaction");
 
@@ -863,21 +1078,21 @@ public partial class BrainStormEraContext : DbContext
             entity.HasOne(d => d.Course).WithMany(p => p.PaymentTransactions)
                 .HasForeignKey(d => d.CourseId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__payment_t__cours__2EDAF651");
+                .HasConstraintName("FK__payment_t__cours__40F9A68C");
 
             entity.HasOne(d => d.PaymentMethod).WithMany(p => p.PaymentTransactions)
                 .HasForeignKey(d => d.PaymentMethodId)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__payment_t__payme__2FCF1A8A");
+                .HasConstraintName("FK__payment_t__payme__41EDCAC5");
 
             entity.HasOne(d => d.User).WithMany(p => p.PaymentTransactions)
                 .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__payment_t__user___2DE6D218");
+                .HasConstraintName("FK__payment_t__user___40058253");
         });
 
         modelBuilder.Entity<Question>(entity =>
         {
-            entity.HasKey(e => e.QuestionId).HasName("PK__question__2EC2154906AF9851");
+            entity.HasKey(e => e.QuestionId).HasName("PK__question__2EC215499BD10942");
 
             entity.ToTable("question");
 
@@ -907,12 +1122,12 @@ public partial class BrainStormEraContext : DbContext
 
             entity.HasOne(d => d.Quiz).WithMany(p => p.Questions)
                 .HasForeignKey(d => d.QuizId)
-                .HasConstraintName("FK__question__quiz_i__1332DBDC");
+                .HasConstraintName("FK__question__quiz_i__25518C17");
         });
 
         modelBuilder.Entity<Quiz>(entity =>
         {
-            entity.HasKey(e => e.QuizId).HasName("PK__quiz__2D7053EC7729EC43");
+            entity.HasKey(e => e.QuizId).HasName("PK__quiz__2D7053EC67043540");
 
             entity.ToTable("quiz");
 
@@ -961,21 +1176,21 @@ public partial class BrainStormEraContext : DbContext
 
             entity.HasOne(d => d.Course).WithMany(p => p.Quizzes)
                 .HasForeignKey(d => d.CourseId)
-                .HasConstraintName("FK__quiz__course_id__0C85DE4D");
+                .HasConstraintName("FK__quiz__course_id__1EA48E88");
 
             entity.HasOne(d => d.Lesson).WithMany(p => p.Quizzes)
                 .HasForeignKey(d => d.LessonId)
-                .HasConstraintName("FK__quiz__lesson_id__0B91BA14");
+                .HasConstraintName("FK__quiz__lesson_id__1DB06A4F");
 
             entity.HasOne(d => d.QuizStatusNavigation).WithMany(p => p.Quizzes)
                 .HasForeignKey(d => d.QuizStatus)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__quiz__quiz_statu__0D7A0286");
+                .HasConstraintName("FK__quiz__quiz_statu__1F98B2C1");
         });
 
         modelBuilder.Entity<QuizAttempt>(entity =>
         {
-            entity.HasKey(e => e.AttemptId).HasName("PK__quiz_att__5621F949DDB9C1CD");
+            entity.HasKey(e => e.AttemptId).HasName("PK__quiz_att__5621F949D80796DA");
 
             entity.ToTable("quiz_attempt");
 
@@ -1019,17 +1234,17 @@ public partial class BrainStormEraContext : DbContext
             entity.HasOne(d => d.Quiz).WithMany(p => p.QuizAttempts)
                 .HasForeignKey(d => d.QuizId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__quiz_atte__quiz___1CBC4616");
+                .HasConstraintName("FK__quiz_atte__quiz___2EDAF651");
 
             entity.HasOne(d => d.User).WithMany(p => p.QuizAttempts)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__quiz_atte__user___1BC821DD");
+                .HasConstraintName("FK__quiz_atte__user___2DE6D218");
         });
 
         modelBuilder.Entity<Status>(entity =>
         {
-            entity.HasKey(e => e.StatusId).HasName("PK__status__3683B53192DF7120");
+            entity.HasKey(e => e.StatusId).HasName("PK__status__3683B531EF75FFC3");
 
             entity.ToTable("status");
 
@@ -1043,7 +1258,7 @@ public partial class BrainStormEraContext : DbContext
 
         modelBuilder.Entity<UserAchievement>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.AchievementId }).HasName("PK__user_ach__9A7AA5E7063E0488");
+            entity.HasKey(e => new { e.UserId, e.AchievementId }).HasName("PK__user_ach__9A7AA5E70AEEA5A1");
 
             entity.ToTable("user_achievement");
 
@@ -1070,24 +1285,24 @@ public partial class BrainStormEraContext : DbContext
 
             entity.HasOne(d => d.Achievement).WithMany(p => p.UserAchievements)
                 .HasForeignKey(d => d.AchievementId)
-                .HasConstraintName("FK__user_achi__achie__5AB9788F");
+                .HasConstraintName("FK__user_achi__achie__6CD828CA");
 
             entity.HasOne(d => d.Enrollment).WithMany(p => p.UserAchievements)
                 .HasForeignKey(d => d.EnrollmentId)
-                .HasConstraintName("FK__user_achi__enrol__5BAD9CC8");
+                .HasConstraintName("FK__user_achi__enrol__6DCC4D03");
 
             entity.HasOne(d => d.RelatedCourse).WithMany(p => p.UserAchievements)
                 .HasForeignKey(d => d.RelatedCourseId)
-                .HasConstraintName("FK__user_achi__relat__5CA1C101");
+                .HasConstraintName("FK__user_achi__relat__6EC0713C");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserAchievements)
                 .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__user_achi__user___59C55456");
+                .HasConstraintName("FK__user_achi__user___6BE40491");
         });
 
         modelBuilder.Entity<UserAnswer>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.QuestionId, e.AttemptId }).HasName("PK__user_ans__730437A26BA3F80F");
+            entity.HasKey(e => new { e.UserId, e.QuestionId, e.AttemptId }).HasName("PK__user_ans__730437A22A485D2B");
 
             entity.ToTable("user_answer");
 
@@ -1117,27 +1332,27 @@ public partial class BrainStormEraContext : DbContext
             entity.HasOne(d => d.Attempt).WithMany(p => p.UserAnswers)
                 .HasForeignKey(d => d.AttemptId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__user_answ__attem__22751F6C");
+                .HasConstraintName("FK__user_answ__attem__3493CFA7");
 
             entity.HasOne(d => d.Question).WithMany(p => p.UserAnswers)
                 .HasForeignKey(d => d.QuestionId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__user_answ__quest__2180FB33");
+                .HasConstraintName("FK__user_answ__quest__339FAB6E");
 
             entity.HasOne(d => d.SelectedOption).WithMany(p => p.UserAnswers)
                 .HasForeignKey(d => d.SelectedOptionId)
                 .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__user_answ__selec__236943A5");
+                .HasConstraintName("FK__user_answ__selec__3587F3E0");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserAnswers)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__user_answ__user___208CD6FA");
+                .HasConstraintName("FK__user_answ__user___32AB8735");
         });
 
         modelBuilder.Entity<UserProgress>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.LessonId }).HasName("PK__user_pro__4FFC28746535B036");
+            entity.HasKey(e => new { e.UserId, e.LessonId }).HasName("PK__user_pro__4FFC28740B0E841A");
 
             entity.ToTable("user_progress");
 
@@ -1195,11 +1410,11 @@ public partial class BrainStormEraContext : DbContext
 
             entity.HasOne(d => d.Lesson).WithMany(p => p.UserProgresses)
                 .HasForeignKey(d => d.LessonId)
-                .HasConstraintName("FK__user_prog__lesso__3B40CD36");
+                .HasConstraintName("FK__user_prog__lesso__4D5F7D71");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserProgresses)
                 .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__user_prog__user___3A4CA8FD");
+                .HasConstraintName("FK__user_prog__user___4C6B5938");
         });
 
         OnModelCreatingPartial(modelBuilder);

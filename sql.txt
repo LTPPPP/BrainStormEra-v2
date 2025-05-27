@@ -359,6 +359,70 @@ CREATE TABLE notification (
     FOREIGN KEY (created_by) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
+
+-- Bảng lưu trữ các cuộc trò chuyện giữa người dùng
+CREATE TABLE message_entity (
+    message_id VARCHAR(36) PRIMARY KEY,
+    sender_id VARCHAR(36) NOT NULL,
+    receiver_id VARCHAR(36) NOT NULL,
+    conversation_id VARCHAR(36) NOT NULL, -- ID để nhóm các tin nhắn trong cùng 1 cuộc trò chuyện
+    message_content NVARCHAR(MAX) NOT NULL,
+    message_type VARCHAR(20) DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'file', 'link', 'system')),
+    attachment_url NVARCHAR(MAX), -- URL của file đính kèm (nếu có)
+    attachment_name NVARCHAR(255), -- Tên file đính kèm
+    attachment_size BIGINT, -- Kích thước file (bytes)
+    is_read BIT DEFAULT 0,
+    read_at DATETIME,
+    is_deleted_by_sender BIT DEFAULT 0,
+    is_deleted_by_receiver BIT DEFAULT 0,
+    reply_to_message_id VARCHAR(36), -- ID tin nhắn được reply (nếu có)
+    is_edited BIT DEFAULT 0,
+    edited_at DATETIME,
+    original_content NVARCHAR(MAX), -- Nội dung gốc trước khi chỉnh sửa
+    message_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    message_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    
+    -- Foreign keys
+    FOREIGN KEY (sender_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (receiver_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (reply_to_message_id) REFERENCES message_entity(message_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+CREATE TABLE conversation (
+    conversation_id VARCHAR(36) PRIMARY KEY,
+    conversation_name NVARCHAR(255), -- Tên cuộc trò chuyện (có thể null cho chat 1-1)
+    conversation_type VARCHAR(20) DEFAULT 'private' CHECK (conversation_type IN ('private', 'group', 'course_discussion')),
+    created_by VARCHAR(36) NOT NULL,
+    course_id VARCHAR(36), -- Liên kết với khóa học (nếu là thảo luận khóa học)
+    is_active BIT DEFAULT 1,
+    last_message_id VARCHAR(36),
+    last_message_at DATETIME,
+    conversation_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    conversation_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    
+    FOREIGN KEY (created_by) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE SET NULL ON UPDATE NO ACTION,
+    FOREIGN KEY (last_message_id) REFERENCES message_entity(message_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+CREATE TABLE conversation_participant (
+    conversation_id VARCHAR(36),
+    user_id VARCHAR(36),
+    participant_role VARCHAR(20) DEFAULT 'member' CHECK (participant_role IN ('admin', 'moderator', 'member')),
+    joined_at DATETIME NOT NULL DEFAULT GETDATE(),
+    left_at DATETIME,
+    is_active BIT DEFAULT 1,
+    is_muted BIT DEFAULT 0,
+    last_read_message_id VARCHAR(36),
+    last_read_at DATETIME,
+    
+    PRIMARY KEY (conversation_id, user_id),
+    FOREIGN KEY (conversation_id) REFERENCES conversation(conversation_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (last_read_message_id) REFERENCES message_entity(message_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
+
 ALTER TABLE enrollment ADD CONSTRAINT FK_enrollment_current_lesson 
     FOREIGN KEY (current_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
@@ -381,3 +445,13 @@ CREATE INDEX IX_enrollment_status ON enrollment(enrollment_status, user_id);
 CREATE INDEX IX_quiz_attempt_user_quiz ON quiz_attempt(user_id, quiz_id);
 CREATE INDEX IX_feedback_course_rating ON feedback(course_id, star_rating);
 CREATE INDEX IX_notification_user_unread ON notification(user_id, is_read);
+
+CREATE INDEX IX_message_conversation ON message_entity(conversation_id, message_created_at);
+CREATE INDEX IX_message_sender_receiver ON message_entity(sender_id, receiver_id);
+CREATE INDEX IX_message_unread ON message_entity(receiver_id, is_read, message_created_at);
+CREATE INDEX IX_conversation_participants ON conversation_participant(user_id, is_active);
+CREATE INDEX IX_conversation_last_message ON conversation(last_message_at DESC);
+CREATE INDEX IX_message_reply_to ON message_entity(reply_to_message_id);
+
+ALTER TABLE conversation ADD CONSTRAINT FK_conversation_last_message 
+    FOREIGN KEY (last_message_id) REFERENCES message_entity(message_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
