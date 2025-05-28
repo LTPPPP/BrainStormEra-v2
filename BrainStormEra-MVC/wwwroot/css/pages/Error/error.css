@@ -1,0 +1,234 @@
+/* Error 404 Page Styles */
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2c3e50;
+  --error-color: #e74c3c;
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  height: 100%;
+  background: linear-gradient(135deg, var(--secondary-color) 0%, #4a6990 100%);
+  color: white;
+  overflow: hidden;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.error {
+  margin-bottom: 2rem;
+}
+
+.error h1 {
+  font-size: 10rem;
+  margin: 0;
+  color: var(--error-color);
+  text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  animation: float 6s ease-in-out infinite;
+}
+
+.error p {
+  font-size: 2rem;
+  margin-top: 1rem;
+  color: white;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.error-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.back-button {
+  padding: 0.75rem 2rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.back-button:hover {
+  background-color: #2980b9;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+}
+
+.back-button.secondary {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.back-button.secondary:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Animation for 3D cube */
+.animation {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  perspective: 1000px;
+  z-index: -1;
+}
+
+.cube {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  margin: -150px 0 0 -150px;
+  transform-style: preserve-3d;
+  animation: rotate 20s infinite linear;
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg);
+  }
+  100% {
+    transform: rotateX(360deg) rotateY(360deg);
+  }
+}
+
+.face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0.2;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.front {
+  transform: translateZ(150px);
+  background: rgba(231, 76, 60, 0.3);
+}
+.back {
+  transform: translateZ(-150px) rotateY(180deg);
+  background: rgba(52, 152, 219, 0.3);
+}
+.right {
+  transform: rotateY(90deg) translateZ(150px);
+  background: rgba(46, 204, 113, 0.3);
+}
+.left {
+  transform: rotateY(-90deg) translateZ(150px);
+  background: rgba(155, 89, 182, 0.3);
+}
+.top {
+  transform: rotateX(90deg) translateZ(150px);
+  background: rgba(241, 196, 15, 0.3);
+}
+.bottom {
+  transform: rotateX(-90deg) translateZ(150px);
+  background: rgba(230, 126, 34, 0.3);
+}
+
+/* Floating animation */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Particles in background */
+.particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+}
+
+.particle {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  animation: particleFloat 15s infinite linear;
+}
+
+@keyframes particleFloat {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(100px);
+    opacity: 0;
+  }
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .error h1 {
+    font-size: 6rem;
+  }
+
+  .error p {
+    font-size: 1.5rem;
+  }
+
+  .cube {
+    width: 200px;
+    height: 200px;
+    margin: -100px 0 0 -100px;
+  }
+
+  .front {
+    transform: translateZ(100px);
+  }
+  .back {
+    transform: translateZ(-100px) rotateY(180deg);
+  }
+  .right {
+    transform: rotateY(90deg) translateZ(100px);
+  }
+  .left {
+    transform: rotateY(-90deg) translateZ(100px);
+  }
+  .top {
+    transform: rotateX(90deg) translateZ(100px);
+  }
+  .bottom {
+    transform: rotateX(-90deg) translateZ(100px);
+  }
+
+  .error-buttons {
+    flex-direction: column;
+  }
+}

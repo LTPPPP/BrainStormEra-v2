@@ -1,8 +1,265 @@
-﻿@{
+﻿@model BrainStormEra_MVC.Models.ViewModels.HomePageGuestViewModel
+@using System.IO
+@{
     ViewData["Title"] = "Home Page";
+    Layout = null;
 }
+<!DOCTYPE html>
+<html lang="en">
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrainStormEra</title>
+    <meta name="description" content="BrainStormEra - The ultimate platform for online learning and skill development">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/pages/Home/enhanced-home.css">
+    <link rel="stylesheet" href="~/css/pages/Home/homePage.css">
+    <link rel="stylesheet" href="~/css/pages/Home/landing_page.css">
+    <link rel="stylesheet" href="~/css/components/placeholders.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+</head>
+
+<body> <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <div class="container">
+        <!-- Header Section -->
+        <div class="text-center mb-5 w-100 position-relative welcome-header-container">
+            <div class="header-placeholder">
+                <div class="logo-header-container">
+                    <img src="~/img/logo/Main_Logo.jpg" alt="BrainStormEra Logo" class="logo-header-img">
+                </div>
+                <div class="header-text">
+                    <h1>Welcome to BrainStormEra</h1>
+                    <div class="subtitle">Unlock Your Learning Potential</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Categories Section -->
+    <div class="container">
+        <div class="filters mb-3">
+            <div class="categories d-flex justify-content-start p-2 rounded" style="font-size: 2.2rem;">
+                Top Recommended Courses
+            </div>
+            <div class="mt-4">
+                <button class="filter-btn active" onclick="filterCoursesByCategory('')">All</button>
+                <button class="filter-btn" onclick="filterCoursesByCategory('1')">Programming</button>
+                <button class="filter-btn" onclick="filterCoursesByCategory('2')">Design</button>
+                <button class="filter-btn" onclick="filterCoursesByCategory('3')">Business</button>
+                <button class="filter-btn" onclick="filterCoursesByCategory('4')">Marketing</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommend Course Section -->
+    <div class="container">
+        @if (ViewBag.DatabaseError != null)
+        {
+            <div class="alert alert-danger" role="alert">
+                <h4 class="alert-heading">Database Connection Error</h4>
+                <p>@ViewBag.DatabaseError</p>
+                <hr>
+                <p class="mb-0">Please check your database connection settings and try again.</p>
+            </div>
+        }
+        else if (ViewBag.Error != null)
+        {
+            <div class="alert alert-warning" role="alert">
+                <h4 class="alert-heading">Error</h4>
+                <p>@ViewBag.Error</p>
+            </div>
+        }
+
+        <div class="row justify-content-center mb-5">
+            @if (Model?.RecommendedCourses != null && Model.RecommendedCourses.Any())
+            {
+                @foreach (var c in Model.RecommendedCourses)
+                {
+                    <div class="col-md-2 col-sm-6 mb-4">
+                        <a href="javascript:void(0);" onclick="viewDetailCourse('@c.CourseId')">
+                            <div class="card course-card h-100">
+                                <div class="card-img-container">
+                                    <img src="@c.CoursePicture" class="card-img-top" alt="@c.CourseName">
+                                    <div class="overlay">
+                                        <div class="overlay-content">View Course</div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="card-title">@c.CourseName</h5>
+                                    <p class="card-text"><i class="fas fa-tag me-2"></i>Price: @c.Price.ToString("N0") ₫</p>
+                                    <p class="card-text"><i class="fas fa-user me-2"></i>By @c.CreatedBy</p>
+                                    <div class="rating">
+                                        <span class="stars" data-rating="@c.StarRating"></span>
+                                    </div>
+                                    <div class="categories-container">
+                                        <i class="fas fa-folder me-2"></i>
+                                        @foreach (var category in c.CourseCategories)
+                                        {
+                                            <span class="badge me-1">@category</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12 text-center no-courses">
+                    <i class="fas fa-book-open fa-3x mb-3"></i>
+                    <p>No recommended courses available at the moment.</p>
+                    <p>Please check back later or browse all courses.</p>
+                </div>
+            }
+        </div>
+    </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="container mt-5 mb-5">
+        <div class="row features-section">
+            <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                    <i class="fas fa-laptop-code feature-icon"></i>
+                    <h3>Learn Anywhere</h3>
+                    <p>Access our courses from any device, anytime. Your learning journey is always at your fingertips.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                    <i class="fas fa-certificate feature-icon"></i>
+                    <h3>Get Certified</h3>
+                    <p>Earn certificates upon course completion to showcase your new skills to employers.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                    <i class="fas fa-users feature-icon"></i>
+                    <h3>Expert Instructors</h3>
+                    <p>Learn from industry professionals with real-world experience in their respective fields.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Newsletter Section -->
+    <div class="container-fluid newsletter-section py-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h2 class="mb-3">Stay Updated with Our Newsletter</h2>
+                    <p>Subscribe to get notified about new courses, special offers and educational content.</p>
+                </div>
+                <div class="col-lg-6">
+                    <form class="newsletter-form d-flex">
+                        <input type="email" class="form-control form-control-lg" placeholder="Your email address...">
+                        <button type="submit" class="btn btn-primary btn-lg ms-2">Subscribe</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" defer></script>
+
+    <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+
+        // Change header style on scroll
+        window.addEventListener('scroll', function () {
+            if (window.scrollY > 50) {
+                document.querySelector('.sticky-header').classList.add('scrolled');
+            } else {
+                document.querySelector('.sticky-header').classList.remove('scrolled');
+            }
+        });
+
+        function viewDetailCourse(courseId) {
+            // Store courseId in cookie
+            document.cookie = "CourseId=" + courseId + "; path=/";
+
+            // Redirect to course detail page
+            window.location.href = "@Url.Action("CourseDetail", "Course")";
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Enhanced star rating display
+            const starElements = document.querySelectorAll('.stars');
+            starElements.forEach(starElement => {
+                const rating = parseInt(starElement.getAttribute('data-rating'));
+                starElement.innerHTML = '★★★★★'.split('').map((star, index) => {
+                    return `<span style="color: ${index < rating ? '#ff9800' : '#e0e0e0'}">${star}</span>`;
+                }).join('');
+            });
+
+            // Filter buttons
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            filterBtns.forEach(button => {
+                button.addEventListener('click', function () {
+                    filterBtns.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Add animation classes to elements when they come into view
+            const animateElements = document.querySelectorAll('.feature-card');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animated');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            animateElements.forEach(element => {
+                observer.observe(element);
+            });
+        });
+
+        function filterCoursesByCategory(categoryId = '') {
+            // Store categoryId in cookie
+            document.cookie = "CategoryId=" + categoryId + "; path=/";
+
+            // Show loading animation
+            const courseCards = document.querySelectorAll('.course-card');
+            courseCards.forEach(card => {
+                card.style.opacity = '0.5';
+            });
+
+            // Redirect to filtered courses page            setTimeout(() => {
+            location.href = '@Url.Action("FilterCoursesByCategory", "Course")';
+        }, 300);
+        }
+    </script>
+</body>
+
+</html>
