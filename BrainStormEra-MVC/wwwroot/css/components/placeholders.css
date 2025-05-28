@@ -1,0 +1,59 @@
+/* Placeholder Logo SVG Code */
+.logo-placeholder {
+  width: 200px;
+  height: 50px;
+  background-color: #3498db;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  border-radius: 5px;
+}
+
+/* Placeholder Header Image */
+.header-placeholder {
+  width: 100%;
+  height: 300px;
+  background: linear-gradient(45deg, #3498db, #2980b9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 24px;
+  border-radius: 10px;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Logo in header */
+.logo-header-img {
+  max-width: 150px;
+  max-height: 150px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  object-fit: contain;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.logo-header-container {
+  margin-bottom: 10px;
+}
+
+.header-text {
+  text-align: center;
+}
+
+.header-text h1 {
+  font-size: 28px;
+  margin-bottom: 10px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  font-weight: 400;
+}

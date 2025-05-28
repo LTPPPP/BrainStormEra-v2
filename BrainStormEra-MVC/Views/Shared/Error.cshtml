@@ -1,7 +1,23 @@
-﻿@model ErrorViewModel
+﻿@model BrainStormEra_MVC.Models.ErrorViewModel
 @{
     ViewData["Title"] = "Error";
     Layout = null;
+    var statusCode = Context.Response.StatusCode;
+    string errorMessage = "An error occurred while processing your request.";
+
+    if (ViewData["ErrorMessage"] != null)
+    {
+        errorMessage = ViewData["ErrorMessage"].ToString();
+    }
+    else if (Model?.RequestId != null)
+    {
+        errorMessage = $"Request ID: {Model.RequestId}";
+    }
+
+    if (statusCode == 404)
+    {
+        errorMessage = ViewData["ErrorMessage"]?.ToString() ?? "The page you're looking for doesn't exist.";
+    }
 }
 
 <!DOCTYPE html>
@@ -10,15 +26,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Page Not Found</title>
-    <link rel="stylesheet" href="./css/Error/Error.css">
+    <title>@(statusCode != 0 ? statusCode.ToString() : "Error") - BrainStormEra</title>
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="stylesheet" href="~/css/pages/Error/error.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
 
 <body>
     <div class="container">
         <div class="error">
-            <h1>404</h1>
-            <p>Page Not Found</p>
+            <h1>@(statusCode != 0 ? statusCode.ToString() : "Error")</h1>
+            <p>@errorMessage</p>
+            <div class="error-buttons">
+                <a href="/" class="back-button"><i class="bi bi-house-door"></i> Home</a>
+                <a href="javascript:history.back()" class="back-button secondary"><i class="bi bi-arrow-left"></i> Go
+                    Back</a>
+            </div>
         </div>
         <div class="animation">
             <div class="cube">
@@ -30,8 +53,34 @@
                 <div class="face bottom"></div>
             </div>
         </div>
+        <div class="particles" id="particles"></div>
     </div>
-    <script src="script.js"></script>
+    <script>
+        // Create random particles
+        document.addEventListener('DOMContentLoaded', function () {
+            const container = document.getElementById('particles');
+            const particleCount = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+
+                // Random size
+                const size = Math.random() * 5 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+
+                // Random position
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+
+                // Random animation delay
+                particle.style.animationDelay = `${Math.random() * 15}s`;
+
+                container.appendChild(particle);
+            }
+        });
+    </script>
 </body>
 
 </html>

@@ -1,0 +1,34 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@{
+    // This partial view contains the common header used across the application
+}
+
+<header class="container-fluid sticky-header">
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">            <a class="navbar-brand" href="@Url.Action("Index", "Home")">
+                <img src="~/img/logo/logowithoutbackground.png" alt="BrainStormEra Logo" class="logo_img">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Index", "Home")">DASHBOARD</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("CourseManagement", "Course")">COURSE</a>
+                    </li>
+                </ul>
+                <div class="profile d-flex align-items-center">
+                    <a href="@Url.Action("LoginPage", "Login")" class="btn_login">
+                        <i class="fas fa-sign-in-alt me-2"></i>Log In
+                    </a>
+                </div>
+            </div>        </div>
+    </nav>
+</header>
+
+<!-- Load header script -->
+<script src="~/js/components/header.js"></script>
