@@ -7,7 +7,7 @@
 
     if (ViewData["ErrorMessage"] != null)
     {
-        errorMessage = ViewData["ErrorMessage"].ToString();
+        errorMessage = ViewData["ErrorMessage"]?.ToString() ?? "An error occurred while processing your request.";
     }
     else if (Model?.RequestId != null)
     {
@@ -29,6 +29,7 @@
     <title>@(statusCode != 0 ? statusCode.ToString() : "Error") - BrainStormEra</title>
     <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
     <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/pages/Error/error.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
 
