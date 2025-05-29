@@ -1,12 +1,5 @@
 /* Base styles for the entire website */
-:root {
-  --primary-color: #3498db;
-  --secondary-color: #2c3e50;
-  --accent-color: #e74c3c;
-  --text-color: #333;
-  --light-bg: #f8f9fa;
-  --dark-bg: #343a40;
-}
+/* Note: All color variables are now defined in global.css */
 
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;

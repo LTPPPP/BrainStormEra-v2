@@ -30,12 +30,7 @@
     applyEntranceAnimations();
 
     // Preload background images for smoother experience
-    preloadImages();
-
-    // Initialize the parallax effect
-    initParallax();
-
-    // Start quote rotation
+    preloadImages(); // Start quote rotation
     startQuoteRotation();
   }
 
@@ -566,7 +561,6 @@
         }, 100 * (index + 1));
       });
   }
-
   /**
    * Preload images for better performance
    */
@@ -574,30 +568,6 @@
     // Preload background image
     const img = new Image();
     img.src = "/images/login-bg.jpg";
-  }
-
-  /**
-   * Initialize parallax effect for background
-   */
-  function initParallax() {
-    if (!formElements.parallaxBg) return;
-
-    // Use RAF for smooth animations
-    window.addEventListener("mousemove", (e) => {
-      if (animationFrame) {
-        cancelAnimationFrame(animationFrame);
-      }
-
-      animationFrame = requestAnimationFrame(() => {
-        const mouseX = e.clientX / window.innerWidth;
-        const mouseY = e.clientY / window.innerHeight;
-
-        // Transform with hardware acceleration
-        formElements.parallaxBg.style.transform = `translate3d(${
-          mouseX * -20
-        }px, ${mouseY * -20}px, 0)`;
-      });
-    });
   }
 
   /**

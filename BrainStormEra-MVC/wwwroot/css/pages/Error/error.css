@@ -1,9 +1,5 @@
 /* Error 404 Page Styles */
-:root {
-  --primary-color: #3498db;
-  --secondary-color: #2c3e50;
-  --error-color: #e74c3c;
-}
+/* Note: All color variables are now defined in global.css */
 
 body,
 html {

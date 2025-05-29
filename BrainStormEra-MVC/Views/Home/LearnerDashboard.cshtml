@@ -1,7 +1,32 @@
 @model BrainStormEra_MVC.Models.ViewModels.LearnerDashboardViewModel
 @{
     ViewData["Title"] = "Learner Dashboard";
+    Layout = null;
 }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/pages/learner-dashboard.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+</head>
+<body>
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
 
 <div class="dashboard-container">
     <!-- Welcome Section -->
@@ -205,13 +230,53 @@
     </div>
 </div>
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/pages/learner-dashboard.css">
-}
+    </div>
+</div>
 
-@section Scripts {
-    <script src="~/js/pages/learner-dashboard.js"></script>
-}
+@await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/pages/learner-dashboard.js"></script>
+
+<script>
+    // Hide preloader when page is loaded
+    window.addEventListener('load', function () {
+        document.querySelector('.page-loader').classList.add('loaded');
+        setTimeout(() => {
+            document.querySelector('.page-loader').style.display = 'none';
+        }, 500);
+    });
+
+    // Enhanced course card interactions
+    document.addEventListener('DOMContentLoaded', function() {
+        const courseCards = document.querySelectorAll('.course-card');
+        courseCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Animate statistics on scroll
+        const statItems = document.querySelectorAll('.stat-item');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationDelay = Math.random() * 0.5 + 's';
+                    entry.target.classList.add('animate__animated', 'animate__fadeInUp');
+                }
+            });
+        });
+
+        statItems.forEach(item => observer.observe(item));
+    });
+</script>
+
+</body>
+</html>
 
                                                
                                                            

@@ -29,9 +29,6 @@
     // Preload background images for smoother experience
     preloadImages();
 
-    // Initialize the parallax effect
-    initParallax();
-
     // Start quote rotation
     startQuoteRotation();
   }
@@ -169,6 +166,7 @@
    * @param {Event} e - The submit event
    */
   function handleFormSubmit(e) {
+    // Only prevent double submission if form is currently submitting
     if (formSubmitted) {
       e.preventDefault();
       return;
@@ -205,6 +203,16 @@
         ripple.remove();
       }, 600);
     }
+
+    // Reset form submission flag after a delay to allow for server response
+    setTimeout(() => {
+      formSubmitted = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        if (btnText) btnText.textContent = "Sign In";
+        if (spinner) spinner.classList.add("d-none");
+      }
+    }, 5000);
   }
 
   /**
@@ -225,28 +233,6 @@
       icon.classList.remove("fa-eye-slash");
       icon.classList.add("fa-eye");
     }
-  }
-
-  /**
-   * Handle OTP input for better UX
-   * @param {Event} e - The input event
-   */
-  /**
-   * Initialize parallax effect for background
-   */
-  function initParallax() {
-    if (!formElements.parallaxBg) return;
-
-    // Simple parallax effect on mouse movement
-    document.addEventListener("mousemove", function (e) {
-      const moveX = (e.clientX / window.innerWidth) * 15;
-      const moveY = (e.clientY / window.innerHeight) * 15;
-
-      // Use requestAnimationFrame for better performance
-      requestAnimationFrame(function () {
-        formElements.parallaxBg.style.backgroundPosition = `calc(50% + ${moveX}px) calc(50% + ${moveY}px)`;
-      });
-    });
   }
 
   /**

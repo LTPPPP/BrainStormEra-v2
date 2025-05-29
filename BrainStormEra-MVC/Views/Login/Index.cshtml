@@ -151,6 +151,27 @@
     <script>
         // Inline critical JS for faster loading
         document.addEventListener('DOMContentLoaded', function () {
+            // Check if login was successful and handle redirect
+            const successMessage = document.querySelector('[data-toast-success]');
+            if (successMessage) {
+                // Login successful, check if we need to redirect
+                const currentUrl = window.location.href;
+                const loginPath = '/Login/Index';
+
+                // If we're still on login page after success, there might be a redirect issue
+                if (currentUrl.includes(loginPath)) {
+                    console.log('Login successful but still on login page, attempting redirect...');
+
+                    // Wait a moment for any pending redirects, then force redirect
+                    setTimeout(() => {
+                        if (window.location.href.includes(loginPath)) {
+                            console.log('Forcing redirect to home page...');
+                            window.location.href = '/Home/Index';
+                        }
+                    }, 2000);
+                }
+            }
+
             // Show loading spinner on form submit
             const loginForm = document.getElementById('loginForm');
             const loginBtn = document.querySelector('.login-btn');

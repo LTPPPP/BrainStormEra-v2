@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BrainStormEra_MVC.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,admin")]
     public class AdminController : Controller
     {
         private readonly BrainStormEraContext _context;
@@ -27,8 +27,8 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["ErrorMessage"] = "You must be logged in to access the admin dashboard.";
                 return RedirectToAction("Index", "Login");
             }
-
-            if (!User.IsInRole("Admin"))
+            var userRole = User?.FindFirst("UserRole")?.Value ?? "";
+            if (!string.Equals(userRole, "Admin", StringComparison.OrdinalIgnoreCase))
             {
                 TempData["ErrorMessage"] = "Access denied. You don't have permission to access the admin dashboard.";
                 return RedirectToUserDashboard();
@@ -110,25 +110,27 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["ErrorMessage"] = "An error occurred while loading the dashboard. Please try again.";
                 return RedirectToAction("Index", "Home");
             }
-        }
-
-        // Helper method to redirect user to appropriate dashboard based on role
+        }        // Helper method to redirect user to appropriate dashboard based on role
         private IActionResult RedirectToUserDashboard()
         {
-            if (User.IsInRole("Admin"))
+            var userRole = User?.FindFirst("UserRole")?.Value ?? "";
+
+            if (string.Equals(userRole, "Admin", StringComparison.OrdinalIgnoreCase))
             {
                 return RedirectToAction("AdminDashboard", "Admin");
             }
-            else if (User.IsInRole("Instructor"))
+            else if (string.Equals(userRole, "Instructor", StringComparison.OrdinalIgnoreCase))
             {
                 return RedirectToAction("InstructorDashboard", "Home");
             }
-            else if (User.IsInRole("Learner"))
+            else if (string.Equals(userRole, "Learner", StringComparison.OrdinalIgnoreCase))
             {
                 return RedirectToAction("LearnerDashboard", "Home");
             }
             else
             {
+                _logger.LogWarning("Invalid user role detected in AdminController: '{Role}' for user: {UserId}",
+                    userRole, User?.FindFirst("UserId")?.Value);
                 TempData["ErrorMessage"] = "Invalid user role. Please contact support.";
                 return RedirectToAction("Index", "Login");
             }

@@ -16,6 +16,18 @@ namespace BrainStormEra_MVC
             // Add services to the container.
             builder.Services.AddControllersWithViews();
 
+            // Add Response Compression for better performance
+            builder.Services.AddResponseCompression(options =>
+            {
+                options.EnableForHttps = true;
+            });
+
+            // Add Memory Cache for better performance
+            builder.Services.AddMemoryCache();
+
+            // Add Response Caching
+            builder.Services.AddResponseCaching();
+
             // Add SignalR for real-time chat
             builder.Services.AddSignalR();
 
@@ -36,9 +48,9 @@ namespace BrainStormEra_MVC
             // Add Authorization
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
-                options.AddPolicy("InstructorOnly", policy => policy.RequireRole("instructor"));
-                options.AddPolicy("LearnerOnly", policy => policy.RequireRole("learner"));
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin", "admin"));
+                options.AddPolicy("InstructorOnly", policy => policy.RequireRole("Instructor", "instructor"));
+                options.AddPolicy("LearnerOnly", policy => policy.RequireRole("Learner", "learner"));
             });
 
             // Add session support
@@ -49,7 +61,6 @@ namespace BrainStormEra_MVC
                 options.Cookie.IsEssential = true;
             });
 
-            // Thêm xử lý lỗi kết nối DB
             try
             {
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -61,8 +72,17 @@ namespace BrainStormEra_MVC
 
                 builder.Services.AddDbContext<BrainStormEraContext>(options =>
                 {
-                    options.UseSqlServer(connectionString);
-                    options.EnableSensitiveDataLogging(); // Enable detailed logging
+                    options.UseSqlServer(connectionString, sqlOptions =>
+                    {
+                        sqlOptions.CommandTimeout(60); // Increased timeout for complex queries
+                        sqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorNumbersToAdd: null);
+                    });
+                    // Remove sensitive data logging in production for better performance
+                    if (builder.Environment.IsDevelopment())
+                    {
+                        options.EnableSensitiveDataLogging();
+                    }
+                    options.EnableServiceProviderCaching();
                 });
             }
             catch
@@ -103,7 +123,15 @@ namespace BrainStormEra_MVC
             }
 
             // Add status code pages handling - this will handle 404s
-            app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}"); app.UseHttpsRedirection();
+            app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
+
+            // Enable response compression for better performance
+            app.UseResponseCompression();
+
+            // Enable response caching
+            app.UseResponseCaching();
+
+            app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
 
