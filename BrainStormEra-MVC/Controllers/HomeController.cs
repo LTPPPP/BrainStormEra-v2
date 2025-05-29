@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 using BrainStormEra_MVC.Models;
 using BrainStormEra_MVC.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -22,16 +25,143 @@ namespace BrainStormEra_MVC.Controllers
             _context = context;
         }
 
-        // Authentication helper properties from BaseController
+        // Authentication helper properties
         protected bool IsAuthenticated => User.Identity?.IsAuthenticated ?? false;
         protected string? CurrentUserId => User?.FindFirst("UserId")?.Value;
         protected string? CurrentUsername => User?.Identity?.Name;
         protected string? CurrentUserRole => User?.FindFirst("UserRole")?.Value;
         protected string? CurrentUserFullName => User?.FindFirst("FullName")?.Value;
-        protected string? CurrentUserEmail => User?.FindFirst(ClaimTypes.Email)?.Value;
-        protected bool IsAdmin => CurrentUserRole == "Admin";
-        protected bool IsInstructor => CurrentUserRole == "Instructor";
-        protected bool IsLearner => CurrentUserRole == "Learner";
+        protected string? CurrentUserEmail => User?.FindFirst(ClaimTypes.Email)?.Value; protected bool IsAdmin => string.Equals(CurrentUserRole, "Admin", StringComparison.OrdinalIgnoreCase);
+        protected bool IsInstructor => string.Equals(CurrentUserRole, "Instructor", StringComparison.OrdinalIgnoreCase);
+        protected bool IsLearner => string.Equals(CurrentUserRole, "Learner", StringComparison.OrdinalIgnoreCase); private async Task<List<dynamic>> GetRecommendedCoursesAsync()
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+                // Get basic course info first (fastest query)
+                var featuredCourses = await _context.Courses
+                    .AsNoTracking()
+                    .Where(c => c.IsFeatured == true && c.CourseStatus == 1)
+                    .Select(c => new
+                    {
+                        c.CourseId,
+                        c.CourseName,
+                        c.CourseImage,
+                        c.Price,
+                        c.CourseDescription,
+                        c.AuthorId
+                    })
+                    .Take(4)
+                    .ToListAsync(cts.Token);
+
+                if (!featuredCourses.Any())
+                {
+                    return new List<dynamic>();
+                }
+                var courseIds = featuredCourses.Select(c => c.CourseId).ToList();
+                var authorIds = featuredCourses.Select(c => c.AuthorId).Distinct().ToList();
+
+                // Run queries sequentially to avoid DbContext concurrency issues
+                var authors = await GetAuthorNamesAsync(authorIds, cts.Token);
+                var enrollmentCounts = await GetEnrollmentCountsAsync(courseIds, cts.Token);
+                var averageRatings = await GetAverageRatingsAsync(courseIds, cts.Token);
+
+                // Combine all data
+                var recommendedCourses = new List<dynamic>();
+                foreach (var course in featuredCourses)
+                {
+                    recommendedCourses.Add(new
+                    {
+                        CourseId = course.CourseId,
+                        CourseName = course.CourseName,
+                        CourseImage = course.CourseImage,
+                        Price = course.Price,
+                        CourseDescription = course.CourseDescription,
+                        AuthorName = authors.ContainsKey(course.AuthorId) ? authors[course.AuthorId] : "Unknown Author",
+                        CourseCategories = new List<string>(), // Load separately if needed
+                        EnrollmentCount = enrollmentCounts.ContainsKey(course.CourseId) ? enrollmentCounts[course.CourseId] : 0,
+                        AverageRating = averageRatings.ContainsKey(course.CourseId) ? averageRatings[course.CourseId] : 0.0
+                    });
+                }
+
+                return recommendedCourses;
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("Course loading operation timed out after 30 seconds");
+                return new List<dynamic>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading recommended courses");
+                return new List<dynamic>();
+            }
+        }
+
+        private async Task<Dictionary<string, string>> GetAuthorNamesAsync(List<string> authorIds, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await _context.Accounts
+                    .AsNoTracking()
+                    .Where(a => authorIds.Contains(a.UserId))
+                    .Select(a => new { a.UserId, a.FullName })
+                    .ToDictionaryAsync(a => a.UserId, a => a.FullName ?? "Unknown Author", cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw; // Re-throw to be handled by the caller
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading author names");
+                return authorIds.ToDictionary(id => id, _ => "Unknown Author");
+            }
+        }
+
+        private async Task<Dictionary<string, int>> GetEnrollmentCountsAsync(List<string> courseIds, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await _context.Enrollments
+                    .AsNoTracking()
+                    .Where(e => courseIds.Contains(e.CourseId))
+                    .GroupBy(e => e.CourseId)
+                    .Select(g => new { CourseId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.CourseId, x => x.Count, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw; // Re-throw to be handled by the caller
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading enrollment counts");
+                return courseIds.ToDictionary(id => id, _ => 0);
+            }
+        }
+        private async Task<Dictionary<string, double>> GetAverageRatingsAsync(List<string> courseIds, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await _context.Feedbacks
+                    .AsNoTracking()
+                    .Where(f => courseIds.Contains(f.CourseId) && f.StarRating.HasValue)
+                    .GroupBy(f => f.CourseId)
+                    .Select(g => new { CourseId = g.Key, AvgRating = g.Average(f => (double)f.StarRating!.Value) })
+                    .ToDictionaryAsync(x => x.CourseId, x => x.AvgRating, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw; // Re-throw to be handled by the caller
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading average ratings");
+                return courseIds.ToDictionary(id => id, _ => 0.0);
+            }
+        }
 
         protected object GetCurrentUserInfo()
         {
@@ -49,9 +179,11 @@ namespace BrainStormEra_MVC.Controllers
         {
             return CurrentUserFullName ?? CurrentUsername ?? "Guest";
         }
-
         protected IActionResult RedirectToUserDashboard()
         {
+            _logger.LogInformation("RedirectToUserDashboard - CurrentUserRole: '{Role}', IsAdmin: {IsAdmin}, IsInstructor: {IsInstructor}, IsLearner: {IsLearner}",
+                CurrentUserRole, IsAdmin, IsInstructor, IsLearner);
+
             if (IsAdmin)
             {
                 return RedirectToAction("AdminDashboard", "Admin");
@@ -66,18 +198,19 @@ namespace BrainStormEra_MVC.Controllers
             }
             else
             {
+                _logger.LogWarning("Invalid user role detected: '{Role}' for user: {UserId}", CurrentUserRole, CurrentUserId);
                 TempData["ErrorMessage"] = "Invalid user role. Please contact support.";
                 return RedirectToAction("Index", "Login");
             }
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             var viewModel = new HomePageGuestViewModel();
 
             try
             {
-                // Kiểm tra kết nối database
+                // Check database connection
                 bool isDatabaseConnected = IsDatabaseConnected();
                 if (!isDatabaseConnected)
                 {
@@ -102,13 +235,10 @@ namespace BrainStormEra_MVC.Controllers
                     ViewBag.IsAuthenticated = false;
                 }
 
-                // Get top 4 featured courses
-                var recommendedCourses = _context.Courses
-                    .Where(c => c.IsFeatured == true && c.CourseStatus == 1)
-                    .Include(c => c.Author)
-                    .Include(c => c.CourseCategories)
-                    .Take(4)
-                    .ToList(); if (recommendedCourses != null && recommendedCourses.Any())
+                // Get top 4 featured courses with timeout protection
+                var recommendedCourses = await GetRecommendedCoursesAsync();
+
+                if (recommendedCourses != null && recommendedCourses.Any())
                 {
                     viewModel.RecommendedCourses = recommendedCourses.Select(c => new CourseViewModel
                     {
@@ -116,11 +246,11 @@ namespace BrainStormEra_MVC.Controllers
                         CourseName = c.CourseName,
                         CoursePicture = c.CourseImage ?? "/images/default-course.jpg",
                         Price = c.Price,
-                        CreatedBy = c.Author?.FullName ?? "Unknown Author",
+                        CreatedBy = c.AuthorName,
                         Description = c.CourseDescription,
-                        StarRating = (int)Math.Round(CalculateAverageRating(c.CourseId)),
-                        EnrollmentCount = _context.Enrollments.Count(e => e.CourseId == c.CourseId),
-                        CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList()
+                        StarRating = (int)Math.Round(c.AverageRating),
+                        EnrollmentCount = c.EnrollmentCount,
+                        CourseCategories = c.CourseCategories
                     }).ToList();
 
                     _logger.LogInformation("Successfully loaded {Count} recommended courses", recommendedCourses.Count);
@@ -151,23 +281,6 @@ namespace BrainStormEra_MVC.Controllers
                 return false;
             }
         }
-        private double CalculateAverageRating(string courseId)
-        {
-            try
-            {
-                var ratings = _context.Feedbacks
-                    .Where(f => f.CourseId == courseId && f.StarRating.HasValue)
-                    .Select(f => (double)f.StarRating!.Value)
-                    .ToList();
-
-                return ratings.Any() ? ratings.Average() : 0;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating average rating for course {CourseId}", courseId);
-                return 0;
-            }
-        }
 
         public IActionResult Privacy()
         {
@@ -179,9 +292,8 @@ namespace BrainStormEra_MVC.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
-
-        [Authorize(Roles = "Learner")]
-        public IActionResult LearnerDashboard()
+        [Authorize(Roles = "Learner,learner")]
+        public async Task<IActionResult> LearnerDashboard()
         {
             try
             {
@@ -204,15 +316,19 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                var user = _context.Accounts
+                // Optimized query to get only needed user data
+                var user = await _context.Accounts
                     .AsNoTracking()
-                    .FirstOrDefault(a => a.UserId == userId);
+                    .Where(a => a.UserId == userId)
+                    .Select(a => new { a.Username, a.FullName, a.UserImage })
+                    .FirstOrDefaultAsync();
 
                 if (user == null)
                 {
                     TempData["ErrorMessage"] = "User account not found. Please log in again.";
                     return RedirectToAction("Index", "Login");
                 }
+
                 var viewModel = new LearnerDashboardViewModel
                 {
                     UserName = user.Username,
@@ -229,9 +345,8 @@ namespace BrainStormEra_MVC.Controllers
                 return RedirectToAction("Index", "Home");
             }
         }
-
-        [Authorize(Roles = "Instructor")]
-        public IActionResult InstructorDashboard()
+        [Authorize(Roles = "Instructor,instructor")]
+        public async Task<IActionResult> InstructorDashboard()
         {
             try
             {
@@ -254,21 +369,32 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                var instructor = _context.Accounts
+                // Optimized query to get instructor data and statistics in one go
+                var instructorData = await _context.Accounts
                     .AsNoTracking()
-                    .FirstOrDefault(a => a.UserId == userId);
+                    .Where(a => a.UserId == userId)
+                    .Select(a => new
+                    {
+                        a.FullName,
+                        a.Username,
+                        a.UserImage,
+                        TotalCourses = a.CourseAuthors.Count(),
+                        TotalStudents = a.CourseAuthors.SelectMany(c => c.Enrollments).Count()
+                    })
+                    .FirstOrDefaultAsync();
 
-                if (instructor == null)
+                if (instructorData == null)
                 {
                     TempData["ErrorMessage"] = "Instructor account not found. Please log in again.";
                     return RedirectToAction("Index", "Login");
                 }
+
                 var viewModel = new InstructorDashboardViewModel
                 {
-                    InstructorName = instructor.FullName ?? instructor.Username,
-                    InstructorImage = instructor.UserImage ?? "/images/default-avatar.jpg",
-                    TotalCourses = _context.Courses.Count(c => c.AuthorId == userId),
-                    TotalStudents = _context.Enrollments.Count(e => _context.Courses.Any(c => c.CourseId == e.CourseId && c.AuthorId == userId)),
+                    InstructorName = instructorData.FullName ?? instructorData.Username,
+                    InstructorImage = instructorData.UserImage ?? "/images/default-avatar.jpg",
+                    TotalCourses = instructorData.TotalCourses,
+                    TotalStudents = instructorData.TotalStudents,
                     TotalRevenue = 0 // Calculate actual revenue if needed
                 };
 
@@ -277,7 +403,8 @@ namespace BrainStormEra_MVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading instructor dashboard");
-                TempData["ErrorMessage"] = "An error occurred while loading the dashboard. Please try again."; return RedirectToAction("Index", "Home");
+                TempData["ErrorMessage"] = "An error occurred while loading the dashboard. Please try again.";
+                return RedirectToAction("Index", "Home");
             }
         }
     }

@@ -167,13 +167,22 @@ namespace BrainStormEra_MVC.Controllers
 
                 _logger.LogInformation("User signed in successfully: {Username}", user.Username);
 
-                // Update last login time - tạo một instance mới để tracking
-                var userToUpdate = await _context.Accounts.FirstOrDefaultAsync(a => a.UserId == user.UserId);
-                if (userToUpdate != null)
+                // Update last login time synchronously in the same context
+                try
                 {
-                    userToUpdate.LastLogin = DateTime.UtcNow;
-                    userToUpdate.AccountUpdatedAt = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
+                    var userToUpdate = await _context.Accounts.FirstOrDefaultAsync(a => a.UserId == user.UserId);
+                    if (userToUpdate != null)
+                    {
+                        userToUpdate.LastLogin = DateTime.UtcNow;
+                        userToUpdate.AccountUpdatedAt = DateTime.UtcNow;
+                        await _context.SaveChangesAsync();
+                        _logger.LogInformation("Updated last login time for user {UserId}", user.UserId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error updating last login time for user {UserId}", user.UserId);
+                    // Don't fail the login process for this error
                 }
 
                 _logger.LogInformation("User {Username} logged in at {Time}.", user.Username, DateTime.UtcNow);
@@ -407,14 +416,14 @@ namespace BrainStormEra_MVC.Controllers
         {
             _logger.LogInformation("Determining post-login redirect for role: {Role}, ReturnUrl: {ReturnUrl}", userRole, returnUrl);
 
-            // Check return URL first
+            // Check return URL first and validate it's safe
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
                 _logger.LogInformation("Redirecting to return URL: {ReturnUrl}", returnUrl);
                 return Redirect(returnUrl);
             }
 
-            // Role-based redirect with explicit URLs for better reliability
+            // Role-based redirect with explicit URLs for better reliability (case-insensitive)
             var redirectResult = userRole.ToLower() switch
             {
                 "admin" => RedirectToAction("AdminDashboard", "Admin"),
