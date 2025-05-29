@@ -11,7 +11,7 @@
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background-color: var(--primary-color);
+  background-color: var(--primary-alt);
   color: white;
   display: flex;
   align-items: center;
@@ -38,20 +38,8 @@
   font-size: 1.5rem;
 }
 
-:root {
-  --primary-color: #4285f4;
-  --primary-hover: #3367d6;
-  --secondary-color: #f8f9fa;
-  --text-color: #202124;
-  --error-color: #ea4335;
-  --success-color: #34a853;
-  --border-color: #dadce0;
-  --shadow-color: rgba(0, 0, 0, 0.1);
-  --animation-timing: 0.3s;
-  --weak-color: #ea4335;
-  --medium-color: #fbbc05;
-  --strong-color: #34a853;
-}
+/* Login Page Styles */
+/* Note: All color variables are now defined in global.css */
 
 /* Using hardware-accelerated properties for animations */
 .login-container {
@@ -125,7 +113,7 @@
   left: 50%;
   width: 0;
   height: 2px;
-  background-color: var(--primary-color);
+  background-color: var(--primary-alt);
   transition: width 0.3s ease, left 0.3s ease;
   z-index: 1;
   transform: translateZ(0);
@@ -137,7 +125,7 @@
 }
 
 .input-group:focus-within {
-  border-color: var(--primary-color);
+  border-color: var(--primary-alt);
   box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
 }
 
@@ -153,7 +141,7 @@
 
 .input-group:focus-within .input-group-text {
   background-color: #e8f0fe;
-  color: var(--primary-color);
+  color: var(--primary-alt);
 }
 
 .form-control {
@@ -174,7 +162,7 @@
 }
 
 .toggle-password:hover {
-  color: var(--primary-color);
+  color: var(--primary-alt);
 }
 
 .validation-summary {
@@ -197,7 +185,7 @@
 .login-btn {
   width: 100%;
   padding: 0.85rem;
-  background-color: var(--primary-color);
+  background-color: var(--primary-alt);
   border: none;
   border-radius: 8px;
   color: white;
@@ -249,7 +237,7 @@
 .forgot-password,
 .back-to-login,
 .register-link {
-  color: var(--primary-color);
+  color: var(--primary-alt);
   text-decoration: none;
   font-size: 0.875rem;
   transition: color var(--animation-timing) ease;
@@ -407,7 +395,7 @@
 }
 
 .toggle-details {
-  color: var(--primary-color);
+  color: var(--primary-alt);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -445,7 +433,7 @@
 }
 
 .terms-link {
-  color: var(--primary-color);
+  color: var(--primary-alt);
   text-decoration: none;
   transition: color 0.3s ease;
 }
@@ -475,7 +463,7 @@
 
 /* Login link in registration footer */
 .login-link {
-  color: var(--primary-color);
+  color: var(--primary-alt);
   font-weight: 500;
   text-decoration: none;
   transition: color 0.3s ease, text-decoration 0.3s ease;

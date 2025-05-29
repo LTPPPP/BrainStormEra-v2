@@ -44,7 +44,7 @@
 .chart-bar {
   background: linear-gradient(
     180deg,
-    var(--primary-color) 0%,
+    var(--primary-alt) 0%,
     var(--primary-dark) 100%
   );
   width: 40px;
@@ -114,23 +114,12 @@
   }
 }
 
-:root {
-  --primary-color: #4285f4;
-  --primary-dark: #3367d6;
-  --secondary-color: #f8f9fa;
-  --success-color: #34a853;
-  --warning-color: #fbbc05;
-  --danger-color: #ea4335;
-  --text-color: #202124;
-  --light-text: #5f6368;
-  --border-color: #dadce0;
-  --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  --transition-speed: 0.3s;
-}
+/* Instructor Dashboard Styles */
+/* Note: All color variables are now defined in global.css */
 
 /* Welcome Section */
 .welcome-section {
-  background: linear-gradient(135deg, #3d5af1 0%, var(--primary-color) 100%);
+  background: linear-gradient(135deg, #3d5af1 0%, var(--primary-alt) 100%);
   color: white;
   padding: 2.5rem 0;
   margin-bottom: 1.5rem;
@@ -149,7 +138,7 @@
 
 .create-course-btn {
   background-color: white;
-  color: var(--primary-color);
+  color: var(--primary-alt);
   border: none;
   border-radius: 50px;
   padding: 0.5rem 1.25rem;
@@ -197,7 +186,7 @@
 }
 
 .view-all-link {
-  color: var(--primary-color);
+  color: var(--primary-alt);
   font-size: 0.9rem;
   font-weight: 500;
   text-decoration: none;
@@ -210,7 +199,7 @@
 }
 
 .mark-all-read {
-  color: var(--primary-color);
+  color: var(--primary-alt);
   font-size: 0.85rem;
   font-weight: 500;
   text-decoration: none;
@@ -279,7 +268,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: var(--primary-color);
+  background-color: var(--primary-alt);
   color: white;
   display: flex;
   align-items: center;

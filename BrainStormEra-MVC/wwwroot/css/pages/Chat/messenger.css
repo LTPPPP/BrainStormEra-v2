@@ -1,10 +1,5 @@
 /* Chat Messenger Style */
-:root {
-  --messenger-blue: #0084ff;
-  --messenger-gray: #f0f0f0;
-  --messenger-light: #f5f5f5;
-  --messenger-dark: #1c1e21;
-}
+/* Note: All color variables are now defined in global.css */
 
 /* Chat Container */
 .chat-container {

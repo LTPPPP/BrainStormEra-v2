@@ -1,22 +1,7 @@
 /* Enhanced styling for BrainStormEra homepage */
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
-:root {
-  --primary-color: #3498db;
-  --primary-dark: #2980b9;
-  --secondary-color: #2c3e50;
-  --accent-color: #e74c3c;
-  --success-color: #2ecc71;
-  --warning-color: #f39c12;
-  --text-color: #333;
-  --light-bg: #f8f9fa;
-  --dark-bg: #343a40;
-  --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-  --hover-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-  --transition-fast: all 0.3s ease;
-  --transition-medium: all 0.5s ease;
-  --transition-slow: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
+/* Note: All color variables are now defined in global.css */
 
 /* Basic Resets and Global Styles */
 * {

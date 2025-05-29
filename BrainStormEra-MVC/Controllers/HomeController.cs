@@ -316,7 +316,7 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                // Optimized query to get only needed user data
+                // Get user data
                 var user = await _context.Accounts
                     .AsNoTracking()
                     .Where(a => a.UserId == userId)
@@ -327,20 +327,78 @@ namespace BrainStormEra_MVC.Controllers
                 {
                     TempData["ErrorMessage"] = "User account not found. Please log in again.";
                     return RedirectToAction("Index", "Login");
-                }
+                }                // Get enrolled courses with progress
+                var enrolledCourses = await _context.Enrollments
+                    .AsNoTracking()
+                    .Where(e => e.UserId == userId)
+                    .Include(e => e.Course)
+                        .ThenInclude(c => c.Author)
+                    .Select(e => new EnrolledCourseViewModel
+                    {
+                        CourseId = e.CourseId,
+                        CourseName = e.Course.CourseName,
+                        CourseImage = e.Course.CourseImage ?? "/images/default-course.jpg",
+                        AuthorName = e.Course.Author.FullName ?? e.Course.Author.Username,
+                        EnrolledDate = e.EnrollmentCreatedAt,
+                        LastAccessDate = e.EnrollmentUpdatedAt, // Use EnrollmentUpdatedAt as last access
+                        CompletionPercentage = (int)(e.ProgressPercentage ?? 0) // Convert decimal to int
+                    })
+                    .ToListAsync();                // Get recommended courses (featured courses not already enrolled)
+                var enrolledCourseIds = enrolledCourses.Select(ec => ec.CourseId).ToList();
+                var recommendedCourses = await _context.Courses
+                    .AsNoTracking()
+                    .Where(c => c.IsFeatured == true &&
+                               c.CourseStatus == 1 &&
+                               !enrolledCourseIds.Contains(c.CourseId))
+                    .Include(c => c.Author)
+                    .Select(c => new CourseViewModel
+                    {
+                        CourseId = c.CourseId,
+                        CourseName = c.CourseName,
+                        CoursePicture = c.CourseImage ?? "/images/default-course.jpg",
+                        Price = c.Price,
+                        CreatedBy = c.Author.FullName ?? c.Author.Username,
+                        Description = c.CourseDescription
+                    })
+                    .Take(6)
+                    .ToListAsync();
+
+                // Get notifications (you can create a Notification system)
+                var notifications = new List<NotificationViewModel>
+                {
+                    new NotificationViewModel
+                    {
+                        NotificationId = "1",
+                        Title = "Welcome to BrainStormEra!",
+                        Message = "Start your learning journey today with our recommended courses.",
+                        CreatedAt = DateTime.Now.AddDays(-1),
+                        IsRead = false
+                    },
+                    new NotificationViewModel
+                    {
+                        NotificationId = "2",
+                        Title = "New Course Available",
+                        Message = "Check out the latest courses in Programming category.",
+                        CreatedAt = DateTime.Now.AddDays(-3),
+                        IsRead = true
+                    }
+                };
 
                 var viewModel = new LearnerDashboardViewModel
                 {
                     UserName = user.Username,
                     FullName = user.FullName ?? user.Username,
-                    UserImage = user.UserImage ?? "/images/default-avatar.jpg"
+                    UserImage = user.UserImage ?? "/images/default-avatar.jpg",
+                    EnrolledCourses = enrolledCourses,
+                    RecommendedCourses = recommendedCourses,
+                    Notifications = notifications
                 };
 
                 return View(viewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading learner dashboard");
+                _logger.LogError(ex, "Error loading learner dashboard for user: {UserId}", CurrentUserId);
                 TempData["ErrorMessage"] = "An error occurred while loading the dashboard. Please try again.";
                 return RedirectToAction("Index", "Home");
             }
