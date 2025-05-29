@@ -213,14 +213,12 @@
             setTimeout(() => {
                 document.querySelector('.page-loader').style.display = 'none';
             }, 500);
-        });
-
-        // Change header style on scroll
+        });        // Change header style on scroll
         window.addEventListener('scroll', function () {
             if (window.scrollY > 50) {
-                document.querySelector('.sticky-header').classList.add('scrolled');
+                document.querySelector('.bse-sticky-header').classList.add('scrolled');
             } else {
-                document.querySelector('.sticky-header').classList.remove('scrolled');
+                document.querySelector('.bse-sticky-header').classList.remove('scrolled');
             }
         });
 

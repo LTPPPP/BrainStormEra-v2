@@ -1,0 +1,398 @@
+@model BrainStormEra_MVC.Models.ViewModels.CourseListViewModel
+@{
+    ViewData["Title"] = "Courses";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="BrainStormEra - Discover amazing courses and expand your knowledge">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/courses.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/Home/enhanced-home.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-overlay"></div>
+        <div class="container" style="padding-top: 100px;">
+            <div class="row align-items-center min-vh-50">
+                <div class="col-lg-8 mx-auto text-center">
+                    <h1 class="hero-title">Discover Amazing Courses</h1>
+                    <p class="hero-subtitle">Expand your knowledge with our comprehensive course library</p>
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-book"></i>
+                            <span>@Model.TotalCourses+ Courses</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-users"></i>
+                            <span>Expert Instructors</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-certificate"></i>
+                            <span>Certificates</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container main-content">
+        <!-- Filters Section -->
+        <div class="filters-section">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <!-- Search Bar -->
+                    <form method="get" action="@Url.Action("Index", "Course")" class="search-form">
+                        <div class="search-wrapper">
+                            <input type="text" name="search" class="form-control search-input" 
+                                   placeholder="Search courses..." value="@Model.CurrentSearch">
+                            <input type="hidden" name="category" value="@Model.CurrentCategory">
+                            <button type="submit" class="search-btn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-lg-4">
+                    <div class="results-info">
+                        <span class="results-count">@Model.TotalCourses courses found</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Filters -->
+            <div class="category-filters">
+                <div class="filter-label">Categories:</div>
+                <div class="filter-buttons">
+                    <a href="@Url.Action("Index", "Course")" 
+                       class="filter-btn @(string.IsNullOrEmpty(Model.CurrentCategory) ? "active" : "")">
+                        All Courses
+                    </a>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <a href="@Url.Action("Index", "Course", new { category = category.CourseCategoryName, search = Model.CurrentSearch })" 
+                           class="filter-btn @(Model.CurrentCategory == category.CourseCategoryName ? "active" : "")">
+                            @category.CourseCategoryName
+                            <span class="count">(@category.CourseCount)</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Grid -->
+        <div class="courses-section">
+            @if (Model.Courses.Any())
+            {
+                <div class="row">
+                    @foreach (var course in Model.Courses)
+                    {
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="course-card" data-course-id="@course.CourseId">
+                                <div class="course-image">
+                                    <img src="@course.CoursePicture" alt="@course.CourseName" loading="lazy">
+                                    <div class="course-overlay">
+                                        <a href="@Url.Action("Details", "Course", new { id = course.CourseId })" 
+                                           class="view-course-btn">
+                                            <i class="fas fa-eye"></i>
+                                            View Details
+                                        </a>
+                                    </div>
+                                    @if (course.Price > 0)
+                                    {
+                                        <div class="course-price">$@course.Price.ToString("N0")</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="course-price free">Free</div>
+                                    }
+                                </div>
+                                <div class="course-content">
+                                    <div class="course-categories">
+                                        @foreach (var category in course.CourseCategories.Take(2))
+                                        {
+                                            <span class="category-badge">@category</span>
+                                        }
+                                    </div>
+                                    <h3 class="course-title">
+                                        <a href="@Url.Action("Details", "Course", new { id = course.CourseId })">
+                                            @course.CourseName
+                                        </a>
+                                    </h3>
+                                    <p class="course-description">@(course.Description?.Length > 100 ? course.Description.Substring(0, 100) + "..." : course.Description)</p>
+                                    <div class="course-meta">
+                                        <div class="instructor">
+                                            <i class="fas fa-user"></i>
+                                            <span>@course.CreatedBy</span>
+                                        </div>
+                                        <div class="rating">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <i class="fas fa-star @(i <= course.StarRating ? "filled" : "")"></i>
+                                            }
+                                            <span class="rating-text">(@course.StarRating.0)</span>
+                                        </div>
+                                    </div>
+                                    <div class="course-stats">
+                                        <span class="enrollment-count">
+                                            <i class="fas fa-users"></i>
+                                            @course.EnrollmentCount students
+                                        </span>
+                                    </div>
+                                    <div class="course-actions">
+                                        @if (ViewBag.IsAuthenticated == true && ViewBag.UserRole == "Learner")
+                                        {
+                                            @if (course.Price > 0)
+                                            {
+                                                <button class="btn btn-primary enroll-btn" onclick="enrollInCourse('@course.CourseId')">
+                                                    <i class="fas fa-shopping-cart"></i>
+                                                    Buy Now
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-success enroll-btn" onclick="enrollInCourse('@course.CourseId')">
+                                                    <i class="fas fa-play"></i>
+                                                    Enroll Free
+                                                </button>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <a href="@Url.Action("Details", "Course", new { id = course.CourseId })" 
+                                               class="btn btn-outline-primary">
+                                                <i class="fas fa-info-circle"></i>
+                                                Learn More
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <div class="pagination-wrapper">
+                        <nav aria-label="Course pagination">
+                            <ul class="pagination justify-content-center">
+                                @if (Model.HasPreviousPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", "Course", new { 
+                                            category = Model.CurrentCategory, 
+                                            search = Model.CurrentSearch, 
+                                            page = Model.CurrentPage - 1 })">
+                                            <i class="fas fa-chevron-left"></i>
+                                            Previous
+                                        </a>
+                                    </li>
+                                }
+
+                                @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                                {
+                                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Index", "Course", new { 
+                                            category = Model.CurrentCategory, 
+                                            search = Model.CurrentSearch, 
+                                            page = i })">
+                                            @i
+                                        </a>
+                                    </li>
+                                }
+
+                                @if (Model.HasNextPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", "Course", new { 
+                                            category = Model.CurrentCategory, 
+                                            search = Model.CurrentSearch, 
+                                            page = Model.CurrentPage + 1 })">
+                                            Next
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                        <div class="pagination-info">
+                            Showing @((Model.CurrentPage - 1) * Model.PageSize + 1) to @(Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalCourses)) of @Model.TotalCourses courses
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="no-courses">
+                    <div class="no-courses-content">
+                        <i class="fas fa-search fa-3x"></i>
+                        <h3>No courses found</h3>
+                        @if (!string.IsNullOrEmpty(Model.CurrentSearch) || !string.IsNullOrEmpty(Model.CurrentCategory))
+                        {
+                            <p>Try adjusting your search criteria or browse all courses.</p>
+                            <a href="@Url.Action("Index", "Course")" class="btn btn-primary">
+                                <i class="fas fa-refresh"></i>
+                                Show All Courses
+                            </a>
+                        }
+                        else
+                        {
+                            <p>No courses are available at the moment. Please check back later.</p>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>    
+    <!-- Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" defer></script>
+    <!-- Include toast notifications script -->
+    <script src="~/js/shared/toast-notifications.js"></script>
+    <!-- Custom JS -->
+    <script src="~/js/components/loader.js"></script>
+    <script src="~/js/pages/courses.js"></script>    
+    <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function() {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });        // Change header style on scroll
+        window.addEventListener('scroll', function () {
+            if (window.scrollY > 50) {
+                document.querySelector('.bse-sticky-header').classList.add('scrolled');
+            } else {
+                document.querySelector('.bse-sticky-header').classList.remove('scrolled');
+            }
+        });
+
+        // Enroll in course function
+        function enrollInCourse(courseId) {
+            @if (ViewBag.IsAuthenticated == true)
+            {
+                <text>
+                fetch('@Url.Action("Enroll", "Course")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({ courseId: courseId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
+                        } else {
+                            alert(data.message);
+                            window.location.reload();
+                        }
+                    } else {
+                        alert(data.message || 'An error occurred');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while enrolling');
+                });
+                </text>
+            }
+            else
+            {
+                <text>
+                alert('Please log in to enroll in courses');
+                window.location.href = '@Url.Action("Index", "Login")';
+                </text>
+            }
+        }
+
+        // Enhanced course card interactions
+        document.addEventListener('DOMContentLoaded', function() {
+            const courseCards = document.querySelectorAll('.course-card');
+            
+            courseCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            // Add animation classes to elements when they come into view
+            const animateElements = document.querySelectorAll('.course-card');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animated');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            animateElements.forEach(element => {
+                observer.observe(element);
+            });
+        });
+    </script>
+</body>
+</html>
