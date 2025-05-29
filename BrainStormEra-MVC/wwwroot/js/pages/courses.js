@@ -1,14 +1,14 @@
-// Course functionality for BrainStormEra
+// Course functionality for BrainStormEra (Legacy functions only)
 document.addEventListener("DOMContentLoaded", function () {
-  // Initialize all course functionality
+  // Initialize legacy course functionality (non-search related)
   initializePageLoader();
   initializeEnrollmentForm();
   initializeShareButtons();
   initializeCurriculumAccordions();
-  initializeFilterSystem();
-  initializeSearchFunctionality();
-  initializeCourseCards();
+  initializeLegacyCourseCards();
   initializeTabNavigation();
+
+  // Note: Search and filter functionality is now handled by course-search.js
 });
 
 // Page Loader
@@ -243,140 +243,8 @@ function initializeCurriculumAccordions() {
   });
 }
 
-// Filter system for course listing
-function initializeFilterSystem() {
-  const categoryFilters = document.querySelectorAll(".category-filter");
-  const priceFilters = document.querySelectorAll(".price-filter");
-  const sortSelect = document.getElementById("sortSelect");
-
-  // Category filters
-  categoryFilters.forEach((filter) => {
-    filter.addEventListener("click", function (e) {
-      e.preventDefault();
-
-      // Toggle active state
-      this.classList.toggle("active");
-
-      // Apply filters
-      applyFilters();
-    });
-  });
-
-  // Price filters
-  priceFilters.forEach((filter) => {
-    filter.addEventListener("change", function () {
-      applyFilters();
-    });
-  });
-
-  // Sort select
-  if (sortSelect) {
-    sortSelect.addEventListener("change", function () {
-      applyFilters();
-    });
-  }
-}
-
-// Apply active filters
-function applyFilters() {
-  const activeCategories = Array.from(
-    document.querySelectorAll(".category-filter.active")
-  ).map((filter) => filter.getAttribute("data-category"));
-
-  const activePriceFilters = Array.from(
-    document.querySelectorAll(".price-filter:checked")
-  ).map((filter) => filter.value);
-
-  const sortBy = document.getElementById("sortSelect")?.value || "newest";
-
-  // Build query parameters
-  const params = new URLSearchParams();
-
-  if (activeCategories.length > 0) {
-    params.set("category", activeCategories.join(","));
-  }
-
-  if (activePriceFilters.length > 0) {
-    params.set("price", activePriceFilters.join(","));
-  }
-
-  params.set("sort", sortBy);
-
-  // Preserve search query
-  const searchInput = document.getElementById("courseSearch");
-  if (searchInput && searchInput.value.trim()) {
-    params.set("search", searchInput.value.trim());
-  }
-
-  // Update URL and reload
-  const newUrl = `${window.location.pathname}?${params.toString()}`;
-  window.location.href = newUrl;
-}
-
-// Search functionality
-function initializeSearchFunctionality() {
-  const searchForm = document.getElementById("courseSearchForm");
-  const searchInput = document.getElementById("courseSearch");
-  const clearSearch = document.getElementById("clearSearch");
-
-  if (searchForm) {
-    searchForm.addEventListener("submit", function (e) {
-      e.preventDefault();
-      performSearch();
-    });
-  }
-
-  if (searchInput) {
-    // Auto-search on input with debounce
-    let searchTimeout;
-    searchInput.addEventListener("input", function () {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => {
-        if (this.value.length >= 3 || this.value.length === 0) {
-          performSearch();
-        }
-      }, 500);
-    });
-
-    // Show/hide clear button
-    searchInput.addEventListener("input", function () {
-      if (clearSearch) {
-        clearSearch.style.display = this.value ? "block" : "none";
-      }
-    });
-  }
-
-  if (clearSearch) {
-    clearSearch.addEventListener("click", function () {
-      searchInput.value = "";
-      this.style.display = "none";
-      performSearch();
-    });
-  }
-}
-
-// Perform search
-function performSearch() {
-  const searchInput = document.getElementById("courseSearch");
-  const searchTerm = searchInput ? searchInput.value.trim() : "";
-
-  const params = new URLSearchParams(window.location.search);
-
-  if (searchTerm) {
-    params.set("search", searchTerm);
-  } else {
-    params.delete("search");
-  }
-
-  // Reset to first page when searching
-  params.delete("page");
-
-  const newUrl = `${window.location.pathname}?${params.toString()}`;
-  window.location.href = newUrl;
-}
-
-// Course card interactions
-function initializeCourseCards() {
+// Course card interactions (legacy - kept for non-search pages)
+function initializeLegacyCourseCards() {
   const courseCards = document.querySelectorAll(".course-card");
 
   courseCards.forEach((card) => {

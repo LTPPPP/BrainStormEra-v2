@@ -90,23 +90,38 @@
     <div class="container main-content">
         <!-- Filters Section -->
         <div class="filters-section">
-            <div class="row align-items-center">
-                <div class="col-lg-8">
+            <div class="row align-items-center mb-3">
+                <div class="col-lg-6">
                     <!-- Search Bar -->
-                    <form method="get" action="@Url.Action("Index", "Course")" class="search-form">
+                    <div class="search-form">
                         <div class="search-wrapper">
-                            <input type="text" name="search" class="form-control search-input" 
+                            <input type="text" id="searchInput" class="form-control search-input" 
                                    placeholder="Search courses..." value="@Model.CurrentSearch">
-                            <input type="hidden" name="category" value="@Model.CurrentCategory">
-                            <button type="submit" class="search-btn">
+                            <button type="button" id="clearSearch" class="clear-search-btn" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button type="button" id="searchBtn" class="search-btn">
                                 <i class="fas fa-search"></i>
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
-                <div class="col-lg-4">
+                <div class="col-lg-3">
+                    <!-- Sort Options -->
+                    <div class="sort-section">
+                        <select id="sortSelect" class="form-select">
+                            <option value="newest">Newest First</option>
+                            <option value="name_asc">Name A-Z</option>
+                            <option value="name_desc">Name Z-A</option>
+                            <option value="price_asc">Price Low to High</option>
+                            <option value="price_desc">Price High to Low</option>
+                            <option value="popular">Most Popular</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-3">
                     <div class="results-info">
-                        <span class="results-count">@Model.TotalCourses courses found</span>
+                        <span class="results-count" id="resultsCount">@Model.TotalCourses courses found</span>
                     </div>
                 </div>
             </div>
@@ -115,20 +130,27 @@
             <div class="category-filters">
                 <div class="filter-label">Categories:</div>
                 <div class="filter-buttons">
-                    <a href="@Url.Action("Index", "Course")" 
-                       class="filter-btn @(string.IsNullOrEmpty(Model.CurrentCategory) ? "active" : "")">
+                    <button class="filter-btn category-filter active" data-category="">
                         All Courses
-                    </a>
+                    </button>
                     @foreach (var category in Model.Categories)
                     {
-                        <a href="@Url.Action("Index", "Course", new { category = category.CourseCategoryName, search = Model.CurrentSearch })" 
-                           class="filter-btn @(Model.CurrentCategory == category.CourseCategoryName ? "active" : "")">
+                        <button class="filter-btn category-filter @(Model.CurrentCategory == category.CourseCategoryName ? "active" : "")" 
+                                data-category="@category.CourseCategoryName">
                             @category.CourseCategoryName
                             <span class="count">(@category.CourseCount)</span>
-                        </a>
+                        </button>
                     }
                 </div>
             </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="loading-text">Searching courses...</span>
         </div>
 
         <!-- Course Grid -->
@@ -327,7 +349,7 @@
         function enrollInCourse(courseId) {
             @if (ViewBag.IsAuthenticated == true)
             {
-                <text>
+            <text>
                 fetch('@Url.Action("Enroll", "Course")', {
                     method: 'POST',
                     headers: {
@@ -353,7 +375,7 @@
                     console.error('Error:', error);
                     alert('An error occurred while enrolling');
                 });
-                </text>
+            </text>
             }
             else
             {

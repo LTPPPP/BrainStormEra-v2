@@ -102,34 +102,32 @@
 
 .search-wrapper {
   position: relative;
-  max-width: 500px;
+  display: flex;
+  align-items: center;
 }
 
 .search-input {
-  padding: 1rem 3rem 1rem 1.5rem;
+  border-radius: 25px;
+  padding: 0.75rem 3rem 0.75rem 1rem;
   border: 2px solid var(--border-color);
-  border-radius: 50px;
   font-size: 1rem;
   transition: var(--transition-fast);
-  background: var(--bg-white);
+  width: 100%;
 }
 
 .search-input:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
 }
 
 .search-btn {
   position: absolute;
   right: 5px;
-  top: 50%;
-  transform: translateY(-50%);
   background: var(--primary-color);
   border: none;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 35px;
+  height: 35px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -139,17 +137,40 @@
 
 .search-btn:hover {
   background: var(--primary-dark);
-  transform: translateY(-50%) scale(1.05);
+  transform: scale(1.05);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 45px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.clear-search-btn:hover {
+  color: var(--danger-color);
 }
 
 .results-info {
   text-align: right;
-  color: var(--text-muted);
-  font-weight: 500;
 }
 
 .results-count {
   font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-color);
+  padding: 0.5rem 1rem;
+  background: var(--bg-light);
+  border-radius: 20px;
+  display: inline-block;
 }
 
 /* Category Filters */
@@ -180,13 +201,15 @@
   background: var(--bg-light);
   color: var(--text-color);
   text-decoration: none;
+  border: none;
   border-radius: 25px;
   font-weight: 500;
   transition: var(--transition-fast);
+  cursor: pointer;
   border: 2px solid transparent;
 }
 
-.filter-btn:hover {
+.filter-btn:hover:not(:disabled) {
   background: var(--primary-light);
   color: white;
   text-decoration: none;
@@ -197,6 +220,11 @@
   background: var(--primary-color);
   color: white;
   border-color: var(--primary-dark);
+}
+
+.filter-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .filter-btn .count {
@@ -222,8 +250,8 @@
 }
 
 .course-card:hover {
-  box-shadow: var(--card-shadow-hover);
-  transform: translateY(-8px);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 .course-image {
@@ -429,12 +457,16 @@
 .no-courses {
   text-align: center;
   padding: 4rem 2rem;
-  color: var(--text-muted);
+}
+
+.no-courses-content {
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 .no-courses-content i {
-  color: var(--primary-color);
-  margin-bottom: 1.5rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
 }
 
 .no-courses-content h3 {
@@ -443,7 +475,7 @@
 }
 
 .no-courses-content p {
-  font-size: 1.1rem;
+  color: var(--text-muted);
   margin-bottom: 2rem;
 }
 
@@ -1216,6 +1248,28 @@
   color: var(--accent-color);
 }
 
+/* Loading Indicator */
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+  gap: 1rem;
+}
+
+.loading-indicator .spinner-border {
+  width: 3rem;
+  height: 3rem;
+  border-width: 0.3rem;
+}
+
+.loading-text {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 /* Responsive Design for Course Details */
 @media (max-width: 991.98px) {
   .course-title {
@@ -1278,4 +1332,53 @@
     width: 80px;
     height: 80px;
   }
+}
+
+@media (max-width: 768px) {
+  .filters-section .row {
+    gap: 1rem;
+  }
+
+  .search-wrapper {
+    margin-bottom: 1rem;
+  }
+
+  .sort-section {
+    margin-bottom: 1rem;
+  }
+
+  .results-info {
+    text-align: center;
+  }
+
+  .category-filters {
+    justify-content: center;
+  }
+
+  .filter-buttons {
+    justify-content: center;
+  }
+}
+
+/* Smooth transitions for dynamic content */
+#coursesContainer {
+  min-height: 400px;
+  transition: opacity 0.3s ease;
+}
+
+#coursesContainer.loading {
+  opacity: 0.7;
+}
+
+/* Enhanced category filter styling */
+.category-filter .count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  margin-left: 0.25rem;
+}
+
+.category-filter.active .count {
+  background: rgba(255, 255, 255, 0.3);
 }

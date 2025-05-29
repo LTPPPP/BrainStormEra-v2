@@ -273,6 +273,94 @@ namespace BrainStormEra_MVC.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> SearchCourses(string? search, string? category, int page = 1, int pageSize = 12, string? sortBy = "newest")
+        {
+            try
+            {
+                var query = _context.Courses
+                    .AsNoTracking()
+                    .Where(c => c.CourseStatus == 1) // Only active courses
+                    .Include(c => c.Author)
+                    .Include(c => c.Enrollments)
+                    .Include(c => c.CourseCategories)
+                    .AsQueryable();
+
+                // Apply search filter
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(c => c.CourseName.Contains(search) ||
+                                           c.CourseDescription!.Contains(search) ||
+                                           c.Author.FullName!.Contains(search));
+                }
+
+                // Apply category filter
+                if (!string.IsNullOrWhiteSpace(category))
+                {
+                    query = query.Where(c => c.CourseCategories
+                        .Any(cc => cc.CourseCategoryName == category));
+                }
+
+                // Apply sorting
+                query = sortBy switch
+                {
+                    "price_asc" => query.OrderBy(c => c.Price),
+                    "price_desc" => query.OrderByDescending(c => c.Price),
+                    "name_asc" => query.OrderBy(c => c.CourseName),
+                    "name_desc" => query.OrderByDescending(c => c.CourseName),
+                    "popular" => query.OrderByDescending(c => c.Enrollments.Count()),
+                    _ => query.OrderByDescending(c => c.CourseCreatedAt) // newest (default)
+                };
+
+                // Get total count for pagination
+                var totalCourses = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling((double)totalCourses / pageSize);
+
+                // Apply pagination
+                var courses = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(c => new CourseViewModel
+                    {
+                        CourseId = c.CourseId,
+                        CourseName = c.CourseName,
+                        CoursePicture = c.CourseImage ?? "/img/default-course.png",
+                        Description = c.CourseDescription,
+                        Price = c.Price,
+                        CreatedBy = c.Author.FullName ?? c.Author.Username,
+                        CourseCategories = c.CourseCategories
+                            .Select(cc => cc.CourseCategoryName)
+                            .ToList(),
+                        EnrollmentCount = c.Enrollments.Count()
+                    })
+                    .ToListAsync();
+
+                // Calculate star ratings (simplified for now)
+                foreach (var course in courses)
+                {
+                    course.StarRating = 4; // Placeholder - you can implement actual rating calculation
+                }
+
+                var result = new
+                {
+                    success = true,
+                    courses = courses,
+                    totalCourses = totalCourses,
+                    totalPages = totalPages,
+                    currentPage = page,
+                    hasNextPage = page < totalPages,
+                    hasPreviousPage = page > 1
+                };
+
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching courses");
+                return Json(new { success = false, message = "An error occurred while searching courses" });
+            }
+        }
+
         private string GetDifficultyLevelText(byte? level)
         {
             return level switch
