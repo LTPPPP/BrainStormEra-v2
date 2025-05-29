@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initializeCurriculumAccordions();
   initializeLegacyCourseCards();
   initializeTabNavigation();
+  initializeSortSectionAnimations();
 
   // Note: Search and filter functionality is now handled by course-search.js
 });
@@ -296,6 +297,126 @@ function initializeTabNavigation() {
     }
   }
 }
+
+// Enhanced Sort Section Animations
+function initializeSortSectionAnimations() {
+  const sortSection = document.querySelector(".sort-section");
+  const sortSelect = document.querySelector("#sortSelect");
+  const sortLabel = document.querySelector(".sort-label");
+
+  if (!sortSection || !sortSelect) return;
+
+  // Add loading class during sort operations
+  sortSelect.addEventListener("change", function () {
+    sortSection.classList.add("loading");
+
+    // Remove loading class after a short delay
+    setTimeout(() => {
+      sortSection.classList.remove("loading");
+    }, 800);
+  });
+
+  // Enhanced hover effects
+  sortSection.addEventListener("mouseenter", function () {
+    this.style.setProperty("--hover-intensity", "1");
+  });
+
+  sortSection.addEventListener("mouseleave", function () {
+    this.style.setProperty("--hover-intensity", "0");
+  });
+
+  // Ripple effect on select focus
+  sortSelect.addEventListener("focus", function () {
+    createRippleEffect(this);
+  });
+
+  // Particle animation on interaction
+  sortSelect.addEventListener("click", function () {
+    createParticleEffect(sortSection);
+  });
+}
+
+// Create ripple effect
+function createRippleEffect(element) {
+  const ripple = document.createElement("div");
+  ripple.className = "ripple-effect";
+  ripple.style.cssText = `
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(0);
+    animation: ripple 0.6s linear;
+    pointer-events: none;
+    z-index: 100;
+  `;
+
+  const rect = element.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  ripple.style.width = ripple.style.height = size + "px";
+  ripple.style.left = rect.width / 2 - size / 2 + "px";
+  ripple.style.top = rect.height / 2 - size / 2 + "px";
+
+  element.style.position = "relative";
+  element.appendChild(ripple);
+
+  setTimeout(() => {
+    if (ripple.parentNode) {
+      ripple.parentNode.removeChild(ripple);
+    }
+  }, 600);
+}
+
+// Create particle effect
+function createParticleEffect(container) {
+  const particleCount = 6;
+
+  for (let i = 0; i < particleCount; i++) {
+    setTimeout(() => {
+      const particle = document.createElement("div");
+      particle.className = "particle";
+      particle.style.cssText = `
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 10;
+        animation: particle-float 2s ease-out forwards;
+      `;
+
+      // Random starting position
+      const x = Math.random() * container.offsetWidth;
+      const y = Math.random() * container.offsetHeight;
+      particle.style.left = x + "px";
+      particle.style.top = y + "px";
+
+      container.appendChild(particle);
+
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, 2000);
+    }, i * 100);
+  }
+}
+
+// Add particle animation keyframes to CSS
+const particleStyles = document.createElement("style");
+particleStyles.textContent = `
+  @keyframes particle-float {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-30px) scale(0.5);
+    }
+  }
+`;
+document.head.appendChild(particleStyles);
 
 // Utility functions
 function showToast(message, type = "info") {

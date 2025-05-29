@@ -109,14 +109,20 @@
                 <div class="col-lg-3">
                     <!-- Sort Options -->
                     <div class="sort-section">
-                        <select id="sortSelect" class="form-select">
-                            <option value="newest">Newest First</option>
-                            <option value="name_asc">Name A-Z</option>
-                            <option value="name_desc">Name Z-A</option>
-                            <option value="price_asc">Price Low to High</option>
-                            <option value="price_desc">Price High to Low</option>
-                            <option value="popular">Most Popular</option>
-                        </select>
+                        <div class="sort-wrapper">
+                            <label for="sortSelect" class="sort-label">
+                                <i class="fas fa-sort-amount-down"></i>
+                                Sort by
+                            </label>
+                            <select id="sortSelect" class="form-select custom-select">
+                                <option value="newest">Newest First</option>
+                                <option value="name_asc">Name A-Z</option>
+                                <option value="name_desc">Name Z-A</option>
+                                <option value="price_asc">Price Low to High</option>
+                                <option value="price_desc">Price High to Low</option>
+                                <option value="popular">Most Popular</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="col-lg-3">
