@@ -277,4 +277,86 @@
       setInterval(rotateQuotes, 8000);
     }, 2000);
   }
+
+  /**
+   * Show error toast for login failures
+   */
+  function showLoginError(message) {
+    if (window.showErrorToast) {
+      window.showErrorToast(message);
+    } else {
+      alert(message); // Fallback for older browsers
+    }
+  }
+
+  /**
+   * Show success toast for login success
+   */
+  function showLoginSuccess(message) {
+    if (window.showSuccessToast) {
+      window.showSuccessToast(message);
+    }
+  }
+
+  /**
+   * Handle form submission with validation
+   */
+  function handleFormSubmission(form) {
+    form.addEventListener("submit", function (e) {
+      // Prevent multiple submissions
+      if (formSubmitted) {
+        e.preventDefault();
+        return false;
+      }
+
+      // Basic client-side validation
+      const username = formElements.usernameInput.value.trim();
+      const password = formElements.passwordInput.value.trim();
+
+      if (!username) {
+        e.preventDefault();
+        showLoginError("Please enter your username.");
+        formElements.usernameInput.focus();
+        return false;
+      }
+
+      if (!password) {
+        e.preventDefault();
+        showLoginError("Please enter your password.");
+        formElements.passwordInput.focus();
+        return false;
+      }
+
+      // Mark form as submitted to prevent double submission
+      formSubmitted = true;
+
+      // Show loading state
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (submitButton) {
+        const originalText = submitButton.innerHTML;
+        submitButton.innerHTML =
+          '<span class="spinner-border spinner-border-sm me-2"></span>Signing In...';
+        submitButton.disabled = true;
+
+        // Re-enable after 10 seconds as failsafe
+        setTimeout(() => {
+          submitButton.innerHTML = originalText;
+          submitButton.disabled = false;
+          formSubmitted = false;
+        }, 10000);
+      }
+    });
+  }
+
+  // ...existing code...
+
+  /**
+   * Set up event listeners
+   */
+  function setupEventListeners() {
+    // Form submission handling
+    if (formElements.loginForm) {
+      handleFormSubmission(formElements.loginForm);
+    }
+  }
 })();

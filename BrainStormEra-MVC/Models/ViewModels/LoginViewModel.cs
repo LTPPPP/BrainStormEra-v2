@@ -13,7 +13,7 @@ namespace BrainStormEra_MVC.Models.ViewModels
 
         public bool RememberMe { get; set; }
 
-        public required string ReturnUrl { get; set; }
+        public string? ReturnUrl { get; set; } = string.Empty;
     }
 
     public class ForgotPasswordViewModel

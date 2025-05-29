@@ -1,5 +1,6 @@
 using BrainStormEra_MVC.Models;
 using BrainStormEra_MVC.Models.ViewModels;
+using BrainStormEra_MVC.Utilities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -51,6 +52,8 @@ namespace BrainStormEra_MVC.Controllers
 
             try
             {
+                _logger.LogInformation("Login attempt for username: {Username}", model.Username);
+
                 // Find user by username
                 var user = await _context.Accounts
                     .AsNoTracking()
@@ -58,83 +61,155 @@ namespace BrainStormEra_MVC.Controllers
 
                 if (user == null)
                 {
+                    _logger.LogWarning("User not found: {Username}", model.Username);
+                    TempData["ErrorMessage"] = "Invalid username or password. Please check your credentials and try again.";
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                     return View(model);
                 }
 
+                _logger.LogInformation("User found: {Username}, Role: {Role}", user.Username, user.UserRole);
+
                 // Check if user is banned
                 if (user.IsBanned == true)
                 {
+                    _logger.LogWarning("Banned user attempted login: {Username}", user.Username);
+                    TempData["ErrorMessage"] = "Your account has been suspended. Please contact support for assistance.";
                     ModelState.AddModelError(string.Empty, "This account has been suspended.");
                     return View(model);
                 }
 
                 // Verify password
-                if (!VerifyPassword(model.Password, user.PasswordHash))
+                _logger.LogInformation("Verifying password for user: {Username}", user.Username);
+
+                // Debug: Log hash information
+                var inputPasswordHash = PasswordHasher.HashPassword(model.Password ?? "");
+                _logger.LogInformation("Input password hash: {InputHash}", inputPasswordHash);
+                _logger.LogInformation("Stored password hash: {StoredHash}", user.PasswordHash);
+
+                if (string.IsNullOrEmpty(model.Password) || !PasswordHasher.VerifyPassword(model.Password, user.PasswordHash))
                 {
+                    _logger.LogWarning("Invalid password for user: {Username}", user.Username);
+                    TempData["ErrorMessage"] = "Invalid username or password. Please check your credentials and try again.";
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                     return View(model);
                 }
 
-                // Create claims for authentication
+                _logger.LogInformation("Password verified successfully for user: {Username}", user.Username);
+
+                // Validate user role (ensure it's one of the allowed roles)
+                var validRoles = new[] { "Admin", "Instructor", "Learner", "admin", "instructor", "learner" };
+                if (!validRoles.Contains(user.UserRole, StringComparer.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Invalid role for user: {Username}, Role: {Role}", user.Username, user.UserRole);
+                    TempData["ErrorMessage"] = "Invalid user role. Please contact system administrator.";
+                    ModelState.AddModelError(string.Empty, "Account configuration error.");
+                    return View(model);
+                }
+
+                _logger.LogInformation("Creating claims for user: {Username}", user.Username);
+
+                // Create claims for authentication with comprehensive user information
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, user.Username),
                     new Claim(ClaimTypes.NameIdentifier, user.UserId),
                     new Claim(ClaimTypes.Role, user.UserRole),
-                    new Claim(ClaimTypes.Email, user.UserEmail)
+                    new Claim(ClaimTypes.Email, user.UserEmail ?? ""),
+                    new Claim("UserId", user.UserId),
+                    new Claim("UserRole", user.UserRole),
+                    new Claim("LoginTime", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"))
                 };
 
+                // Add optional user information
                 if (!string.IsNullOrEmpty(user.FullName))
                 {
                     claims.Add(new Claim("FullName", user.FullName));
+                }
+                if (!string.IsNullOrEmpty(user.PhoneNumber))
+                {
+                    claims.Add(new Claim("PhoneNumber", user.PhoneNumber));
+                }
+                if (user.DateOfBirth.HasValue)
+                {
+                    claims.Add(new Claim("DateOfBirth", user.DateOfBirth.Value.ToString("yyyy-MM-dd")));
+                }
+                if (!string.IsNullOrEmpty(user.UserImage))
+                {
+                    claims.Add(new Claim("UserImage", user.UserImage));
+                }
+                if (!string.IsNullOrEmpty(user.UserAddress))
+                {
+                    claims.Add(new Claim("UserAddress", user.UserAddress));
+                }
+                if (user.Gender.HasValue)
+                {
+                    claims.Add(new Claim("Gender", user.Gender.Value.ToString()));
+                }
+                if (user.PaymentPoint.HasValue)
+                {
+                    claims.Add(new Claim("PaymentPoint", user.PaymentPoint.Value.ToString()));
                 }
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var authProperties = new AuthenticationProperties
                 {
                     IsPersistent = model.RememberMe,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(model.RememberMe ? 30 : 1)
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(model.RememberMe ? 30 : 1),
+                    AllowRefresh = true
                 };
+
+                _logger.LogInformation("Signing in user: {Username}", user.Username);
 
                 await HttpContext.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(claimsIdentity),
                     authProperties);
 
-                // Update last login time
-                user.LastLogin = DateTime.UtcNow;
-                _context.Accounts.Update(user);
-                await _context.SaveChangesAsync();
+                _logger.LogInformation("User signed in successfully: {Username}", user.Username);
+
+                // Update last login time - tạo một instance mới để tracking
+                var userToUpdate = await _context.Accounts.FirstOrDefaultAsync(a => a.UserId == user.UserId);
+                if (userToUpdate != null)
+                {
+                    userToUpdate.LastLogin = DateTime.UtcNow;
+                    userToUpdate.AccountUpdatedAt = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                }
 
                 _logger.LogInformation("User {Username} logged in at {Time}.", user.Username, DateTime.UtcNow);
 
-                // Redirect to return URL or learner homepage based on role
+                // Set success message for toast notification
+                TempData["SuccessMessage"] = $"Welcome back, {user.FullName ?? user.Username}! Login successful.";
+
+                _logger.LogInformation("Determining redirect for user: {Username}, Role: {Role}", user.Username, user.UserRole);
+
+                // Redirect to return URL or role-based dashboard
                 if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
                 {
+                    _logger.LogInformation("Redirecting to return URL: {ReturnUrl}", model.ReturnUrl);
                     return Redirect(model.ReturnUrl);
                 }
                 else
                 {
-                    // Redirect to appropriate dashboard based on user role
-                    if (user.UserRole.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                    // Redirect to appropriate dashboard based on user role, or home page as default
+                    IActionResult redirectAction = user.UserRole.ToLower() switch
                     {
-                        return RedirectToAction("Index", "Home", new { area = "Admin" });
-                    }
-                    else if (user.UserRole.Equals("Instructor", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return RedirectToAction("InstructorDashboard", "Home");
-                    }
-                    else
-                    {
-                        // Default learner dashboard
-                        return RedirectToAction("LearnerDashboard", "Home");
-                    }
+                        "admin" => RedirectToAction("AdminDashboard", "Admin"),
+                        "instructor" => RedirectToAction("InstructorDashboard", "Home"),
+                        "learner" => RedirectToAction("LearnerDashboard", "Home"),
+                        _ => RedirectToAction("Index", "Home") // Default to home page
+                    };
+
+                    _logger.LogInformation("Redirecting user {Username} with role {Role} to appropriate dashboard",
+                        user.Username, user.UserRole);
+
+                    return redirectAction;
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during login attempt for user {Username}", model.Username);
+                TempData["ErrorMessage"] = "An unexpected error occurred during login. Please try again later.";
                 ModelState.AddModelError(string.Empty, "An error occurred during login. Please try again.");
                 return View(model);
             }
@@ -294,7 +369,7 @@ namespace BrainStormEra_MVC.Controllers
                 }
 
                 // Update password
-                user.PasswordHash = HashPassword(model.NewPassword);
+                user.PasswordHash = PasswordHasher.HashPassword(model.NewPassword);
                 user.AccountUpdatedAt = DateTime.UtcNow;
 
                 _context.Accounts.Update(user);
@@ -322,24 +397,18 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet, HttpPost]
         public async Task<IActionResult> Logout()
         {
+            var username = User.Identity?.Name;
+
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            _logger.LogInformation("User {Username} logged out at {Time}", username, DateTime.UtcNow);
+
+            TempData["InfoMessage"] = "You have been logged out successfully.";
+
             return RedirectToAction("Index", "Home");
         }
 
         #region Helper Methods
-        private string HashPassword(string password)
-        {
-            using var sha256 = SHA256.Create();
-            var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(hashedBytes);
-        }
-
-        private bool VerifyPassword(string password, string storedHash)
-        {
-            string hashedPassword = HashPassword(password);
-            return hashedPassword == storedHash;
-        }
-
         private string GenerateOtp()
         {
             // Generate a 6-digit OTP

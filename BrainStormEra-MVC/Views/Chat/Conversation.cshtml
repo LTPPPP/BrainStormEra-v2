@@ -151,14 +151,14 @@
             messageDiv.dataset.messageId = message.messageId;
 
             messageDiv.innerHTML = `
-                    <div class="message-content">
-                        <div class="message-text">${message.messageContent}</div>
-                        <div class="message-time">
-                            ${new Date(message.messageCreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            ${isCurrentUser ? '<span class="message-status status-delivered"><i class="bi bi-check2"></i></span>' : ''}
+                        <div class="message-content">
+                            <div class="message-text">${message.messageContent}</div>
+                            <div class="message-time">
+                                ${new Date(message.messageCreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                ${isCurrentUser ? '<span class="message-status status-delivered"><i class="bi bi-check2"></i></span>' : ''}
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
 
             messageContainer.appendChild(messageDiv);
             scrollToBottom();
@@ -201,16 +201,16 @@
                         const convElement = document.createElement('div');
                         convElement.className = `chat-conversation-item${isActive ? ' active' : ''}`;
                         convElement.innerHTML = `
-                                <div class="chat-avatar">
-                                    <span>${conv.otherParticipant.fullName.substring(0, 1).toUpperCase()}</span>
-                                </div>
-                                <div class="chat-conversation-content">
-                                    <div class="chat-conversation-name">${conv.otherParticipant.fullName}</div>
-                                    <div class="chat-conversation-message">${conv.lastMessage ? conv.lastMessage.messageContent : 'Start a conversation'}</div>
-                                </div>
-                                ${hasUnread ? `<div class="chat-unread-badge">${conv.unreadMessageCount}</div>` : ''}
-                                <div class="chat-conversation-time">${conv.lastMessage ? new Date(conv.lastMessage.messageCreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
-                            `;
+                                    <div class="chat-avatar">
+                                        <span>${conv.otherParticipant.fullName.substring(0, 1).toUpperCase()}</span>
+                                    </div>
+                                    <div class="chat-conversation-content">
+                                        <div class="chat-conversation-name">${conv.otherParticipant.fullName}</div>
+                                        <div class="chat-conversation-message">${conv.lastMessage ? conv.lastMessage.messageContent : 'Start a conversation'}</div>
+                                    </div>
+                                    ${hasUnread ? `<div class="chat-unread-badge">${conv.unreadMessageCount}</div>` : ''}
+                                    <div class="chat-conversation-time">${conv.lastMessage ? new Date(conv.lastMessage.messageCreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                                `;
 
                         convElement.addEventListener('click', () => {
                             window.location.href = `/Chat/Conversation/${conv.conversationId}`;
@@ -220,7 +220,7 @@
                     });
                 }
             } catch (error) {
-                console.error('Error loading recent conversations:', error);
+                // Error loading recent conversations
             }
         }
 
@@ -282,7 +282,7 @@
                 messageInput.value = "";
                 messageInput.focus();
             } catch (err) {
-                console.error(err);
+                // Failed to send message
                 alert("Failed to send message. Please try again.");
             }
         });
@@ -299,5 +299,3 @@
         });
     </script>
 }
-
-   

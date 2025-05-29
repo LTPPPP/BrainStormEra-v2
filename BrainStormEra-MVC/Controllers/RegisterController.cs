@@ -1,5 +1,6 @@
 using BrainStormEra_MVC.Models;
 using BrainStormEra_MVC.Models.ViewModels;
+using BrainStormEra_MVC.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -25,21 +26,21 @@ namespace BrainStormEra_MVC.Controllers
         {
             return View();
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
             {
+                TempData["ErrorMessage"] = "Please correct the errors below and try again.";
                 return View(model);
             }
             try
-            {
-                // Check if username already exists
+            {                // Check if username already exists
                 bool usernameExists = await _context.Accounts.AnyAsync(a => a.Username == model.Username);
                 if (usernameExists)
                 {
+                    TempData["ErrorMessage"] = "Username is already taken. Please choose a different username.";
                     ModelState.AddModelError("Username", "Username is already taken");
                     return View(model);
                 }
@@ -48,17 +49,16 @@ namespace BrainStormEra_MVC.Controllers
                 bool emailExists = await _context.Accounts.AnyAsync(a => a.UserEmail == model.Email);
                 if (emailExists)
                 {
+                    TempData["ErrorMessage"] = "Email is already registered. Please use a different email or try logging in.";
                     ModelState.AddModelError("Email", "Email is already registered");
                     return View(model);
-                }
-
-                // Create new account
+                }                // Create new account
                 var account = new Account
                 {
                     UserId = Guid.NewGuid().ToString(),
-                    UserRole = "Student", // Default role for new registrations
+                    UserRole = "Learner", // Default role for new registrations
                     Username = model.Username,
-                    PasswordHash = HashPassword(model.Password),
+                    PasswordHash = PasswordHasher.HashPassword(model.Password),
                     UserEmail = model.Email,
                     FullName = model.FullName,
                     DateOfBirth = model.DateOfBirth.HasValue ? DateOnly.FromDateTime(model.DateOfBirth.Value) : null,
@@ -71,41 +71,22 @@ namespace BrainStormEra_MVC.Controllers
                 };
 
                 _context.Accounts.Add(account);
-                await _context.SaveChangesAsync();
-
-                // Redirect to success page or login
-                TempData["RegistrationSuccess"] = "Your account has been created successfully. You can now log in.";
+                await _context.SaveChangesAsync();                // Redirect to success page or login
+                TempData["SuccessMessage"] = "Your account has been created successfully. You can now log in.";
                 return RedirectToAction("Index", "Login");
             }
             catch (DbUpdateException ex)
             {
-                _logger.LogError(ex, "Error occurred while registering user");
+                _logger.LogError(ex, "Database error occurred while registering user");
+                TempData["ErrorMessage"] = "A database error occurred while creating your account. Please try again.";
                 ModelState.AddModelError(string.Empty, "An error occurred while registering your account. Please try again.");
                 return View(model);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error during registration");
-                ModelState.AddModelError(string.Empty, "An unexpected error occurred. Please try again later.");
-                return View(model);
-            }
-        }
-
-        private string HashPassword(string password)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                // Convert the input string to a byte array and compute the hash
-                byte[] hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-
-                // Convert the byte array to a string
-                StringBuilder builder = new StringBuilder();
-                for (int i = 0; i < hashedBytes.Length; i++)
-                {
-                    builder.Append(hashedBytes[i].ToString("x2"));
-                }
-
-                return builder.ToString();
+                TempData["ErrorMessage"] = "An unexpected error occurred during registration. Please try again later.";
+                ModelState.AddModelError(string.Empty, "An unexpected error occurred. Please try again later."); return View(model);
             }
         }
 

@@ -391,6 +391,138 @@
   }
 
   /**
+   * Show error toast for registration failures
+   */
+  function showRegistrationError(message) {
+    if (window.showErrorToast) {
+      window.showErrorToast(message);
+    } else {
+      alert(message); // Fallback for older browsers
+    }
+  }
+
+  /**
+   * Show success toast for registration success
+   */
+  function showRegistrationSuccess(message) {
+    if (window.showSuccessToast) {
+      window.showSuccessToast(message);
+    }
+  }
+
+  /**
+   * Show warning toast
+   */
+  function showRegistrationWarning(message) {
+    if (window.showWarningToast) {
+      window.showWarningToast(message);
+    }
+  }
+
+  /**
+   * Enhanced form validation with toast notifications
+   */
+  function validateFormWithToasts(form) {
+    const username = formElements.usernameInput?.value?.trim();
+    const email = formElements.emailInput?.value?.trim();
+    const password = formElements.passwordInput?.value;
+    const confirmPassword = formElements.confirmPasswordInput?.value;
+    const fullName = formElements.fullNameInput?.value?.trim();
+
+    const errors = [];
+
+    // Validate username
+    if (!username) {
+      errors.push("Username is required");
+    } else if (username.length < 3) {
+      errors.push("Username must be at least 3 characters long");
+    } else if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      errors.push(
+        "Username can only contain letters, numbers, underscores, and hyphens"
+      );
+    }
+
+    // Validate email
+    if (!email) {
+      errors.push("Email is required");
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.push("Please enter a valid email address");
+    }
+
+    // Validate password
+    if (!password) {
+      errors.push("Password is required");
+    } else if (password.length < 6) {
+      errors.push("Password must be at least 6 characters long");
+    }
+
+    // Validate confirm password
+    if (!confirmPassword) {
+      errors.push("Please confirm your password");
+    } else if (password !== confirmPassword) {
+      errors.push("Passwords do not match");
+    }
+
+    // Validate full name
+    if (!fullName) {
+      errors.push("Full name is required");
+    }
+
+    if (errors.length > 0) {
+      showRegistrationError(
+        "Please fix the following errors: " + errors.join(", ")
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Handle form submission with enhanced validation
+   */
+  function handleEnhancedFormSubmission(form) {
+    form.addEventListener("submit", function (e) {
+      // Prevent multiple submissions
+      if (formSubmitted) {
+        e.preventDefault();
+        showRegistrationWarning(
+          "Registration is already in progress. Please wait..."
+        );
+        return false;
+      }
+
+      // Validate form
+      if (!validateFormWithToasts(form)) {
+        e.preventDefault();
+        return false;
+      }
+
+      // Mark form as submitted
+      formSubmitted = true;
+
+      // Show loading state
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (submitButton) {
+        const originalText = submitButton.innerHTML;
+        submitButton.innerHTML =
+          '<span class="spinner-border spinner-border-sm me-2"></span>Creating Account...';
+        submitButton.disabled = true;
+
+        // Show progress message
+        showRegistrationWarning("Creating your account, please wait...");
+
+        // Re-enable after 15 seconds as failsafe
+        setTimeout(() => {
+          submitButton.innerHTML = originalText;
+          submitButton.disabled = false;
+          formSubmitted = false;
+        }, 15000);
+      }
+    });
+  }
+
+  /**
    * Handle form submission with loading state and animations
    */
   function handleFormSubmit(e) {
