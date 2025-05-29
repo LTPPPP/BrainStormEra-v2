@@ -117,12 +117,6 @@
   --strength-medium: #fbbc05; /* Medium password */
   --strength-strong: #34a853; /* Strong password */
 
-  /* Chat Colors */
-  --messenger-blue: #0084ff;
-  --messenger-gray: #f0f0f0;
-  --messenger-light: #f5f5f5;
-  --messenger-dark: #1c1e21;
-
   /* Scrollbar Colors */
   --scrollbar-track: #f1f1f1;
   --scrollbar-thumb: #888;

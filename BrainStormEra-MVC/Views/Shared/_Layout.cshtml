@@ -35,18 +35,10 @@
     <script src="~/js/utils/site.js" asp-append-version="true"></script>
     <script src="~/js/utils/secure-logout.js" asp-append-version="true"></script>
 
-    @* Add SignalR scripts for global notifications if user is logged in *@
+    @* Global scripts for logged in users *@
     @if (Context.Session.TryGetValue("UserId", out _))
     {
-        <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
-        <script src="~/js/pages/Chat/chat-notification.js"></script>
-        <script>
-            // Initialize global notification system
-            document.addEventListener("DOMContentLoaded", function () {
-                const chatNotification = new ChatNotification('/chatHub');
-                chatNotification.initialize();
-            });
-        </script>
+        // User is logged in
     }
 
     @await RenderSectionAsync("Scripts", required: false)

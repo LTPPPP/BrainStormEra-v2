@@ -6,19 +6,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const userAvatar = document.querySelector(".user-avatar");
   const actionButtons = document.querySelectorAll(".btn_login, .btn_register");
 
-  // This function will be used to show notifications in the header
-  function updateChatNotificationBadge(count) {
-    const badge = document.getElementById("chatNotificationBadge");
-    if (badge) {
-      if (count > 0) {
-        badge.textContent = count;
-        badge.style.display = "inline-block";
-      } else {
-        badge.style.display = "none";
-      }
-    }
-  }
-
   // Function to update notification badge
   function updateNotificationBadge(count) {
     if (notificationBadge) {
@@ -104,7 +91,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Expose functions globally
-  window.updateChatNotificationBadge = updateChatNotificationBadge;
   window.updateNotificationBadge = updateNotificationBadge;
 
   // Add ripple effect to login and register buttons

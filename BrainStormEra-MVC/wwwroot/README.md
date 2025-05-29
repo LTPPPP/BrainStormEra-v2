@@ -21,7 +21,6 @@ Dự án BrainStormEra được tổ chức theo mô hình MVC (Model-View-Contr
     - `homePage.css`: Style cơ bản cho trang chủ
     - `landing_page.css`: Style cho landing page
   - **Course**: CSS cho trang khóa học
-  - **Chat**: CSS cho trang chat
   - **Payment**: CSS cho trang thanh toán
 
 ### JavaScript
@@ -32,9 +31,6 @@ Dự án BrainStormEra được tổ chức theo mô hình MVC (Model-View-Contr
 - **pages**: Chứa JS cho từng trang cụ thể
   - **Home**: JS cho trang chủ
   - **Course**: JS cho trang khóa học
-  - **Chat**: JS cho trang chat
-    - `chat.js`: Logic cho chức năng chat
-    - `chat-notification.js`: Logic cho thông báo chat
   - **Payment**: JS cho trang thanh toán
 - **utils**: Chứa các utility functions
   - `site.js`: JS chung cho toàn bộ trang web
