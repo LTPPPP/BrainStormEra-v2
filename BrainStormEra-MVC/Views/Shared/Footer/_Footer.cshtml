@@ -1,3 +1,10 @@
+@{
+    // This partial view contains the common footer used across the application
+}
+
+<!-- Link footer CSS -->
+<link rel="stylesheet" href="~/css/components/footer.css" />
+
 <!-- Footer -->
 <footer class="footer py-5">
     <div class="container">
@@ -66,23 +73,3 @@
         <i class="fas fa-arrow-up"></i>
     </button>
 </footer>
-
-<script>
-    function scrollToTop() {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    }
-
-    // Show/hide back to top button based on scroll position
-    window.addEventListener('scroll', function () {
-        const backToTopBtn = document.querySelector('.back-to-top');
-        if (window.scrollY > 300) {
-            backToTopBtn.style.display = 'block';
-            backToTopBtn.classList.add('show');
-        } else {
-            backToTopBtn.classList.remove('show');
-        }
-    });
-</script>

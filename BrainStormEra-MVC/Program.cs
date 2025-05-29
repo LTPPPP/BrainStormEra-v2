@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Diagnostics;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using BrainStormEra_MVC.Models;
-using BrainStormEra_MVC.Hubs;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace BrainStormEra_MVC
@@ -27,9 +26,6 @@ namespace BrainStormEra_MVC
 
             // Add Response Caching
             builder.Services.AddResponseCaching();
-
-            // Add SignalR for real-time chat
-            builder.Services.AddSignalR();
 
             // Add Authentication
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -143,9 +139,6 @@ namespace BrainStormEra_MVC
             app.UseAuthorization(); app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
-
-            // Map SignalR hub
-            app.MapHub<ChatHub>("/chatHub");
 
             app.Run();
         }

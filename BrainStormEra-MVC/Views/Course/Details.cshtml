@@ -1,0 +1,477 @@
+@model BrainStormEra_MVC.Models.ViewModels.CourseDetailViewModel
+@{
+    ViewData["Title"] = Model.CourseName;
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/courses.css">
+
+    <link rel="icon" href="~/img/logo/favicon.ico" type="image/x-icon">
+</head>
+
+<body>
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Header -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Course Details Container -->
+    <div class="course-details-container">
+        <!-- Breadcrumb -->
+        <div class="container">
+            <nav aria-label="breadcrumb" class="course-breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item"><a href="/Course">Courses</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">@Model.CourseName</li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Course Header -->
+        <div class="course-header">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="course-header-content">
+                            <div class="course-categories mb-3">
+                                @foreach (var category in Model.CourseCategories)
+                                {
+                                    <span class="course-category-badge">@category</span>
+                                }
+                            </div>
+                            <h1 class="course-title">@Model.CourseName</h1>
+                            <p class="course-subtitle">@Model.Description</p>
+                            <div class="course-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-user"></i>
+                                    <span>@Model.CreatedBy</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-star"></i>
+                                    <span>@Model.StarRating.ToString("F1") (@Model.EnrollmentCount reviews)</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-users"></i>
+                                    <span>@Model.EnrollmentCount students</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>Last updated @Model.CreatedDate.ToString("MMM yyyy")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="course-preview-card">
+                            <div class="course-preview-image">
+                                <img src="@Model.CoursePicture" alt="@Model.CourseName" class="img-fluid">
+                                <div class="play-button">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                            </div>
+                            <div class="course-preview-content">
+                                <div class="course-price">
+                                    @if (Model.Price == 0)
+                                    {
+                                        <span class="free-badge">FREE</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="price">$@Model.Price.ToString("F2")</span>
+                                    }
+                                </div>
+
+                                @if (Model.IsEnrolled)
+                                {
+                                    <button class="btn btn-success btn-lg w-100 mb-3" disabled>
+                                        <i class="fas fa-check-circle me-2"></i>Enrolled
+                                    </button>
+                                    <a href="#" class="btn btn-outline-primary btn-lg w-100">Continue Learning</a>
+                                }
+                                else
+                                {
+                                    <form asp-controller="Course" asp-action="Enroll" method="post" class="enrollment-form">
+                                        <input type="hidden" name="courseId" value="@Model.CourseId" />
+                                        <button type="submit" class="btn btn-primary btn-lg w-100 mb-3 enroll-btn">
+                                            @if (Model.Price == 0)
+                                            {
+                                                <i class="fas fa-plus me-2"></i>
+                                        
+                                                <span>Enroll for Free</span>
+                                            }
+                                            else
+                                            {
+                                                <i class="fas fa-shopping-cart me-2"></i>
+                                        
+                                                <span>Enroll Now</span>
+                                            }
+                                        </button>
+                                    </form>
+                                }
+
+                                <div class="course-includes">
+                                    <h6>This course includes:</h6>
+                                    <ul class="includes-list">
+                                        <li><i class="fas fa-video"></i> On-demand video</li>
+                                        <li><i class="fas fa-file-alt"></i> Articles and resources</li>
+                                        <li><i class="fas fa-mobile-alt"></i> Mobile and TV access</li>
+                                        <li><i class="fas fa-infinity"></i> Full lifetime access</li>
+                                        <li><i class="fas fa-certificate"></i> Certificate of completion</li>
+                                    </ul>
+                                </div>
+
+                                <div class="share-course mt-3">
+                                    <h6>Share this course:</h6>
+                                    <div class="share-buttons">
+                                        <a href="#" class="share-btn facebook" data-share="facebook"><i
+                                                class="fab fa-facebook-f"></i></a>
+                                        <a href="#" class="share-btn twitter" data-share="twitter"><i
+                                                class="fab fa-twitter"></i></a>
+                                        <a href="#" class="share-btn linkedin" data-share="linkedin"><i
+                                                class="fab fa-linkedin-in"></i></a>
+                                        <a href="#" class="share-btn copy-link" data-share="copy"><i
+                                                class="fas fa-link"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Content -->
+        <div class="course-content">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <!-- Course Navigation Tabs -->
+                        <div class="course-nav-tabs">
+                            <ul class="nav nav-tabs" id="courseTab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab"
+                                        data-bs-target="#overview" type="button" role="tab">Overview</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="curriculum-tab" data-bs-toggle="tab"
+                                        data-bs-target="#curriculum" type="button" role="tab">Curriculum</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="instructor-tab" data-bs-toggle="tab"
+                                        data-bs-target="#instructor" type="button" role="tab">Instructor</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="reviews-tab" data-bs-toggle="tab"
+                                        data-bs-target="#reviews" type="button" role="tab">Reviews</button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content" id="courseTabContent">
+                            <!-- Overview Tab -->
+                            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                                <div class="course-overview">
+                                    <h3>Course Description</h3>
+                                    <div class="course-description">
+                                        @Html.Raw(Model.Description)
+                                    </div>
+
+                                    <h3>What you'll learn</h3>
+                                    <div class="learning-objectives">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <ul class="objectives-list">
+                                                    <li><i class="fas fa-check"></i> Master the fundamentals and core
+                                                        concepts</li>
+                                                    <li><i class="fas fa-check"></i> Build real-world projects from
+                                                        scratch</li>
+                                                    <li><i class="fas fa-check"></i> Develop problem-solving skills</li>
+                                                </ul>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <ul class="objectives-list">
+                                                    <li><i class="fas fa-check"></i> Apply best practices and industry
+                                                        standards</li>
+                                                    <li><i class="fas fa-check"></i> Prepare for certification exams
+                                                    </li>
+                                                    <li><i class="fas fa-check"></i> Advance your career prospects</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h3>Prerequisites</h3>
+                                    <div class="prerequisites">
+                                        <ul>
+                                            <li>Basic computer literacy</li>
+                                            <li>Willingness to learn</li>
+                                            <li>No prior experience required</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Curriculum Tab -->
+                            <div class="tab-pane fade" id="curriculum" role="tabpanel">
+                                <div class="course-curriculum">
+                                    <div class="curriculum-header">
+                                        <h3>Course Curriculum</h3>
+                                        <p>Comprehensive learning path designed for progressive skill building</p>
+                                    </div>
+
+                                    <div class="curriculum-sections">
+                                        <!-- Sample curriculum sections -->
+                                        <div class="curriculum-section">
+                                            <div class="section-header" data-bs-toggle="collapse"
+                                                data-bs-target="#section1">
+                                                <h4>1. Introduction and Setup</h4>
+                                                <div class="section-meta">
+                                                    <span>5 lectures • 45 min</span>
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </div>
+                                            </div>
+                                            <div class="collapse show" id="section1">
+                                                <div class="section-content">
+                                                    <div class="lecture-item">
+                                                        <i class="fas fa-play-circle"></i>
+                                                        <span>Course Overview and Welcome</span>
+                                                        <span class="lecture-duration">5:30</span>
+                                                    </div>
+                                                    <div class="lecture-item">
+                                                        <i class="fas fa-play-circle"></i>
+                                                        <span>Setting up Development Environment</span>
+                                                        <span class="lecture-duration">12:45</span>
+                                                    </div>
+                                                    <div class="lecture-item">
+                                                        <i class="fas fa-file-alt"></i>
+                                                        <span>Course Resources and Materials</span>
+                                                        <span class="lecture-duration">Reading</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="curriculum-section">
+                                            <div class="section-header" data-bs-toggle="collapse"
+                                                data-bs-target="#section2">
+                                                <h4>2. Core Concepts</h4>
+                                                <div class="section-meta">
+                                                    <span>8 lectures • 1h 20min</span>
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </div>
+                                            </div>
+                                            <div class="collapse" id="section2">
+                                                <div class="section-content">
+                                                    <div class="lecture-item">
+                                                        <i class="fas fa-play-circle"></i>
+                                                        <span>Fundamental Principles</span>
+                                                        <span class="lecture-duration">15:20</span>
+                                                    </div>
+                                                    <div class="lecture-item">
+                                                        <i class="fas fa-play-circle"></i>
+                                                        <span>Practical Examples</span>
+                                                        <span class="lecture-duration">18:35</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Instructor Tab -->
+                            <div class="tab-pane fade" id="instructor" role="tabpanel">
+                                <div class="instructor-info">
+                                    <div class="instructor-card">
+                                        <div class="instructor-avatar">
+                                            <img src="/img/default-avatar.png" alt="@Model.CreatedBy"
+                                                class="img-fluid rounded-circle">
+                                        </div>
+                                        <div class="instructor-details">
+                                            <h3>@Model.CreatedBy</h3>
+                                            <p class="instructor-title">Expert Instructor & Developer</p>
+                                            <div class="instructor-stats">
+                                                <div class="stat">
+                                                    <i class="fas fa-star"></i>
+                                                    <span>4.8 Instructor Rating</span>
+                                                </div>
+                                                <div class="stat">
+                                                    <i class="fas fa-users"></i>
+                                                    <span>10,000+ Students</span>
+                                                </div>
+                                                <div class="stat">
+                                                    <i class="fas fa-play-circle"></i>
+                                                    <span>25 Courses</span>
+                                                </div>
+                                            </div>
+                                            <div class="instructor-bio">
+                                                <p>An experienced professional with over 10 years in the industry.
+                                                    Passionate about teaching and helping students achieve their goals
+                                                    through practical, hands-on learning experiences.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reviews Tab -->
+                            <div class="tab-pane fade" id="reviews" role="tabpanel">
+                                <div class="course-reviews">
+                                    <div class="reviews-header">
+                                        <h3>Student Reviews</h3>
+                                        <div class="rating-summary">
+                                            <div class="overall-rating">
+                                                <span class="rating-number">@Model.StarRating.ToString("F1")</span>
+                                                <div class="rating-stars">
+                                                    @for (int i = 1; i <= 5; i++)
+                                                    {
+                                                        if (i <= Model.StarRating)
+                                                        {
+                                                            <i class="fas fa-star"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="far fa-star"></i>
+                                                        }
+                                                    }
+                                                </div>
+                                                <span class="rating-count">(@Model.EnrollmentCount reviews)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sample Reviews -->
+                                    <div class="reviews-list">
+                                        <div class="review-item">
+                                            <div class="reviewer-info">
+                                                <img src="/img/default-avatar.png" alt="Student"
+                                                    class="reviewer-avatar">
+                                                <div class="reviewer-details">
+                                                    <h5>John Doe</h5>
+                                                    <div class="review-rating">
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                    </div>
+                                                    <span class="review-date">2 weeks ago</span>
+                                                </div>
+                                            </div>
+                                            <div class="review-content">
+                                                <p>Excellent course! The instructor explains complex concepts in a clear
+                                                    and understandable way. Highly recommended for anyone looking to
+                                                    improve their skills.</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="review-item">
+                                            <div class="reviewer-info">
+                                                <img src="/img/default-avatar.png" alt="Student"
+                                                    class="reviewer-avatar">
+                                                <div class="reviewer-details">
+                                                    <h5>Jane Smith</h5>
+                                                    <div class="review-rating">
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="far fa-star"></i>
+                                                    </div>
+                                                    <span class="review-date">1 month ago</span>
+                                                </div>
+                                            </div>
+                                            <div class="review-content">
+                                                <p>Great practical examples and hands-on projects. The course content is
+                                                    well-structured and progressive.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="col-lg-4">
+                        <div class="course-sidebar">
+                            <!-- Related Courses -->
+                            <div class="sidebar-section">
+                                <h4>Related Courses</h4>
+                                <div class="related-courses">
+                                    <!-- Sample related course items -->
+                                    <div class="related-course-item">
+                                        <img src="/img/default-course.png" alt="Related Course"
+                                            class="related-course-image">
+                                        <div class="related-course-info">
+                                            <h6>Advanced Programming Concepts</h6>
+                                            <div class="related-course-meta">
+                                                <span class="price">$49.99</span>
+                                                <div class="rating">
+                                                    <i class="fas fa-star"></i>
+                                                    <span>4.7</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/global.js"></script>
+    <script src="~/js/pages/courses.js"></script>
+
+    <!-- Enrollment Success Modal -->
+    <div class="modal fade" id="enrollmentModal" tabindex="-1" aria-labelledby="enrollmentModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="enrollmentModalLabel">Enrollment Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="enrollmentMessage"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="continueLearning" style="display: none;">Continue
+                        Learning</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
+

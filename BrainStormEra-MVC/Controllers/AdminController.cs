@@ -27,14 +27,13 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["ErrorMessage"] = "You must be logged in to access the admin dashboard.";
                 return RedirectToAction("Index", "Login");
             }
-            var userRole = User?.FindFirst("UserRole")?.Value ?? "";
-            if (!string.Equals(userRole, "Admin", StringComparison.OrdinalIgnoreCase))
+            var userRole = User?.FindFirst("UserRole")?.Value ?? ""; if (!string.Equals(userRole, "Admin", StringComparison.OrdinalIgnoreCase))
             {
                 TempData["ErrorMessage"] = "Access denied. You don't have permission to access the admin dashboard.";
                 return RedirectToUserDashboard();
             }
 
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
             {
                 TempData["ErrorMessage"] = "Invalid user session. Please log in again.";

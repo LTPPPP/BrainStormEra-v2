@@ -17,6 +17,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
     <link rel="stylesheet" href="~/css/layouts/base.css">
     <link rel="stylesheet" href="~/css/components/header.css">
     <link rel="stylesheet" href="~/css/pages/Home/enhanced-home.css">
@@ -28,9 +29,30 @@
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
     <!-- Load page loader script -->
     <script src="~/js/components/loader.js"></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
 </head>
 
-<body> <!-- Page Loader -->
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
     <div class="page-loader">
         <div class="loader"></div>
     </div>
@@ -177,12 +199,12 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+    </div> @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" defer></script>
+    <!-- Include toast notifications script -->
+    <script src="~/js/shared/toast-notifications.js"></script>
 
     <script>
         // Hide preloader when page is loaded
@@ -191,14 +213,12 @@
             setTimeout(() => {
                 document.querySelector('.page-loader').style.display = 'none';
             }, 500);
-        });
-
-        // Change header style on scroll
+        });        // Change header style on scroll
         window.addEventListener('scroll', function () {
             if (window.scrollY > 50) {
-                document.querySelector('.sticky-header').classList.add('scrolled');
+                document.querySelector('.bse-sticky-header').classList.add('scrolled');
             } else {
-                document.querySelector('.sticky-header').classList.remove('scrolled');
+                document.querySelector('.bse-sticky-header').classList.remove('scrolled');
             }
         });
 

@@ -388,18 +388,79 @@ namespace BrainStormEra_MVC.Controllers
             return View();
         }
 
-        [HttpGet, HttpPost]
+        [HttpGet]
         public async Task<IActionResult> Logout()
         {
             var username = User.Identity?.Name;
 
+            // Sign out of the authentication scheme
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            // Clear all session data
+            HttpContext.Session.Clear();
+
+            // Clear all authentication cookies
+            foreach (var cookie in Request.Cookies.Keys)
+            {
+                Response.Cookies.Delete(cookie);
+            }
+
+            // Explicitly delete the authentication cookie
+            Response.Cookies.Delete("BrainStormEraAuth");
+
+            // Clear any authentication tokens from the response
+            Response.Headers["Authorization"] = "";
+
+            // Set cache control headers to prevent caching of sensitive information
+            Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
 
             _logger.LogInformation("User {Username} logged out at {Time}", username, DateTime.UtcNow);
 
+            // Clear any success messages from previous login
+            TempData.Remove("SuccessMessage");
             TempData["InfoMessage"] = "You have been logged out successfully.";
 
+            // For direct GET requests, redirect to homepage
             return RedirectToAction("Index", "Home");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> LogoutComplete()
+        {
+            var username = User.Identity?.Name;
+
+            // Sign out of the authentication scheme
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            // Clear all session data
+            HttpContext.Session.Clear();
+
+            // Clear all authentication cookies
+            foreach (var cookie in Request.Cookies.Keys)
+            {
+                Response.Cookies.Delete(cookie);
+            }
+
+            // Explicitly delete the authentication cookie
+            Response.Cookies.Delete("BrainStormEraAuth");
+
+            // Clear any authentication tokens from the response
+            Response.Headers["Authorization"] = "";
+
+            // Set cache control headers to prevent caching of sensitive information
+            Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
+
+            _logger.LogInformation("User {Username} logged out at {Time}", username, DateTime.UtcNow);
+
+            // Clear any success messages from previous login
+            TempData.Remove("SuccessMessage");
+
+            // Return JSON result for AJAX requests
+            return Json(new { success = true, message = "Logout successful" });
         }
 
         #region Helper Methods

@@ -10,9 +10,15 @@
   );
   color: white;
   padding: 2.5rem 0;
+  margin-top: 2rem; /* Add top margin to prevent header overlap */
   margin-bottom: 1.5rem;
   position: relative;
   overflow: hidden;
+  z-index: 5; /* Add z-index lower than header */
+}
+
+.welcome-container {
+  padding-top: 1rem; /* Additional padding to ensure no overlap */
 }
 
 .welcome-section::before {
@@ -523,4 +529,11 @@
 
 .stat-item {
   width: 100%;
+}
+
+/* Dashboard Container */
+.dashboard-container {
+  padding-top: 60px; /* Add space for the fixed header */
+  position: relative;
+  z-index: 1;
 }

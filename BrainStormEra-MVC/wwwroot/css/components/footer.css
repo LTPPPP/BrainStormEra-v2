@@ -1,0 +1,417 @@
+/* Footer styles for BrainStormEra */
+
+/* Enhanced Footer Styles */
+.footer {
+  background-color: var(--secondary-color);
+  color: #ffffff;
+  padding: 70px 0 20px;
+  position: relative;
+  margin-top: auto;
+}
+
+.footer h4 {
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 25px;
+  position: relative;
+  color: white;
+}
+
+.footer h4:after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background-color: var(--primary-color);
+  border-radius: 2px;
+}
+
+.footer p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  line-height: 1.8;
+  margin-bottom: 1rem;
+}
+
+.footer-about p {
+  margin-bottom: 1.5rem;
+}
+
+.footer-links ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links ul li {
+  margin-bottom: 15px;
+  transition: all 0.3s ease;
+  padding: 5px 0;
+  position: relative;
+}
+
+.footer-links ul li:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.footer-links ul li a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.footer-links ul li a:hover {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.footer-links ul li a i.fas.fa-chevron-right {
+  transition: transform 0.3s ease;
+  color: var(--primary-color);
+  margin-right: 8px;
+  font-size: 0.8rem;
+}
+
+/* Footer Contact Section */
+.footer-contact p {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s ease;
+}
+
+.footer-contact p:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.footer-contact p i {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+  width: 30px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+/* Social Media Links */
+.social-links {
+  margin-top: 30px;
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.social-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.social-icon::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-color);
+  transform: scale(0);
+  transition: transform 0.3s ease;
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.social-icon:hover::before {
+  transform: scale(1);
+}
+
+.social-icon:hover {
+  transform: translateY(-5px);
+  color: white;
+  text-decoration: none;
+  box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+}
+
+/* Specific social media colors on hover */
+.social-icon:nth-child(1):hover {
+  /* Facebook */
+  background: #3b5998;
+}
+
+.social-icon:nth-child(2):hover {
+  /* Twitter */
+  background: #1da1f2;
+}
+
+.social-icon:nth-child(3):hover {
+  /* Instagram */
+  background: linear-gradient(
+    45deg,
+    #f09433 0%,
+    #e6683c 25%,
+    #dc2743 50%,
+    #cc2366 75%,
+    #bc1888 100%
+  );
+}
+
+.social-icon:nth-child(4):hover {
+  /* LinkedIn */
+  background: #0077b5;
+}
+
+.social-icon:nth-child(5):hover {
+  /* YouTube */
+  background: #ff0000;
+}
+
+/* Back to Top Button */
+.back-to-top {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 45px;
+  height: 45px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+  z-index: 999;
+  border: none;
+  transition: all 0.3s ease;
+  opacity: 0;
+  font-size: 1.2rem;
+}
+
+.back-to-top.show {
+  display: flex;
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+.back-to-top:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+}
+
+.back-to-top:active {
+  transform: translateY(-1px);
+}
+
+/* Copyright Section */
+.footer .border-top {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.footer .text-danger {
+  color: #ff6b6b !important;
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heartbeat {
+  0%,
+  50%,
+  100% {
+    transform: scale(1);
+  }
+  25%,
+  75% {
+    transform: scale(1.1);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .footer {
+    padding: 60px 0 20px;
+  }
+}
+
+@media (max-width: 992px) {
+  .footer {
+    padding: 50px 0 20px;
+  }
+
+  .footer h4 {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+  }
+
+  .footer-contact,
+  .footer-about {
+    margin-bottom: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer {
+    padding: 40px 0 20px;
+    text-align: center;
+  }
+
+  .footer h4 {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+  }
+
+  .footer h4:after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .social-links {
+    justify-content: center;
+    margin-top: 25px;
+  }
+
+  .back-to-top {
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .footer-contact p,
+  .footer-links ul li a {
+    justify-content: center;
+  }
+
+  .footer .text-center {
+    text-align: center !important;
+  }
+
+  .footer .text-md-start,
+  .footer .text-md-end {
+    text-align: center !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .footer {
+    padding: 35px 0 20px;
+  }
+
+  .footer h4 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+  }
+
+  .footer p {
+    font-size: 0.9rem;
+  }
+
+  .footer-links ul li a {
+    font-size: 0.9rem;
+  }
+
+  .social-icon {
+    width: 35px;
+    height: 35px;
+    font-size: 1rem;
+  }
+
+  .social-links {
+    gap: 10px;
+  }
+}
+
+/* High DPI and Retina Display Support */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .footer h4:after {
+    height: 4px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .footer {
+    background: none !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+
+  .back-to-top {
+    display: none !important;
+  }
+
+  .social-links {
+    display: none !important;
+  }
+}
+
+/* Dark mode support (if implemented) */
+@media (prefers-color-scheme: dark) {
+  .footer {
+    background-color: #1a1a1a;
+  }
+
+  .footer h4:after {
+    background-color: var(--primary-color);
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .footer-links ul li a,
+  .social-icon,
+  .back-to-top {
+    transition: none;
+  }
+
+  .back-to-top.show {
+    animation: none;
+    opacity: 1;
+  }
+
+  .footer .text-danger {
+    animation: none;
+  }
+}
+
+/* Focus styles for accessibility */
+.footer-links ul li a:focus,
+.social-icon:focus,
+.back-to-top:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .footer {
+    border-top: 3px solid var(--primary-color);
+  }
+}
