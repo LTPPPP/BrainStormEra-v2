@@ -49,7 +49,6 @@ namespace BrainStormEra_MVC
                 options.Cookie.IsEssential = true;
             });
 
-            // Thêm xử lý lỗi kết nối DB
             try
             {
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

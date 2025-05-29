@@ -169,6 +169,7 @@
    * @param {Event} e - The submit event
    */
   function handleFormSubmit(e) {
+    // Only prevent double submission if form is currently submitting
     if (formSubmitted) {
       e.preventDefault();
       return;
@@ -205,6 +206,16 @@
         ripple.remove();
       }, 600);
     }
+
+    // Reset form submission flag after a delay to allow for server response
+    setTimeout(() => {
+      formSubmitted = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        if (btnText) btnText.textContent = "Sign In";
+        if (spinner) spinner.classList.add("d-none");
+      }
+    }, 5000);
   }
 
   /**

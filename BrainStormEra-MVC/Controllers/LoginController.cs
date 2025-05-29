@@ -183,28 +183,13 @@ namespace BrainStormEra_MVC.Controllers
 
                 _logger.LogInformation("Determining redirect for user: {Username}, Role: {Role}", user.Username, user.UserRole);
 
-                // Redirect to return URL or role-based dashboard
-                if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-                {
-                    _logger.LogInformation("Redirecting to return URL: {ReturnUrl}", model.ReturnUrl);
-                    return Redirect(model.ReturnUrl);
-                }
-                else
-                {
-                    // Redirect to appropriate dashboard based on user role, or home page as default
-                    IActionResult redirectAction = user.UserRole.ToLower() switch
-                    {
-                        "admin" => RedirectToAction("AdminDashboard", "Admin"),
-                        "instructor" => RedirectToAction("InstructorDashboard", "Home"),
-                        "learner" => RedirectToAction("LearnerDashboard", "Home"),
-                        _ => RedirectToAction("Index", "Home") // Default to home page
-                    };
+                // Add cache control headers to prevent caching of login page
+                Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+                Response.Headers["Pragma"] = "no-cache";
+                Response.Headers["Expires"] = "0";
 
-                    _logger.LogInformation("Redirecting user {Username} with role {Role} to appropriate dashboard",
-                        user.Username, user.UserRole);
-
-                    return redirectAction;
-                }
+                // Use helper method for redirect logic
+                return GetPostLoginRedirect(user.UserRole, model.ReturnUrl);
             }
             catch (Exception ex)
             {
@@ -413,6 +398,37 @@ namespace BrainStormEra_MVC.Controllers
         {
             // Generate a 6-digit OTP
             return Random.Shared.Next(100000, 999999).ToString();
+        }
+
+        /// <summary>
+        /// Helper method to determine the appropriate redirect after successful login
+        /// </summary>
+        private IActionResult GetPostLoginRedirect(string userRole, string? returnUrl = null)
+        {
+            _logger.LogInformation("Determining post-login redirect for role: {Role}, ReturnUrl: {ReturnUrl}", userRole, returnUrl);
+
+            // Check return URL first
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                _logger.LogInformation("Redirecting to return URL: {ReturnUrl}", returnUrl);
+                return Redirect(returnUrl);
+            }
+
+            // Role-based redirect with explicit URLs for better reliability
+            var redirectResult = userRole.ToLower() switch
+            {
+                "admin" => RedirectToAction("AdminDashboard", "Admin"),
+                "instructor" => RedirectToAction("InstructorDashboard", "Home"),
+                "learner" => RedirectToAction("LearnerDashboard", "Home"),
+                _ => RedirectToAction("Index", "Home")
+            };
+
+            _logger.LogInformation("Redirecting user with role {Role} to {Controller}/{Action}",
+                userRole,
+                redirectResult is RedirectToActionResult redirectAction ? redirectAction.ControllerName : "Unknown",
+                redirectResult is RedirectToActionResult redirectAction2 ? redirectAction2.ActionName : "Unknown");
+
+            return redirectResult;
         }
         #endregion
     }
