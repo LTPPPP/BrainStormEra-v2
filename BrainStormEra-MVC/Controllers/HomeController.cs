@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace BrainStormEra_MVC.Controllers
 {
@@ -186,14 +188,17 @@ namespace BrainStormEra_MVC.Controllers
 
             if (IsAdmin)
             {
+                _logger.LogInformation("Redirecting admin user to Admin Dashboard");
                 return RedirectToAction("AdminDashboard", "Admin");
             }
             else if (IsInstructor)
             {
+                _logger.LogInformation("Redirecting instructor user to Instructor Dashboard");
                 return RedirectToAction("InstructorDashboard", "Home");
             }
             else if (IsLearner)
             {
+                _logger.LogInformation("Redirecting learner user to Learner Dashboard");
                 return RedirectToAction("LearnerDashboard", "Home");
             }
             else
@@ -203,13 +208,21 @@ namespace BrainStormEra_MVC.Controllers
                 return RedirectToAction("Index", "Login");
             }
         }
-
         public async Task<IActionResult> Index()
         {
             var viewModel = new HomePageGuestViewModel();
 
             try
             {
+                // Check if the user is authenticated and redirect if needed
+                var redirectResult = await CheckAuthenticationAndRedirect();
+                if (redirectResult != null)
+                {
+                    return redirectResult; // Redirect to dashboard if authenticated
+                }
+
+                // If we reach here, the user is not authenticated - show guest home page
+
                 // Check database connection
                 bool isDatabaseConnected = IsDatabaseConnected();
                 if (!isDatabaseConnected)
@@ -219,21 +232,8 @@ namespace BrainStormEra_MVC.Controllers
                     return View(viewModel);
                 }
 
-                // Check if user is authenticated and log their information
-                if (IsAuthenticated)
-                {
-                    _logger.LogInformation("Authenticated user accessing home page: {Username} (Role: {Role})",
-                        CurrentUsername, CurrentUserRole);
-
-                    // Pass user information to view for personalization
-                    ViewBag.CurrentUser = GetCurrentUserInfo();
-                    ViewBag.IsAuthenticated = true;
-                    ViewBag.UserDisplayName = GetCurrentUserDisplayName();
-                }
-                else
-                {
-                    ViewBag.IsAuthenticated = false;
-                }
+                // For guest users
+                ViewBag.IsAuthenticated = false;
 
                 // Get top 4 featured courses with timeout protection
                 var recommendedCourses = await GetRecommendedCoursesAsync();
@@ -463,6 +463,38 @@ namespace BrainStormEra_MVC.Controllers
                 _logger.LogError(ex, "Error loading instructor dashboard");
                 TempData["ErrorMessage"] = "An error occurred while loading the dashboard. Please try again.";
                 return RedirectToAction("Index", "Home");
+            }
+        }
+
+        /// <summary>
+        /// Checks if a user is authenticated and redirects to appropriate dashboard
+        /// </summary>
+        /// <returns>Redirect action result if authenticated, null if not</returns>
+        private async Task<IActionResult?> CheckAuthenticationAndRedirect()
+        {
+            if (!IsAuthenticated)
+            {
+                return null; // Not authenticated, continue with guest view
+            }
+
+            _logger.LogInformation("Authenticated user accessing page: {Username} (Role: {Role}), redirecting to dashboard",
+                CurrentUsername, CurrentUserRole);
+
+            try
+            {
+                // Redirect to appropriate dashboard based on user role
+                return RedirectToUserDashboard();
+            }
+            catch (Exception ex)
+            {
+                // If we encounter any error during redirection (e.g., invalid role)
+                _logger.LogError(ex, "Error redirecting authenticated user: {Username}, {Role}",
+                    CurrentUsername, CurrentUserRole);
+
+                // Clear the invalid authentication cookie
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                TempData["ErrorMessage"] = "Your session has expired or is invalid. Please log in again.";
+                return RedirectToAction("Index", "Login");
             }
         }
     }
