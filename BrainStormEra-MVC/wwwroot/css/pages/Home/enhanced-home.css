@@ -196,6 +196,34 @@ body {
   box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
 }
 
+/* Register Button - Complementary to Login Button */
+.btn_register {
+  background: white;
+  color: var(--primary-color);
+  padding: 10px 30px;
+  border-radius: 50px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-decoration: none;
+  box-shadow: 0 5px 15px rgba(52, 152, 219, 0.1);
+  transition: var(--transition-medium);
+  border: 2px solid var(--primary-color);
+}
+
+.btn_register:hover {
+  background: rgba(52, 152, 219, 0.05);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(52, 152, 219, 0.2);
+  color: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.btn_register:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.15);
+}
+
 /* Header Section */
 .header-placeholder {
   background: linear-gradient(135deg, var(--primary-color) 0%, #3d5af1 100%);
