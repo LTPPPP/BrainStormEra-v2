@@ -231,3 +231,211 @@
   box-shadow: 0 0 0 0.1rem var(--focus-ring-white),
     0 0 0 0.25rem var(--focus-ring-primary);
 }
+
+/* ====================== DEFAULT STYLES ====================== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  color: var(--text-color);
+  background-color: var(--bg-white);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
+}
+
+/* ====================== TEXT UTILITIES ====================== */
+.text-primary {
+  color: var(--text-primary) !important;
+}
+
+.text-dark {
+  color: var(--text-dark) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+.text-white {
+  color: var(--text-light) !important;
+}
+
+.text-gray {
+  color: var(--text-gray) !important;
+}
+
+/* ====================== BACKGROUND UTILITIES ====================== */
+.bg-white {
+  background-color: var(--bg-white) !important;
+}
+
+.bg-light {
+  background-color: var(--bg-light) !important;
+}
+
+.bg-dark {
+  background-color: var(--bg-dark) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+/* ====================== CARD STYLES ====================== */
+.card {
+  background-color: var(--bg-white);
+  color: var(--text-color);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--card-shadow-light);
+}
+
+.card-body {
+  color: var(--text-color);
+}
+
+.card-title,
+.card-header {
+  color: var(--text-dark);
+}
+
+/* ====================== BUTTON STYLES ====================== */
+.btn {
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-white);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--text-light);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: var(--text-light);
+}
+
+/* ====================== FORM STYLES ====================== */
+.form-control,
+.form-select {
+  color: var(--text-color);
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+}
+
+.form-control:focus,
+.form-select:focus {
+  color: var(--text-color);
+  background-color: var(--bg-white);
+  border-color: var(--primary-color);
+}
+
+/* ====================== TABLE STYLES ====================== */
+.table {
+  color: var(--text-color);
+}
+
+.table th {
+  color: var(--text-dark);
+  background-color: var(--bg-light);
+}
+
+.table td {
+  color: var(--text-color);
+}
+
+/* ====================== NAVIGATION STYLES ====================== */
+.navbar {
+  background-color: var(--bg-white);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.navbar-brand,
+.nav-link {
+  color: var(--text-dark) !important;
+}
+
+.nav-link:hover {
+  color: var(--primary-color) !important;
+}
+
+/* ====================== ALERT STYLES ====================== */
+.alert {
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.alert-success {
+  background-color: var(--bg-success);
+  border-color: var(--success-color);
+  color: var(--text-light);
+}
+
+.alert-danger {
+  background-color: var(--bg-danger);
+  border-color: var(--danger-color);
+  color: var(--text-light);
+}
+
+.alert-warning {
+  background-color: var(--bg-warning);
+  border-color: var(--warning-color);
+  color: var(--text-dark);
+}
+
+/* ====================== GENERAL TEXT ELEMENTS ====================== */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-dark);
+}
+
+p,
+span,
+div {
+  color: var(--text-color);
+}
+
+a {
+  color: var(--primary-color);
+}
+
+a:hover {
+  color: var(--primary-dark);
+}
+
+/* ====================== SPECIFIC COMPONENT OVERRIDES ====================== */
+.sidebar {
+  background-color: var(--bg-white);
+  color: var(--text-color);
+}
+
+.main-content {
+  background-color: var(--bg-light);
+  color: var(--text-color);
+}
+
+.dashboard-card {
+  background-color: var(--bg-white);
+  color: var(--text-color);
+  border: 1px solid var(--border-light);
+}
+
+/* ====================== FORCE COLOR INHERITANCE ====================== */
+.container,
+.container-fluid {
+  color: inherit;
+}
+
+.row,
+.col,
+[class*="col-"] {
+  color: inherit;
+}

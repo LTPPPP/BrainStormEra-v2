@@ -33,6 +33,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/utils/site.js" asp-append-version="true"></script>
+    <script src="~/js/utils/secure-logout.js" asp-append-version="true"></script>
 
     @* Add SignalR scripts for global notifications if user is logged in *@
     @if (Context.Session.TryGetValue("UserId", out _))
