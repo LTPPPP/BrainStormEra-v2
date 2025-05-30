@@ -56,9 +56,10 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       // Add notifications to the dropdown
-      const dropdownDivider = notificationDropdown.querySelector(
-        ".dropdown-divider:last-of-type"
-      );
+      // Find the last li element that contains a dropdown-divider
+      const dropdownDividerLi = Array.from(notificationDropdown.children)
+        .filter((li) => li.querySelector(".dropdown-divider"))
+        .pop();
 
       dummyNotifications.forEach((notification) => {
         const notificationItem = document.createElement("li");
@@ -75,7 +76,15 @@ document.addEventListener("DOMContentLoaded", function () {
           </div>
         `;
 
-        notificationDropdown.insertBefore(notificationItem, dropdownDivider);
+        if (dropdownDividerLi) {
+          notificationDropdown.insertBefore(
+            notificationItem,
+            dropdownDividerLi
+          );
+        } else {
+          // Fallback: append to the end
+          notificationDropdown.appendChild(notificationItem);
+        }
       });
 
       // Update badge count (unread notifications)
