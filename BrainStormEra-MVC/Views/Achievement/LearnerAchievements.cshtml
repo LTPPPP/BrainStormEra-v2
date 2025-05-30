@@ -59,11 +59,16 @@
         <div class="loader"></div>
     </div>    <!-- Include Header partial view -->
     @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
-    
-    <main class="achievement-section my-spacing">
-    <h2 class="achievement-header">Your Achievements</h2>
+      <main class="achievement-section">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="achievement-header">
+                <i class="fas fa-trophy text-warning"></i>
+                Your Achievements
+            </div>
 
-    <div class="achievement-flex-container">
+            <!-- Achievements Content -->
+            <div class="achievement-flex-container">
         @if (achievements != null && achievements.Any())
         {
             foreach (var achievement in achievements)
@@ -80,13 +85,14 @@
                         </div>
                     </div>
                 </div>
-            }
-        }
+            }        }
         else
         {
             <p class="achievement-no-data">No achievements found for this user.</p>
         }
-    </div>
+            </div>
+        </div>
+    </main>
 
     <!-- Modal for Achievement Details -->
     <div class="modal fade" id="achievementModal" tabindex="-1" aria-labelledby="achievementModalLabel"
@@ -103,11 +109,10 @@
                     <h5 id="achievement-name" class="achievement-modal-title"></h5>
                     <p id="achievement-description" class="achievement-modal-description"></p>
                     <p class="achievement-modal-date"><strong>Date Received:</strong> <span
-                            id="achievement-date"></span></p>
-                </div>
+                            id="achievement-date"></span></p>                </div>
             </div>
-        </div>    </div>
-</main>
+        </div>
+    </div>
 
 <!-- Footer -->
 @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")

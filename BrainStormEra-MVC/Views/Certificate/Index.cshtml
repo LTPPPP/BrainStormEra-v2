@@ -1,0 +1,223 @@
+@model List<BrainStormEra_MVC.Models.ViewModels.CertificateSummaryViewModel>
+@{
+    ViewData["Title"] = "My Certificates";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="View and download your course completion certificates">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/certificates.css">
+    <link rel="stylesheet" href="~/css/pages/Home/enhanced-home.css">
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Header -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Main Content -->
+    <div class="certificates-page">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="page-title">
+                            <i class="fas fa-certificate text-warning"></i>
+                            My Certificates
+                        </h1>
+                        <p class="page-subtitle">View and download your course completion certificates</p>
+                    </div>
+                    <div class="col-md-4 text-end">                        <div class="stats-card">
+                            <div class="stat-number">@(ViewBag.TotalCertificates ?? 0)</div>
+                            <div class="stat-label">Total Certificates</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificates Content -->
+            <div class="certificates-content">
+                @if (ViewBag.HasCertificates == true)
+                {
+                    <div class="row">
+                        @foreach (var certificate in Model)
+                        {
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                                <div class="certificate-card">
+                                    <div class="certificate-header">
+                                        <div class="certificate-badge">
+                                            <i class="fas fa-award"></i>
+                                        </div>
+                                        <div class="course-image">
+                                            <img src="@certificate.CourseImage" alt="@certificate.CourseName" 
+                                                 class="img-fluid" loading="lazy">
+                                        </div>
+                                    </div>
+                                    <div class="certificate-body">
+                                        <h5 class="course-name">@certificate.CourseName</h5>
+                                        <div class="certificate-meta">
+                                            <div class="meta-item">
+                                                <i class="fas fa-user text-muted"></i>
+                                                <span>@certificate.AuthorName</span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class="fas fa-calendar text-muted"></i>
+                                                <span>Completed: @certificate.CompletedDate.ToString("MMM dd, yyyy")</span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class="fas fa-clock text-muted"></i>
+                                                <span>Duration: @certificate.CompletionDuration</span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class="fas fa-chart-line text-muted"></i>
+                                                <span>Score: @certificate.ProgressPercentage%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="certificate-actions">
+                                        <a href="@Url.Action("Details", new { courseId = certificate.CourseId })" 
+                                           class="btn btn-primary btn-sm">
+                                            <i class="fas fa-eye me-1"></i>
+                                            View Certificate
+                                        </a>
+                                        <button class="btn btn-outline-secondary btn-sm" 
+                                                onclick="downloadCertificate('@certificate.CourseId')">
+                                            <i class="fas fa-download me-1"></i>
+                                            Download
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <!-- Empty State -->
+                    <div class="empty-state">
+                        <div class="empty-state-content">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-certificate"></i>
+                            </div>
+                            <h3>No Certificates Yet</h3>
+                            <p class="text-muted">
+                                You haven't completed any courses yet. Start learning to earn your first certificate!
+                            </p>
+                            <a href="@Url.Action("Index", "Course")" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>
+                                Browse Courses
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/shared/toast-notifications.js"></script>
+    <script src="~/js/components/loader.js"></script>
+    <script>
+        // Hide page loader when content is loaded
+        window.addEventListener('load', function() {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+
+        // Download certificate function
+        function downloadCertificate(courseId) {
+            fetch('@Url.Action("Download", "Certificate")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: JSON.stringify({ courseId: courseId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.printUrl) {
+                        // Open certificate details in new window for printing
+                        window.open(data.printUrl + '?print=true', '_blank');
+                    }
+                    showToast('success', data.message || 'Certificate ready for download');
+                } else {
+                    showToast('error', data.message || 'Failed to download certificate');
+                }
+            })
+            .catch(error => {
+                console.error('Error downloading certificate:', error);
+                showToast('error', 'An error occurred while downloading the certificate');
+            });
+        }
+
+        // Toast notification function
+        function showToast(type, message) {
+            // Create toast element dynamically
+            const toastHtml = `
+                <div class="toast-notification toast-${type}" style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+                    <div class="toast-content">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                        <span>${message}</span>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', toastHtml);
+            
+            // Remove toast after 3 seconds
+            setTimeout(() => {
+                const toast = document.querySelector('.toast-notification:last-child');
+                if (toast) toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
