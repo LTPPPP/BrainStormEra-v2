@@ -31,7 +31,7 @@ namespace BrainStormEra_MVC.Controllers
             HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             ViewData["ReturnUrl"] = returnUrl;
-            return View(new LoginViewModel
+            return View("~/Views/Auth/Login.cshtml", new LoginViewModel
             {
                 ReturnUrl = returnUrl ?? string.Empty,
                 Username = string.Empty,
@@ -47,7 +47,7 @@ namespace BrainStormEra_MVC.Controllers
 
             if (!ModelState.IsValid)
             {
-                return View(model);
+                return View("~/Views/Auth/Login.cshtml", model);
             }
 
             try
@@ -64,7 +64,7 @@ namespace BrainStormEra_MVC.Controllers
                     _logger.LogWarning("User not found: {Username}", model.Username);
                     TempData["ErrorMessage"] = "Invalid username or password. Please check your credentials and try again.";
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                    return View(model);
+                    return View("~/Views/Auth/Login.cshtml", model);
                 }
 
                 _logger.LogInformation("User found: {Username}, Role: {Role}", user.Username, user.UserRole);
@@ -75,7 +75,7 @@ namespace BrainStormEra_MVC.Controllers
                     _logger.LogWarning("Banned user attempted login: {Username}", user.Username);
                     TempData["ErrorMessage"] = "Your account has been suspended. Please contact support for assistance.";
                     ModelState.AddModelError(string.Empty, "This account has been suspended.");
-                    return View(model);
+                    return View("~/Views/Auth/Login.cshtml", model);
                 }
 
                 // Verify password
@@ -91,7 +91,7 @@ namespace BrainStormEra_MVC.Controllers
                     _logger.LogWarning("Invalid password for user: {Username}", user.Username);
                     TempData["ErrorMessage"] = "Invalid username or password. Please check your credentials and try again.";
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                    return View(model);
+                    return View("~/Views/Auth/Login.cshtml", model);
                 }
 
                 _logger.LogInformation("Password verified successfully for user: {Username}", user.Username);
@@ -103,7 +103,7 @@ namespace BrainStormEra_MVC.Controllers
                     _logger.LogWarning("Invalid role for user: {Username}, Role: {Role}", user.Username, user.UserRole);
                     TempData["ErrorMessage"] = "Invalid user role. Please contact system administrator.";
                     ModelState.AddModelError(string.Empty, "Account configuration error.");
-                    return View(model);
+                    return View("~/Views/Auth/Login.cshtml", model);
                 }
 
                 _logger.LogInformation("Creating claims for user: {Username}", user.Username);
@@ -212,7 +212,7 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet]
         public IActionResult ForgotPassword()
         {
-            return View();
+            return View("~/Views/Auth/ForgotPassword.cshtml");
         }
 
         [HttpPost]
@@ -221,7 +221,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return View(model);
+                return View("~/Views/Auth/ForgotPassword.cshtml", model);
             }
 
             try
@@ -253,14 +253,14 @@ namespace BrainStormEra_MVC.Controllers
             {
                 _logger.LogError(ex, "Error during forgot password for email {Email}", model.Email);
                 ModelState.AddModelError(string.Empty, "An error occurred. Please try again.");
-                return View(model);
+                return View("~/Views/Auth/ForgotPassword.cshtml", model);
             }
         }
 
         [HttpGet]
         public IActionResult ForgotPasswordConfirmation()
         {
-            return View();
+            return View("~/Views/Auth/ForgotPasswordConfirmation.cshtml");
         }
 
         [HttpGet]
@@ -271,7 +271,7 @@ namespace BrainStormEra_MVC.Controllers
                 return RedirectToAction(nameof(ForgotPassword));
             }
 
-            return View(new OtpVerificationViewModel
+            return View("~/Views/Auth/VerifyOtp.cshtml", new OtpVerificationViewModel
             {
                 Email = email,
                 OtpCode = string.Empty
@@ -284,7 +284,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return View(model);
+                return View("~/Views/Auth/VerifyOtp.cshtml", model);
             }
 
             // Check if OTP exists and is valid
@@ -293,7 +293,7 @@ namespace BrainStormEra_MVC.Controllers
                 otpData.expiry < DateTime.UtcNow)
             {
                 ModelState.AddModelError(string.Empty, "Invalid or expired OTP code.");
-                return View(model);
+                return View("~/Views/Auth/VerifyOtp.cshtml", model);
             }
 
             // Remove OTP from cache
@@ -326,7 +326,7 @@ namespace BrainStormEra_MVC.Controllers
                 return RedirectToAction(nameof(ForgotPassword));
             }
 
-            return View(new ResetPasswordViewModel
+            return View("~/Views/Auth/ResetPassword.cshtml", new ResetPasswordViewModel
             {
                 Email = email,
                 Token = token,
@@ -341,7 +341,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return View(model);
+                return View("~/Views/Auth/ResetPassword.cshtml", model);
             }
 
             // Verify token is valid
@@ -350,7 +350,7 @@ namespace BrainStormEra_MVC.Controllers
                 tokenData.expiry < DateTime.UtcNow)
             {
                 ModelState.AddModelError(string.Empty, "Invalid or expired token.");
-                return View(model);
+                return View("~/Views/Auth/ResetPassword.cshtml", model);
             }
 
             try
@@ -378,14 +378,14 @@ namespace BrainStormEra_MVC.Controllers
             {
                 _logger.LogError(ex, "Error during password reset for email {Email}", model.Email);
                 ModelState.AddModelError(string.Empty, "An error occurred. Please try again.");
-                return View(model);
+                return View("~/Views/Auth/ResetPassword.cshtml", model);
             }
         }
 
         [HttpGet]
         public IActionResult ResetPasswordConfirmation()
         {
-            return View();
+            return View("~/Views/Auth/ResetPasswordConfirmation.cshtml");
         }
 
         [HttpGet]

@@ -20,11 +20,10 @@ namespace BrainStormEra_MVC.Controllers
             _context = context;
             _logger = logger;
         }
-
         [HttpGet]
         public IActionResult Index()
         {
-            return View();
+            return View("~/Views/Auth/Register.cshtml");
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -33,26 +32,24 @@ namespace BrainStormEra_MVC.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["ErrorMessage"] = "Please correct the errors below and try again.";
-                return View(model);
+                return View("~/Views/Auth/Register.cshtml", model);
             }
             try
             {                // Check if username already exists
-                bool usernameExists = await _context.Accounts.AnyAsync(a => a.Username == model.Username);
-                if (usernameExists)
+                bool usernameExists = await _context.Accounts.AnyAsync(a => a.Username == model.Username); if (usernameExists)
                 {
                     TempData["ErrorMessage"] = "Username is already taken. Please choose a different username.";
                     ModelState.AddModelError("Username", "Username is already taken");
-                    return View(model);
+                    return View("~/Views/Auth/Register.cshtml", model);
                 }
 
                 // Check if email already exists
-                bool emailExists = await _context.Accounts.AnyAsync(a => a.UserEmail == model.Email);
-                if (emailExists)
+                bool emailExists = await _context.Accounts.AnyAsync(a => a.UserEmail == model.Email); if (emailExists)
                 {
                     TempData["ErrorMessage"] = "Email is already registered. Please use a different email or try logging in.";
                     ModelState.AddModelError("Email", "Email is already registered");
-                    return View(model);
-                }                // Create new account
+                    return View("~/Views/Auth/Register.cshtml", model);
+                }// Create new account
                 var account = new Account
                 {
                     UserId = Guid.NewGuid().ToString(),
@@ -80,13 +77,13 @@ namespace BrainStormEra_MVC.Controllers
                 _logger.LogError(ex, "Database error occurred while registering user");
                 TempData["ErrorMessage"] = "A database error occurred while creating your account. Please try again.";
                 ModelState.AddModelError(string.Empty, "An error occurred while registering your account. Please try again.");
-                return View(model);
+                return View("~/Views/Auth/Register.cshtml", model);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error during registration");
                 TempData["ErrorMessage"] = "An unexpected error occurred during registration. Please try again later.";
-                ModelState.AddModelError(string.Empty, "An unexpected error occurred. Please try again later."); return View(model);
+                ModelState.AddModelError(string.Empty, "An unexpected error occurred. Please try again later."); return View("~/Views/Auth/Register.cshtml", model);
             }
         }
 

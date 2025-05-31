@@ -1,0 +1,228 @@
+/* Certificate Page Styles */
+.certificates-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem 0;
+  padding-top: 80px; /* Add top padding to prevent header from covering content */
+}
+
+.page-header {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+.page-title {
+  color: #2c3e50;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-subtitle {
+  color: #6c757d;
+  font-size: 1.1rem;
+  margin-bottom: 0;
+}
+
+.stats-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin-top: 0.25rem;
+}
+
+/* Certificate Cards */
+.certificate-card {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.certificate-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.certificate-header {
+  position: relative;
+  height: 180px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.certificate-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.course-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.course-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.certificate-body {
+  padding: 1.5rem;
+}
+
+.course-name {
+  color: #2c3e50;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.certificate-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.meta-item i {
+  width: 16px;
+  text-align: center;
+}
+
+.certificate-actions {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #f8f9fa;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.certificate-actions .btn {
+  flex: 1;
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  color: #dee2e6;
+  margin-bottom: 1.5rem;
+}
+
+.empty-state h3 {
+  color: #495057;
+  margin-bottom: 1rem;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Breadcrumb Styling */
+.breadcrumb {
+  background: none;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.breadcrumb-item a {
+  color: #6c757d;
+  text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+  color: #495057;
+}
+
+.breadcrumb-item.active {
+  color: #495057;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .certificates-page {
+    padding: 1rem 0;
+  }
+
+  .page-header {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .page-header .row {
+    text-align: center;
+  }
+
+  .stats-card {
+    margin-top: 1rem;
+  }
+
+  .certificate-actions {
+    flex-direction: column;
+  }
+
+  .certificate-actions .btn {
+    flex: none;
+  }
+}

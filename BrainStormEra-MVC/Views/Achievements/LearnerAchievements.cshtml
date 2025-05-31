@@ -1,0 +1,259 @@
+@{
+    ViewData["Title"] = "Your Achievements";
+    Layout = null;
+    var achievements = (IEnumerable<dynamic>?)ViewData["Achievements"];
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="BrainStormEra - View your learning achievements and milestones">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/Achievements/LearnerAchievement.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/Home/enhanced-home.css">
+    <link rel="stylesheet" href="~/css/pages/Home/homePage.css">
+    <link rel="stylesheet" href="~/css/pages/Home/landing_page.css">
+    <link rel="stylesheet" href="~/css/components/placeholders.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+      <main class="achievement-section">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="achievement-header">
+                <i class="fas fa-trophy text-warning"></i>
+                Your Achievements
+            </div>
+
+            <!-- Achievements Content -->
+            <div class="achievement-flex-container">
+        @if (achievements != null && achievements.Any())
+        {
+            foreach (var achievement in achievements)
+            {
+                <div class="achievement-flex-item">
+                    <div class="achievement-card-custom text-center shadow-sm" data-bs-toggle="modal"
+                        data-bs-target="#achievementModal" data-id="@achievement.AchievementId"
+                        data-name="@achievement.AchievementName" data-description="@achievement.AchievementDescription"
+                        data-icon="@achievement.AchievementIcon" data-date="@achievement.ReceivedDate">
+                        <img src="@achievement.AchievementIcon" alt="@achievement.AchievementName"
+                            class="achievement-image mx-auto">
+                        <div class="achievement-card-body">
+                            <h5 class="achievement-title-text">@achievement.AchievementName</h5>
+                        </div>
+                    </div>
+                </div>
+            }        }
+        else
+        {
+            <p class="achievement-no-data">No achievements found for this user.</p>
+        }
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Achievement Details -->
+    <div class="modal fade" id="achievementModal" tabindex="-1" aria-labelledby="achievementModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="achievementModalLabel">Learner Achievement Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="achievement-icon" src="" alt="Achievement Icon"
+                        class="achievement-modal-image img-fluid mb-3">
+                    <h5 id="achievement-name" class="achievement-modal-title"></h5>
+                    <p id="achievement-description" class="achievement-modal-description"></p>
+                    <p class="achievement-modal-date"><strong>Date Received:</strong> <span
+                            id="achievement-date"></span></p>                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Footer -->
+@await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" defer></script>
+<!-- Include toast notifications script -->
+<script src="~/js/shared/toast-notifications.js"></script>
+<!-- Custom JS -->
+<script src="~/js/components/loader.js"></script>
+
+<script>
+    // Hide preloader when page is loaded
+    window.addEventListener('load', function() {
+        document.querySelector('.page-loader').classList.add('loaded');
+        setTimeout(() => {
+            document.querySelector('.page-loader').style.display = 'none';
+        }, 500);
+    });
+    
+    // Change header style on scroll
+    window.addEventListener('scroll', function () {
+        if (window.scrollY > 50) {
+            document.querySelector('.bse-sticky-header').classList.add('scrolled');
+        } else {
+            document.querySelector('.bse-sticky-header').classList.remove('scrolled');
+        }
+    });    document.addEventListener('DOMContentLoaded', function () {
+        // Achievement card click effects - Professional version
+        document.querySelectorAll('.achievement-card-custom').forEach(function (card) {
+            card.addEventListener('click', function () {
+                // Add subtle click animation
+                this.classList.add('clicked');
+                setTimeout(() => {
+                    this.classList.remove('clicked');
+                }, 300);
+
+                // Create subtle success feedback
+                createSuccessFeedback(this);
+
+                // Get achievement data
+                const achievementName = this.getAttribute('data-name');
+                const achievementDescription = this.getAttribute('data-description');
+                const achievementIcon = this.getAttribute('data-icon');
+                const achievementDate = new Date(this.getAttribute('data-date'));
+
+                // Format description as "Award for completed X courses"
+                const formattedDescription = `Award for completed ${achievementDescription} courses`;
+
+                // Format date to show only the date part (e.g., 13-Nov-24)
+                const formattedDate = achievementDate.toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: '2-digit'
+                });
+
+                // Set modal content
+                document.getElementById('achievement-name').textContent = achievementName || 'N/A';
+                document.getElementById('achievement-description').textContent = formattedDescription || 'N/A';
+                document.getElementById('achievement-icon').setAttribute('src', achievementIcon || '/path/to/default/icon.png');
+                document.getElementById('achievement-date').textContent = formattedDate || 'N/A';
+            });
+
+            // Professional hover effects
+            card.addEventListener('mouseenter', function() {
+                // Add subtle vibration effect on mobile (professional feedback)
+                if (navigator.vibrate) {
+                    navigator.vibrate(20); // Very light vibration
+                }
+            });
+        });
+
+        // Create subtle success feedback function
+        function createSuccessFeedback(element) {
+            const feedback = document.createElement('div');
+            feedback.className = 'success-pulse';
+            feedback.style.position = 'absolute';
+            feedback.style.top = '50%';
+            feedback.style.left = '50%';
+            feedback.style.width = '30px';
+            feedback.style.height = '30px';
+            feedback.style.backgroundColor = '#28a745';
+            feedback.style.borderRadius = '50%';
+            feedback.style.transform = 'translate(-50%, -50%) scale(0)';
+            feedback.style.opacity = '0.8';
+            feedback.style.pointerEvents = 'none';
+            feedback.style.zIndex = '1000';
+            feedback.style.animation = 'successPulse 0.6s ease-out forwards';
+            
+            // Ensure the parent element has relative positioning
+            if (getComputedStyle(element).position === 'static') {
+                element.style.position = 'relative';
+            }
+            
+            element.appendChild(feedback);
+            
+            // Remove feedback after animation
+            setTimeout(() => {
+                if (feedback.parentNode) {
+                    feedback.parentNode.removeChild(feedback);
+                }
+            }, 600);
+        }
+
+        // Add smooth scroll enhancement for better UX
+        document.querySelectorAll('.achievement-card-custom').forEach(function(card) {
+            card.addEventListener('click', function() {
+                // Smooth scroll to top of modal when opened
+                setTimeout(() => {
+                    const modal = document.getElementById('achievementModal');
+                    if (modal && modal.classList.contains('show')) {
+                        modal.scrollTop = 0;
+                    }
+                }, 100);
+            });
+        });
+
+        // Add professional CSS animations
+        const professionalStyle = document.createElement('style');
+        professionalStyle.textContent = `
+            @@keyframes successPulse {
+                0% {
+                    transform: translate(-50%, -50%) scale(0);
+                    opacity: 0.8;
+                }
+                50% {
+                    transform: translate(-50%, -50%) scale(1.2);
+                    opacity: 0.6;
+                }
+                100% {
+                    transform: translate(-50%, -50%) scale(2);
+                    opacity: 0;
+                }
+            }
+            
+            .achievement-card-custom.clicked {
+                transform: scale(0.98);
+                box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+            }
+        `;
+        document.head.appendChild(professionalStyle);
+    });
+</script>
+</body>
+</html>

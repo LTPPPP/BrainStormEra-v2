@@ -96,13 +96,13 @@ namespace BrainStormEra_MVC.Controllers
                     PageSize = pageSize
                 };
 
-                return View(viewModel);
+                return View("~/Views/Courses/Index.cshtml", viewModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading courses");
                 ViewBag.Error = "An error occurred while loading courses. Please try again later.";
-                return View(new CourseListViewModel());
+                return View("~/Views/Courses/Index.cshtml", new CourseListViewModel());
             }
         }
 
@@ -199,7 +199,7 @@ namespace BrainStormEra_MVC.Controllers
                     viewModel.CanEnroll = true;
                 }
 
-                return View(viewModel);
+                return View("~/Views/Courses/Details.cshtml", viewModel);
             }
             catch (Exception ex)
             {
