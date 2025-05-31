@@ -36,6 +36,9 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAchievementRepository, BrainStormEra_MVC.Services.Repositories.AchievementRepository>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICertificateService, BrainStormEra_MVC.Services.CertificateService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICertificateRepository, BrainStormEra_MVC.Services.Repositories.CertificateRepository>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IUserContextService, BrainStormEra_MVC.Services.UserContextService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IResponseService, BrainStormEra_MVC.Services.ResponseService>();
+            builder.Services.AddSingleton<BrainStormEra_MVC.Services.Interfaces.ICacheService, BrainStormEra_MVC.Services.CacheService>();
 
             // Add Authentication
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
