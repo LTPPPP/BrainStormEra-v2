@@ -90,32 +90,52 @@
 
                                     <div class="meta-item">
                                         <div class="meta-icon rating-icon">
-                                            <i class="fas fa-star"></i>
+                                            <span class="star-combined">
+                                                <i class="fas fa-star-half-alt star-left"></i>
+                                                <i class="fas fa-star-half-alt star-right"></i>
+                                            </span>
                                         </div>
                                         <div class="meta-info">
                                             <span class="meta-label">Rating</span>                                            <div class="rating-display">
                                                 <span class="rating-value">@Model.AverageRating.ToString("F1")</span>
-                                                <div class="rating-stars" data-rating="@Model.AverageRating.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)">
-                                                    @{
-                                                        var rating = (double)Model.AverageRating;
-                                                        for (int i = 1; i <= 5; i++)
-                                                        {
-                                                            if (i <= Math.Floor(rating))
-                                                            {
-                                                                <i class="fas fa-star star-filled"></i>
-                                                            }
-                                                            else if (i <= rating)
-                                                            {
-                                                                var percentage = (rating - Math.Floor(rating)) * 100;
-                                                                <span class="star-partial">
-                                                                    <i class="far fa-star star-empty"></i>
-                                                                    <i class="fas fa-star star-fill" style="width: @(percentage)%;"></i>
-                                                                </span>
-                                                            }
-                                                            else
-                                                            {
-                                                                <i class="far fa-star star-empty"></i>
-                                                            }
+                                                <div class="rating-stars" data-rating="@Model.AverageRating.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)">                                    @{
+                                        var rating = (double)Model.AverageRating;
+                                        // Special logic: ratings 0.1-0.9 show as half star only
+                                        double roundedRating;
+                                        if (rating > 0 && rating < 1)
+                                        {
+                                            roundedRating = 0.5; // Show only half star for ratings 0.1-0.9
+                                        }
+                                        else
+                                        {
+                                            roundedRating = Math.Round(rating * 2) / 2; // Round to nearest 0.5 for other values
+                                        }
+                                        
+                                        for (int i = 1; i <= 5; i++)
+                                        {
+                                            if (i <= Math.Floor(roundedRating))
+                                            {
+                                                // Full star
+                                                <span class="star-combined">
+                                                    <i class="fas fa-star-half-alt star-left"></i>
+                                                    <i class="fas fa-star-half-alt star-right"></i>
+                                                </span>
+                                            }
+                                            else if (i - 0.5 <= roundedRating)
+                                            {
+                                                // Half star
+                                                <span class="star-half">
+                                                    <i class="fas fa-star-half-alt"></i>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                // Empty star
+                                                <span class="star-combined star-empty">
+                                                    <i class="fas fa-star-half-alt star-left"></i>
+                                                    <i class="fas fa-star-half-alt star-right"></i>
+                                                </span>
+                                            }
                                                         }
                                                     }
                                                 </div>
@@ -432,7 +452,10 @@
                                             <p class="instructor-title">Course Instructor</p>
                                             <div class="instructor-stats">
                                                 <div class="stat">
-                                                    <i class="fas fa-star"></i>
+                                                    <span class="star-combined">
+                                                        <i class="fas fa-star-half-alt star-left"></i>
+                                                        <i class="fas fa-star-half-alt star-right"></i>
+                                                    </span>
                                                     <span>@Model.AverageRating.ToString("F1") Instructor Rating</span>
                                                 </div>
                                                 <div class="stat">
@@ -460,23 +483,41 @@
                                                 <div class="rating-stars" data-rating="@Model.AverageRating.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)">
                                                     @{
                                                         var ratingValue = (double)Model.AverageRating;
+                                                        // Special logic: ratings 0.1-0.9 show as half star only
+                                                        double roundedRatingValue;
+                                                        if (ratingValue > 0 && ratingValue < 1)
+                                                        {
+                                                            roundedRatingValue = 0.5; // Show only half star for ratings 0.1-0.9
+                                                        }
+                                                        else
+                                                        {
+                                                            roundedRatingValue = Math.Round(ratingValue * 2) / 2; // Round to nearest 0.5 for other values
+                                                        }
+                                                        
                                                         for (int i = 1; i <= 5; i++)
                                                         {
-                                                            if (i <= Math.Floor(ratingValue))
+                                                            if (i <= Math.Floor(roundedRatingValue))
                                                             {
-                                                                <i class="fas fa-star star-filled"></i>
+                                                                // Full star
+                                                                <span class="star-combined">
+                                                                    <i class="fas fa-star-half-alt star-left"></i>
+                                                                    <i class="fas fa-star-half-alt star-right"></i>
+                                                                </span>
                                                             }
-                                                            else if (i <= ratingValue)
+                                                            else if (i - 0.5 <= roundedRatingValue)
                                                             {
-                                                                var percentage = (ratingValue - Math.Floor(ratingValue)) * 100;
-                                                                <span class="star-partial">
-                                                                    <i class="far fa-star star-empty"></i>
-                                                                    <i class="fas fa-star star-fill" style="width: @(percentage)%;"></i>
+                                                                // Half star
+                                                                <span class="star-half">
+                                                                    <i class="fas fa-star-half-alt"></i>
                                                                 </span>
                                                             }
                                                             else
                                                             {
-                                                                <i class="far fa-star star-empty"></i>
+                                                                // Empty star
+                                                                <span class="star-combined star-empty">
+                                                                    <i class="fas fa-star-half-alt star-left"></i>
+                                                                    <i class="fas fa-star-half-alt star-right"></i>
+                                                                </span>
                                                             }
                                                         }
                                                     }
@@ -499,15 +540,40 @@
                                                         <div class="reviewer-details">
                                                             <h5>@review.UserName</h5>
                                                             <div class="review-rating">
-                                                                @for (int i = 1; i <= 5; i++)
-                                                                {
-                                                                    if (i <= review.StarRating)
+                                                                @{
+                                                                    var reviewRating = (double)review.StarRating;
+                                                                    // Special logic: ratings 0.1-0.9 show as half star only
+                                                                    double roundedReviewRating;
+                                                                    if (reviewRating > 0 && reviewRating < 1)
                                                                     {
-                                                                        <i class="fas fa-star"></i>
+                                                                        roundedReviewRating = 0.5; // Show only half star for ratings 0.1-0.9
                                                                     }
                                                                     else
                                                                     {
-                                                                        <i class="far fa-star"></i>
+                                                                        roundedReviewRating = Math.Round(reviewRating * 2) / 2; // Round to nearest 0.5 for other values
+                                                                    }
+                                                                }
+                                                                @for (int i = 1; i <= 5; i++)
+                                                                {
+                                                                    if (i <= Math.Floor(roundedReviewRating))
+                                                                    {
+                                                                        <span class="star-combined">
+                                                                            <i class="fas fa-star-half-alt star-left"></i>
+                                                                            <i class="fas fa-star-half-alt star-right"></i>
+                                                                        </span>
+                                                                    }
+                                                                    else if (i - 0.5 <= roundedReviewRating)
+                                                                    {
+                                                                        <span class="star-half">
+                                                                            <i class="fas fa-star-half-alt"></i>
+                                                                        </span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="star-combined star-empty">
+                                                                            <i class="fas fa-star-half-alt star-left"></i>
+                                                                            <i class="fas fa-star-half-alt star-right"></i>
+                                                                        </span>
                                                                     }
                                                                 }
                                                             </div>
@@ -550,7 +616,10 @@
                                         <span><strong>@Model.TotalStudents</strong> students enrolled</span>
                                     </div>
                                     <div class="stat-item">
-                                        <i class="fas fa-star"></i>
+                                        <span class="star-combined">
+                                            <i class="fas fa-star-half-alt star-left"></i>
+                                            <i class="fas fa-star-half-alt star-right"></i>
+                                        </span>
                                         <span><strong>@Model.AverageRating.ToString("F1")</strong> average rating</span>
                                     </div>
                                     <div class="stat-item">

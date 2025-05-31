@@ -1,5 +1,6 @@
 using BrainStormEra_MVC.Models;
 using BrainStormEra_MVC.Models.ViewModels;
+using BrainStormEra_MVC.Services.Interfaces;
 using BrainStormEra_MVC.Utilities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -16,14 +17,16 @@ namespace BrainStormEra_MVC.Controllers
         private readonly BrainStormEraContext _context;
         private readonly ILogger<LoginController> _logger;
         private readonly IConfiguration _configuration;
+        private readonly IUserService _userService;
         // Cache for OTP codes (in a production environment, use a more robust solution like Redis)
         private static Dictionary<string, (string otp, DateTime expiry)> _otpCache = new();
 
-        public LoginController(BrainStormEraContext context, ILogger<LoginController> logger, IConfiguration configuration)
+        public LoginController(BrainStormEraContext context, ILogger<LoginController> logger, IConfiguration configuration, IUserService userService)
         {
             _context = context;
             _logger = logger;
             _configuration = configuration;
+            _userService = userService;
         }
         [HttpGet]
         public IActionResult Index(string? returnUrl = null)
@@ -54,10 +57,8 @@ namespace BrainStormEra_MVC.Controllers
             {
                 _logger.LogInformation("Login attempt for username: {Username}", model.Username);
 
-                // Find user by username
-                var user = await _context.Accounts
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(a => a.Username == model.Username);
+                // Find user by username using service
+                var user = await _userService.GetUserByUsernameAsync(model.Username);
 
                 if (user == null)
                 {
@@ -78,15 +79,8 @@ namespace BrainStormEra_MVC.Controllers
                     return View("~/Views/Auth/Login.cshtml", model);
                 }
 
-                // Verify password
-                _logger.LogInformation("Verifying password for user: {Username}", user.Username);
-
-                // Debug: Log hash information
-                var inputPasswordHash = PasswordHasher.HashPassword(model.Password ?? "");
-                _logger.LogInformation("Input password hash: {InputHash}", inputPasswordHash);
-                _logger.LogInformation("Stored password hash: {StoredHash}", user.PasswordHash);
-
-                if (string.IsNullOrEmpty(model.Password) || !PasswordHasher.VerifyPassword(model.Password, user.PasswordHash))
+                // Verify password using service
+                if (string.IsNullOrEmpty(model.Password) || !await _userService.VerifyPasswordAsync(model.Password, user.PasswordHash))
                 {
                     _logger.LogWarning("Invalid password for user: {Username}", user.Username);
                     TempData["ErrorMessage"] = "Invalid username or password. Please check your credentials and try again.";
@@ -167,23 +161,8 @@ namespace BrainStormEra_MVC.Controllers
 
                 _logger.LogInformation("User signed in successfully: {Username}", user.Username);
 
-                // Update last login time synchronously in the same context
-                try
-                {
-                    var userToUpdate = await _context.Accounts.FirstOrDefaultAsync(a => a.UserId == user.UserId);
-                    if (userToUpdate != null)
-                    {
-                        userToUpdate.LastLogin = DateTime.UtcNow;
-                        userToUpdate.AccountUpdatedAt = DateTime.UtcNow;
-                        await _context.SaveChangesAsync();
-                        _logger.LogInformation("Updated last login time for user {UserId}", user.UserId);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error updating last login time for user {UserId}", user.UserId);
-                    // Don't fail the login process for this error
-                }
+                // Update last login time using service
+                await _userService.UpdateLastLoginAsync(user.UserId);
 
                 _logger.LogInformation("User {Username} logged in at {Time}.", user.Username, DateTime.UtcNow);
 
@@ -226,9 +205,8 @@ namespace BrainStormEra_MVC.Controllers
 
             try
             {
-                var user = await _context.Accounts
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(a => a.UserEmail == model.Email);
+                // Find user by email using service
+                var user = await _userService.GetUserByEmailAsync(model.Email);
 
                 if (user == null)
                 {
@@ -355,7 +333,7 @@ namespace BrainStormEra_MVC.Controllers
 
             try
             {
-                var user = await _context.Accounts.FirstOrDefaultAsync(a => a.UserEmail == model.Email);
+                var user = await _userService.GetUserByEmailAsync(model.Email);
                 if (user == null)
                 {
                     // Don't reveal that the user does not exist
@@ -366,8 +344,7 @@ namespace BrainStormEra_MVC.Controllers
                 user.PasswordHash = PasswordHasher.HashPassword(model.NewPassword);
                 user.AccountUpdatedAt = DateTime.UtcNow;
 
-                _context.Accounts.Update(user);
-                await _context.SaveChangesAsync();
+                await _userService.UpdateUserAsync(user);
 
                 // Remove token from cache
                 _otpCache.Remove(model.Email);

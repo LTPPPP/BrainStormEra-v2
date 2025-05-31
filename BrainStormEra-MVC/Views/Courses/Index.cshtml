@@ -205,11 +205,46 @@
                                             <span>@course.CreatedBy</span>
                                         </div>
                                         <div class="rating">
+                                            @{
+                                                var courseRating = (double)course.StarRating;
+                                                // Special logic: ratings 0.1-0.9 show as half star only
+                                                double roundedCourseRating;
+                                                if (courseRating > 0 && courseRating < 1)
+                                                {
+                                                    roundedCourseRating = 0.5; // Show only half star for ratings 0.1-0.9
+                                                }
+                                                else
+                                                {
+                                                    roundedCourseRating = Math.Round(courseRating * 2) / 2; // Round to nearest 0.5 for other values
+                                                }
+                                            }
                                             @for (int i = 1; i <= 5; i++)
                                             {
-                                                <i class="fas fa-star @(i <= course.StarRating ? "filled" : "")"></i>
+                                                if (i <= Math.Floor(roundedCourseRating))
+                                                {
+                                                    // Full star
+                                                    <span class="star-combined">
+                                                        <i class="fas fa-star-half-alt star-left"></i>
+                                                        <i class="fas fa-star-half-alt star-right"></i>
+                                                    </span>
+                                                }
+                                                else if (i - 0.5 <= roundedCourseRating)
+                                                {
+                                                    // Half star
+                                                    <span class="star-half">
+                                                        <i class="fas fa-star-half-alt"></i>
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    // Empty star
+                                                    <span class="star-combined star-empty">
+                                                        <i class="fas fa-star-half-alt star-left"></i>
+                                                        <i class="fas fa-star-half-alt star-right"></i>
+                                                    </span>
+                                                }
                                             }
-                                            <span class="rating-text">(@course.StarRating.0)</span>
+                                            <span class="rating-text">(@course.StarRating.ToString("F1"))</span>
                                         </div>
                                     </div>
                                     <div class="course-stats">

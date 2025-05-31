@@ -1,0 +1,15 @@
+using BrainStormEra_MVC.Models;
+using BrainStormEra_MVC.Models.ViewModels;
+
+namespace BrainStormEra_MVC.Services.Interfaces
+{
+    public interface ICourseService
+    {
+        Task<CourseListViewModel> GetCoursesAsync(string? search, string? category, int page, int pageSize);
+        Task<CourseDetailViewModel?> GetCourseDetailAsync(string courseId);
+        Task<List<CourseViewModel>> SearchCoursesAsync(string? search, string? category, int page, int pageSize, string? sortBy);
+        Task<bool> EnrollUserAsync(string userId, string courseId);
+        Task<bool> IsUserEnrolledAsync(string userId, string courseId);
+        Task<List<CourseCategoryViewModel>> GetCategoriesAsync();
+    }
+}

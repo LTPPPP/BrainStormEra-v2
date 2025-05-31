@@ -1,90 +1,55 @@
-using BrainStormEra_MVC.Models;
 using BrainStormEra_MVC.Models.ViewModels;
+using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace BrainStormEra_MVC.Controllers
 {
     [Authorize(Roles = "Learner,learner")]
-    public class CertificateController : Controller
+    public class CertificateController : BaseController
     {
-        private readonly BrainStormEraContext _context;
+        private readonly ICertificateService _certificateService;
+        private readonly IUserContextService _userContextService;
+        private readonly IResponseService _responseService;
         private readonly ILogger<CertificateController> _logger;
+        private readonly IMemoryCache _cache;
+        private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(5);
 
-        public CertificateController(BrainStormEraContext context, ILogger<CertificateController> logger)
+        public CertificateController(
+            ICertificateService certificateService,
+            IUserContextService userContextService,
+            IResponseService responseService,
+            ILogger<CertificateController> logger,
+            IMemoryCache cache)
         {
-            _context = context;
+            _certificateService = certificateService;
+            _userContextService = userContextService;
+            _responseService = responseService;
             _logger = logger;
+            _cache = cache;
         }
 
-        /// <summary>
-        /// Display all completed courses with certificates for the current learner
-        /// </summary>
         public async Task<IActionResult> Index()
         {
             try
             {
-                var userId = User.FindFirst("UserId")?.Value;
-                if (string.IsNullOrEmpty(userId))
+                if (!IsUserAuthenticated())
                 {
-                    TempData["ErrorMessage"] = "User not authenticated. Please log in again.";
-                    return RedirectToAction("Index", "Login");
-                }                // Get completed courses with certificates
-                var enrollmentData = await _context.Enrollments
-                    .AsNoTracking()
-                    .Where(e => e.UserId == userId &&
-                               e.EnrollmentStatus == 5 &&
-                               e.CertificateIssuedDate != null)
-                    .Include(e => e.Course)
-                        .ThenInclude(c => c.Author)
-                    .Select(e => new
-                    {
-                        CourseId = e.CourseId,
-                        CourseName = e.Course.CourseName,
-                        CourseImage = e.Course.CourseImage,
-                        AuthorName = e.Course.Author.FullName ?? e.Course.Author.Username,
-                        CertificateIssuedDate = e.CertificateIssuedDate!.Value,
-                        EnrollmentDate = e.EnrollmentCreatedAt,
-                        FinalScore = e.ProgressPercentage ?? 0
-                    })
-                    .ToListAsync();
+                    return RedirectToLogin("User not authenticated. Please log in again.");
+                }
 
-                // Convert DateOnly to DateTime after the query
-                var completedCourses = enrollmentData
-                    .Select(e => new CertificateSummaryViewModel
-                    {
-                        CourseId = e.CourseId,
-                        CourseName = e.CourseName,
-                        CourseImage = e.CourseImage ?? "/img/default-course.png",
-                        AuthorName = e.AuthorName,
-                        CompletedDate = e.CertificateIssuedDate.ToDateTime(TimeOnly.MinValue),
-                        EnrollmentDate = e.EnrollmentDate,
-                        FinalScore = e.FinalScore
-                    })
-                    .OrderByDescending(c => c.CompletedDate)
-                    .ToList();
-
-                ViewBag.HasCertificates = completedCourses.Any();
-                ViewBag.TotalCertificates = completedCourses.Count; return View("~/Views/Certificates/Index.cshtml", completedCourses);
+                var certificates = await GetCachedUserCertificates();
+                SetViewBagData(certificates);
+                return View("~/Views/Certificates/Index.cshtml", certificates);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading certificates for user");
-                TempData["ErrorMessage"] = "An error occurred while loading your certificates. Please try again.";
-
-                // Ensure ViewBag values are set even in error case
-                ViewBag.HasCertificates = false;
-                ViewBag.TotalCertificates = 0;
-
-                return View("~/Views/Certificates/Index.cshtml", new List<CertificateSummaryViewModel>());
+                _logger.LogError(ex, "Error loading certificates for user {UserId}", CurrentUserId);
+                return HandleIndexError();
             }
         }
 
-        /// <summary>
-        /// Display detailed certificate information for a specific course
-        /// </summary>
         public async Task<IActionResult> Details(string courseId)
         {
             try
@@ -95,52 +60,19 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index");
                 }
 
-                var userId = User.FindFirst("UserId")?.Value;
-                if (string.IsNullOrEmpty(userId))
+                if (!IsUserAuthenticated())
                 {
-                    TempData["ErrorMessage"] = "User not authenticated. Please log in again.";
-                    return RedirectToAction("Index", "Login");
+                    return RedirectToLogin("User not authenticated. Please log in again.");
                 }
 
-                // Get certificate details
-                var certificateData = await _context.Enrollments
-                    .AsNoTracking()
-                    .Where(e => e.UserId == userId &&
-                               e.CourseId == courseId &&
-                               e.EnrollmentStatus == 5 &&
-                               e.CertificateIssuedDate != null)
-                    .Include(e => e.Course)
-                        .ThenInclude(c => c.Author)
-                    .Include(e => e.User)
-                    .FirstOrDefaultAsync();
-
-                if (certificateData == null)
+                var certificateDetails = await GetCachedCertificateDetails(courseId);
+                if (certificateDetails == null)
                 {
                     TempData["ErrorMessage"] = "Certificate not found or course not completed.";
                     return RedirectToAction("Index");
                 }
 
-                // Calculate completion duration
-                var completionDuration = (certificateData.CertificateIssuedDate!.Value.ToDateTime(TimeOnly.MinValue)
-                                        - certificateData.EnrollmentCreatedAt).TotalDays;
-
-                var viewModel = new CertificateDetailsViewModel
-                {
-                    CourseId = certificateData.CourseId,
-                    CourseName = certificateData.Course.CourseName,
-                    CourseDescription = certificateData.Course.CourseDescription ?? "",
-                    CourseImage = certificateData.Course.CourseImage ?? "/img/default-course.png",
-                    LearnerName = certificateData.User.FullName ?? certificateData.User.Username,
-                    LearnerEmail = certificateData.User.UserEmail,
-                    InstructorName = certificateData.Course.Author.FullName ?? certificateData.Course.Author.Username,
-                    CompletedDate = certificateData.CertificateIssuedDate.Value.ToDateTime(TimeOnly.MinValue),
-                    EnrollmentDate = certificateData.EnrollmentCreatedAt,
-                    CompletionDurationDays = Math.Max(1, (int)Math.Round(completionDuration)),
-                    FinalScore = certificateData.ProgressPercentage ?? 0,
-                    CertificateCode = $"BSE-{courseId.Substring(0, 8).ToUpper()}-{DateTime.Now.Year}"
-                };
-
-                return View("~/Views/Certificates/Details.cshtml", viewModel);
+                return View("~/Views/Certificates/Details.cshtml", certificateDetails);
             }
             catch (Exception ex)
             {
@@ -150,42 +82,96 @@ namespace BrainStormEra_MVC.Controllers
             }
         }
 
-        /// <summary>
-        /// Download or print the certificate (placeholder for future implementation)
-        /// </summary>
         [HttpPost]
         public async Task<IActionResult> Download(string courseId)
         {
             try
             {
-                var userId = User.FindFirst("UserId")?.Value;
-                if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(courseId))
+                if (!IsUserAuthenticated() || string.IsNullOrEmpty(courseId))
                 {
-                    return Json(new { success = false, message = "Invalid request parameters." });
+                    return _responseService.HandleJsonError("Invalid request parameters.");
                 }
 
-                // Verify the user has a certificate for this course
-                var hasCertificate = await _context.Enrollments
-                    .AnyAsync(e => e.UserId == userId &&
-                                  e.CourseId == courseId &&
-                                  e.EnrollmentStatus == 5 &&
-                                  e.CertificateIssuedDate != null);
-
-                if (!hasCertificate)
+                var isValid = await GetCachedCertificateValidation(courseId);
+                if (!isValid)
                 {
-                    return Json(new { success = false, message = "Certificate not found." });
+                    return _responseService.HandleJsonError("Certificate not found.");
                 }
 
-                // TODO: Implement actual certificate PDF generation
-                // For now, redirect to the certificate details page for printing
                 var printUrl = Url.Action("Details", new { courseId });
-                return Json(new { success = true, printUrl, message = "Certificate ready for printing." });
+                return _responseService.HandleJsonSuccess(new { printUrl }, "Certificate ready for printing.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error downloading certificate for course {CourseId}", courseId);
-                return Json(new { success = false, message = "An error occurred while preparing the certificate." });
+                return _responseService.HandleJsonError("An error occurred while preparing the certificate.");
             }
+        }
+
+        private bool IsUserAuthenticated()
+        {
+            return _userContextService.IsAuthenticated(User);
+        }
+
+        private IActionResult RedirectToLogin(string message)
+        {
+            TempData["ErrorMessage"] = message;
+            return RedirectToAction("Index", "Login");
+        }
+
+        private async Task<List<CertificateSummaryViewModel>> GetCachedUserCertificates()
+        {
+            var cacheKey = $"UserCertificates_{CurrentUserId}";
+            if (_cache.TryGetValue(cacheKey, out List<CertificateSummaryViewModel>? cachedCertificates))
+            {
+                return cachedCertificates!;
+            }
+
+            var certificates = await _certificateService.GetUserCertificatesAsync(CurrentUserId!);
+            _cache.Set(cacheKey, certificates, CacheExpiration);
+            return certificates;
+        }
+
+        private async Task<CertificateDetailsViewModel?> GetCachedCertificateDetails(string courseId)
+        {
+            var cacheKey = $"CertificateDetails_{CurrentUserId}_{courseId}";
+            if (_cache.TryGetValue(cacheKey, out CertificateDetailsViewModel? cachedDetails))
+            {
+                return cachedDetails;
+            }
+
+            var details = await _certificateService.GetCertificateDetailsAsync(CurrentUserId!, courseId);
+            if (details != null)
+            {
+                _cache.Set(cacheKey, details, CacheExpiration);
+            }
+            return details;
+        }
+
+        private async Task<bool> GetCachedCertificateValidation(string courseId)
+        {
+            var cacheKey = $"CertificateValid_{CurrentUserId}_{courseId}";
+            if (_cache.TryGetValue(cacheKey, out bool cachedValid))
+            {
+                return cachedValid;
+            }
+
+            var isValid = await _certificateService.ValidateCertificateAsync(CurrentUserId!, courseId);
+            _cache.Set(cacheKey, isValid, CacheExpiration);
+            return isValid;
+        }
+
+        private void SetViewBagData(List<CertificateSummaryViewModel> certificates)
+        {
+            ViewBag.HasCertificates = certificates.Any();
+            ViewBag.TotalCertificates = certificates.Count;
+        }
+
+        private IActionResult HandleIndexError()
+        {
+            TempData["ErrorMessage"] = "An error occurred while loading your certificates. Please try again.";
+            SetViewBagData(new List<CertificateSummaryViewModel>());
+            return View("~/Views/Certificates/Index.cshtml", new List<CertificateSummaryViewModel>());
         }
     }
 }
