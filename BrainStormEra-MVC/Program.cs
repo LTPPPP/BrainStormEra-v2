@@ -29,6 +29,9 @@ namespace BrainStormEra_MVC
 
             // Register Services with SOLID principles
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IUserService, BrainStormEra_MVC.Services.UserService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseService, BrainStormEra_MVC.Services.CourseService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseRepository, BrainStormEra_MVC.Services.Repositories.CourseRepository>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IEnrollmentService, BrainStormEra_MVC.Services.EnrollmentService>();
 
             // Add Authentication
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -139,7 +142,10 @@ namespace BrainStormEra_MVC
 
             // Add Authentication and Authorization middleware
             app.UseAuthentication();
-            app.UseAuthorization(); app.MapControllerRoute(
+            app.UseAuthorization();
+
+            // Configure routing
+            app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
 
