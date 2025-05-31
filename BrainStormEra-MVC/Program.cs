@@ -27,6 +27,9 @@ namespace BrainStormEra_MVC
             // Add Response Caching
             builder.Services.AddResponseCaching();
 
+            // Register Services with SOLID principles
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IUserService, BrainStormEra_MVC.Services.UserService>();
+
             // Add Authentication
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>

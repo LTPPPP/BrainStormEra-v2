@@ -1,5 +1,6 @@
 using BrainStormEra_MVC.Models;
 using BrainStormEra_MVC.Models.ViewModels;
+using BrainStormEra_MVC.Services.Interfaces;
 using BrainStormEra_MVC.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,11 +15,13 @@ namespace BrainStormEra_MVC.Controllers
     {
         private readonly BrainStormEraContext _context;
         private readonly ILogger<RegisterController> _logger;
+        private readonly IUserService _userService;
 
-        public RegisterController(BrainStormEraContext context, ILogger<RegisterController> logger)
+        public RegisterController(BrainStormEraContext context, ILogger<RegisterController> logger, IUserService userService)
         {
             _context = context;
             _logger = logger;
+            _userService = userService;
         }
         [HttpGet]
         public IActionResult Index()
@@ -35,8 +38,10 @@ namespace BrainStormEra_MVC.Controllers
                 return View("~/Views/Auth/Register.cshtml", model);
             }
             try
-            {                // Check if username already exists
-                bool usernameExists = await _context.Accounts.AnyAsync(a => a.Username == model.Username); if (usernameExists)
+            {
+                // Check if username already exists
+                bool usernameExists = await _userService.UsernameExistsAsync(model.Username);
+                if (usernameExists)
                 {
                     TempData["ErrorMessage"] = "Username is already taken. Please choose a different username.";
                     ModelState.AddModelError("Username", "Username is already taken");
@@ -44,12 +49,15 @@ namespace BrainStormEra_MVC.Controllers
                 }
 
                 // Check if email already exists
-                bool emailExists = await _context.Accounts.AnyAsync(a => a.UserEmail == model.Email); if (emailExists)
+                bool emailExists = await _userService.EmailExistsAsync(model.Email);
+                if (emailExists)
                 {
                     TempData["ErrorMessage"] = "Email is already registered. Please use a different email or try logging in.";
                     ModelState.AddModelError("Email", "Email is already registered");
                     return View("~/Views/Auth/Register.cshtml", model);
-                }// Create new account
+                }
+
+                // Create new account
                 var account = new Account
                 {
                     UserId = Guid.NewGuid().ToString(),
@@ -67,8 +75,16 @@ namespace BrainStormEra_MVC.Controllers
                     AccountUpdatedAt = DateTime.UtcNow
                 };
 
-                _context.Accounts.Add(account);
-                await _context.SaveChangesAsync();                // Redirect to success page or login
+                // Use service to create user
+                bool success = await _userService.CreateUserAsync(account);
+
+                if (!success)
+                {
+                    TempData["ErrorMessage"] = "Failed to create account. Please try again later.";
+                    return View("~/Views/Auth/Register.cshtml", model);
+                }
+
+                // Redirect to success page or login
                 TempData["SuccessMessage"] = "Your account has been created successfully. You can now log in.";
                 return RedirectToAction("Index", "Login");
             }
@@ -83,7 +99,8 @@ namespace BrainStormEra_MVC.Controllers
             {
                 _logger.LogError(ex, "Unexpected error during registration");
                 TempData["ErrorMessage"] = "An unexpected error occurred during registration. Please try again later.";
-                ModelState.AddModelError(string.Empty, "An unexpected error occurred. Please try again later."); return View("~/Views/Auth/Register.cshtml", model);
+                ModelState.AddModelError(string.Empty, "An unexpected error occurred. Please try again later.");
+                return View("~/Views/Auth/Register.cshtml", model);
             }
         }
 
@@ -95,7 +112,7 @@ namespace BrainStormEra_MVC.Controllers
                 return Json(new { valid = false, message = "Invalid username format" });
             }
 
-            bool exists = await _context.Accounts.AnyAsync(a => a.Username == username);
+            bool exists = await _userService.UsernameExistsAsync(username);
             return Json(new { valid = !exists, message = exists ? "Username is already taken" : "" });
         }
 
