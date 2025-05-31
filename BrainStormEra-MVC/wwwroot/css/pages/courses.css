@@ -834,6 +834,19 @@
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 }
 
+/* Half Star Styles */
+.star-half {
+  display: inline-block;
+  font-size: inherit;
+  line-height: 1;
+  color: #ffd700;
+}
+
+.star-half i {
+  color: #ffd700;
+  filter: drop-shadow(0 1px 2px rgba(255, 215, 0, 0.3));
+}
+
 /* Partial Star Rating Support */
 .star-partial {
   position: relative;
@@ -854,33 +867,58 @@
   white-space: nowrap;
 }
 
-.star-filled {
-  color: #ffd700;
+/* Combined Half-Star Rating Styles */
+.star-combined {
+  position: relative;
+  display: inline-block;
+  font-size: inherit;
+  line-height: 1;
 }
 
-.star-empty {
+.star-combined .star-left {
+  color: #ffd700;
+  transform: scaleX(-1);
+  position: relative;
+  z-index: 2;
+}
+
+.star-combined .star-right {
+  color: #ffd700;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.star-combined.star-empty .star-left,
+.star-combined.star-empty .star-right {
   color: #e0e0e0;
 }
 
-.rating-stars {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
+.star-combined.star-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
-.rating-stars i {
-  font-size: 0.85rem;
-  transition: transform 0.2s ease;
+.star-combined.star-fill .star-left,
+.star-combined.star-fill .star-right {
+  color: #ffd700;
 }
 
-.rating-display:hover .rating-stars i {
-  transform: scale(1.1);
+.star-partial .star-combined.star-empty {
+  color: #e0e0e0;
 }
 
-.rating-count {
-  font-size: 0.85rem;
-  opacity: 0.8;
-  font-weight: 400;
+.star-partial .star-combined.star-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  color: #ffd700;
+  white-space: nowrap;
 }
 
 /* Secondary Meta */

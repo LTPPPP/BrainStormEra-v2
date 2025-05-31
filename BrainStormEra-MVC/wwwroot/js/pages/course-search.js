@@ -296,8 +296,34 @@ class CourseSearchManager {
 
   generateStarRating(rating) {
     let stars = "";
+
+    // Special logic: ratings 0.1-0.9 show as half star only
+    let roundedRating;
+    if (rating > 0 && rating < 1) {
+      roundedRating = 0.5; // Show only half star for ratings 0.1-0.9
+    } else {
+      roundedRating = Math.round(rating * 2) / 2; // Round to nearest 0.5 for other values
+    }
+
     for (let i = 1; i <= 5; i++) {
-      stars += `<i class="fas fa-star ${i <= rating ? "filled" : ""}"></i>`;
+      if (i <= Math.floor(roundedRating)) {
+        // Full star
+        stars += `<span class="star-combined">
+          <i class="fas fa-star-half-alt star-left"></i>
+          <i class="fas fa-star-half-alt star-right"></i>
+        </span>`;
+      } else if (i - 0.5 <= roundedRating) {
+        // Half star
+        stars += `<span class="star-half">
+          <i class="fas fa-star-half-alt"></i>
+        </span>`;
+      } else {
+        // Empty star
+        stars += `<span class="star-combined star-empty">
+          <i class="fas fa-star-half-alt star-left"></i>
+          <i class="fas fa-star-half-alt star-right"></i>
+        </span>`;
+      }
     }
     return stars;
   }
