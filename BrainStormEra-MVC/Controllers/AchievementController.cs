@@ -42,12 +42,10 @@ namespace BrainStormEra_MVC.Controllers
                     AchievementIcon = a.AchievementIcon,
                     ReceivedDate = ua.ReceivedDate
                 })
-                .ToListAsync();
-
-            ViewData["UserId"] = userId;
+                .ToListAsync(); ViewData["UserId"] = userId;
             ViewData["Achievements"] = learnerAchievements;
 
-            return View("~/Views/Achievement/LearnerAchievements.cshtml");
+            return View("~/Views/Achievements/LearnerAchievements.cshtml");
         }        // Get achievement details via AJAX
         [HttpGet]
         public async Task<IActionResult> GetAchievementDetails(string achievementId, string userId)

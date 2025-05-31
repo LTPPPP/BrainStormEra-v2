@@ -67,9 +67,7 @@ namespace BrainStormEra_MVC.Controllers
                     .ToList();
 
                 ViewBag.HasCertificates = completedCourses.Any();
-                ViewBag.TotalCertificates = completedCourses.Count;
-
-                return View(completedCourses);
+                ViewBag.TotalCertificates = completedCourses.Count; return View("~/Views/Certificates/Index.cshtml", completedCourses);
             }
             catch (Exception ex)
             {
@@ -80,7 +78,7 @@ namespace BrainStormEra_MVC.Controllers
                 ViewBag.HasCertificates = false;
                 ViewBag.TotalCertificates = 0;
 
-                return View(new List<CertificateSummaryViewModel>());
+                return View("~/Views/Certificates/Index.cshtml", new List<CertificateSummaryViewModel>());
             }
         }
 
@@ -142,7 +140,7 @@ namespace BrainStormEra_MVC.Controllers
                     CertificateCode = $"BSE-{courseId.Substring(0, 8).ToUpper()}-{DateTime.Now.Year}"
                 };
 
-                return View(viewModel);
+                return View("~/Views/Certificates/Details.cshtml", viewModel);
             }
             catch (Exception ex)
             {
