@@ -225,7 +225,6 @@
 
 .footer .text-danger {
   color: #ff6b6b !important;
-  animation: heartbeat 1.5s ease-in-out infinite;
 }
 
 /* Animations */
@@ -237,18 +236,6 @@
   100% {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes heartbeat {
-  0%,
-  50%,
-  100% {
-    transform: scale(1);
-  }
-  25%,
-  75% {
-    transform: scale(1.1);
   }
 }
 

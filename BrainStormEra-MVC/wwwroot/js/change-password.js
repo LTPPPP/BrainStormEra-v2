@@ -1,4 +1,4 @@
-// Change Password page JavaScript functionality
+// Enhanced Change Password page JavaScript functionality
 document.addEventListener("DOMContentLoaded", function () {
   const passwordForm = document.querySelector(".password-form");
   const newPasswordField = document.querySelector('input[name="NewPassword"]');
@@ -16,6 +16,13 @@ document.addEventListener("DOMContentLoaded", function () {
     newPasswordField.addEventListener("input", function () {
       checkPasswordStrength(this.value);
       updatePasswordRequirements(this.value);
+
+      // Add typing animation
+      if (this.value.length > 0) {
+        $(this).addClass("active-input");
+      } else {
+        $(this).removeClass("active-input");
+      }
     });
   }
 
@@ -23,6 +30,13 @@ document.addEventListener("DOMContentLoaded", function () {
   if (confirmPasswordField && newPasswordField) {
     confirmPasswordField.addEventListener("input", function () {
       validatePasswordMatch();
+
+      // Add typing animation
+      if (this.value.length > 0) {
+        $(this).addClass("active-input");
+      } else {
+        $(this).removeClass("active-input");
+      }
     });
 
     newPasswordField.addEventListener("input", function () {
@@ -32,22 +46,45 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Form submission validation
+  // Form submission validation with improved feedback
   if (passwordForm) {
     passwordForm.addEventListener("submit", function (e) {
       if (!validatePasswordForm()) {
         e.preventDefault();
+
+        // Highlight the password requirements section
+        $(".password-requirements").addClass("pulse-animation");
+        setTimeout(function () {
+          $(".password-requirements").removeClass("pulse-animation");
+        }, 1000);
+      } else {
+        // Show loading state on button
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML =
+          '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        submitBtn.disabled = true;
+
+        // You can add additional logic here if needed
       }
     });
   }
 
-  // Real-time validation for all password fields
-  const passwordFields = document.querySelectorAll('input[type="password"]');
-  passwordFields.forEach((field) => {
-    field.addEventListener("blur", function () {
+  // Focus effect on input fields
+  const allInputs = document.querySelectorAll(".form-control");
+  allInputs.forEach((input) => {
+    input.addEventListener("focus", function () {
+      this.parentElement.classList.add("input-focused");
+    });
+
+    input.addEventListener("blur", function () {
+      this.parentElement.classList.remove("input-focused");
       validatePasswordField(this);
     });
   });
+
+  // Add animations to page elements
+  animateElements();
 });
 
 function initializePasswordToggles() {
@@ -67,9 +104,21 @@ function initializePasswordToggles() {
         if (passwordField.type === "password") {
           passwordField.type = "text";
           icon.className = "fas fa-eye-slash";
+
+          // Add a small animation
+          $(this).addClass("toggled");
+          setTimeout(() => {
+            $(this).removeClass("toggled");
+          }, 300);
         } else {
           passwordField.type = "password";
           icon.className = "fas fa-eye";
+
+          // Add a small animation
+          $(this).addClass("toggled");
+          setTimeout(() => {
+            $(this).removeClass("toggled");
+          }, 300);
         }
       }
     });
@@ -87,13 +136,14 @@ function checkPasswordStrength(password) {
 
   if (password.length === 0) {
     strengthBar.style.width = "0%";
-    strengthText.textContent = "Độ mạnh mật khẩu";
+    strengthText.textContent = "Password Strength";
     strengthBar.style.backgroundColor = "#e9ecef";
     return;
   }
 
-  // Length check
-  if (password.length >= 8) score += 20;
+  // Length check - improved scoring
+  if (password.length >= 10) score += 25;
+  else if (password.length >= 8) score += 20;
   else if (password.length >= 6) score += 10;
 
   // Uppercase check
@@ -108,23 +158,38 @@ function checkPasswordStrength(password) {
   // Special character check
   if (/[^A-Za-z0-9]/.test(password)) score += 20;
 
-  // Set strength level and color
+  // Variety of characters check
+  const uniqueChars = new Set(password.split("")).size;
+  if (uniqueChars > 6) score += 15;
+  else if (uniqueChars > 4) score += 10;
+  else if (uniqueChars > 2) score += 5;
+
+  // Set strength level and color with smooth animation
   if (score < 40) {
-    feedback = "Yếu";
+    feedback = "Weak";
     strengthBar.style.backgroundColor = "#dc3545";
   } else if (score < 60) {
-    feedback = "Trung bình";
+    feedback = "Medium";
     strengthBar.style.backgroundColor = "#ffc107";
   } else if (score < 80) {
-    feedback = "Mạnh";
+    feedback = "Strong";
     strengthBar.style.backgroundColor = "#28a745";
   } else {
-    feedback = "Rất mạnh";
+    feedback = "Very Strong";
     strengthBar.style.backgroundColor = "#20c997";
   }
 
-  strengthBar.style.width = score + "%";
-  strengthText.textContent = `Độ mạnh: ${feedback}`;
+  // Smooth animation for strength bar
+  strengthBar.style.transition =
+    "width 0.5s ease-in-out, background-color 0.5s";
+  strengthBar.style.width = Math.min(100, score) + "%";
+  strengthText.textContent = `Strength: ${feedback}`;
+
+  // Add animation to strength text
+  $(strengthText).addClass("strength-updated");
+  setTimeout(() => {
+    $(strengthText).removeClass("strength-updated");
+  }, 500);
 }
 
 function updatePasswordRequirements(password) {
@@ -140,17 +205,33 @@ function updatePasswordRequirements(password) {
     const element = document.getElementById(id);
     if (element) {
       const icon = element.querySelector("i");
-      if (requirements[id]) {
+
+      // Check if state is changing
+      const wasSuccessful = icon.classList.contains("fa-check");
+      const isSuccessful = requirements[id];
+
+      if (isSuccessful) {
         icon.className = "fas fa-check text-success";
-        element.classList.add("text-success");
-        element.classList.remove("text-danger");
+        if (!wasSuccessful) {
+          // Add animation for newly satisfied requirement
+          $(element).addClass("requirement-satisfied");
+          setTimeout(() => {
+            $(element).removeClass("requirement-satisfied");
+          }, 800);
+        }
       } else {
         icon.className = "fas fa-times text-danger";
-        element.classList.add("text-danger");
-        element.classList.remove("text-success");
       }
     }
   });
+
+  // Check if all requirements are met
+  const allMet = Object.values(requirements).every(Boolean);
+  if (allMet && password.length > 0) {
+    $(".password-requirements").addClass("all-requirements-met");
+  } else {
+    $(".password-requirements").removeClass("all-requirements-met");
+  }
 }
 
 function validatePasswordMatch() {
@@ -173,12 +254,18 @@ function validatePasswordMatch() {
       errorMsg.className = "invalid-feedback password-match-error";
       confirmField.parentNode.appendChild(errorMsg);
     }
-    errorMsg.textContent = "Mật khẩu xác nhận không khớp";
+    errorMsg.textContent = "Passwords don't match";
 
     return false;
   } else if (confirmPassword) {
     confirmField.classList.remove("is-invalid");
     confirmField.classList.add("is-valid");
+
+    // Add a small success animation
+    $(confirmField).addClass("match-success");
+    setTimeout(() => {
+      $(confirmField).removeClass("match-success");
+    }, 800);
 
     // Remove error message
     const errorMsg = confirmField.parentNode.querySelector(
@@ -203,10 +290,19 @@ function validatePasswordField(field) {
   }
 
   if (field.name === "NewPassword" && value) {
-    // Check minimum length
-    if (value.length < 6) {
-      isValid = false;
-    }
+    // Enhanced validation with improved feedback
+    const lengthValid = value.length >= 6;
+    const uppercaseValid = /[A-Z]/.test(value);
+    const lowercaseValid = /[a-z]/.test(value);
+    const numberValid = /[0-9]/.test(value);
+    const specialValid = /[^A-Za-z0-9]/.test(value);
+
+    isValid =
+      lengthValid &&
+      uppercaseValid &&
+      lowercaseValid &&
+      numberValid &&
+      specialValid;
   }
 
   if (field.name === "ConfirmPassword" && value) {
@@ -218,13 +314,17 @@ function validatePasswordField(field) {
     }
   }
 
-  // Update field appearance
+  // Update field appearance with smooth transition
+  field.style.transition = "border-color 0.3s, box-shadow 0.3s";
+
   if (isValid && value) {
     field.classList.remove("is-invalid");
     field.classList.add("is-valid");
-  } else if (!isValid) {
+  } else if (!isValid && value) {
     field.classList.remove("is-valid");
     field.classList.add("is-invalid");
+  } else {
+    field.classList.remove("is-valid", "is-invalid");
   }
 
   return isValid;
@@ -243,25 +343,53 @@ function validatePasswordForm() {
 
   // Check if all fields are filled
   if (!currentPassword || !newPassword || !confirmPassword) {
-    showNotification("Vui lòng điền đầy đủ thông tin", "warning");
+    showNotification("Please fill in all required fields", "warning");
     isValid = false;
   }
 
   // Check new password strength
   if (newPassword.length < 6) {
-    showNotification("Mật khẩu mới phải có ít nhất 6 ký tự", "warning");
+    showNotification(
+      "Your new password must be at least 6 characters long",
+      "warning"
+    );
     isValid = false;
   }
 
   // Check password match
   if (newPassword !== confirmPassword) {
-    showNotification("Mật khẩu xác nhận không khớp", "warning");
+    showNotification("Passwords don't match", "warning");
     isValid = false;
   }
 
   // Check if new password is different from current
   if (currentPassword === newPassword) {
-    showNotification("Mật khẩu mới phải khác với mật khẩu hiện tại", "warning");
+    showNotification(
+      "New password must be different from your current password",
+      "warning"
+    );
+    isValid = false;
+  }
+
+  // Check password requirements
+  const lengthValid = newPassword.length >= 6;
+  const uppercaseValid = /[A-Z]/.test(newPassword);
+  const lowercaseValid = /[a-z]/.test(newPassword);
+  const numberValid = /[0-9]/.test(newPassword);
+  const specialValid = /[^A-Za-z0-9]/.test(newPassword);
+
+  const allRequirementsMet =
+    lengthValid &&
+    uppercaseValid &&
+    lowercaseValid &&
+    numberValid &&
+    specialValid;
+
+  if (!allRequirementsMet) {
+    showNotification(
+      "Your password doesn't meet all the requirements",
+      "warning"
+    );
     isValid = false;
   }
 
@@ -276,7 +404,7 @@ function showNotification(message, type = "info") {
 
   // Create notification element
   const notification = document.createElement("div");
-  notification.className = `alert alert-${type} alert-dismissible fade show position-fixed password-notification`;
+  notification.className = `alert alert-${type} alert-dismissible fade show position-fixed password-notification animate__animated animate__fadeInRight`;
   notification.style.cssText = `
         top: 20px;
         right: 20px;
@@ -297,7 +425,13 @@ function showNotification(message, type = "info") {
   // Auto-remove after 4 seconds
   setTimeout(() => {
     if (notification.parentNode) {
-      notification.remove();
+      notification.classList.remove("animate__fadeInRight");
+      notification.classList.add("animate__fadeOutRight");
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 500);
     }
   }, 4000);
 }
@@ -314,20 +448,99 @@ function getIconForType(type) {
 
 // Password strength tips
 const passwordTips = [
-  "Sử dụng ít nhất 8 ký tự",
-  "Kết hợp chữ hoa và chữ thường",
-  "Bao gồm số và ký tự đặc biệt",
-  "Tránh sử dụng thông tin cá nhân",
-  "Không sử dụng từ trong từ điển",
-  "Thay đổi mật khẩu định kỳ",
+  "Use at least 8 characters",
+  "Mix uppercase and lowercase letters",
+  "Include numbers and special characters",
+  "Avoid using personal information",
+  "Don't use dictionary words",
+  "Change your password regularly",
+  "Use different passwords for different accounts",
+  "Consider using a password manager",
 ];
 
 // Show random password tip
 function showPasswordTip() {
   const randomTip =
     passwordTips[Math.floor(Math.random() * passwordTips.length)];
-  showNotification(`💡 Mẹo: ${randomTip}`, "info");
+  showNotification(`💡 Tip: ${randomTip}`, "info");
+}
+
+function animateElements() {
+  // Add additional animations to elements
+  setTimeout(() => {
+    $(".password-requirements").addClass("animate__animated animate__fadeIn");
+  }, 500);
 }
 
 // Show tip when page loads
 setTimeout(showPasswordTip, 2000);
+
+// Add custom CSS animations
+const style = document.createElement("style");
+style.textContent = `
+  .pulse-animation {
+    animation: pulse 0.8s;
+  }
+  
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+  }
+  
+  .input-focused {
+    transition: all 0.3s ease;
+  }
+  
+  .input-focused .form-control {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+  
+  .toggled {
+    transform: scale(1.2);
+    transition: transform 0.3s;
+  }
+  
+  .active-input {
+    border-color: #3498db !important;
+  }
+  
+  .strength-updated {
+    animation: fadeInOut 0.5s;
+  }
+  
+  @keyframes fadeInOut {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+  }
+  
+  .requirement-satisfied {
+    animation: satisfied 0.8s;
+  }
+  
+  @keyframes satisfied {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  
+  .match-success {
+    border-color: #28a745 !important;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1) !important;
+    transition: all 0.3s;
+  }
+  
+  .all-requirements-met {
+    border-left: 4px solid #28a745;
+    transition: border-left 0.5s ease;
+  }
+`;
+document.head.appendChild(style);
