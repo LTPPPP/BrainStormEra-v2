@@ -14,15 +14,18 @@ namespace BrainStormEra_MVC.Controllers
         private readonly BrainStormEraContext _context;
         private readonly ILogger<ProfileController> _logger;
         private readonly IUserService _userService;
+        private readonly IAvatarService _avatarService;
 
         public ProfileController(
             BrainStormEraContext context,
             ILogger<ProfileController> logger,
-            IUserService userService)
+            IUserService userService,
+            IAvatarService avatarService)
         {
             _context = context;
             _logger = logger;
             _userService = userService;
+            _avatarService = avatarService;
         }
 
         [HttpGet]
@@ -212,7 +215,13 @@ namespace BrainStormEra_MVC.Controllers
                 // Handle profile image upload if provided
                 if (model.ProfileImage != null && model.ProfileImage.Length > 0)
                 {
-                    var uploadResult = await UploadProfileImageAsync(model.ProfileImage, userId);
+                    // Delete old avatar before uploading new one
+                    if (!string.IsNullOrEmpty(user.UserImage))
+                    {
+                        await _avatarService.DeleteAvatarAsync(user.UserImage);
+                    }
+
+                    var uploadResult = await _avatarService.UploadAvatarAsync(model.ProfileImage, userId);
                     if (uploadResult.Success)
                     {
                         user.UserImage = uploadResult.ImagePath;
@@ -293,54 +302,71 @@ namespace BrainStormEra_MVC.Controllers
             }
         }
 
-        private async Task<(bool Success, string? ImagePath, string? ErrorMessage)> UploadProfileImageAsync(IFormFile file, string userId)
+        [HttpGet]
+        public async Task<IActionResult> GetAvatar(string? userId = null)
         {
             try
             {
-                // Validate file
-                if (file == null || file.Length == 0)
+                var targetUserId = userId ?? CurrentUserId;
+                if (string.IsNullOrEmpty(targetUserId))
                 {
-                    return (false, null, "No file selected.");
+                    return File(_avatarService.GetDefaultAvatarBytes(), "image/svg+xml");
                 }
 
-                // Check file size (max 5MB)
-                if (file.Length > 5 * 1024 * 1024)
+                var user = await _context.Accounts
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.UserId == targetUserId);
+
+                if (user?.UserImage == null || !_avatarService.AvatarExists(user.UserImage))
                 {
-                    return (false, null, "File size cannot exceed 5MB.");
+                    return File(_avatarService.GetDefaultAvatarBytes(), "image/svg+xml");
                 }
 
-                // Check file type
-                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
-                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
-                if (!allowedExtensions.Contains(fileExtension))
-                {
-                    return (false, null, "Only JPG, JPEG, PNG, and GIF files are allowed.");
-                }
+                var imagePath = Path.Combine("wwwroot", "images", "users", user.UserImage);
+                var contentType = _avatarService.GetImageContentType(user.UserImage);
+                var imageBytes = await System.IO.File.ReadAllBytesAsync(imagePath);
 
-                // Create upload directory if it doesn't exist
-                var uploadDir = Path.Combine("wwwroot", "img", "profiles");
-                if (!Directory.Exists(uploadDir))
-                {
-                    Directory.CreateDirectory(uploadDir);
-                }
-
-                // Generate unique filename
-                var fileName = $"{userId}_{Guid.NewGuid()}{fileExtension}";
-                var filePath = Path.Combine(uploadDir, fileName);
-
-                // Save file
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
-
-                var relativePath = $"/img/profiles/{fileName}";
-                return (true, relativePath, null);
+                return File(imageBytes, contentType);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error uploading profile image for user: {UserId}", userId);
-                return (false, null, "An error occurred while uploading the image.");
+                _logger.LogError(ex, "Error retrieving avatar for user: {UserId}", userId);
+                return File(_avatarService.GetDefaultAvatarBytes(), "image/svg+xml");
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAvatar()
+        {
+            try
+            {
+                var userId = CurrentUserId;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new { success = false, message = "User not authenticated" });
+                }
+
+                var user = await _context.Accounts.FindAsync(userId);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "User not found" });
+                }
+
+                if (!string.IsNullOrEmpty(user.UserImage))
+                {
+                    await _avatarService.DeleteAvatarAsync(user.UserImage);
+                    user.UserImage = null;
+                    user.AccountUpdatedAt = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                }
+
+                return Json(new { success = true, message = "Avatar deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting avatar for user: {UserId}", CurrentUserId);
+                return Json(new { success = false, message = "An error occurred while deleting avatar" });
             }
         }
     }

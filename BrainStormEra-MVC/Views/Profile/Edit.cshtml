@@ -81,7 +81,7 @@
                                 <div class="profile-image-container">
                                     @if (!string.IsNullOrEmpty(Model.CurrentImagePath))
                                     {
-                                        <img id="profileImagePreview" src="~/images/users/@Model.CurrentImagePath"
+                                        <img id="profileImagePreview" src="@Url.Action("GetAvatar", "Profile")"
                                             alt="Profile Image" class="profile-image-preview" />
                                     }
                                     else
@@ -103,6 +103,14 @@
                                     <small class="form-text text-muted">Accepts JPG, PNG files. Maximum size
                                         5MB.</small>
                                 </div>
+                                @if (!string.IsNullOrEmpty(Model.CurrentImagePath))
+                                {
+                                    <div class="form-group mt-2">
+                                        <button type="button" class="btn btn-outline-danger btn-sm" id="deleteAvatarBtn">
+                                            <i class="fas fa-trash"></i> Remove Avatar
+                                        </button>
+                                    </div>
+                                }
                             </div>
                         </div>
 

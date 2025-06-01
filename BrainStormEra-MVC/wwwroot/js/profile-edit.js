@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const profileImageInput = document.getElementById("profileImageInput");
   const profileImagePreview = document.getElementById("profileImagePreview");
   const imageUploadOverlay = document.querySelector(".image-upload-overlay");
+  const deleteAvatarBtn = document.getElementById("deleteAvatarBtn");
 
   if (profileImageInput && profileImagePreview) {
     // Click overlay to trigger file input
@@ -66,6 +67,15 @@ document.addEventListener("DOMContentLoaded", function () {
           showNotification("Ảnh đã được chọn thành công", "success");
         };
         reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  // Handle delete avatar button
+  if (deleteAvatarBtn) {
+    deleteAvatarBtn.addEventListener("click", function () {
+      if (confirm("Bạn có chắc chắn muốn xóa avatar không?")) {
+        deleteAvatar();
       }
     });
   }
@@ -378,4 +388,52 @@ function showNotification(message, type = "info") {
       notification.remove();
     }
   }, 4000);
+}
+
+function deleteAvatar() {
+  fetch("/Profile/DeleteAvatar", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      RequestVerificationToken: document.querySelector(
+        'input[name="__RequestVerificationToken"]'
+      ).value,
+    },
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        // Replace image with placeholder
+        const profileImagePreview = document.getElementById(
+          "profileImagePreview"
+        );
+        if (profileImagePreview) {
+          const placeholder = document.createElement("div");
+          placeholder.id = "profileImagePreview";
+          placeholder.className = "profile-image-placeholder";
+          placeholder.innerHTML = '<i class="fas fa-user"></i>';
+          profileImagePreview.parentNode.replaceChild(
+            placeholder,
+            profileImagePreview
+          );
+        }
+
+        // Hide delete button
+        const deleteBtn = document.getElementById("deleteAvatarBtn");
+        if (deleteBtn && deleteBtn.parentElement) {
+          deleteBtn.parentElement.style.display = "none";
+        }
+
+        showNotification("Avatar đã được xóa thành công", "success");
+      } else {
+        showNotification(
+          data.message || "Có lỗi xảy ra khi xóa avatar",
+          "error"
+        );
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      showNotification("Có lỗi xảy ra khi xóa avatar", "error");
+    });
 }

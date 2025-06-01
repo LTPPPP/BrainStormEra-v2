@@ -65,16 +65,7 @@
             <div class="profile-header">
                 <div class="profile-banner">
                     <div class="profile-avatar-container">
-                        @if (!string.IsNullOrEmpty(Model.UserImage))
-                        {
-                            <img src="~/images/users/@Model.UserImage" alt="Avatar" class="profile-avatar" />
-                        }
-                        else
-                        {
-                            <div class="profile-avatar-placeholder">
-                                <i class="fas fa-user"></i>
-                            </div>
-                        }
+                        <img src="@Url.Action("GetAvatar", "Profile")" alt="Avatar" class="profile-avatar" />
                     </div>
                     <div class="profile-info">
                         <h1 class="profile-name">@Model.FullName</h1>
