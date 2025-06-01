@@ -1,0 +1,162 @@
+@model BrainStormEra_MVC.Models.ViewModels.UserProfileViewModel
+@{
+    ViewData["Title"] = "Personal Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="~/css/profile.css" rel="stylesheet" />
+
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-banner">
+            <div class="profile-avatar-container">
+                @if (!string.IsNullOrEmpty(Model.UserImage))
+                {
+                    <img src="~/images/users/@Model.UserImage" alt="Avatar" class="profile-avatar" />
+                }
+                else
+                {
+                    <div class="profile-avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                }
+            </div>
+            <div class="profile-info">
+                <h1 class="profile-name">@Model.FullName</h1>
+                <p class="profile-username">@@@Model.Username</p>
+                <span class="profile-role badge badge-@(Model.Role?.ToLower())">@Model.Role</span>
+            </div>
+            <div class="profile-actions">
+                <a href="@Url.Action("Edit", "Profile")" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </a>
+                <a href="@Url.Action("ChangePassword", "Profile")" class="btn btn-secondary">
+                    <i class="fas fa-lock"></i> Change Password
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-content">
+        <div class="row">
+            <!-- Personal Information -->
+            <div class="col-md-8">
+                <div class="profile-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-user-circle"></i> Personal Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="info-item">
+                                    <label><i class="fas fa-envelope text-primary me-2"></i>Email:</label>
+                                    <span>@Model.Email</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="info-item">
+                                    <label><i class="fas fa-phone text-primary me-2"></i>Phone Number:</label>
+                                    <span>@(Model.PhoneNumber ?? "Not updated")</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="info-item">
+                                    <label><i class="fas fa-venus-mars text-primary me-2"></i>Gender:</label>
+                                    <span>@(Model.Gender ?? "Not updated")</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="info-item">
+                                    <label><i class="fas fa-birthday-cake text-primary me-2"></i>Date of Birth:</label>
+                                    <span>@(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Not updated")</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="info-item">
+                                    <label><i class="fas fa-map-marker-alt text-primary me-2"></i>Address:</label>
+                                    <span>@(Model.UserAddress ?? "Not updated")</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="info-item">
+                                    <label><i class="fas fa-calendar-plus text-primary me-2"></i>Join Date:</label>
+                                    <span>@(Model.CreatedAt?.ToString("dd/MM/yyyy") ?? "Unknown")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="col-md-4">
+                <div class="profile-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-chart-bar"></i> Statistics</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-item">
+                            <div class="stat-icon courses">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number">@Model.TotalCourses</span>
+                                <span class="stat-label">Total Courses</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-icon completed">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number">@Model.CompletedCourses</span>
+                                <span class="stat-label">Completed</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-icon progress">
+                                <i class="fas fa-play-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number">@Model.InProgressCourses</span>
+                                <span class="stat-label">In Progress</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-icon certificates">
+                                <i class="fas fa-award"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number">@Model.CertificatesEarned</span>
+                                <span class="stat-label">Certificates</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-icon achievements">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number">@Model.TotalAchievements</span>
+                                <span class="stat-label">Achievements</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/profile.js"></script>
+}

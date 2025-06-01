@@ -1,0 +1,132 @@
+@model BrainStormEra_MVC.Models.ViewModels.EditProfileViewModel
+@{
+    ViewData["Title"] = "Edit Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="~/css/profile.css" rel="stylesheet" />
+
+<div class="profile-container">
+    <div class="profile-edit-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-user-edit"></i> Edit Profile</h2>
+            <a href="@Url.Action("Index", "Profile")" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="profile-edit-content">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data" class="profile-edit-form">
+            <div class="row">
+                <!-- Profile Image Section -->
+                <div class="col-md-4">
+                    <div class="profile-image-section">
+                        <div class="profile-image-container">
+                            @if (!string.IsNullOrEmpty(Model.CurrentImagePath))
+                            {
+                                <img id="profileImagePreview" src="~/images/users/@Model.CurrentImagePath"
+                                    alt="Profile Image" class="profile-image-preview" />
+                            }
+                            else
+                            {
+                                <div id="profileImagePreview" class="profile-image-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            }
+ <div class="image-upload-overlay">
+                                <i class="fas fa-camera"></i>
+                                <span>Change Photo</span>
+                            </div>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label for="ProfileImage" class="form-label">Profile Picture</label>
+                            <input asp-for="ProfileImage" type="file" class="form-control" id="profileImageInput"
+                                accept="image/*" />
+                            <span asp-validation-for="ProfileImage" class="text-danger"></span>
+                            <small class="form-text text-muted">Accepts JPG, PNG files. Maximum size 5MB.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Fields Section -->
+                <div class="col-md-8">
+                    <div class="profile-form-section">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="FullName" class="form-label required">Full Name</label>
+                                    <input asp-for="FullName" class="form-control" placeholder="Enter full name" />
+                                    <span asp-validation-for="FullName" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Email" class="form-label required">Email</label>
+                                    <input asp-for="Email" class="form-control" placeholder="Enter email" />
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
+                                    <input asp-for="PhoneNumber" class="form-control"
+                                        placeholder="Enter phone number" />
+                                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Gender" class="form-label">Gender</label>
+                                    <select asp-for="Gender" class="form-control">
+                                        <option value="">Select gender</option>
+                                        <option value="Nam">Male</option>
+                                        <option value="Nữ">Female</option>
+                                        <option value="Khác">Other</option>
+                                    </select>
+                                    <span asp-validation-for="Gender" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="DateOfBirth" class="form-label">Date of Birth</label>
+                                    <input asp-for="DateOfBirth" type="date" class="form-control" />
+                                    <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="UserAddress" class="form-label">Address</label>
+                            <textarea asp-for="UserAddress" class="form-control" rows="3"
+                                placeholder="Enter address"></textarea>
+                            <span asp-validation-for="UserAddress" class="text-danger"></span>
+                        </div>
+
+                        <input asp-for="CurrentImagePath" type="hidden" />
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <a href="@Url.Action("Index", "Profile")" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/profile-edit.js"></script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
