@@ -256,7 +256,7 @@
 }
 
 .parallax-bg {
-  background-image: url("/images/login-bg.jpg");
+  background-image: url("/img/login-bg.jpg");
   background-attachment: fixed;
   background-position: center;
   background-repeat: no-repeat;

@@ -322,7 +322,7 @@ namespace BrainStormEra_MVC.Controllers
                     return File(_avatarService.GetDefaultAvatarBytes(), "image/svg+xml");
                 }
 
-                var imagePath = Path.Combine("wwwroot", "images", "users", user.UserImage);
+                var imagePath = Path.Combine("wwwroot", "img", "profiles", user.UserImage);
                 var contentType = _avatarService.GetImageContentType(user.UserImage);
                 var imageBytes = await System.IO.File.ReadAllBytesAsync(imagePath);
 

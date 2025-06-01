@@ -11,7 +11,7 @@ namespace BrainStormEra_MVC.Services
     {
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ILogger<AvatarService> _logger;
-        private const string AvatarDirectory = "images/users";
+        private const string AvatarDirectory = "img/profiles";
         private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
         private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
 

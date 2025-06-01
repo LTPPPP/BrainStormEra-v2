@@ -244,7 +244,7 @@ namespace BrainStormEra_MVC.Controllers
                     {
                         CourseId = c.CourseId,
                         CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/images/default-course.jpg",
+                        CoursePicture = c.CourseImage ?? "/img/default-course.png",
                         Price = c.Price,
                         CreatedBy = c.AuthorName,
                         Description = c.CourseDescription,
@@ -337,7 +337,7 @@ namespace BrainStormEra_MVC.Controllers
                     {
                         CourseId = e.CourseId,
                         CourseName = e.Course.CourseName,
-                        CourseImage = e.Course.CourseImage ?? "/images/default-course.jpg",
+                        CourseImage = e.Course.CourseImage ?? "/img/default-course.png",
                         AuthorName = e.Course.Author.FullName ?? e.Course.Author.Username,
                         EnrolledDate = e.EnrollmentCreatedAt,
                         LastAccessDate = e.EnrollmentUpdatedAt, // Use EnrollmentUpdatedAt as last access
@@ -355,7 +355,7 @@ namespace BrainStormEra_MVC.Controllers
                     {
                         CourseId = c.CourseId,
                         CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/images/default-course.jpg",
+                        CoursePicture = c.CourseImage ?? "/img/default-course.png",
                         Price = c.Price,
                         CreatedBy = c.Author.FullName ?? c.Author.Username,
                         Description = c.CourseDescription
@@ -388,7 +388,7 @@ namespace BrainStormEra_MVC.Controllers
                 {
                     UserName = user.Username,
                     FullName = user.FullName ?? user.Username,
-                    UserImage = user.UserImage ?? "/images/default-avatar.jpg",
+                    UserImage = user.UserImage ?? "/img/default-avatar.svg",
                     EnrolledCourses = enrolledCourses,
                     RecommendedCourses = recommendedCourses,
                     Notifications = notifications
@@ -450,7 +450,7 @@ namespace BrainStormEra_MVC.Controllers
                 var viewModel = new InstructorDashboardViewModel
                 {
                     InstructorName = instructorData.FullName ?? instructorData.Username,
-                    InstructorImage = instructorData.UserImage ?? "/images/default-avatar.jpg",
+                    InstructorImage = instructorData.UserImage ?? "/img/default-avatar.svg",
                     TotalCourses = instructorData.TotalCourses,
                     TotalStudents = instructorData.TotalStudents,
                     TotalRevenue = 0 // Calculate actual revenue if needed
