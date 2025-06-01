@@ -1,0 +1,269 @@
+@model BrainStormEra_MVC.Models.ViewModels.UserProfileViewModel
+@{
+    ViewData["Title"] = "Personal Profile";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="BrainStormEra - Your personal profile and learning dashboard">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/Course/courses.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <link rel="stylesheet" href="~/css/pages/Auth/profile.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js" defer></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+    <!-- Main Content -->
+    <div class="container main-content">
+        <div class="profile-container" style="margin-top: 2rem;">
+            <div class="profile-header">
+                <div class="profile-banner">
+                    <div class="profile-avatar-container">
+                        <img src="@Url.Action("GetAvatar", "Profile")" alt="Avatar" class="profile-avatar" />
+                    </div>
+                    <div class="profile-info">
+                        <h1 class="profile-name">@Model.FullName</h1>
+                        <p class="profile-username">@@@Model.Username</p>
+                        <span class="profile-role badge badge-@(Model.Role?.ToLower())">@Model.Role</span>
+                    </div>
+                    <div class="profile-actions">
+                        <a href="@Url.Action("Edit", "Profile")" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </a>
+                        <a href="@Url.Action("ChangePassword", "Profile")" class="btn btn-secondary">
+                            <i class="fas fa-lock"></i> Change Password
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-content">
+                <div class="row">
+                    <!-- Personal Information -->
+                    <div class="col-md-8">
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-user-circle"></i> Personal Information</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="info-item">
+                                            <label><i class="fas fa-envelope text-primary me-2"></i>Email:</label>
+                                            <span>@Model.Email</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-item">
+                                            <label><i class="fas fa-phone text-primary me-2"></i>Phone Number:</label>
+                                            <span>@(Model.PhoneNumber ?? "Not updated")</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="info-item">
+                                            <label><i class="fas fa-venus-mars text-primary me-2"></i>Gender:</label>
+                                            <span>@(Model.Gender ?? "Not updated")</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="info-item">
+                                            <label><i class="fas fa-birthday-cake text-primary me-2"></i>Date of
+                                                Birth:</label>
+                                            <span>@(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Not updated")</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="info-item">
+                                            <label><i
+                                                    class="fas fa-map-marker-alt text-primary me-2"></i>Address:</label>
+                                            <span>@(Model.UserAddress ?? "Not updated")</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="info-item">
+                                            <label><i class="fas fa-calendar-plus text-primary me-2"></i>Join
+                                                Date:</label>
+                                            <span>@(Model.CreatedAt?.ToString("dd/MM/yyyy") ?? "Unknown")</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="col-md-4">
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-chart-bar"></i> Statistics</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="stat-item">
+                                    <div class="stat-icon courses">
+                                        <i class="fas fa-graduation-cap"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <span class="stat-number">@Model.TotalCourses</span>
+                                        <span class="stat-label">Total Courses</span>
+                                    </div>
+                                </div>
+
+                                <div class="stat-item">
+                                    <div class="stat-icon completed">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <span class="stat-number">@Model.CompletedCourses</span>
+                                        <span class="stat-label">Completed</span>
+                                    </div>
+                                </div>
+
+                                <div class="stat-item">
+                                    <div class="stat-icon progress">
+                                        <i class="fas fa-play-circle"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <span class="stat-number">@Model.InProgressCourses</span>
+                                        <span class="stat-label">In Progress</span>
+                                    </div>
+                                </div>
+
+                                <div class="stat-item">
+                                    <div class="stat-icon certificates">
+                                        <i class="fas fa-award"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <span class="stat-number">@Model.CertificatesEarned</span>
+                                        <span class="stat-label">Certificates</span>
+                                    </div>
+                                </div>
+
+                                <div class="stat-item">
+                                    <div class="stat-icon achievements">
+                                        <i class="fas fa-trophy"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <span class="stat-number">@Model.TotalAchievements</span>
+                                        <span class="stat-label">Achievements</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="~/js/components/loader.js"></script>
+    <script src="~/js/pages/Auth/profile.js"></script>
+    <script src="~/js/shared/toast-notifications.js"></script>
+
+    <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+
+        // Back to top function
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Enhanced profile card interactions
+        document.addEventListener('DOMContentLoaded', function () {
+            const profileCards = document.querySelectorAll('.profile-card');
+
+            profileCards.forEach(card => {
+                card.addEventListener('mouseenter', function () {
+                    this.style.transform = 'translateY(-5px)';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+
+            // Add animation classes to elements when they come into view
+            const animateElements = document.querySelectorAll('.profile-card, .stat-item');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animated');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            animateElements.forEach(element => {
+                observer.observe(element);
+            });
+        });
+    </script>
+</body>
+
+</html>

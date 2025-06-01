@@ -1,0 +1,228 @@
+@model BrainStormEra_MVC.Models.ViewModels.NotificationIndexViewModel
+@{
+    ViewData["Title"] = "Notifications";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="BrainStormEra - Manage your notifications and stay updated">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">    
+    <link rel="stylesheet" href="~/css/pages/Course/courses.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <!-- Notification Index specific styles -->
+    <link rel="stylesheet" href="~/css/pages/Notifications/notification-index.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js" defer></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body class="notification-page">
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Main Content -->
+    <div class="container main-content">
+        <!-- Enhanced Page Header -->
+        <div class="page-header">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="page-title">
+                        <i class="fas fa-bell"></i>
+                        Notifications Center
+                    </h1>
+                    <p class="page-subtitle">Stay connected with your learning journey and platform updates</p>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <div class="stats-card">
+                        <div class="stat-number">@Model.UnreadCount</div>
+                        <div class="stat-label">Unread Messages</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Notifications Content -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-inbox me-2"></i>All Notifications
+                            @if (Model.UnreadCount > 0)
+                            {
+                                <span class="badge bg-danger ms-2">@Model.UnreadCount New</span>
+                            }
+                        </h5>
+                        <div class="notification-controls">
+                            @if (Model.UnreadCount > 0)
+                            {
+                                <button id="markAllRead" class="btn btn-outline-primary btn-sm me-2">
+                                    <i class="fas fa-check-double me-1"></i>Mark All Read
+                                </button>
+                            }
+                            <button id="refreshNotifications" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Notifications.Any())
+                        {
+                            <div id="notificationsList" class="list-group list-group-flush">
+                                @foreach (var notification in Model.Notifications)
+                                {
+                                    <div class="list-group-item notification-item @(notification.IsRead == false ? "unread" : "")" 
+                                         data-notification-id="@notification.NotificationId">
+                                        <div class="d-flex w-100 justify-content-between align-items-start">
+                                            <div class="notification-content flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="mb-0 fw-bold notification-title">@notification.NotificationTitle</h6>
+                                                    <div class="notification-meta d-flex align-items-center">
+                                                        @if (!string.IsNullOrEmpty(notification.NotificationType))
+                                                        {
+                                                            <span class="badge bg-secondary me-2">@notification.NotificationType</span>
+                                                        }
+                                                        @if (notification.IsRead == false)
+                                                        {
+                                                            <span class="badge bg-primary me-2">New</span>
+                                                        }
+                                                        <small class="text-muted">@notification.NotificationCreatedAt.ToString("MMM dd, yyyy • HH:mm")</small>
+                                                    </div>
+                                                </div>
+                                                <p class="mb-2 notification-message">@notification.NotificationContent</p>
+                                                @if (!string.IsNullOrEmpty(notification.CourseId) && notification.Course != null)
+                                                {
+                                                    <div class="course-reference">
+                                                        <i class="fas fa-graduation-cap me-1"></i>
+                                                        <span class="text-muted">Related to: <strong>@notification.Course.CourseName</strong></span>
+                                                    </div>
+                                                }
+                                            </div>
+                                            <div class="notification-actions ms-3 d-flex">
+                                                @if (notification.IsRead == false)
+                                                {
+                                                    <button class="btn btn-sm mark-read-btn" 
+                                                            data-notification-id="@notification.NotificationId"
+                                                            title="Mark as read">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                                <button class="btn btn-sm delete-btn" 
+                                                        data-notification-id="@notification.NotificationId"
+                                                        title="Delete notification">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            
+                            @if (Model.HasNextPage)
+                            {
+                                <div class="card-footer text-center">
+                                    <button id="loadMore" class="btn btn-outline-primary" data-page="@(Model.CurrentPage + 1)">
+                                        <i class="fas fa-chevron-down me-2"></i>Load More Notifications
+                                    </button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <i class="fas fa-bell-slash"></i>
+                                <h5>Your inbox is empty</h5>
+                                <p>No notifications to display. You'll receive updates here as they become available.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container for real-time notifications -->
+    <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
+
+    <!-- Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/microsoft-signalr/signalr.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <!-- Custom JS -->
+    <script src="~/js/components/loader.js"></script>
+    <script src="~/js/shared/toast-notifications.js"></script>
+
+    <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+
+        // Back to top function
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        $(document).ready(function() {
+            // Initialize SignalR connection
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/notificationHub")
+                .configureLogging(signalR.LogLevel.Information)
+                .build();
+            
+            // Add your SignalR connection logic here
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,126 @@
+/* Notification Page Styles */
+.notification-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem 0;
+  padding-top: 80px; /* Add top padding to prevent header from covering content */
+}
+
+.page-header {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+.page-title {
+  color: #2c3e50;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-subtitle {
+  color: #6c757d;
+  font-size: 1.1rem;
+  margin-bottom: 0;
+}
+
+.stats-card {
+  background: linear-gradient(135deg, #4285f4 0%, #667eea 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin-top: 0.25rem;
+}
+
+/* Notification specific styles */
+.notification-item.unread {
+  background-color: #f8f9ff;
+  border-left: 4px solid #007bff;
+}
+
+.notification-item:hover {
+  background-color: #f8f9fa;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+.notification-actions {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.notification-item:hover .notification-actions {
+  opacity: 1;
+}
+
+.notification-content {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.notification-content:last-child {
+  border-bottom: none;
+}
+
+.notification-title {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.notification-message {
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.notification-time {
+  font-size: 0.85rem;
+  color: #adb5bd;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  font-size: 0.75rem;
+}
+
+/* Toast notifications */
+.toast {
+  min-width: 300px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .page-header {
+    padding: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .stats-card {
+    margin-top: 1rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+}

@@ -44,25 +44,31 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end notification-dropdown"
                                 aria-labelledby="notificationDropdown">
-                                <li class="dropdown-header">Notifications</li>
-                                <li>
-                                    <hr class="dropdown-divider">
+                                <li class="dropdown-header">
+                                    <span>Notifications</span>
+                                    @if (User.IsInRole("Admin") || User.IsInRole("admin"))
+                                    {
+                                        <a href="@Url.Action("Manage", "Notification")" class="btn btn-sm btn-outline-light">
+                                            <i class="fas fa-cog"></i>
+                                        </a>
+                                    }
                                 </li>
-                                <li class="notification-empty text-center p-3">
-                                    <p class="mb-0">No new notifications</p>
-                                </li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li class="dropdown-item text-center">
-                                    <a href="#" class="view-all-notifications">View All</a>
+                                <div class="notification-list-container">
+                                    <li class="notification-empty">
+                                        <p class="mb-0">No new notifications</p>
+                                    </li>
+                                </div>
+                                <li class="notification-footer">
+                                    <a href="@Url.Action("Index", "Notification")" class="view-all-notifications">
+                                        <i class="fas fa-list me-1"></i>View All Notifications
+                                    </a>
                                 </li>
                             </ul>
                         </div>
                         <div class="dropdown">
                             <a href="#" class="user-avatar" id="userDropdown" data-bs-toggle="dropdown"
                                 aria-expanded="false">
-                                <img src="@(User.FindFirst("UserImage")?.Value ?? "/img/default-avatar.svg")"
+                                <img src="@Url.Action("GetAvatar", "Profile", new { userId = User.FindFirst("UserId")?.Value })"
                                     alt="User Avatar">
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
@@ -75,8 +81,14 @@
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>My Profile</a></li>
+                                <li><a class="dropdown-item" href="@Url.Action("Index", "Profile")"><i
+                                            class="fas fa-user me-2"></i>My Profile</a></li>
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-book me-2"></i>My Courses</a></li>
+                                @if (User.IsInRole("Admin") || User.IsInRole("admin"))
+                                {
+                                    <li><a class="dropdown-item" href="@Url.Action("Manage", "Notification")"><i
+                                                class="fas fa-bell me-2"></i>Manage Notifications</a></li>
+                                }
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
                                 <li>
                                     <hr class="dropdown-divider">

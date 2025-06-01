@@ -1,0 +1,479 @@
+@{
+    ViewData["Title"] = "Notification Management";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="BrainStormEra - Send and manage system notifications">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/Course/courses.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <!-- Notification Management specific styles -->
+    <link rel="stylesheet" href="~/css/pages/Notifications/notification-manage.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js" defer></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body class="notification-manage-page">
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml") <!-- Main Content -->
+    <div class="container main-content">
+        <!-- Page Header -->
+        <header class="page-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="page-title">
+                        <i class="fas fa-bullhorn"></i>
+                        Notification Management
+                    </h1>
+                    <p class="page-subtitle">Send and manage system notifications efficiently</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="stats-card modern-stats">
+                        <div class="stat-number" id="activeUsersCount">0</div>
+                        <div class="stat-label">Active Users Online</div>
+                    </div>
+                </div>
+            </div>
+        </header> <!-- Management Content -->
+        <div class="row">
+            <div class="col-12">
+                <div class="modern-card notification-form-card">
+                    <div class="card-header modern-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-paper-plane me-2"></i>Send Notification
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Send Notification Form -->
+                            <div class="col-md-8">
+                                <form id="notificationForm">
+                                    <div class="mb-3">
+                                        <label for="notificationTitle" class="form-label modern-label">
+                                            <i class="fas fa-heading me-1"></i>Title
+                                        </label>
+                                        <input type="text" class="form-control modern-input" id="notificationTitle"
+                                            placeholder="Enter notification title..." required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="notificationContent" class="form-label modern-label">
+                                            <i class="fas fa-align-left me-1"></i>Content
+                                        </label>
+                                        <textarea class="form-control modern-input" id="notificationContent" rows="4"
+                                            placeholder="Enter notification content..." required></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="notificationType" class="form-label modern-label">
+                                            <i class="fas fa-tag me-1"></i>Type
+                                        </label>
+                                        <select class="form-select modern-select" id="notificationType">
+                                            <option value="General">📢 General</option>
+                                            <option value="Course">📚 Course</option>
+                                            <option value="System">⚙️ System</option>
+                                            <option value="Achievement">🏆 Achievement</option>
+                                            <option value="Announcement">📣 Announcement</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="targetType" class="form-label modern-label">
+                                            <i class="fas fa-users me-1"></i>Send To
+                                        </label>
+                                        <select class="form-select modern-select" id="targetType" required>
+                                            <option value="">🎯 Select target...</option>
+                                            <option value="user">👤 Specific User</option>
+                                            <option value="course">🎓 Course Students</option>
+                                            <option value="role">👥 Role</option>
+                                            <option value="all">🌍 All Users</option>
+                                        </select>
+                                    </div> <!-- Target specific fields -->
+                                    <div class="mb-3 target-field" id="userField" style="display: none;">
+                                        <label for="targetUserId" class="form-label modern-label">
+                                            <i class="fas fa-user me-1"></i>User ID
+                                        </label>
+                                        <input type="text" class="form-control modern-input" id="targetUserId"
+                                            placeholder="Enter user ID">
+                                    </div>
+
+                                    <div class="mb-3 target-field" id="courseField" style="display: none;">
+                                        <label for="targetCourseId" class="form-label modern-label">
+                                            <i class="fas fa-graduation-cap me-1"></i>Course ID
+                                        </label>
+                                        <input type="text" class="form-control modern-input" id="targetCourseId"
+                                            placeholder="Enter course ID">
+                                    </div>
+
+                                    <div class="mb-3 target-field" id="roleField" style="display: none;">
+                                        <label for="targetRole" class="form-label modern-label">
+                                            <i class="fas fa-user-tag me-1"></i>Role
+                                        </label>
+                                        <select class="form-select modern-select" id="targetRole">
+                                            <option value="">Select role...</option>
+                                            <option value="Admin">👑 Admin</option>
+                                            <option value="Instructor">🎓 Instructor</option>
+                                            <option value="Learner">📚 Learner</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn modern-btn-primary btn-send">
+                                            <i class="fas fa-paper-plane me-2"></i>Send Notification
+                                            <span class="btn-glow"></span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div> <!-- Quick Actions -->
+                            <div class="col-md-4">
+                                <div class="modern-card quick-actions-card">
+                                    <div class="card-header modern-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-bolt me-1"></i>Quick Actions
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-grid gap-3">
+                                            <button class="btn modern-btn-outline quick-action-btn btn-welcome"
+                                                onclick="sendWelcomeToNewUsers()">
+                                                <i class="fas fa-user-plus me-2"></i>Welcome New Users
+                                                <span class="btn-shine"></span>
+                                            </button>
+                                            <button class="btn modern-btn-outline quick-action-btn btn-maintenance"
+                                                onclick="sendSystemMaintenance()">
+                                                <i class="fas fa-tools me-2"></i>System Maintenance
+                                                <span class="btn-shine"></span>
+                                            </button>
+                                            <button class="btn modern-btn-outline quick-action-btn btn-course"
+                                                onclick="sendCourseUpdates()">
+                                                <i class="fas fa-book-open me-2"></i>Course Updates
+                                                <span class="btn-shine"></span>
+                                            </button>
+                                            <button class="btn modern-btn-outline quick-action-btn btn-urgent"
+                                                onclick="sendUrgentAlert()">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>Urgent Alert
+                                                <span class="btn-shine"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modern-card stats-card mt-4">
+                                    <div class="card-header modern-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-chart-bar me-1"></i>Notification Statistics
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="stats-grid">
+                                            <div class="stat-item">
+                                                <div class="stat-icon">
+                                                    <i class="fas fa-paper-plane"></i>
+                                                </div>
+                                                <div class="stat-content">
+                                                    <div class="stat-label">Today's Notifications</div>
+                                                    <div class="stat-number" id="todayCount">0</div>
+                                                </div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <div class="stat-icon online">
+                                                    <i class="fas fa-users"></i>
+                                                </div>
+                                                <div class="stat-content">
+                                                    <div class="stat-label">Users Online</div>
+                                                    <div class="stat-number" id="onlineCount">0</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div id="messageContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1070;"></div>
+    </div>
+
+    <!-- Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <!-- Custom JS -->
+    <script src="~/js/components/loader.js"></script>
+    <script src="~/js/shared/toast-notifications.js"></script>
+
+    <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+
+        // Back to top function
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        $(document).ready(function () {
+            // Update active users count in stats card
+            updateActiveUsersCount();
+
+            // Update count every 30 seconds
+            setInterval(updateActiveUsersCount, 30000);
+
+            // Handle target type change
+            $('#targetType').change(function () {
+                const targetType = $(this).val();
+
+                // Hide all target fields
+                $('#userField, #courseField, #roleField').hide();
+
+                // Show relevant field
+                switch (targetType) {
+                    case 'user':
+                        $('#userField').show();
+                        break;
+                    case 'course':
+                        $('#courseField').show();
+                        break;
+                    case 'role':
+                        $('#roleField').show();
+                        break;
+                }
+            });
+
+            // Handle form submission
+            $('#notificationForm').submit(function (e) {
+                e.preventDefault();
+                sendNotification();
+            });
+        });
+
+        function updateActiveUsersCount() {
+            // Update both the stats card and the statistics section
+            if (typeof notificationConnection !== 'undefined' && notificationConnection.state === 'Connected') {
+                notificationConnection.invoke('GetActiveUsersCount')
+                    .then(function (count) {
+                        $('#activeUsersCount').text(count);
+                        $('#onlineCount').text(count);
+                    })
+                    .catch(function (err) {
+                        console.error('Error getting active users count:', err);
+                        $('#activeUsersCount').text('--');
+                        $('#onlineCount').text('--');
+                    });
+            } else {
+                // Fallback when SignalR is not connected
+                $('#activeUsersCount').text('--');
+                $('#onlineCount').text('--');
+            }
+        }
+
+        function sendNotification() {
+            const title = $('#notificationTitle').val();
+            const content = $('#notificationContent').val();
+            const type = $('#notificationType').val();
+            const targetType = $('#targetType').val();
+
+            let url, data;
+
+            switch (targetType) {
+                case 'user':
+                    url = '/Notification/SendToUser';
+                    data = {
+                        targetUserId: $('#targetUserId').val(),
+                        title: title,
+                        content: content,
+                        type: type
+                    };
+                    break;
+
+                case 'course':
+                    url = '/Notification/SendToCourse';
+                    data = {
+                        courseId: $('#targetCourseId').val(),
+                        title: title,
+                        content: content,
+                        type: type
+                    };
+                    break;
+
+                case 'role':
+                    url = '/Notification/SendToRole';
+                    data = {
+                        role: $('#targetRole').val(),
+                        title: title,
+                        content: content,
+                        type: type
+                    };
+                    break;
+
+                case 'all':
+                    url = '/Notification/SendToAll';
+                    data = {
+                        title: title,
+                        content: content,
+                        type: type
+                    };
+                    break;
+
+                default:
+                    showMessage('Please select a target type', 'error');
+                    return;
+            }
+
+            $.post(url, data)
+                .done(function (response) {
+                    if (response.success) {
+                        showMessage('Notification sent successfully!', 'success');
+                        $('#notificationForm')[0].reset();
+                        $('#targetType').change(); // Reset form fields
+                    } else {
+                        showMessage('Failed to send notification', 'error');
+                    }
+                })
+                .fail(function () {
+                    showMessage('Error sending notification', 'error');
+                });
+        }
+
+        function sendWelcomeToNewUsers() {
+            const data = {
+                role: 'Learner',
+                title: 'Welcome to BrainStormEra!',
+                content: 'Welcome to our learning platform! Start exploring courses and begin your learning journey.',
+                type: 'Welcome'
+            };
+
+            $.post('/Notification/SendToRole', data)
+                .done(function (response) {
+                    if (response.success) {
+                        showMessage('Welcome message sent to all learners!', 'success');
+                    }
+                });
+        }
+
+        function sendSystemMaintenance() {
+            const data = {
+                title: 'Scheduled System Maintenance',
+                content: 'We will be performing system maintenance tonight from 2:00 AM to 4:00 AM. The platform may be temporarily unavailable.',
+                type: 'System'
+            };
+
+            $.post('/Notification/SendToAll', data)
+                .done(function (response) {
+                    if (response.success) {
+                        showMessage('Maintenance notification sent to all users!', 'success');
+                    }
+                });
+        }
+
+        function sendCourseUpdates() {
+            const data = {
+                role: 'Instructor',
+                title: 'Course Management Updates',
+                content: 'New features have been added to the course management system. Check out the updated interface!',
+                type: 'Course'
+            };
+
+            $.post('/Notification/SendToRole', data)
+                .done(function (response) {
+                    if (response.success) {
+                        showMessage('Course update notification sent to instructors!', 'success');
+                    }
+                });
+        }
+
+        function sendUrgentAlert() {
+            const data = {
+                title: 'Urgent: Security Update Required',
+                content: 'Please update your password for enhanced security. This is required for all users.',
+                type: 'System'
+            };
+
+            $.post('/Notification/SendToAll', data)
+                .done(function (response) {
+                    if (response.success) {
+                        showMessage('Urgent alert sent to all users!', 'success');
+                    }
+                });
+        }
+
+        function showMessage(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+
+            const messageHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    <i class="fas ${icon} me-2"></i>${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            $('#messageContainer').append(messageHtml);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                $('#messageContainer .alert').first().fadeOut(() => {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+    </script>
+</body>
+
+</html>

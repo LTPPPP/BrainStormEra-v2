@@ -8,10 +8,20 @@
     <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="~/css/global.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/layouts/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components/header.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/BrainStormEra.styles.css" asp-append-version="true" />
+
+    @* User authentication meta tags for JavaScript access *@
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <meta name="user-id" content="@User.FindFirst("UserId")?.Value" />
+        <meta name="user-role" content="@User.FindFirst("UserRole")?.Value" />
+        <meta name="user-name" content="@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)" />
+    }
+
     @await RenderSectionAsync("Styles", required: false)
 </head>
 
@@ -32,13 +42,19 @@
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    @* SignalR Client Library *@
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
+
+    @* Global Scripts *@
+    <script src="~/js/shared/toast-notifications.js" asp-append-version="true"></script>
     <script src="~/js/utils/site.js" asp-append-version="true"></script>
     <script src="~/js/utils/secure-logout.js" asp-append-version="true"></script>
 
-    @* Global scripts for logged in users *@
-    @if (Context.Session.TryGetValue("UserId", out _))
+    @* Notification System for logged in users *@
+    @if (User.Identity?.IsAuthenticated == true)
     {
-        // User is logged in
+        <script src="~/js/shared/notification-system.js" asp-append-version="true"></script>
     }
 
     @await RenderSectionAsync("Scripts", required: false)
