@@ -1,143 +1,203 @@
 @{
     ViewData["Title"] = "Notification Management";
+    Layout = null;
 }
 
-<div class="container">
-    <!-- Page Header -->
-    <div class="page-header">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <h1 class="page-title">
-                    <i class="fas fa-bullhorn text-primary"></i>
-                    Notification Management
-                </h1>
-                <p class="page-subtitle">Send and manage system notifications</p>
-            </div>
-            <div class="col-md-4 text-end">
-                <div class="stats-card">
-                    <div class="stat-number" id="activeUsersCount">0</div>
-                    <div class="stat-label">Active Users Online</div>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="BrainStormEra - Send and manage system notifications">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/courses.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/Home/enhanced-home.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js" defer></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Main Content -->
+    <div class="container main-content" style="margin-top: 2rem;">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="page-title">
+                        <i class="fas fa-bullhorn text-primary"></i>
+                        Notification Management
+                    </h1>
+                    <p class="page-subtitle">Send and manage system notifications</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="stats-card">
+                        <div class="stat-number" id="activeUsersCount">0</div>
+                        <div class="stat-label">Active Users Online</div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Management Content -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="fas fa-paper-plane me-2"></i>Send Notification
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <!-- Send Notification Form -->
-                        <div class="col-md-8">
-                            <form id="notificationForm">
-                                <div class="mb-3">
-                                    <label for="notificationTitle" class="form-label">Title</label>
-                                    <input type="text" class="form-control" id="notificationTitle" required>
-                                </div>
+        <!-- Management Content -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-paper-plane me-2"></i>Send Notification
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Send Notification Form -->
+                            <div class="col-md-8">
+                                <form id="notificationForm">
+                                    <div class="mb-3">
+                                        <label for="notificationTitle" class="form-label">Title</label>
+                                        <input type="text" class="form-control" id="notificationTitle" required>
+                                    </div>
 
-                                <div class="mb-3">
-                                    <label for="notificationContent" class="form-label">Content</label>
-                                    <textarea class="form-control" id="notificationContent" rows="4"
-                                        required></textarea>
-                                </div>
+                                    <div class="mb-3">
+                                        <label for="notificationContent" class="form-label">Content</label>
+                                        <textarea class="form-control" id="notificationContent" rows="4"
+                                            required></textarea>
+                                    </div>
 
-                                <div class="mb-3">
-                                    <label for="notificationType" class="form-label">Type</label>
-                                    <select class="form-select" id="notificationType">
-                                        <option value="General">General</option>
-                                        <option value="Course">Course</option>
-                                        <option value="System">System</option>
-                                        <option value="Achievement">Achievement</option>
-                                        <option value="Announcement">Announcement</option>
-                                    </select>
-                                </div>
+                                    <div class="mb-3">
+                                        <label for="notificationType" class="form-label">Type</label>
+                                        <select class="form-select" id="notificationType">
+                                            <option value="General">General</option>
+                                            <option value="Course">Course</option>
+                                            <option value="System">System</option>
+                                            <option value="Achievement">Achievement</option>
+                                            <option value="Announcement">Announcement</option>
+                                        </select>
+                                    </div>
 
-                                <div class="mb-3">
-                                    <label for="targetType" class="form-label">Send To</label>
-                                    <select class="form-select" id="targetType" required>
-                                        <option value="">Select target...</option>
-                                        <option value="user">Specific User</option>
-                                        <option value="course">Course Students</option>
-                                        <option value="role">Role</option>
-                                        <option value="all">All Users</option>
-                                    </select>
-                                </div>
+                                    <div class="mb-3">
+                                        <label for="targetType" class="form-label">Send To</label>
+                                        <select class="form-select" id="targetType" required>
+                                            <option value="">Select target...</option>
+                                            <option value="user">Specific User</option>
+                                            <option value="course">Course Students</option>
+                                            <option value="role">Role</option>
+                                            <option value="all">All Users</option>
+                                        </select>
+                                    </div>
 
-                                <!-- Target specific fields -->
-                                <div class="mb-3" id="userField" style="display: none;">
-                                    <label for="targetUserId" class="form-label">User ID</label>
-                                    <input type="text" class="form-control" id="targetUserId"
-                                        placeholder="Enter user ID">
-                                </div>
+                                    <!-- Target specific fields -->
+                                    <div class="mb-3" id="userField" style="display: none;">
+                                        <label for="targetUserId" class="form-label">User ID</label>
+                                        <input type="text" class="form-control" id="targetUserId"
+                                            placeholder="Enter user ID">
+                                    </div>
 
-                                <div class="mb-3" id="courseField" style="display: none;">
-                                    <label for="targetCourseId" class="form-label">Course ID</label>
-                                    <input type="text" class="form-control" id="targetCourseId"
-                                        placeholder="Enter course ID">
-                                </div>
+                                    <div class="mb-3" id="courseField" style="display: none;">
+                                        <label for="targetCourseId" class="form-label">Course ID</label>
+                                        <input type="text" class="form-control" id="targetCourseId"
+                                            placeholder="Enter course ID">
+                                    </div>
 
-                                <div class="mb-3" id="roleField" style="display: none;">
-                                    <label for="targetRole" class="form-label">Role</label>
-                                    <select class="form-select" id="targetRole">
-                                        <option value="">Select role...</option>
-                                        <option value="Admin">Admin</option>
-                                        <option value="Instructor">Instructor</option>
-                                        <option value="Learner">Learner</option>
-                                    </select>
-                                </div>
+                                    <div class="mb-3" id="roleField" style="display: none;">
+                                        <label for="targetRole" class="form-label">Role</label>
+                                        <select class="form-select" id="targetRole">
+                                            <option value="">Select role...</option>
+                                            <option value="Admin">Admin</option>
+                                            <option value="Instructor">Instructor</option>
+                                            <option value="Learner">Learner</option>
+                                        </select>
+                                    </div>
 
-                                <div class="d-grid">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-paper-plane me-2"></i>Send Notification
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Quick Actions -->
-                        <div class="col-md-4">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="mb-0">Quick Actions</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-grid gap-2">
-                                        <button class="btn btn-outline-info btn-sm" onclick="sendWelcomeToNewUsers()">
-                                            <i class="fas fa-user-plus me-1"></i>Welcome New Users
-                                        </button>
-                                        <button class="btn btn-outline-warning btn-sm"
-                                            onclick="sendSystemMaintenance()">
-                                            <i class="fas fa-tools me-1"></i>System Maintenance
-                                        </button>
-                                        <button class="btn btn-outline-success btn-sm" onclick="sendCourseUpdates()">
-                                            <i class="fas fa-book-open me-1"></i>Course Updates
-                                        </button>
-                                        <button class="btn btn-outline-danger btn-sm" onclick="sendUrgentAlert()">
-                                            <i class="fas fa-exclamation-triangle me-1"></i>Urgent Alert
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-paper-plane me-2"></i>Send Notification
                                         </button>
                                     </div>
-                                </div>
+                                </form>
                             </div>
 
-                            <div class="card mt-3">
-                                <div class="card-header">
-                                    <h6 class="mb-0">Notification Statistics</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="text-center">
-                                        <div class="mb-2">
-                                            <small class="text-muted">Notifications sent today</small>
-                                            <div class="fs-4 fw-bold text-primary" id="todayCount">0</div>
+                            <!-- Quick Actions -->
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Quick Actions</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-outline-info btn-sm"
+                                                onclick="sendWelcomeToNewUsers()">
+                                                <i class="fas fa-user-plus me-1"></i>Welcome New Users
+                                            </button>
+                                            <button class="btn btn-outline-warning btn-sm"
+                                                onclick="sendSystemMaintenance()">
+                                                <i class="fas fa-tools me-1"></i>System Maintenance
+                                            </button>
+                                            <button class="btn btn-outline-success btn-sm"
+                                                onclick="sendCourseUpdates()">
+                                                <i class="fas fa-book-open me-1"></i>Course Updates
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" onclick="sendUrgentAlert()">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Urgent Alert
+                                            </button>
                                         </div>
-                                        <div class="mb-2">
-                                            <small class="text-muted">Active users online</small>
-                                            <div class="fs-4 fw-bold text-success" id="onlineCount">0</div>
+                                    </div>
+                                </div>
+
+                                <div class="card mt-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Notification Statistics</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center">
+                                            <div class="mb-2">
+                                                <small class="text-muted">Notifications sent today</small>
+                                                <div class="fs-4 fw-bold text-primary" id="todayCount">0</div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <small class="text-muted">Active users online</small>
+                                                <div class="fs-4 fw-bold text-success" id="onlineCount">0</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -147,14 +207,38 @@
                 </div>
             </div>
         </div>
+
+        <!-- Success/Error Messages -->
+        <div id="messageContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1070;"></div>
     </div>
-</div>
 
-<!-- Success/Error Messages -->
-<div id="messageContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1070;"></div>
+    <!-- Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
 
-@section Scripts {
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <!-- Custom JS -->
+    <script src="~/js/components/loader.js"></script>
+    <script src="~/js/shared/toast-notifications.js"></script>
+
     <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+
+        // Back to top function
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
         $(document).ready(function () {
             // Update active users count in stats card
             updateActiveUsersCount();
@@ -345,11 +429,11 @@
             const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
 
             const messageHtml = `
-                        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                            <i class="fas ${icon} me-2"></i>${message}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    `;
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    <i class="fas ${icon} me-2"></i>${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
 
             $('#messageContainer').append(messageHtml);
 
@@ -361,5 +445,6 @@
             }, 5000);
         }
     </script>
-}
-required>textarea</div>
+</body>
+
+</html>
