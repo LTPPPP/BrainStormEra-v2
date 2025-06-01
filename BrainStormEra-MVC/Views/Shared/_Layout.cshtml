@@ -54,7 +54,7 @@
     @* Notification System for logged in users *@
     @if (User.Identity?.IsAuthenticated == true)
     {
-        <script src="~/js/notification-system.js" asp-append-version="true"></script>
+        <script src="~/js/shared/notification-system.js" asp-append-version="true"></script>
     }
 
     @await RenderSectionAsync("Scripts", required: false)
