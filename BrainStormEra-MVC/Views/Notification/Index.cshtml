@@ -20,10 +20,11 @@
     <link rel="stylesheet" href="~/css/global.css">
     <link rel="stylesheet" href="~/css/layouts/base.css">
     <link rel="stylesheet" href="~/css/components/header.css">
-    <link rel="stylesheet" href="~/css/components/loader.css">
-    <link rel="stylesheet" href="~/css/pages/courses.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">    <link rel="stylesheet" href="~/css/pages/courses.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
     <link rel="stylesheet" href="~/css/pages/Home/enhanced-home.css">
+    <!-- Notification Index specific styles -->
+    <link rel="stylesheet" href="~/css/pages/notification-index.css">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
     <!-- Load page loader script -->
@@ -32,7 +33,7 @@
     <link rel="stylesheet" href="~/css/components/toast-notifications.css">
 </head>
 
-<body>
+<body class="notification-page">
     <!-- Display toast notifications from TempData -->
     @if (TempData["SuccessMessage"] != null)
     {
@@ -60,42 +61,42 @@
     @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
 
     <!-- Main Content -->
-    <div class="container main-content" style="margin-top: 2rem;">
-        <!-- Page Header -->
+    <div class="container main-content">
+        <!-- Enhanced Page Header -->
         <div class="page-header">
             <div class="row align-items-center">
-                <div class="col-md-8">
+                <div class="col-lg-8">
                     <h1 class="page-title">
-                        <i class="fas fa-bell text-primary"></i>
-                        Notifications
+                        <i class="fas fa-bell"></i>
+                        Notifications Center
                     </h1>
-                    <p class="page-subtitle">Manage your notifications and stay updated</p>
+                    <p class="page-subtitle">Stay connected with your learning journey and platform updates</p>
                 </div>
-                <div class="col-md-4 text-end">
+                <div class="col-lg-4 text-end">
                     <div class="stats-card">
                         <div class="stat-number">@Model.UnreadCount</div>
-                        <div class="stat-label">Unread Notifications</div>
+                        <div class="stat-label">Unread Messages</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Notifications Content -->
+        <!-- Enhanced Notifications Content -->
         <div class="row">
             <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
-                            <i class="fas fa-list me-2"></i>All Notifications
+                            <i class="fas fa-inbox me-2"></i>All Notifications
                             @if (Model.UnreadCount > 0)
                             {
-                                <span class="badge bg-danger ms-2">@Model.UnreadCount unread</span>
+                                <span class="badge bg-danger ms-2">@Model.UnreadCount New</span>
                             }
                         </h5>
-                        <div>
+                        <div class="notification-controls">
                             @if (Model.UnreadCount > 0)
                             {
-                                <button id="markAllRead" class="btn btn-outline-primary btn-sm">
+                                <button id="markAllRead" class="btn btn-outline-primary btn-sm me-2">
                                     <i class="fas fa-check-double me-1"></i>Mark All Read
                                 </button>
                             }
@@ -113,10 +114,10 @@
                                     <div class="list-group-item notification-item @(notification.IsRead == false ? "unread" : "")" 
                                          data-notification-id="@notification.NotificationId">
                                         <div class="d-flex w-100 justify-content-between align-items-start">
-                                            <div class="flex-grow-1">
-                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <h6 class="mb-0 fw-bold">@notification.NotificationTitle</h6>
-                                                    <div class="d-flex align-items-center">
+                                            <div class="notification-content flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="mb-0 fw-bold notification-title">@notification.NotificationTitle</h6>
+                                                    <div class="notification-meta d-flex align-items-center">
                                                         @if (!string.IsNullOrEmpty(notification.NotificationType))
                                                         {
                                                             <span class="badge bg-secondary me-2">@notification.NotificationType</span>
@@ -125,27 +126,30 @@
                                                         {
                                                             <span class="badge bg-primary me-2">New</span>
                                                         }
-                                                        <small class="text-muted">@notification.NotificationCreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                                        <small class="text-muted">@notification.NotificationCreatedAt.ToString("MMM dd, yyyy • HH:mm")</small>
                                                     </div>
                                                 </div>
-                                                <p class="mb-1">@notification.NotificationContent</p>
+                                                <p class="mb-2 notification-message">@notification.NotificationContent</p>
                                                 @if (!string.IsNullOrEmpty(notification.CourseId) && notification.Course != null)
                                                 {
-                                                    <small class="text-muted">
-                                                        <i class="fas fa-book me-1"></i>Course: @notification.Course.CourseName
-                                                    </small>
+                                                    <div class="course-reference">
+                                                        <i class="fas fa-graduation-cap me-1"></i>
+                                                        <span class="text-muted">Related to: <strong>@notification.Course.CourseName</strong></span>
+                                                    </div>
                                                 }
                                             </div>
-                                            <div class="notification-actions ms-3">
+                                            <div class="notification-actions ms-3 d-flex">
                                                 @if (notification.IsRead == false)
                                                 {
-                                                    <button class="btn btn-sm btn-outline-primary mark-read-btn" 
-                                                            data-notification-id="@notification.NotificationId">
+                                                    <button class="btn btn-sm mark-read-btn" 
+                                                            data-notification-id="@notification.NotificationId"
+                                                            title="Mark as read">
                                                         <i class="fas fa-check"></i>
                                                     </button>
                                                 }
-                                                <button class="btn btn-sm btn-outline-danger delete-btn" 
-                                                        data-notification-id="@notification.NotificationId">
+                                                <button class="btn btn-sm delete-btn" 
+                                                        data-notification-id="@notification.NotificationId"
+                                                        title="Delete notification">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -158,17 +162,17 @@
                             {
                                 <div class="card-footer text-center">
                                     <button id="loadMore" class="btn btn-outline-primary" data-page="@(Model.CurrentPage + 1)">
-                                        <i class="fas fa-plus me-1"></i>Load More
+                                        <i class="fas fa-chevron-down me-2"></i>Load More Notifications
                                     </button>
                                 </div>
                             }
                         }
                         else
                         {
-                            <div class="text-center py-5">
-                                <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
-                                <h5 class="text-muted">No notifications yet</h5>
-                                <p class="text-muted">You'll see notifications here when they arrive.</p>
+                            <div class="empty-state">
+                                <i class="fas fa-bell-slash"></i>
+                                <h5>Your inbox is empty</h5>
+                                <p>No notifications to display. You'll receive updates here as they become available.</p>
                             </div>
                         }
                     </div>
