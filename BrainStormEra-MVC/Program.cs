@@ -27,6 +27,14 @@ namespace BrainStormEra_MVC
             // Add Response Caching
             builder.Services.AddResponseCaching();
 
+            // Add SignalR
+            builder.Services.AddSignalR(options =>
+            {
+                options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+                options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+                options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+            });
+
             // Register Services with SOLID principles
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IUserService, BrainStormEra_MVC.Services.UserService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseService, BrainStormEra_MVC.Services.CourseService>();
@@ -38,6 +46,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICertificateRepository, BrainStormEra_MVC.Services.Repositories.CertificateRepository>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IUserContextService, BrainStormEra_MVC.Services.UserContextService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IResponseService, BrainStormEra_MVC.Services.ResponseService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.INotificationService, BrainStormEra_MVC.Services.NotificationService>();
             builder.Services.AddSingleton<BrainStormEra_MVC.Services.Interfaces.ICacheService, BrainStormEra_MVC.Services.CacheService>();
 
             // Add Authentication
@@ -155,6 +164,9 @@ namespace BrainStormEra_MVC
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
+
+            // Configure SignalR Hub
+            app.MapHub<BrainStormEra_MVC.Hubs.NotificationHub>("/notificationHub");
 
             app.Run();
         }

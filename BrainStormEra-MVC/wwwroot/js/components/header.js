@@ -18,85 +18,57 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Load notifications from server
-  function loadNotifications() {
-    // This would normally be an API call to get notifications
-    // For demo purposes, we'll create some dummy notifications
-    const dummyNotifications = [
-      {
-        id: 1,
-        title: "New course available",
-        message: "A new course on JavaScript has been added.",
-        time: "2 hours ago",
-        isRead: false,
-      },
-      {
-        id: 2,
-        title: "Your progress",
-        message: "You've completed 50% of Python Basics course.",
-        time: "Yesterday",
-        isRead: true,
-      },
-      {
-        id: 3,
-        title: "Course Update",
-        message: "Your enrolled course has new content available.",
-        time: "3 days ago",
-        isRead: false,
-      },
-    ];
+  // Function to add notification to dropdown
+  function addNotificationToDropdown(notification) {
+    if (!notificationDropdown) return;
 
-    if (notificationDropdown) {
-      // Clear the placeholder
-      const emptyItem = notificationDropdown.querySelector(
-        ".notification-empty"
-      );
-      if (emptyItem && dummyNotifications.length > 0) {
-        emptyItem.remove();
-      }
+    // Find the notification list container
+    const listContainer = notificationDropdown.querySelector(
+      ".notification-list-container"
+    );
+    if (!listContainer) return;
 
-      // Add notifications to the dropdown
-      // Find the last li element that contains a dropdown-divider
-      const dropdownDividerLi = Array.from(notificationDropdown.children)
-        .filter((li) => li.querySelector(".dropdown-divider"))
-        .pop();
-
-      dummyNotifications.forEach((notification) => {
-        const notificationItem = document.createElement("li");
-        notificationItem.classList.add("notification-item");
-        if (!notification.isRead) {
-          notificationItem.classList.add("unread");
-        }
-
-        notificationItem.innerHTML = `
-          <div class="notification-content">
-            <h6>${notification.title}</h6>
-            <p>${notification.message}</p>
-            <div class="notification-time">${notification.time}</div>
-          </div>
-        `;
-
-        if (dropdownDividerLi) {
-          notificationDropdown.insertBefore(
-            notificationItem,
-            dropdownDividerLi
-          );
-        } else {
-          // Fallback: append to the end
-          notificationDropdown.appendChild(notificationItem);
-        }
-      });
-
-      // Update badge count (unread notifications)
-      const unreadCount = dummyNotifications.filter((n) => !n.isRead).length;
-      updateNotificationBadge(unreadCount);
+    // Remove empty state if exists
+    const emptyItem = listContainer.querySelector(".notification-empty");
+    if (emptyItem) {
+      emptyItem.remove();
     }
+
+    const notificationItem = document.createElement("li");
+    notificationItem.classList.add("notification-item");
+    if (!notification.isRead) {
+      notificationItem.classList.add("unread");
+    }
+
+    notificationItem.innerHTML = `
+      <div class="dropdown-item notification-content">
+        <div class="d-flex">
+          <div class="notification-icon">
+            <i class="fas fa-bell text-primary"></i>
+          </div>
+          <div class="flex-grow-1">
+            <h6 class="mb-1">${notification.title}</h6>
+            <p class="mb-1 text-muted small">${notification.message}</p>
+            <div class="notification-time text-muted small">${
+              notification.time || "Just now"
+            }</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add to the beginning of the list container
+    listContainer.insertBefore(notificationItem, listContainer.firstChild);
   }
 
-  // Initialize
+  // Initialize for logged in users
   if (userAvatar) {
-    // User is logged in, load notifications
-    loadNotifications();
+    // User is logged in, notification system will handle real-time updates
+    // The NotificationSystem class will call updateNotificationBadge and addNotificationToDropdown
+
+    // Make functions globally available for NotificationSystem
+    window.updateNotificationBadge = updateNotificationBadge;
+    window.addNotificationToDropdown = addNotificationToDropdown;
   }
 
   // Expose functions globally
@@ -108,36 +80,47 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   function createRippleEffect(event) {
-    const button = this;
+    const button = event.currentTarget;
+    const rect = button.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = event.clientX - rect.left - size / 2;
+    const y = event.clientY - rect.top - size / 2;
 
-    // Remove existing ripples
-    const existingRipple = button.querySelector(".ripple");
-    if (existingRipple) {
-      existingRipple.remove();
-    }
-
-    // Create ripple element
     const ripple = document.createElement("span");
-    ripple.classList.add("ripple");
+    ripple.style.cssText = `
+      position: absolute;
+      width: ${size}px;
+      height: ${size}px;
+      left: ${x}px;
+      top: ${y}px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+      pointer-events: none;
+    `;
+
+    button.style.position = "relative";
+    button.style.overflow = "hidden";
     button.appendChild(ripple);
 
-    // Set ripple size and position
-    const diameter = Math.max(button.clientWidth, button.clientHeight);
-    const radius = diameter / 2;
-
-    ripple.style.width = ripple.style.height = `${diameter}px`;
-
-    const rect = button.getBoundingClientRect();
-    const offsetX = event.clientX - rect.left;
-    const offsetY = event.clientY - rect.top;
-
-    ripple.style.left = `${offsetX - radius}px`;
-    ripple.style.top = `${offsetY - radius}px`;
-    ripple.classList.add("active");
-
-    // Remove ripple after animation completes
     setTimeout(() => {
       ripple.remove();
     }, 600);
+  }
+
+  // Add CSS for ripple animation if not already present
+  if (!document.querySelector("#ripple-styles")) {
+    const style = document.createElement("style");
+    style.id = "ripple-styles";
+    style.textContent = `
+      @keyframes ripple {
+        to {
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
   }
 });
