@@ -98,6 +98,8 @@
 .dashboard-card-header h2 {
   margin: 0;
   font-size: 1.3rem;
+  font-weight: 700;
+  color: #2c3e50;
 }
 
 .dashboard-card-body {
@@ -514,6 +516,123 @@
   opacity: 1;
 }
 
+/* Income Chart Styles */
+.filter-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.filter-btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+  border: 2px solid #007bff;
+  background: transparent;
+  color: #007bff;
+  min-width: 50px;
+  text-align: center;
+}
+
+.filter-btn:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.filter-btn:hover {
+  background: #007bff;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.filter-btn.active {
+  background: #007bff;
+  color: white;
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.income-summary {
+  padding: 15px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 123, 255, 0.1);
+}
+
+.income-summary .summary-item {
+  position: relative;
+}
+
+.income-summary .summary-item::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: rgba(0, 123, 255, 0.2);
+}
+
+.income-summary .col-6:last-child .summary-item::after {
+  display: none;
+}
+
+.summary-item {
+  text-align: center;
+}
+
+.summary-item h5 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.summary-item h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.chart-container {
+  height: 300px;
+  position: relative;
+}
+
+.chart-container canvas {
+  border-radius: 8px;
+}
+
+/* Smooth transitions for chart updates */
+.chart-container {
+  transition: opacity 0.3s ease;
+}
+
+/* Enhanced loading state */
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Hover effects for summary items */
+.summary-item:hover h3 {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+/* Enhanced dashboard card styles */
+.dashboard-card {
+  margin-bottom: 2rem;
+}
+
+.dashboard-card-header {
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+  border-bottom: none;
+}
+
+.dashboard-card-body {
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .welcome-title {
@@ -542,6 +661,20 @@
   .course-image {
     height: 180px;
   }
+
+  .filter-buttons {
+    margin-top: 10px;
+    justify-content: center;
+  }
+
+  .dashboard-card-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .chart-container {
+    height: 250px;
+  }
 }
 
 @media (max-width: 767.98px) {
@@ -564,6 +697,15 @@
 
   .course-actions .btn {
     padding: 12px 16px;
+  }
+
+  .filter-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+
+  .summary-item h3 {
+    font-size: 1.3rem;
   }
 }
 
