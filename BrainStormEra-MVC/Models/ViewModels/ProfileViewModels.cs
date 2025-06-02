@@ -30,19 +30,19 @@ namespace BrainStormEra_MVC.Models.ViewModels
     }
     public class EditProfileViewModel
     {
-        [Required(ErrorMessage = "Tên đầy đủ không được để trống")]
-        [StringLength(100, ErrorMessage = "Tên đầy đủ không được vượt quá 100 ký tự")]
+        [Required(ErrorMessage = "Full name is required")]
+        [StringLength(100, ErrorMessage = "Full name cannot exceed 100 characters")]
         public string FullName { get; set; } = "";
 
-        [Required(ErrorMessage = "Email không được để trống")]
-        [EmailAddress(ErrorMessage = "Định dạng email không hợp lệ")]
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
         public string Email { get; set; } = "";
 
-        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
-        [StringLength(15, ErrorMessage = "Số điện thoại không được vượt quá 15 ký tự")]
+        [Phone(ErrorMessage = "Invalid phone number")]
+        [StringLength(15, ErrorMessage = "Phone number cannot exceed 15 characters")]
         public string? PhoneNumber { get; set; }
 
-        [StringLength(200, ErrorMessage = "Địa chỉ không được vượt quá 200 ký tự")]
+        [StringLength(200, ErrorMessage = "Address cannot exceed 200 characters")]
         public string? UserAddress { get; set; }
 
         [DataType(DataType.Date)]
@@ -51,13 +51,13 @@ namespace BrainStormEra_MVC.Models.ViewModels
         public string? Gender { get; set; }
 
         // Bank Information
-        [StringLength(50, ErrorMessage = "Số tài khoản ngân hàng không được vượt quá 50 ký tự")]
+        [StringLength(50, ErrorMessage = "Bank account number cannot exceed 50 characters")]
         public string? BankAccountNumber { get; set; }
 
-        [StringLength(255, ErrorMessage = "Tên ngân hàng không được vượt quá 255 ký tự")]
+        [StringLength(255, ErrorMessage = "Bank name cannot exceed 255 characters")]
         public string? BankName { get; set; }
 
-        [StringLength(255, ErrorMessage = "Tên chủ tài khoản không được vượt quá 255 ký tự")]
+        [StringLength(255, ErrorMessage = "Account holder name cannot exceed 255 characters")]
         public string? AccountHolderName { get; set; }
 
         public IFormFile? ProfileImage { get; set; }
@@ -66,18 +66,18 @@ namespace BrainStormEra_MVC.Models.ViewModels
     }
     public class ChangePasswordViewModel
     {
-        [Required(ErrorMessage = "Mật khẩu hiện tại không được để trống")]
+        [Required(ErrorMessage = "Current password is required")]
         [DataType(DataType.Password)]
         public string CurrentPassword { get; set; } = "";
 
-        [Required(ErrorMessage = "Mật khẩu mới không được để trống")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự")]
+        [Required(ErrorMessage = "New password is required")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters long")]
         [DataType(DataType.Password)]
         public string NewPassword { get; set; } = "";
 
-        [Required(ErrorMessage = "Xác nhận mật khẩu không được để trống")]
+        [Required(ErrorMessage = "Password confirmation is required")]
         [DataType(DataType.Password)]
-        [Compare("NewPassword", ErrorMessage = "Mật khẩu xác nhận không khớp")]
+        [Compare("NewPassword", ErrorMessage = "Confirmation password does not match")]
         public string ConfirmPassword { get; set; } = "";
     }
 }

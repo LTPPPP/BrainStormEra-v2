@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
         ];
         if (!validTypes.includes(file.type)) {
           showNotification(
-            "Vui lòng chọn file ảnh hợp lệ (JPG, PNG, GIF)",
+            "Please select a valid image file (JPG, PNG, GIF)",
             "warning"
           );
           this.value = "";
@@ -38,10 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Validate file size (5MB)
         const maxSize = 5 * 1024 * 1024; // 5MB in bytes
         if (file.size > maxSize) {
-          showNotification(
-            "Kích thước file không được vượt quá 5MB",
-            "warning"
-          );
+          showNotification("File size cannot exceed 5MB", "warning");
           this.value = "";
           return;
         }
@@ -64,7 +61,7 @@ document.addEventListener("DOMContentLoaded", function () {
             );
           }
 
-          showNotification("Ảnh đã được chọn thành công", "success");
+          showNotification("Image selected successfully", "success");
         };
         reader.readAsDataURL(file);
       }
@@ -314,7 +311,7 @@ function loadFromLocalStorage() {
           }
         });
 
-        showNotification("Đã khôi phục dữ liệu đã lưu", "info");
+        showNotification("Restored saved data", "info");
       }
     } catch (e) {
       localStorage.removeItem("profile_edit_data");
@@ -332,7 +329,7 @@ function addCharacterCounters() {
     if (maxLength) {
       const counter = document.createElement("small");
       counter.className = "form-text text-muted character-counter";
-      counter.innerHTML = `<span class="current">0</span>/${maxLength} ký tự`;
+      counter.innerHTML = `<span class="current">0</span>/${maxLength} characters`;
 
       field.parentNode.appendChild(counter);
 
@@ -442,16 +439,16 @@ function deleteAvatar() {
           deleteBtn.parentElement.style.display = "none";
         }
 
-        showNotification("Avatar đã được xóa thành công", "success");
+        showNotification("Avatar has been deleted successfully", "success");
       } else {
         showNotification(
-          data.message || "Có lỗi xảy ra khi xóa avatar",
+          data.message || "An error occurred while deleting avatar",
           "error"
         );
       }
     })
     .catch((error) => {
       console.error("Error:", error);
-      showNotification("Có lỗi xảy ra khi xóa avatar", "error");
+      showNotification("An error occurred while deleting avatar", "error");
     });
 }

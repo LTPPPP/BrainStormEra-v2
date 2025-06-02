@@ -106,7 +106,7 @@ namespace BrainStormEra_MVC
             }
             catch
             {
-                // Vẫn tiếp tục chạy ứng dụng nhưng ghi lại lỗi
+                // Continue running the application but log the error
             }
 
             var app = builder.Build();

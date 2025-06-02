@@ -86,9 +86,9 @@ namespace BrainStormEra_MVC.Controllers
                 // Convert gender short to string
                 string genderString = user.Gender switch
                 {
-                    1 => "Nam",
-                    2 => "Nữ",
-                    3 => "Khác",
+                    1 => "Male",
+                    2 => "Female",
+                    3 => "Other",
                     _ => null
                 }; var viewModel = new UserProfileViewModel
                 {

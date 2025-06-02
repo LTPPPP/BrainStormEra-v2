@@ -104,7 +104,7 @@ document.addEventListener("DOMContentLoaded", function () {
     button.addEventListener("click", function () {
       if (this.form && this.form.checkValidity()) {
         const originalText = this.innerHTML;
-        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         this.disabled = true;
 
         // Re-enable button after 5 seconds as fallback
@@ -146,10 +146,10 @@ function showNotification(message, type = "info") {
 }
 
 function formatDate(dateString) {
-  if (!dateString) return "Chưa cập nhật";
+  if (!dateString) return "Not updated";
 
   const date = new Date(dateString);
-  return date.toLocaleDateString("vi-VN", {
+  return date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",

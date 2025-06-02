@@ -1,56 +1,56 @@
-# Cấu Trúc Thư Mục Dự Án BrainStormEra
+# BrainStormEra Project Directory Structure
 
-## Tổng Quan
+## Overview
 
-Dự án BrainStormEra được tổ chức theo mô hình MVC (Model-View-Controller) với cấu trúc thư mục được phân chia rõ ràng để dễ dàng quản lý và bảo trì.
+The BrainStormEra project is organized according to the MVC (Model-View-Controller) pattern with a clearly divided directory structure for easy management and maintenance.
 
-## Cấu Trúc Thư Mục wwwroot
+## wwwroot Directory Structure
 
 ### CSS
 
-- **components**: Chứa các file CSS cho các thành phần UI tái sử dụng
-  - `header.css`: Style cho header
-  - `loader.css`: Style cho loading animation
-  - `placeholders.css`: Style cho các placeholder
-- **layouts**: Chứa các file CSS cho layout chung
-  - `base.css`: Style cơ bản cho toàn bộ trang web
-  - `site.css`: Style cho layout chính
-- **pages**: Chứa CSS cho từng trang cụ thể, được phân chia theo controller
-  - **Home**: CSS cho trang chủ
-    - `enhanced-home.css`: Style nâng cao cho trang chủ
-    - `homePage.css`: Style cơ bản cho trang chủ
-    - `landing_page.css`: Style cho landing page
-  - **Course**: CSS cho trang khóa học
-  - **Payment**: CSS cho trang thanh toán
+- **components**: Contains CSS files for reusable UI components
+  - `header.css`: Styles for header
+  - `loader.css`: Styles for loading animation
+  - `placeholders.css`: Styles for placeholders
+- **layouts**: Contains CSS files for common layouts
+  - `base.css`: Basic styles for the entire website
+  - `site.css`: Styles for main layout
+- **pages**: Contains CSS for specific pages, organized by controller
+  - **Home**: CSS for home page
+    - `enhanced-home.css`: Enhanced styles for home page
+    - `homePage.css`: Basic styles for home page
+    - `landing_page.css`: Styles for landing page
+  - **Course**: CSS for course pages
+  - **Payment**: CSS for payment pages
 
 ### JavaScript
 
-- **components**: Chứa JS cho các thành phần UI tái sử dụng
-  - `header.js`: Logic cho header
-  - `loader.js`: Logic cho loading animation
-- **pages**: Chứa JS cho từng trang cụ thể
-  - **Home**: JS cho trang chủ
-  - **Course**: JS cho trang khóa học
-  - **Payment**: JS cho trang thanh toán
-- **utils**: Chứa các utility functions
-  - `site.js`: JS chung cho toàn bộ trang web
+- **components**: Contains JS for reusable UI components
+  - `header.js`: Logic for header
+  - `loader.js`: Logic for loading animation
+- **pages**: Contains JS for specific pages
+  - **Home**: JS for home page
+  - **Course**: JS for course pages
+  - **Payment**: JS for payment pages
+- **utils**: Contains utility functions
+  - `site.js`: Common JS for the entire website
 
-### Hình Ảnh
+### Images
 
-- **logo**: Chứa logo của trang web
-  - `Main_Logo.jpg`: Logo chính của BrainStormEra
-- **banners**: Chứa banner cho trang web
-- **courses**: Chứa hình ảnh liên quan đến khóa học
-- **avatars**: Chứa avatar người dùng
-- **icons**: Chứa các icon sử dụng trong trang web
+- **logo**: Contains website logos
+  - `Main_Logo.jpg`: Main logo of BrainStormEra
+- **banners**: Contains website banners
+- **courses**: Contains course-related images
+- **avatars**: Contains user avatars
+- **icons**: Contains icons used throughout the website
 
-## Cách Sử Dụng
+## Usage
 
-Khi thêm file mới, hãy đảm bảo đặt chúng vào đúng thư mục theo cấu trúc đã được phân chia. Điều này giúp dự án được tổ chức tốt và dễ dàng bảo trì.
+When adding new files, make sure to place them in the correct directory according to the established structure. This helps keep the project well-organized and easy to maintain.
 
-## Quy Ước Đặt Tên
+## Naming Conventions
 
-- Sử dụng `kebab-case` cho tên file (ví dụ: `header-dropdown.css`)
-- Sử dụng tên có ý nghĩa mô tả rõ chức năng của file
-- Prefix CSS component với tên component (ví dụ: `header-dropdown.css`)
-- Prefix JS pages với tên controller (ví dụ: `home-slider.js`)
+- Use `kebab-case` for file names (e.g., `header-dropdown.css`)
+- Use meaningful names that clearly describe the file's function
+- Prefix CSS components with the component name (e.g., `header-dropdown.css`)
+- Prefix JS pages with the controller name (e.g., `home-slider.js`)
