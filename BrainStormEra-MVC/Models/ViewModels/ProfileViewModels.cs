@@ -16,6 +16,11 @@ namespace BrainStormEra_MVC.Models.ViewModels
         public string Role { get; set; } = "";
         public DateTime? CreatedAt { get; set; }
 
+        // Bank Information
+        public string? BankAccountNumber { get; set; }
+        public string? BankName { get; set; }
+        public string? AccountHolderName { get; set; }
+
         // Statistics
         public int TotalCourses { get; set; }
         public int CompletedCourses { get; set; }
@@ -44,6 +49,16 @@ namespace BrainStormEra_MVC.Models.ViewModels
         public DateTime? DateOfBirth { get; set; }
 
         public string? Gender { get; set; }
+
+        // Bank Information
+        [StringLength(50, ErrorMessage = "Số tài khoản ngân hàng không được vượt quá 50 ký tự")]
+        public string? BankAccountNumber { get; set; }
+
+        [StringLength(255, ErrorMessage = "Tên ngân hàng không được vượt quá 255 ký tự")]
+        public string? BankName { get; set; }
+
+        [StringLength(255, ErrorMessage = "Tên chủ tài khoản không được vượt quá 255 ký tự")]
+        public string? AccountHolderName { get; set; }
 
         public IFormFile? ProfileImage { get; set; }
 

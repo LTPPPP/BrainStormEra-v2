@@ -219,7 +219,6 @@ function validateField(field) {
     field.classList.add("is-invalid");
     return;
   }
-
   // Specific field validations
   switch (field.type) {
     case "email":
@@ -245,6 +244,25 @@ function validateField(field) {
         if (selectedDate > today || selectedDate < minDate) {
           isValid = false;
         }
+      }
+      break;
+  }
+
+  // Additional field validations by name
+  switch (field.name) {
+    case "BankAccountNumber":
+      if (value && !/^[0-9]{8,20}$/.test(value)) {
+        isValid = false;
+      }
+      break;
+    case "BankName":
+      if (value && value.length < 2) {
+        isValid = false;
+      }
+      break;
+    case "AccountHolderName":
+      if (value && !/^[a-zA-ZÀ-ỹ\s]{2,}$/.test(value)) {
+        isValid = false;
       }
       break;
   }
