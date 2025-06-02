@@ -446,20 +446,11 @@
   align-items: center;
   gap: 6px;
   box-shadow: 0 2px 8px rgba(241, 196, 15, 0.2);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.points-container:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(241, 196, 15, 0.3);
-  background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
 }
 
 .points-container i {
   font-size: 1rem;
   color: #f39c12;
-  animation: coinSpin 2s linear infinite;
 }
 
 .points-value {
@@ -476,18 +467,6 @@
   color: #8e44ad;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-@keyframes coinSpin {
-  0% {
-    transform: rotateY(0deg);
-  }
-  50% {
-    transform: rotateY(180deg);
-  }
-  100% {
-    transform: rotateY(360deg);
-  }
 }
 
 /* Responsive adjustments for payment points */
