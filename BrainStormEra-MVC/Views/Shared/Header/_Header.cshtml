@@ -36,6 +36,14 @@
                 <div class="profile d-flex align-items-center">
                     @if (User.Identity?.IsAuthenticated == true)
                     {
+                        <!-- Payment Points Display -->
+                        <div class="payment-points me-3">
+                            <div class="points-container">
+                                <i class="fas fa-coins text-warning"></i>
+                                <span class="points-value" id="userPoints">0</span>
+                                <span class="points-label">Points</span>
+                            </div>
+                        </div>
                         <div class="dropdown me-3">
                             <a href="#" class="notification-bell" id="notificationDropdown" data-bs-toggle="dropdown"
                                 aria-expanded="false">
