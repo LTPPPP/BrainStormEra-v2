@@ -43,6 +43,8 @@ public partial class MessageEntity
 
     public DateTime MessageUpdatedAt { get; set; }
 
+    public virtual Conversation Conversation { get; set; } = null!;
+
     public virtual ICollection<ConversationParticipant> ConversationParticipants { get; set; } = new List<ConversationParticipant>();
 
     public virtual ICollection<Conversation> Conversations { get; set; } = new List<Conversation>();

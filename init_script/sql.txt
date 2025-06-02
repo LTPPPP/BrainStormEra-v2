@@ -1,4 +1,36 @@
+-- Complete Database Schema for Learning Management System
+-- SQL Server T-SQL Script
 
+-- Drop tables if they exist (in reverse dependency order)
+IF OBJECT_ID('user_answer') IS NOT NULL DROP TABLE user_answer;
+IF OBJECT_ID('quiz_attempt') IS NOT NULL DROP TABLE quiz_attempt;
+IF OBJECT_ID('answer_option') IS NOT NULL DROP TABLE answer_option;
+IF OBJECT_ID('question') IS NOT NULL DROP TABLE question;
+IF OBJECT_ID('quiz') IS NOT NULL DROP TABLE quiz;
+IF OBJECT_ID('lesson_prerequisite') IS NOT NULL DROP TABLE lesson_prerequisite;
+IF OBJECT_ID('user_progress') IS NOT NULL DROP TABLE user_progress;
+IF OBJECT_ID('certificate') IS NOT NULL DROP TABLE certificate;
+IF OBJECT_ID('user_achievement') IS NOT NULL DROP TABLE user_achievement;
+IF OBJECT_ID('achievement') IS NOT NULL DROP TABLE achievement;
+IF OBJECT_ID('feedback') IS NOT NULL DROP TABLE feedback;
+IF OBJECT_ID('notification') IS NOT NULL DROP TABLE notification;
+IF OBJECT_ID('conversation_participant') IS NOT NULL DROP TABLE conversation_participant;
+IF OBJECT_ID('message_entity') IS NOT NULL DROP TABLE message_entity;
+IF OBJECT_ID('conversation') IS NOT NULL DROP TABLE conversation;
+IF OBJECT_ID('chatbot_conversation') IS NOT NULL DROP TABLE chatbot_conversation;
+IF OBJECT_ID('payment_transaction') IS NOT NULL DROP TABLE payment_transaction;
+IF OBJECT_ID('enrollment') IS NOT NULL DROP TABLE enrollment;
+IF OBJECT_ID('lesson') IS NOT NULL DROP TABLE lesson;
+IF OBJECT_ID('chapter') IS NOT NULL DROP TABLE chapter;
+IF OBJECT_ID('course_category_mapping') IS NOT NULL DROP TABLE course_category_mapping;
+IF OBJECT_ID('course') IS NOT NULL DROP TABLE course;
+IF OBJECT_ID('course_category') IS NOT NULL DROP TABLE course_category;
+IF OBJECT_ID('account') IS NOT NULL DROP TABLE account;
+IF OBJECT_ID('payment_method') IS NOT NULL DROP TABLE payment_method;
+IF OBJECT_ID('lesson_type') IS NOT NULL DROP TABLE lesson_type;
+IF OBJECT_ID('status') IS NOT NULL DROP TABLE status;
+
+-- Create base tables first
 CREATE TABLE status (
     status_id INT PRIMARY KEY,
     status_name NVARCHAR(255) NOT NULL
@@ -29,6 +61,9 @@ CREATE TABLE account (
     user_address NVARCHAR(MAX),
     user_image NVARCHAR(MAX),
     is_banned BIT DEFAULT 0,
+    bank_account_number VARCHAR(50),
+    bank_name NVARCHAR(255),
+    account_holder_name NVARCHAR(255),
     last_login DATETIME,
     account_created_at DATETIME NOT NULL DEFAULT GETDATE(),
     account_updated_at DATETIME NOT NULL DEFAULT GETDATE()
@@ -75,7 +110,6 @@ CREATE TABLE course_category_mapping (
     FOREIGN KEY (course_category_id) REFERENCES course_category(course_category_id) ON DELETE CASCADE ON UPDATE NO ACTION
 );
 
-
 CREATE TABLE chapter (
     chapter_id VARCHAR(36) PRIMARY KEY,
     course_id VARCHAR(36) NOT NULL,
@@ -90,12 +124,10 @@ CREATE TABLE chapter (
     chapter_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE ON UPDATE NO ACTION,
     FOREIGN KEY (chapter_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION,
-    CONSTRAINT unique_chapter_order_per_course UNIQUE (course_id, chapter_order)
+    FOREIGN KEY (unlock_after_chapter_id) REFERENCES chapter(chapter_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT unique_chapter_order_per_course UNIQUE (course_id, chapter_order),
+    CONSTRAINT CK_chapter_no_self_unlock CHECK (chapter_id != unlock_after_chapter_id OR unlock_after_chapter_id IS NULL)
 );
-
-
-ALTER TABLE chapter ADD CONSTRAINT FK_chapter_unlock_after 
-    FOREIGN KEY (unlock_after_chapter_id) REFERENCES chapter(chapter_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 CREATE TABLE lesson (
     lesson_id VARCHAR(36) PRIMARY KEY,
@@ -120,10 +152,10 @@ CREATE TABLE lesson (
     FOREIGN KEY (chapter_id) REFERENCES chapter(chapter_id) ON DELETE CASCADE ON UPDATE NO ACTION,
     FOREIGN KEY (lesson_type_id) REFERENCES lesson_type(lesson_type_id) ON DELETE SET NULL ON UPDATE NO ACTION,
     FOREIGN KEY (lesson_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION,
-    CONSTRAINT unique_lesson_order_per_chapter UNIQUE (chapter_id, lesson_order)
+    FOREIGN KEY (unlock_after_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT unique_lesson_order_per_chapter UNIQUE (chapter_id, lesson_order),
+    CONSTRAINT CK_lesson_no_self_unlock CHECK (lesson_id != unlock_after_lesson_id OR unlock_after_lesson_id IS NULL)
 );
-ALTER TABLE lesson ADD CONSTRAINT FK_lesson_unlock_after 
-    FOREIGN KEY (unlock_after_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 CREATE TABLE enrollment (
     enrollment_id VARCHAR(36) PRIMARY KEY,
@@ -139,9 +171,10 @@ CREATE TABLE enrollment (
     enrollment_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE ON UPDATE NO ACTION,
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE ON UPDATE NO ACTION,
-    FOREIGN KEY (enrollment_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION
+    FOREIGN KEY (enrollment_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION,
+    FOREIGN KEY (current_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (last_accessed_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
-
 
 CREATE TABLE lesson_prerequisite (
     lesson_id VARCHAR(36),
@@ -152,7 +185,8 @@ CREATE TABLE lesson_prerequisite (
     created_at DATETIME NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (lesson_id, prerequisite_lesson_id),
     FOREIGN KEY (lesson_id) REFERENCES lesson(lesson_id) ON DELETE CASCADE ON UPDATE NO ACTION,
-    FOREIGN KEY (prerequisite_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+    FOREIGN KEY (prerequisite_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT CK_lesson_prerequisite_no_self CHECK (lesson_id != prerequisite_lesson_id)
 );
 
 CREATE TABLE quiz (
@@ -175,6 +209,7 @@ CREATE TABLE quiz (
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
     FOREIGN KEY (quiz_status) REFERENCES status(status_id) ON DELETE SET NULL ON UPDATE NO ACTION
 );
+
 CREATE TABLE question (
     question_id VARCHAR(36) PRIMARY KEY,
     quiz_id VARCHAR(36) NOT NULL,
@@ -209,7 +244,8 @@ CREATE TABLE quiz_attempt (
     attempt_number INT DEFAULT 1,
     time_spent INT, -- in seconds
     FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY (quiz_id) REFERENCES quiz(quiz_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+    FOREIGN KEY (quiz_id) REFERENCES quiz(quiz_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT CK_quiz_score_valid CHECK (percentage_score >= 0 AND percentage_score <= 100)
 );
 
 CREATE TABLE user_answer (
@@ -229,10 +265,13 @@ CREATE TABLE user_answer (
 
 CREATE TABLE payment_transaction (
     transaction_id VARCHAR(36) PRIMARY KEY,
+    recipient_id VARCHAR(36),
+    payout_notes NVARCHAR(500),
     user_id VARCHAR(36) NOT NULL,
     course_id VARCHAR(36) NOT NULL,
     amount DECIMAL(10,2) NOT NULL CHECK (amount >= 0),
     payment_method_id INT,
+    transaction_type VARCHAR(20) DEFAULT 'course_payment',
     transaction_status VARCHAR(20) DEFAULT 'pending' CHECK (transaction_status IN ('pending', 'completed', 'failed', 'refunded', 'cancelled')),
     payment_gateway VARCHAR(50), -- PayPal, Stripe, VNPay, etc.
     payment_gateway_ref VARCHAR(255), -- Reference from payment gateway
@@ -247,10 +286,12 @@ CREATE TABLE payment_transaction (
     net_amount DECIMAL(10,2), -- Amount after fees
     transaction_created_at DATETIME NOT NULL DEFAULT GETDATE(),
     transaction_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
-    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY (payment_method_id) REFERENCES payment_method(payment_method_id) ON DELETE SET NULL ON UPDATE NO ACTION
+    FOREIGN KEY (payment_method_id) REFERENCES payment_method(payment_method_id) ON DELETE SET NULL ON UPDATE NO ACTION,
+    FOREIGN KEY (recipient_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
+
 CREATE TABLE user_progress (
     user_id VARCHAR(36),
     lesson_id VARCHAR(36),
@@ -270,7 +311,8 @@ CREATE TABLE user_progress (
     meets_quiz_requirement BIT DEFAULT 1, -- Whether quiz requirements are met (default true for non-quiz lessons)
     PRIMARY KEY (user_id, lesson_id),
     FOREIGN KEY (user_id) REFERENCES account(user_id) ON DELETE CASCADE ON UPDATE NO ACTION,
-    FOREIGN KEY (lesson_id) REFERENCES lesson(lesson_id) ON DELETE CASCADE ON UPDATE NO ACTION
+    FOREIGN KEY (lesson_id) REFERENCES lesson(lesson_id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    CONSTRAINT CK_progress_percentage_valid CHECK (progress_percentage >= 0 AND progress_percentage <= 100)
 );
 
 CREATE TABLE certificate (
@@ -329,6 +371,7 @@ CREATE TABLE achievement (
     points_reward INT DEFAULT 0,
     achievement_created_at DATETIME NOT NULL DEFAULT GETDATE()
 );
+
 CREATE TABLE user_achievement (
     user_id VARCHAR(36),
     achievement_id VARCHAR(36),
@@ -359,6 +402,21 @@ CREATE TABLE notification (
     FOREIGN KEY (created_by) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
+CREATE TABLE conversation (
+    conversation_id VARCHAR(36) PRIMARY KEY,
+    conversation_name NVARCHAR(255), -- Tên cuộc trò chuyện (có thể null cho chat 1-1)
+    conversation_type VARCHAR(20) DEFAULT 'private' CHECK (conversation_type IN ('private', 'group', 'course_discussion')),
+    created_by VARCHAR(36) NOT NULL,
+    course_id VARCHAR(36), -- Liên kết với khóa học (nếu là thảo luận khóa học)
+    is_active BIT DEFAULT 1,
+    last_message_id VARCHAR(36),
+    last_message_at DATETIME,
+    conversation_created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    conversation_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
+    
+    FOREIGN KEY (created_by) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE SET NULL ON UPDATE NO ACTION
+);
 
 -- Bảng lưu trữ các cuộc trò chuyện giữa người dùng
 CREATE TABLE message_entity (
@@ -385,24 +443,8 @@ CREATE TABLE message_entity (
     -- Foreign keys
     FOREIGN KEY (sender_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
     FOREIGN KEY (receiver_id) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY (conversation_id) REFERENCES conversation(conversation_id) ON DELETE CASCADE ON UPDATE NO ACTION,
     FOREIGN KEY (reply_to_message_id) REFERENCES message_entity(message_id) ON DELETE NO ACTION ON UPDATE NO ACTION
-);
-
-CREATE TABLE conversation (
-    conversation_id VARCHAR(36) PRIMARY KEY,
-    conversation_name NVARCHAR(255), -- Tên cuộc trò chuyện (có thể null cho chat 1-1)
-    conversation_type VARCHAR(20) DEFAULT 'private' CHECK (conversation_type IN ('private', 'group', 'course_discussion')),
-    created_by VARCHAR(36) NOT NULL,
-    course_id VARCHAR(36), -- Liên kết với khóa học (nếu là thảo luận khóa học)
-    is_active BIT DEFAULT 1,
-    last_message_id VARCHAR(36),
-    last_message_at DATETIME,
-    conversation_created_at DATETIME NOT NULL DEFAULT GETDATE(),
-    conversation_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
-    
-    FOREIGN KEY (created_by) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE SET NULL ON UPDATE NO ACTION,
-    FOREIGN KEY (last_message_id) REFERENCES message_entity(message_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
 CREATE TABLE conversation_participant (
@@ -422,13 +464,11 @@ CREATE TABLE conversation_participant (
     FOREIGN KEY (last_read_message_id) REFERENCES message_entity(message_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
+-- Add remaining foreign key constraints after all tables are created
+ALTER TABLE conversation ADD CONSTRAINT FK_conversation_last_message 
+    FOREIGN KEY (last_message_id) REFERENCES message_entity(message_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
-ALTER TABLE enrollment ADD CONSTRAINT FK_enrollment_current_lesson 
-    FOREIGN KEY (current_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
-
-ALTER TABLE enrollment ADD CONSTRAINT FK_enrollment_last_accessed_lesson 
-    FOREIGN KEY (last_accessed_lesson_id) REFERENCES lesson(lesson_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
-
+-- Create all indexes for performance optimization
 CREATE INDEX IX_lesson_chapter_order ON lesson(chapter_id, lesson_order);
 CREATE INDEX IX_chapter_course_order ON chapter(course_id, chapter_order);
 CREATE INDEX IX_user_progress_user_lesson ON user_progress(user_id, lesson_id);
@@ -453,5 +493,35 @@ CREATE INDEX IX_conversation_participants ON conversation_participant(user_id, i
 CREATE INDEX IX_conversation_last_message ON conversation(last_message_at DESC);
 CREATE INDEX IX_message_reply_to ON message_entity(reply_to_message_id);
 
-ALTER TABLE conversation ADD CONSTRAINT FK_conversation_last_message 
-    FOREIGN KEY (last_message_id) REFERENCES message_entity(message_id) ON DELETE NO ACTION ON UPDATE NO ACTION;
+CREATE INDEX IX_payment_transaction_user ON payment_transaction(user_id, transaction_status);
+CREATE INDEX IX_quiz_attempt_status ON quiz_attempt(user_id, is_passed, end_time);
+CREATE INDEX IX_user_answer_attempt ON user_answer(attempt_id, is_correct);
+
+-- Insert sample data for status table
+INSERT INTO status (status_id, status_name) VALUES
+(1, 'Active'),
+(2, 'Inactive'),
+(3, 'Pending'),
+(4, 'Completed'),
+(5, 'Draft'),
+(6, 'Published'),
+(7, 'Archived');
+
+-- Insert sample data for lesson_type table
+INSERT INTO lesson_type (lesson_type_id, lesson_type_name) VALUES
+(1, 'Video'),
+(2, 'Text'),
+(3, 'Interactive'),
+(4, 'Quiz'),
+(5, 'Assignment'),
+(6, 'Discussion');
+
+-- Insert sample data for payment_method table
+INSERT INTO payment_method (payment_method_id, method_name, is_active) VALUES
+(1, 'Credit Card', 1),
+(2, 'PayPal', 1),
+(3, 'Bank Transfer', 1),
+(4, 'VNPay', 1),
+(5, 'Momo', 1);
+
+PRINT 'Database schema created successfully!';

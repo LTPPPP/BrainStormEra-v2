@@ -32,4 +32,6 @@ public partial class Conversation
     public virtual Account CreatedByNavigation { get; set; } = null!;
 
     public virtual MessageEntity? LastMessage { get; set; }
+
+    public virtual ICollection<MessageEntity> MessageEntities { get; set; } = new List<MessageEntity>();
 }

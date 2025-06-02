@@ -31,6 +31,12 @@ public partial class Account
 
     public bool? IsBanned { get; set; }
 
+    public string? BankAccountNumber { get; set; }
+
+    public string? BankName { get; set; }
+
+    public string? AccountHolderName { get; set; }
+
     public DateTime? LastLogin { get; set; }
 
     public DateTime AccountCreatedAt { get; set; }
@@ -61,7 +67,9 @@ public partial class Account
 
     public virtual ICollection<Notification> NotificationUsers { get; set; } = new List<Notification>();
 
-    public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
+    public virtual ICollection<PaymentTransaction> PaymentTransactionRecipients { get; set; } = new List<PaymentTransaction>();
+
+    public virtual ICollection<PaymentTransaction> PaymentTransactionUsers { get; set; } = new List<PaymentTransaction>();
 
     public virtual ICollection<QuizAttempt> QuizAttempts { get; set; } = new List<QuizAttempt>();
 
