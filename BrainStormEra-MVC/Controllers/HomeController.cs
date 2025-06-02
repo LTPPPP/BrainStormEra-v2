@@ -427,33 +427,73 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                // Optimized query to get instructor data and statistics in one go
-                var instructorData = await _context.Accounts
+                // Get instructor basic data including PaymentPoint
+                var user = await _context.Accounts
                     .AsNoTracking()
                     .Where(a => a.UserId == userId)
-                    .Select(a => new
-                    {
-                        a.FullName,
-                        a.Username,
-                        a.UserImage,
-                        TotalCourses = a.CourseAuthors.Count(),
-                        TotalStudents = a.CourseAuthors.SelectMany(c => c.Enrollments).Count()
-                    })
+                    .Select(a => new { a.Username, a.FullName, a.UserImage, a.PaymentPoint })
                     .FirstOrDefaultAsync();
 
-                if (instructorData == null)
+                if (user == null)
                 {
                     TempData["ErrorMessage"] = "Instructor account not found. Please log in again.";
                     return RedirectToAction("Index", "Login");
                 }
 
+                // Get instructor's courses with detailed stats
+                var instructorCourses = await _context.Courses
+                    .AsNoTracking()
+                    .Where(c => c.AuthorId == userId)
+                    .Include(c => c.Enrollments)
+                    .Select(c => new CourseViewModel
+                    {
+                        CourseId = c.CourseId,
+                        CourseName = c.CourseName,
+                        CoursePicture = c.CourseImage ?? "/img/default-course.png",
+                        Price = c.Price,
+                        CreatedBy = user.FullName ?? user.Username,
+                        Description = c.CourseDescription,
+                        EnrollmentCount = c.Enrollments.Count()
+                    })
+                    .ToListAsync();
+
+                // Calculate statistics
+                var totalCourses = instructorCourses.Count;
+                var totalStudents = instructorCourses.Sum(c => c.EnrollmentCount);
+                var totalRevenue = user.PaymentPoint ?? 0; // Use instructor's PaymentPoint as revenue
+
+                // Get notifications for instructor
+                var notifications = new List<NotificationViewModel>
+                {
+                    new NotificationViewModel
+                    {
+                        NotificationId = "1",
+                        Title = "Welcome to Instructor Dashboard!",
+                        Message = "Start creating amazing courses and help students learn.",
+                        CreatedAt = DateTime.Now.AddDays(-1),
+                        IsRead = false
+                    },
+                    new NotificationViewModel
+                    {
+                        NotificationId = "2",
+                        Title = "Course Creation Tips",
+                        Message = "Check out our guide for creating engaging course content.",
+                        CreatedAt = DateTime.Now.AddDays(-3),
+                        IsRead = true
+                    }
+                };
+
                 var viewModel = new InstructorDashboardViewModel
                 {
-                    InstructorName = instructorData.FullName ?? instructorData.Username,
-                    InstructorImage = instructorData.UserImage ?? "/img/default-avatar.svg",
-                    TotalCourses = instructorData.TotalCourses,
-                    TotalStudents = instructorData.TotalStudents,
-                    TotalRevenue = 0 // Calculate actual revenue if needed
+                    InstructorName = user.FullName ?? user.Username,
+                    InstructorImage = user.UserImage ?? "/img/default-avatar.svg",
+                    TotalCourses = totalCourses,
+                    TotalStudents = totalStudents,
+                    TotalRevenue = totalRevenue,
+                    TotalReviews = 0, // Calculate if needed
+                    AverageRating = 4.5, // Calculate if needed
+                    RecentCourses = instructorCourses.Take(5).ToList(),
+                    Notifications = notifications
                 };
 
                 return View(viewModel);
