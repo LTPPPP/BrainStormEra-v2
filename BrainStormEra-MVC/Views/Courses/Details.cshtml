@@ -496,6 +496,15 @@
                                                                 }
                                                             </div>
                                                         }
+                                                        @if (ViewBag.IsAuthor == true)
+                                                        {
+                                                            <div class="lesson-actions mt-3 text-center">
+                                                                <a href="@Url.Action("CreateLesson", "Lesson", new { chapterId = chapter.ChapterId })" 
+                                                                   class="btn btn-sm btn-outline-primary">
+                                                                    <i class="fas fa-plus me-2"></i>Create Lesson
+                                                                </a>
+                                                            </div>
+                                                        }
                                                     </div>
                                                 </div>
                                             </div>
