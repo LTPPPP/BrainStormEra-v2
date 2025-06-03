@@ -65,7 +65,8 @@
             <div class="profile-header">
                 <div class="profile-banner">
                     <div class="profile-avatar-container">
-                        <img src="@Url.Action("GetAvatar", "Profile")" alt="Avatar" class="profile-avatar" />
+                        <img src="@Url.Action("GetAvatar", "Profile")" alt="Avatar" class="profile-avatar"
+                            onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';" />
                     </div>
                     <div class="profile-info">
                         <h1 class="profile-name">@Model.FullName</h1>

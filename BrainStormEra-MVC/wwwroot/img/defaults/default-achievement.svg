@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#f0f0f0" />
+  <circle cx="100" cy="100" r="70" fill="#d0d0d0" />
+  <polygon points="100,50 115,85 150,85 120,105 130,140 100,120 70,140 80,105 50,85 85,85" fill="#a0a0a0" />
+  <text x="100" y="175" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#808080">Default
+    Achievement</text>
+</svg>

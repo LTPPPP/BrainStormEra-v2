@@ -1,0 +1,542 @@
+@model BrainStormEra_MVC.Models.ViewModels.CreateChapterViewModel
+@{
+    ViewData["Title"] = "Create Chapter";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="Create a new chapter for your course on BrainStormEra">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">    
+    <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1 class="mb-3">
+                        <i class="fas fa-plus-circle me-3"></i>
+                        Create New Chapter
+                    </h1>
+                    <p class="lead mb-0">Add engaging content to your course: <strong>@Model.CourseName</strong></p>
+                    <div class="mt-4">
+                        <span class="badge bg-light text-dark fs-6 me-3">
+                            <i class="fas fa-clock me-1"></i> Takes 2-5 minutes
+                        </span>
+                        <span class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-book me-1"></i> Organize your content
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="create-course-container">
+        <form asp-controller="Chapter" asp-action="CreateChapter" method="post" id="createChapterForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="CourseId" />                <!-- Chapter Information Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Chapter Information
+                    </h3>
+                    <p class="text-muted mb-4">Provide details about your new chapter and how it fits into your course</p>
+                    
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="mb-4">
+                                <label asp-for="ChapterName" class="form-label">
+                                    <i class="fas fa-book me-2"></i>Chapter Name *
+                                </label>
+                                <input asp-for="ChapterName" class="form-control" 
+                                       placeholder="e.g., Introduction to HTML & CSS Basics" 
+                                       maxlength="200" />
+                                <span asp-validation-for="ChapterName" class="text-danger"></span>
+                                <div class="form-text">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Choose a clear, descriptive title that tells students what they'll learn
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label asp-for="ChapterDescription" class="form-label">
+                                    <i class="fas fa-align-left me-2"></i>Chapter Description
+                                </label>
+                                <textarea asp-for="ChapterDescription" class="form-control" rows="5" 
+                                          placeholder="Describe what students will learn in this chapter, the key concepts covered, and any practical exercises included..."
+                                          maxlength="1000"></textarea>
+                                <span asp-validation-for="ChapterDescription" class="text-danger"></span>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Provide a clear overview to help students understand the chapter's value
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="mb-4">
+                                <label asp-for="ChapterOrder" class="form-label">
+                                    <i class="fas fa-sort-numeric-up me-2"></i>Chapter Order *
+                                </label>
+                                <input asp-for="ChapterOrder" type="number" class="form-control" min="1" max="999" />
+                                <span asp-validation-for="ChapterOrder" class="text-danger"></span>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    The position of this chapter in the course sequence
+                                </div>
+                            </div>
+
+                            <div class="mt-4 p-3 bg-light rounded">
+                                <h6 class="fw-bold text-primary">
+                                    <i class="fas fa-tips me-2"></i>Chapter Tips
+                                </h6>
+                                <ul class="small mb-0 ps-3">
+                                    <li>Keep chapters focused on one main topic</li>
+                                    <li>Use descriptive names for easy navigation</li>
+                                    <li>Consider the logical learning progression</li>
+                                    <li>Balance content length for better engagement</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chapter Settings Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-cog me-2"></i>
+                        Chapter Settings
+                    </h3>
+                    <p class="text-muted mb-4">Configure access and prerequisites for this chapter</p>
+
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="form-check form-switch custom-cursor-default-hover" style="padding-left: 2rem;">
+                                <input asp-for="IsLocked" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsLocked" class="form-check-label">
+                                    <i class="fas fa-lock me-2 text-warning"></i>
+                                    <strong>Lock Chapter</strong>
+                                    <div class="small text-muted mt-1">Students must unlock this chapter through prerequisites</div>
+                                </label>
+                            </div>
+                        </div>
+
+                        @if (Model.ExistingChapters.Any())
+                        {
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label asp-for="UnlockAfterChapterId" class="form-label">
+                                        <i class="fas fa-unlock me-2"></i>Unlock After Chapter
+                                    </label>
+                                    <select asp-for="UnlockAfterChapterId" class="form-select">
+                                        <option value="">No prerequisite - Available immediately</option>
+                                        @foreach (var chapter in Model.ExistingChapters.OrderBy(c => c.ChapterOrder))
+                                        {
+                                            <option value="@chapter.ChapterId">Chapter @chapter.ChapterOrder: @chapter.ChapterName</option>
+                                        }
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Choose which chapter must be completed first (only applies if locked)
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>                <!-- Existing Chapters Section -->
+                @if (Model.ExistingChapters.Any())
+                {
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-list me-2"></i>
+                            Course Overview
+                        </h3>
+                        <p class="text-muted mb-4">Current chapters in "<strong>@Model.CourseName</strong>" - your new chapter will be added to this sequence</p>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="existing-chapters-container">
+                                    <div class="existing-chapters-list">
+                                        @foreach (var chapter in Model.ExistingChapters.OrderBy(c => c.ChapterOrder))
+                                        {
+                                            <div class="chapter-item">
+                                                <div class="chapter-order">
+                                                    <span class="order-number">@chapter.ChapterOrder</span>
+                                                </div>
+                                                <div class="chapter-info">
+                                                    <h5 class="chapter-title">@chapter.ChapterName</h5>
+                                                    @if (!string.IsNullOrEmpty(chapter.ChapterDescription))
+                                                    {
+                                                        <p class="chapter-desc text-muted">@chapter.ChapterDescription</p>
+                                                    }
+                                                    <span class="chapter-status">
+                                                        <i class="fas fa-check-circle text-success me-1"></i>
+                                                        Published
+                                                    </span>
+                                                </div>
+                                                <div class="chapter-actions">
+                                                    <i class="fas fa-grip-lines text-muted"></i>
+                                                </div>
+                                            </div>
+                                        }
+                                        
+                                        <!-- New Chapter Preview -->
+                                        <div class="chapter-item new-chapter-preview">
+                                            <div class="chapter-order">
+                                                <span class="order-number" id="newChapterOrder">@Model.ChapterOrder</span>
+                                            </div>
+                                            <div class="chapter-info">
+                                                <h5 class="chapter-title">
+                                                    <span id="newChapterNamePreview" class="text-muted">Your new chapter will appear here</span>
+                                                </h5>
+                                                <p class="chapter-desc text-muted">
+                                                    <span id="newChapterDescPreview">Chapter description will be shown here</span>
+                                                </p>
+                                                <span class="chapter-status">
+                                                    <i class="fas fa-clock text-warning me-1"></i>
+                                                    Ready to create
+                                                </span>
+                                            </div>
+                                            <div class="chapter-actions">
+                                                <i class="fas fa-plus text-primary"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="chapter-statistics mt-4">
+                                        <div class="row text-center">
+                                            <div class="col-md-4">
+                                                <div class="stat-item">
+                                                    <h4 class="stat-value text-primary">@Model.ExistingChapters.Count</h4>
+                                                    <p class="stat-label">Existing Chapters</p>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="stat-item">
+                                                    <h4 class="stat-value text-success">@(Model.ExistingChapters.Count + 1)</h4>
+                                                    <p class="stat-label">After Adding New</p>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="stat-item">
+                                                    <h4 class="stat-value text-info">@Model.ExistingChapters.Sum(c => c.Lessons.Count)</h4>
+                                                    <p class="stat-label">Total Lessons</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-section">
+                        <div class="empty-state text-center py-5">
+                            <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">This will be your first chapter!</h4>
+                            <p class="text-muted">Start building your course content with an engaging first chapter.</p>
+                        </div>
+                    </div>
+                }                <!-- Form Actions -->
+                <div class="form-actions">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8 text-center">
+                            <h5 class="mb-4 text-muted">Ready to add this chapter to your course?</h5>
+
+                            <button type="submit" class="btn btn-create btn-lg me-3">
+                                <i class="fas fa-plus-circle me-2"></i>Create Chapter
+                            </button>
+
+                            <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })" 
+                               class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Course
+                            </a>
+                            
+                            <div class="mt-4">
+                                <small class="text-muted">
+                                    <i class="fas fa-shield-alt me-1"></i>
+                                    After creating the chapter, you can add lessons, quizzes, and other content to it.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>    <!-- Include Footer partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" defer></script>
+    <!-- Include toast notifications script -->
+    <script src="~/js/shared/toast-notifications.js"></script>
+    <!-- Custom JS -->
+    <script src="~/js/components/loader.js"></script>
+    <script src="~/js/pages/Course/create-course.js"></script>
+    <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+        // Change header style on scroll
+        window.addEventListener('scroll', function () {
+            const header = document.querySelector('header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');});
+
+        // Live preview functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            const chapterNameInput = document.querySelector('#ChapterName');
+            const chapterDescInput = document.querySelector('#ChapterDescription');
+            const chapterOrderInput = document.querySelector('#ChapterOrder');
+            const namePreview = document.querySelector('#newChapterNamePreview');
+            const descPreview = document.querySelector('#newChapterDescPreview');
+            const orderPreview = document.querySelector('#newChapterOrder');
+
+            function updatePreview() {
+                const name = chapterNameInput.value.trim();
+                const desc = chapterDescInput.value.trim();
+                const order = chapterOrderInput.value;
+
+                namePreview.textContent = name || 'Your new chapter will appear here';
+                descPreview.textContent = desc || 'Chapter description will be shown here';
+                orderPreview.textContent = order || '@Model.ChapterOrder';
+
+                // Toggle preview visibility
+                const previewElement = document.querySelector('.new-chapter-preview');
+                if (name || desc) {
+                    previewElement.classList.add('active');
+                } else {
+                    previewElement.classList.remove('active');
+                }
+            }
+
+            if (chapterNameInput) {
+                chapterNameInput.addEventListener('input', updatePreview);
+            }
+            if (chapterDescInput) {
+                chapterDescInput.addEventListener('input', updatePreview);
+            }
+            if (chapterOrderInput) {
+                chapterOrderInput.addEventListener('input', updatePreview);
+            }            // Form validation and submission
+            const form = document.getElementById('createChapterForm');
+            const submitBtn = document.querySelector('.btn-create');
+
+            if (form && submitBtn) {
+                // Enhanced form validation
+                form.addEventListener('submit', function(e) {
+                    let isValid = true;
+                    const errors = [];
+
+                    // Validate chapter name
+                    const chapterName = document.getElementById('ChapterName').value.trim();
+                    if (!chapterName) {
+                        errors.push('Chapter name is required');
+                        isValid = false;
+                    } else if (chapterName.length < 3) {
+                        errors.push('Chapter name must be at least 3 characters');
+                        isValid = false;
+                    }
+
+                    // Validate chapter order
+                    const chapterOrder = parseInt(document.getElementById('ChapterOrder').value);
+                    if (!chapterOrder || chapterOrder < 1 || chapterOrder > 999) {
+                        errors.push('Chapter order must be between 1 and 999');
+                        isValid = false;
+                    }
+
+                    // Check for duplicate chapter orders in existing chapters
+                    const existingOrders = Array.from(document.querySelectorAll('.chapter-item .order-number'))
+                        .map(el => parseInt(el.textContent))
+                        .filter(order => !isNaN(order));
+                    
+                    if (existingOrders.includes(chapterOrder)) {
+                        errors.push(`Chapter order ${chapterOrder} is already taken`);
+                        isValid = false;
+                    }
+
+                    // Validate prerequisite if locked
+                    const isLocked = document.getElementById('IsLocked').checked;
+                    const prerequisiteSelect = document.getElementById('UnlockAfterChapterId');
+                    if (isLocked && prerequisiteSelect && prerequisiteSelect.value) {
+                        // Find the selected prerequisite chapter order
+                        const selectedOption = prerequisiteSelect.options[prerequisiteSelect.selectedIndex];
+                        const prerequisiteText = selectedOption.text;
+                        const prerequisiteOrder = parseInt(prerequisiteText.match(/Chapter (\d+):/)?.[1]);
+                        
+                        if (prerequisiteOrder >= chapterOrder) {
+                            errors.push('Prerequisite chapter must come before this chapter in the sequence');
+                            isValid = false;
+                        }
+                    }
+
+                    if (!isValid) {
+                        e.preventDefault();
+                        alert('Please fix the following errors:\n• ' + errors.join('\n• '));
+                        return false;
+                    }
+
+                    // Show loading state
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Chapter...';
+                    
+                    // Re-enable button after 30 seconds in case of slow response
+                    setTimeout(() => {
+                        if (submitBtn.disabled) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="fas fa-plus-circle me-2"></i>Create Chapter';
+                        }
+                    }, 30000);
+                });
+
+                // Real-time validation feedback
+                const chapterNameInput = document.getElementById('ChapterName');
+                const chapterOrderInput = document.getElementById('ChapterOrder');
+
+                chapterNameInput?.addEventListener('blur', function() {
+                    const value = this.value.trim();
+                    const feedback = this.parentNode.querySelector('.validation-feedback') || document.createElement('div');
+                    feedback.className = 'validation-feedback';
+                    
+                    if (!value) {
+                        feedback.textContent = 'Chapter name is required';
+                        feedback.className += ' text-danger';
+                    } else if (value.length < 3) {
+                        feedback.textContent = 'Chapter name must be at least 3 characters';
+                        feedback.className += ' text-danger';
+                    } else {
+                        feedback.textContent = '✓ Valid chapter name';
+                        feedback.className += ' text-success';
+                    }
+                    
+                    if (!this.parentNode.querySelector('.validation-feedback')) {
+                        this.parentNode.appendChild(feedback);
+                    }
+                });
+
+                chapterOrderInput?.addEventListener('blur', function() {
+                    const value = parseInt(this.value);
+                    const feedback = this.parentNode.querySelector('.validation-feedback') || document.createElement('div');
+                    feedback.className = 'validation-feedback';
+                    
+                    const existingOrders = Array.from(document.querySelectorAll('.chapter-item .order-number'))
+                        .map(el => parseInt(el.textContent))
+                        .filter(order => !isNaN(order));
+                    
+                    if (!value || value < 1 || value > 999) {
+                        feedback.textContent = 'Chapter order must be between 1 and 999';
+                        feedback.className += ' text-danger';
+                    } else if (existingOrders.includes(value)) {
+                        feedback.textContent = `Chapter order ${value} is already taken`;
+                        feedback.className += ' text-danger';
+                    } else {
+                        feedback.textContent = '✓ Valid chapter order';
+                        feedback.className += ' text-success';
+                    }
+                    
+                    if (!this.parentNode.querySelector('.validation-feedback')) {
+                        this.parentNode.appendChild(feedback);
+                    }
+                });
+            }
+
+            // Character count for description
+            if (chapterDescInput) {
+                const maxLength = 1000;
+                const charCounter = document.createElement('div');
+                charCounter.className = 'form-text text-end mt-1';
+                charCounter.innerHTML = `<small class="text-muted"><span id="charCount">0</span>/${maxLength} characters</small>`;
+                chapterDescInput.parentNode.insertBefore(charCounter, chapterDescInput.nextSibling.nextSibling);
+
+                const charCountSpan = document.getElementById('charCount');
+                chapterDescInput.addEventListener('input', function() {
+                    const length = this.value.length;
+                    charCountSpan.textContent = length;
+                    if (length > maxLength * 0.9) {
+                        charCountSpan.className = 'text-warning';
+                    } else if (length >= maxLength) {
+                        charCountSpan.className = 'text-danger';
+                    } else {
+                        charCountSpan.className = 'text-muted';
+                    }
+                });
+            }
+
+            // Smooth scrolling for form sections
+            const formSections = document.querySelectorAll('.form-section');
+            formSections.forEach((section, index) => {
+                section.style.opacity = '0';
+                section.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    section.style.transition = 'all 0.6s ease';
+                    section.style.opacity = '1';
+                    section.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+    </script>
+
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+    }
+</body>
+
+</html>

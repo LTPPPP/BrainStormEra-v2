@@ -74,6 +74,42 @@ namespace BrainStormEra_MVC.Services.Repositories
             return course;
         }
 
+        public async Task<Course?> GetCourseDetailAsync(string courseId, string? currentUserId = null)
+        {
+            // If no current user provided, use the original method
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return await GetCourseDetailAsync(courseId);
+            }
+
+            // For authenticated users, check if they're the course author
+            var cacheKey = $"CourseDetail_{courseId}_{currentUserId}";
+
+            if (_cache.TryGetValue(cacheKey, out Course? cachedCourse))
+            {
+                return cachedCourse;
+            }
+
+            var course = await _context.Courses
+                .AsNoTracking()
+                .Include(c => c.Author)
+                .Include(c => c.Chapters.OrderBy(ch => ch.ChapterOrder))
+                    .ThenInclude(ch => ch.Lessons.OrderBy(l => l.LessonOrder))
+                .Include(c => c.CourseCategories)
+                .Include(c => c.Feedbacks)
+                    .ThenInclude(f => f.User)
+                .Include(c => c.Enrollments)
+                .FirstOrDefaultAsync(c => c.CourseId == courseId &&
+                    (c.CourseStatus == 1 || c.AuthorId == currentUserId)); // Allow authors to view their own courses regardless of status
+
+            if (course != null)
+            {
+                _cache.Set(cacheKey, course, TimeSpan.FromMinutes(10));
+            }
+
+            return course;
+        }
+
         public async Task<List<Course>> GetFeaturedCoursesAsync(int take = 4)
         {
             var cacheKey = $"FeaturedCourses_{take}";

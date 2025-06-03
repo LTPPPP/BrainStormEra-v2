@@ -97,11 +97,10 @@ namespace BrainStormEra_MVC.Services
                 return Task.FromResult(false);
             }
         }
-
         public string GetCourseImageUrl(string? imageFileName)
         {
             if (string.IsNullOrEmpty(imageFileName))
-                return "/img/default-course.png"; // Return default course image URL
+                return "/img/defaults/default-course.svg"; // Return default course image URL
 
             // If imageFileName is already a full path, return as is
             if (imageFileName.StartsWith("/"))

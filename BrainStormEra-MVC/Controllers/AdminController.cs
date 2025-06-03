@@ -75,7 +75,7 @@ namespace BrainStormEra_MVC.Controllers
                 var viewModel = new AdminDashboardViewModel
                 {
                     AdminName = admin.FullName ?? admin.Username,
-                    AdminImage = admin.UserImage ?? "/img/default-avatar.png",
+                    AdminImage = admin.UserImage ?? "/img/defaults/default-avatar.svg",
                     TotalUsers = totalUsers,
                     TotalCourses = totalCourses,
                     TotalEnrollments = totalEnrollments,
@@ -94,7 +94,7 @@ namespace BrainStormEra_MVC.Controllers
                     {
                         CourseId = c.CourseId,
                         CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/default-course.png",
+                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
                         Price = c.Price,
                         CreatedBy = c.Author.FullName ?? c.Author.Username,
                         Description = c.CourseDescription

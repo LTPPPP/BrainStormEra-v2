@@ -169,7 +169,8 @@
                         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                             <div class="course-card" data-course-id="@course.CourseId">
                                 <div class="course-image">
-                                    <img src="@course.CoursePicture" alt="@course.CourseName" loading="lazy">
+                                    <img src="@course.CoursePicture" alt="@course.CourseName" loading="lazy" 
+                                         onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
                                     <div class="course-overlay">
                                         <a href="@Url.Action("Details", "Course", new { id = course.CourseId })" 
                                            class="view-course-btn">

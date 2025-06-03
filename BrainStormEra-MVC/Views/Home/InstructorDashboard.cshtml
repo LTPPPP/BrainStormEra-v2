@@ -56,6 +56,7 @@
     @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
 
     <div class="dashboard-container">
+        @Html.AntiForgeryToken()
         <!-- Welcome Section -->
         <div class="welcome-section">
             <div class="container welcome-container">
@@ -141,7 +142,8 @@
                                         <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
                                             <div class="course-card">
                                                 <div class="course-image">
-                                                    <img src="@course.CoursePicture" alt="@course.CourseName">
+                                                    <img src="@course.CoursePicture" alt="@course.CourseName"
+                                                        onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
                                                     @if (course.Price > 0)
                                                     {
                                                         <div class="course-price">$@course.Price</div>
@@ -155,10 +157,21 @@
                                                     <h3 class="course-title">@course.CourseName</h3>
                                                     <p class="course-students">@course.EnrollmentCount students enrolled</p>
                                                     <div class="course-actions">
-                                                        <a href="#" class="btn btn-sm btn-outline-primary me-2">
+                                                        <a href="@Url.Action("Details", "Course", new { id = course.CourseId })"
+                                                            class="btn btn-sm btn-outline-info" title="View Course Details">
+                                                            <i class="fas fa-eye"></i> Details
+                                                        </a>
+                                                        <a href="@Url.Action("EditCourse", "Course", new { id = course.CourseId })"
+                                                            class="btn btn-sm btn-outline-primary" title="Edit Course">
                                                             <i class="fas fa-edit"></i> Edit
                                                         </a>
-                                                        <a href="#" class="btn btn-sm btn-outline-success">
+                                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                            onclick="confirmDeleteCourse('@course.CourseId', '@course.CourseName')"
+                                                            title="Delete Course">
+                                                            <i class="fas fa-trash"></i> Delete
+                                                        </button>
+                                                        <a href="#" class="btn btn-sm btn-outline-success"
+                                                            title="View Analytics">
                                                             <i class="fas fa-chart-line"></i> Analytics
                                                         </a>
                                                     </div>
@@ -171,7 +184,8 @@
                             else
                             {
                                 <div class="empty-state">
-                                    <img src="/img/empty-courses.svg" alt="No courses" class="empty-state-img">
+                                    <img src="/img/empty-courses.svg" alt="No courses" class="empty-state-img"
+                                        onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
                                     <h3>No courses yet</h3>
                                     <p>Start creating your first course to share your knowledge with students!</p>
                                     <a href="@Url.Action("CreateCourse", "Course")" class="btn btn-primary">Create
@@ -423,6 +437,63 @@
             });
 
             statItems.forEach(item => observer.observe(item));
+
+            // Course deletion confirmation function
+            window.confirmDeleteCourse = function (courseId, courseName) {
+                if (confirm(`Are you sure you want to delete the course "${courseName}"?\n\nThis action cannot be undone and will permanently remove all course content. Students enrolled in this course will lose access.`)) {
+                    deleteCourse(courseId);
+                }
+            };
+
+            // Delete course function
+            function deleteCourse(courseId) {
+                // Show loading state
+                const deleteButton = document.querySelector(`button[onclick*="${courseId}"]`);
+                if (deleteButton) {
+                    deleteButton.disabled = true;
+                    deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+                }
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+                fetch('@Url.Action("DeleteCourse", "Course")', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: `id=${encodeURIComponent(courseId)}&__RequestVerificationToken=${encodeURIComponent(document.querySelector('input[name="__RequestVerificationToken"]').value)}`
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast(data.message || 'Course deleted successfully!', 'success');
+                            // Reload the page to refresh the course list
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            showToast(data.message || 'Failed to delete course. Please try again.', 'error');
+                            // Restore button state
+                            if (deleteButton) {
+                                deleteButton.disabled = false;
+                                deleteButton.innerHTML = '<i class="fas fa-trash"></i> Delete';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting course:', error);
+                        showToast('An error occurred while deleting the course. Please try again.', 'error');
+                        // Restore button state
+                        if (deleteButton) {
+                            deleteButton.disabled = false;
+                            deleteButton.innerHTML = '<i class="fas fa-trash"></i> Delete';
+                        }
+                    });
+            }
         });
     </script>
 

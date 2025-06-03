@@ -12,6 +12,7 @@ body {
   margin-bottom: 0;
   position: relative;
   overflow: hidden;
+  margin-top: 6rem;
 }
 
 .page-header::before {
@@ -626,30 +627,300 @@ body {
   color: white;
 }
 
-/* Form Switches */
+/* Form Switches - Professional Design */
 .form-check {
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 12px;
-  border: 2px solid #e1e8ed;
-  transition: all 0.3s ease;
-  margin-bottom: 15px;
+  padding: 24px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(248, 250, 252, 0.95) 100%
+  );
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  /* Ensure content stays within bounds */
+  contain: layout style;
+}
+
+.form-check::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.02) 0%,
+    rgba(118, 75, 162, 0.02) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
 .form-check:hover {
-  border-color: #667eea;
-  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(102, 126, 234, 0.3);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(248, 250, 252, 1) 100%
+  );
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.12);
+}
+
+.form-check:hover::before {
+  opacity: 1;
+}
+
+/* Custom Form Check Input - Professional Switch Design */
+.form-check-input {
+  width: 3.25rem;
+  height: 1.75rem;
+  margin-top: 0;
+  margin-right: 0; /* Remove default margin for right alignment */
+  background-color: #e2e8f0;
+  border: 2px solid #cbd5e0;
+  border-radius: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  background-image: none;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  /* Prevent overflow */
+  overflow: visible;
+  contain: none;
+}
+
+.form-check-input:focus {
+  border-color: #667eea;
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.15);
 }
 
 .form-check-input:checked {
   background-color: #667eea;
   border-color: #667eea;
+  background-image: none;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1),
+    0 0 0 0.1rem rgba(102, 126, 234, 0.2);
 }
 
+.form-check-input:checked:focus {
+  box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+}
+
+/* Switch Handle - Contained Design */
+.form-check-input::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* Ensure the handle stays within the switch */
+  max-width: calc(100% - 4px);
+  max-height: calc(100% - 4px);
+}
+
+.form-check-input:checked::before {
+  transform: translateX(1.4rem);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  /* Ensure it doesn't overflow the switch boundary */
+  left: calc(100% - 1.3rem);
+  transform: none;
+}
+
+/* Active state animation */
+.form-check-input:active::before {
+  width: 1.4rem;
+  transition: width 0.1s ease;
+}
+
+.form-check-input:checked:active::before {
+  left: calc(100% - 1.45rem);
+  width: 1.4rem;
+}
+
+/* Disabled State */
+.form-check-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-check-input:disabled + .form-check-label {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Custom Cursor Default Hover for Settings Container */
+.form-check.custom-cursor-default-hover {
+  cursor: default;
+}
+
+.form-check.custom-cursor-default-hover:hover {
+  cursor: default;
+}
+
+.form-check.custom-cursor-default-hover .form-check-input {
+  cursor: pointer;
+}
+
+.form-check.custom-cursor-default-hover .form-check-label {
+  cursor: pointer;
+}
+
+/* Label Styling */
 .form-check-label {
-  font-weight: 500;
-  color: #2c3e50;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  /* Ensure text doesn't overflow */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.form-check-label strong {
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+  color: #1a202c;
+  /* Prevent text overflow */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.form-check-label .small {
+  font-weight: 400;
+  color: #718096;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  /* Allow wrapping for description text */
+  white-space: normal;
+}
+
+/* Form Switch Layout - Contained Design with Checkbox on Right */
+.form-switch {
+  padding-left: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  /* Ensure proper containment */
+  min-height: 2rem;
+  position: relative;
+}
+
+.form-switch .form-check-input {
+  margin-left: 0;
+  margin-right: 0;
+  order: 2; /* Move checkbox to the right */
+  /* Fixed positioning to prevent layout shift */
+  position: relative;
+  top: 0.125rem;
+  flex-shrink: 0;
+  width: 3em !important;
+}
+
+.form-switch .form-check-label {
+  order: 1; /* Move label to the left */
+  margin-left: 0;
+  margin-right: 1rem;
+  flex: 1;
+  min-width: 0; /* Allow text to shrink */
+  text-align: left; /* Ensure text is left-aligned */
+}
+
+/* Icon styling in labels */
+.form-check-label i {
+  font-size: 1.1rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* Enhanced visual feedback */
+.form-check-input:hover:not(:disabled) {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.1rem rgba(102, 126, 234, 0.1);
+}
+
+.form-check-input:checked:hover:not(:disabled) {
+  background-color: #5a67d8;
+  border-color: #5a67d8;
+}
+
+/* Accessibility improvements */
+.form-check-input:focus-visible {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .form-check-input,
+  .form-check-input::before,
+  .form-check {
+    transition: none;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .form-check {
+    padding: 20px 16px;
+  }
+
+  .form-check-input {
+    width: 2.75rem;
+    height: 1.5rem;
+  }
+
+  .form-check-input::before {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .form-check-input:checked::before {
+    left: calc(100% - 1.05rem);
+  }
+
+  .form-check-input:checked:active::before {
+    left: calc(100% - 1.2rem);
+    width: 1.2rem;
+  }
+
+  .form-check-label strong {
+    font-size: 1rem;
+  }
+
+  .form-check-label .small {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .form-check {
+    padding: 16px 12px;
+  }
+
+  .form-switch .form-check-label {
+    margin-right: 0.75rem; /* Changed from margin-left to margin-right */
+  }
 }
 
 /* Form Actions */
@@ -753,6 +1024,129 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Image Loading States and Error Handling */
+.image-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.image-container img {
+  transition: opacity 0.3s ease;
+}
+
+.image-container.loading img {
+  opacity: 0.5;
+}
+
+.image-container .image-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #6c757d;
+  font-size: 3rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 12px;
+}
+
+.image-container.error .image-placeholder,
+.image-container.loading .image-placeholder {
+  opacity: 1;
+}
+
+.image-error-fallback {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.image-error-fallback i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.8;
+}
+
+.image-error-fallback .error-text {
+  font-weight: 500;
+}
+
+/* Course image specific styles */
+.course-image-preview {
+  position: relative;
+  aspect-ratio: 16/9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  transition: all 0.3s ease;
+}
+
+.course-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.course-image-preview:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+}
+
+/* Fallback for broken images */
+img[src=""],
+img:not([src]) {
+  opacity: 0;
+}
+
+img[alt]:after {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #6c757d;
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  content: "\f03e";
+  font-size: 3rem;
+  text-align: center;
+  line-height: 200px;
+  border-radius: 12px;
+  border: 2px solid #dee2e6;
+}
+
+/* Loading spinner for images */
+@keyframes imageLoad {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.image-loaded {
+  animation: imageLoad 0.5s ease-in-out;
 }
 
 /* Responsive Design */
@@ -882,4 +1276,76 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Existing Chapters List Styles */
+.existing-chapters-list {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.chapter-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.chapter-item:last-child {
+  margin-bottom: 0;
+}
+
+.chapter-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #007bff;
+}
+
+.chapter-order {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 14px;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.chapter-info {
+  flex: 1;
+}
+
+.chapter-info h5 {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.chapter-info p {
+  margin: 0;
+  font-size: 14px;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+.existing-chapters-list:empty::after {
+  content: "No chapters created yet. This will be the first chapter.";
+  display: block;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  padding: 20px;
 }

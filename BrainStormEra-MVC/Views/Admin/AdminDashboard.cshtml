@@ -117,7 +117,9 @@
                                         {
                                             <tr>
                                                 <td>
-                                                    <div class="d-flex align-items-center">                                                        <img src="@course.CoursePicture" alt="@course.CourseName" class="course-thumb me-3">
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="@course.CoursePicture" alt="@course.CourseName" class="course-thumb me-3"
+                                                             onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
                                                         <div>
                                                             <h6 class="mb-0">@course.CourseName</h6>
                                                             <small class="text-muted">@(course.Description != null ? course.Description.Substring(0, Math.Min(50, course.Description.Length)) + "..." : "No description")</small>
@@ -148,7 +150,8 @@
                         else
                         {
                             <div class="empty-state">
-                                <img src="/img/empty-courses.svg" alt="No courses" class="empty-state-img">
+                                <img src="/img/empty-courses.svg" alt="No courses" class="empty-state-img"
+                                     onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
                                 <h3>No courses found</h3>
                                 <p>No courses have been created yet.</p>
                             </div>
@@ -221,7 +224,8 @@
                         else
                         {
                             <div class="empty-state">
-                                <img src="/img/empty-users.svg" alt="No users" class="empty-state-img">
+                                <img src="/img/empty-users.svg" alt="No users" class="empty-state-img"
+                                     onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
                                 <h3>No users found</h3>
                                 <p>No users have registered yet.</p>
                             </div>

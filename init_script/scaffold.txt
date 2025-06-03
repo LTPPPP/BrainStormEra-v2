@@ -1,0 +1,1 @@
+dotnet ef dbcontext scaffold "Server=...; Database=BrainStormEra;User ID=sa;Password=...;Trust Server Certificate=True" Microsoft.EntityFrameworkCore.SqlServer -o Models
