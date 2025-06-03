@@ -57,7 +57,7 @@
     </div>
 
     <!-- Include Header partial view -->
-    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")    <!-- Page Header -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml") <!-- Page Header -->
     <div class="page-header">
         <div class="container">
             <div class="row">
@@ -84,35 +84,34 @@
     <div class="create-course-container">
         <form asp-action="CreateCourse" method="post" enctype="multipart/form-data" id="createCourseForm">
             @Html.AntiForgeryToken()
-              <!-- Course Information Section -->
+            <!-- Course Information Section -->
             <div class="form-section">
                 <h3 class="section-title">
                     <i class="fas fa-info-circle me-2"></i>
                     Course Information
                 </h3>
                 <p class="text-muted mb-4">Tell us about your course and what students will learn</p>
-                
+
                 <div class="row">
                     <div class="col-lg-8">
                         <div class="mb-4">
                             <label asp-for="CourseName" class="form-label">
                                 <i class="fas fa-book me-2"></i>Course Name *
                             </label>
-                            <input asp-for="CourseName" class="form-control" 
-                                   placeholder="e.g., Complete Web Development Bootcamp" 
-                                   maxlength="100" />
+                            <input asp-for="CourseName" class="form-control"
+                                placeholder="e.g., Complete Web Development Bootcamp" maxlength="100" />
                             <span asp-validation-for="CourseName" class="text-danger"></span>
                             <div class="form-text">
                                 <i class="fas fa-lightbulb me-1"></i>
                                 Choose a clear, descriptive title that tells students what they'll learn
                             </div>
                         </div>
-                        
+
                         <div class="mb-4">
                             <label asp-for="CourseDescription" class="form-label">
                                 <i class="fas fa-align-left me-2"></i>Course Description *
                             </label>
-                            <textarea asp-for="CourseDescription" class="form-control" rows="6" 
+                            <textarea asp-for="CourseDescription" class="form-control" rows="6"
                                 placeholder="Describe what students will learn, the skills they'll gain, and any prerequisites..."></textarea>
                             <span asp-validation-for="CourseDescription" class="text-danger"></span>
                             <div class="form-text">
@@ -121,21 +120,20 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4">
                         <div class="mb-4">
                             <label asp-for="CourseImage" class="form-label">
                                 <i class="fas fa-image me-2"></i>Course Thumbnail
                             </label>
-                            <input asp-for="CourseImage" type="file" class="form-control" 
-                                   accept="image/*" />
+                            <input asp-for="CourseImage" type="file" class="form-control" accept="image/*" />
                             <div class="form-text">
                                 <i class="fas fa-camera me-1"></i>
                                 Upload a high-quality image (1280x720px recommended)
                                 <br><small>JPG, PNG, or GIF. Max 5MB.</small>
                             </div>
                         </div>
-                        
+
                         <div class="mt-4 p-3 bg-light rounded">
                             <h6 class="fw-bold text-primary">
                                 <i class="fas fa-tips me-2"></i>Image Tips
@@ -150,21 +148,22 @@
                     </div>
                 </div>
             </div>
-              <!-- Categories Section -->
+            <!-- Categories Section -->
             <div class="form-section">
                 <h3 class="section-title">
                     <i class="fas fa-tags me-2"></i>
                     Course Categories
                 </h3>
                 <p class="text-muted mb-4">Help students find your course by selecting relevant categories</p>
-                
+
                 <div class="mb-4">
                     <label class="form-label">
                         <i class="fas fa-search me-2"></i>Search and Select Categories *
-                    </label>                    <div class="category-input-container">
-                        <input type="text" id="categoryInput" class="form-control" 
-                               placeholder="Start typing to search categories (e.g., 'programming', 'design')" 
-                               autocomplete="off" />
+                    </label>
+                    <div class="category-input-container">
+                        <input type="text" id="categoryInput" class="form-control"
+                            placeholder="Start typing to search categories (e.g., 'programming', 'design')"
+                            autocomplete="off" />
                         <i class="fas fa-spinner fa-spin category-loading-icon"></i>
                         <div id="categorySuggestions" class="category-suggestions"></div>
                         <div class="loading-spinner">
@@ -172,28 +171,28 @@
                         </div>
                     </div>
                     <span asp-validation-for="SelectedCategories" class="text-danger"></span>
-                    
+
                     <div id="selectedCategories" class="selected-categories">
                         <div class="text-muted text-center w-100">
                             <i class="fas fa-plus-circle me-2"></i>
                             Selected categories will appear here
                         </div>
                     </div>
-                    
+
                     <div class="form-text mt-3">
                         <i class="fas fa-info-circle me-1"></i>
                         Select 2-5 relevant categories to help students discover your course
                     </div>
                 </div>
             </div>
-              <!-- Course Details Section -->
+            <!-- Course Details Section -->
             <div class="form-section">
                 <h3 class="section-title">
                     <i class="fas fa-cog me-2"></i>
                     Course Details
                 </h3>
                 <p class="text-muted mb-4">Set your course pricing and difficulty level</p>
-                
+
                 <div class="row">
                     <div class="col-lg-6">
                         <div class="mb-4">
@@ -204,8 +203,8 @@
                                 <span class="input-group-text">
                                     <i class="fas fa-dollar-sign"></i>
                                 </span>
-                                <input asp-for="Price" type="number" step="0.01" class="form-control" 
-                                       placeholder="0.00" min="0" max="999.99" />
+                                <input asp-for="Price" type="number" step="0.01" class="form-control" placeholder="0.00"
+                                    min="0" max="999.99" />
                             </div>
                             <span asp-validation-for="Price" class="text-danger"></span>
                             <div class="form-text">
@@ -213,13 +212,13 @@
                                 Set to $0.00 for free courses. Premium courses typically range from $19.99 to $199.99
                             </div>
                         </div>
-                        
+
                         <div class="mb-4">
                             <label asp-for="EstimatedDuration" class="form-label">
                                 <i class="fas fa-clock me-2"></i>Estimated Duration (Hours)
                             </label>
-                            <input asp-for="EstimatedDuration" type="number" class="form-control" 
-                                   placeholder="e.g., 12" min="1" max="200" />
+                            <input asp-for="EstimatedDuration" type="number" class="form-control" placeholder="e.g., 12"
+                                min="1" max="200" />
                             <span asp-validation-for="EstimatedDuration" class="text-danger"></span>
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
@@ -227,7 +226,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-6">
                         <div class="mb-4">
                             <label class="form-label">
@@ -272,17 +271,17 @@
                     </div>
                 </div>
             </div>
-              <!-- Course Settings Section -->
+            <!-- Course Settings Section -->
             <div class="form-section">
                 <h3 class="section-title">
                     <i class="fas fa-sliders-h me-2"></i>
                     Course Settings
                 </h3>
                 <p class="text-muted mb-4">Configure how students will interact with your course</p>
-                
                 <div class="row">
                     <div class="col-lg-4">
-                        <div class="form-check form-switch">
+                        <div class="form-check form-switch custom-cursor-default-hover"
+                            style="padding-left: 2rem;">  
                             <input asp-for="IsFeatured" class="form-check-input" type="checkbox" />
                             <label asp-for="IsFeatured" class="form-check-label">
                                 <i class="fas fa-star me-2 text-warning"></i>
@@ -292,7 +291,7 @@
                         </div>
                     </div>
                     <div class="col-lg-4">
-                        <div class="form-check form-switch">
+                        <div class="form-check form-switch custom-cursor-default-hover" style="padding-left: 2rem;">
                             <input asp-for="EnforceSequentialAccess" class="form-check-input" type="checkbox" checked />
                             <label asp-for="EnforceSequentialAccess" class="form-check-label">
                                 <i class="fas fa-sort-numeric-up me-2 text-info"></i>
@@ -302,7 +301,7 @@
                         </div>
                     </div>
                     <div class="col-lg-4">
-                        <div class="form-check form-switch">
+                        <div class="form-check form-switch custom-cursor-default-hover"style="padding-left: 2rem;">
                             <input asp-for="AllowLessonPreview" class="form-check-input" type="checkbox" />
                             <label asp-for="AllowLessonPreview" class="form-check-label">
                                 <i class="fas fa-eye me-2 text-success"></i>
@@ -312,47 +311,50 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="mt-4 p-4 bg-info bg-opacity-10 rounded-3 border border-info border-opacity-25">
                     <div class="d-flex align-items-start">
                         <i class="fas fa-info-circle text-info me-3 mt-1"></i>
                         <div>
                             <h6 class="fw-bold text-info mb-2">Course Settings Guide</h6>
                             <ul class="small mb-0 text-muted">
-                                <li><strong>Featured:</strong> Boosts course visibility in search results and recommendations</li>
-                                <li><strong>Sequential:</strong> Recommended for structured learning paths with dependencies</li>
-                                <li><strong>Preview:</strong> Allows potential students to sample your teaching style</li>
+                                <li><strong>Featured:</strong> Boosts course visibility in search results and
+                                    recommendations</li>
+                                <li><strong>Sequential:</strong> Recommended for structured learning paths with
+                                    dependencies</li>
+                                <li><strong>Preview:</strong> Allows potential students to sample your teaching style
+                                </li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
-              <!-- Form Actions -->
+            <!-- Form Actions -->
             <div class="form-actions">
                 <div class="row justify-content-center">
                     <div class="col-lg-8 text-center">
                         <h5 class="mb-4 text-muted">Ready to launch your course?</h5>
-                        
+
                         <button type="submit" class="btn btn-create btn-lg me-3">
                             <i class="fas fa-rocket me-2"></i>
                             Create Course
                         </button>
-                        
-                        <a href="@Url.Action("InstructorDashboard", "Home")" 
-                           class="btn btn-outline-secondary btn-lg">
+
+                        <a href="@Url.Action("InstructorDashboard", "Home")" class="btn btn-outline-secondary btn-lg">
                             <i class="fas fa-arrow-left me-2"></i>
                             Cancel
                         </a>
-                        
+
                         <div class="mt-4">
                             <small class="text-muted">
                                 <i class="fas fa-shield-alt me-1"></i>
                                 Your course will be saved as a draft and can be published later
                             </small>
                         </div>
-                    </div>                </div>
+                    </div>
+                </div>
             </div>
-            
+
             <!-- Hidden inputs for selected categories (moved inside form) -->
             <div id="selectedCategoriesInputs"></div>
         </form>
@@ -367,15 +369,15 @@
     <script src="~/js/shared/toast-notifications.js"></script>
     <!-- Custom JS -->
     <script src="~/js/components/loader.js"></script>
-    <script src="~/js/pages/Course/create-course.js"></script>    
+    <script src="~/js/pages/Course/create-course.js"></script>
     <script>
         // Hide preloader when page is loaded
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             document.querySelector('.page-loader').classList.add('loaded');
             setTimeout(() => {
                 document.querySelector('.page-loader').style.display = 'none';
             }, 500);
-        });        
+        });
         // Change header style on scroll
         window.addEventListener('scroll', function () {
             const header = document.querySelector('header');
@@ -388,7 +390,10 @@
     </script>
 
     @section Scripts {
-        @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
     }
 </body>
+
 </html>
