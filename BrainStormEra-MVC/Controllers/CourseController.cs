@@ -8,11 +8,16 @@ namespace BrainStormEra_MVC.Controllers
     public class CourseController : Controller
     {
         private readonly ICourseService _courseService;
+        private readonly ICourseImageService _courseImageService;
         private readonly ILogger<CourseController> _logger;
 
-        public CourseController(ICourseService courseService, ILogger<CourseController> logger)
+        public CourseController(
+            ICourseService courseService,
+            ICourseImageService courseImageService,
+            ILogger<CourseController> logger)
         {
             _courseService = courseService;
+            _courseImageService = courseImageService;
             _logger = logger;
         }
 
@@ -23,9 +28,8 @@ namespace BrainStormEra_MVC.Controllers
                 var viewModel = await _courseService.GetCoursesAsync(search, category, page, pageSize);
                 return View("~/Views/Courses/Index.cshtml", viewModel);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error loading courses");
                 ViewBag.Error = "An error occurred while loading courses. Please try again later.";
                 return View("~/Views/Courses/Index.cshtml", new CourseListViewModel());
             }
@@ -58,9 +62,8 @@ namespace BrainStormEra_MVC.Controllers
                 viewModel.CanEnroll = !viewModel.IsEnrolled;
                 return View("~/Views/Courses/Details.cshtml", viewModel);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error loading course details for {CourseId}", id);
                 return NotFound();
             }
         }
@@ -93,9 +96,8 @@ namespace BrainStormEra_MVC.Controllers
                     return Json(new { success = false, message = "Course requires payment or enrollment failed" });
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error enrolling user in course {CourseId}", courseId);
                 return Json(new { success = false, message = "An error occurred during enrollment" });
             }
         }
@@ -122,10 +124,105 @@ namespace BrainStormEra_MVC.Controllers
 
                 return Json(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error searching courses");
                 return Json(new { success = false, message = "An error occurred while searching courses" });
+            }
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Instructor,instructor")]
+        public async Task<IActionResult> CreateCourse()
+        {
+            try
+            {
+                var model = new CreateCourseViewModel
+                {
+                    AvailableCategories = await _courseService.GetCategoriesAsync()
+                };
+                return View("~/Views/Courses/CreateCourse.cshtml", model);
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "An error occurred while loading the create course page.";
+                return RedirectToAction("InstructorDashboard", "Home");
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Instructor,instructor")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateCourse(CreateCourseViewModel model)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var userId = User.FindFirst("UserId")?.Value;
+                    if (string.IsNullOrEmpty(userId))
+                    {
+                        TempData["ErrorMessage"] = "User not authenticated";
+                        return RedirectToAction("Index", "Login");
+                    }
+
+                    var courseId = await _courseService.CreateCourseAsync(model, userId);
+
+                    // Handle course image upload if provided
+                    if (model.CourseImage != null)
+                    {
+                        var uploadResult = await _courseImageService.UploadCourseImageAsync(model.CourseImage, courseId);
+                        if (uploadResult.Success && !string.IsNullOrEmpty(uploadResult.ImagePath))
+                        {
+                            // Update course with image path
+                            await _courseService.UpdateCourseImageAsync(courseId, uploadResult.ImagePath);
+                        }
+                        else
+                        {
+                            TempData["WarningMessage"] = uploadResult.ErrorMessage ?? "Failed to upload course image.";
+                        }
+                    }
+
+                    TempData["SuccessMessage"] = "Course created successfully! Your course is now pending approval.";
+                    return RedirectToAction("InstructorDashboard", "Home");
+                }
+
+                // If model state is invalid, reload the form with categories
+                model.AvailableCategories = await _courseService.GetCategoriesAsync();
+                TempData["ErrorMessage"] = "Please correct the errors below and try again.";
+                return View("~/Views/Courses/CreateCourse.cshtml", model);
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An error occurred while creating the course. Please try again.";
+
+                try
+                {
+                    model.AvailableCategories = await _courseService.GetCategoriesAsync();
+                }
+                catch (Exception)
+                {
+                    model.AvailableCategories = new List<CourseCategoryViewModel>();
+                }
+                return View("~/Views/Courses/CreateCourse.cshtml", model);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchCategories(string term)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(term))
+                {
+                    return Json(new List<CategoryAutocompleteItem>());
+                }
+
+                var categories = await _courseService.SearchCategoriesAsync(term);
+                return Json(categories);
+            }
+            catch (Exception)
+            {
+                return Json(new List<CategoryAutocompleteItem>());
             }
         }
     }

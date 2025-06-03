@@ -66,7 +66,7 @@
                         <p class="welcome-subtitle">Manage your courses and track your teaching progress.</p>
                     </div>
                     <div class="col-md-4 text-md-end">
-                        <a href="#" class="btn btn-primary create-course-btn">
+                        <a href="@Url.Action("CreateCourse", "Course")" class="btn btn-primary create-course-btn">
                             <i class="fas fa-plus me-2"></i>Create New Course
                         </a>
                     </div>
@@ -174,7 +174,8 @@
                                     <img src="/img/empty-courses.svg" alt="No courses" class="empty-state-img">
                                     <h3>No courses yet</h3>
                                     <p>Start creating your first course to share your knowledge with students!</p>
-                                    <a href="#" class="btn btn-primary">Create Course</a>
+                                    <a href="@Url.Action("CreateCourse", "Course")" class="btn btn-primary">Create
+                                        Course</a>
                                 </div>
                             }
                         </div>
@@ -428,4 +429,3 @@
 </body>
 
 </html>
-   

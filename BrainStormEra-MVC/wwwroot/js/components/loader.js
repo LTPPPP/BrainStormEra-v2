@@ -1,12 +1,10 @@
 // Hide page loader when the document is fully loaded
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("DOM Content loaded - hiding loader");
   setTimeout(hideLoader, 1000); // Ensure that the loader displays for at least 1 second
 });
 
 // Also hide loader on window load (in case of images and resources)
 window.addEventListener("load", function () {
-  console.log("Window loaded - hiding loader");
   hideLoader();
 });
 
@@ -17,7 +15,6 @@ function hideLoader() {
     // Completely remove after animation completes
     setTimeout(() => {
       pageLoader.style.display = "none";
-      console.log("Loader hidden");
     }, 500); // transition time in CSS
   }
 }

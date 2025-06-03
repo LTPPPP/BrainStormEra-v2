@@ -57,7 +57,6 @@ class SecureLogout {
         }, 1500); // Show popup for 1.5 seconds before redirecting
       })
       .catch((error) => {
-        console.error("Logout error:", error);
         // Redirect anyway in case of error
         window.location.href = "/Home/Index";
       });
@@ -137,17 +136,15 @@ class SecureLogout {
     // Clear localStorage
     try {
       localStorage.clear();
-      console.log("Local storage cleared");
     } catch (e) {
-      console.error("Error clearing localStorage:", e);
+      // Error clearing localStorage
     }
 
     // Clear sessionStorage
     try {
       sessionStorage.clear();
-      console.log("Session storage cleared");
     } catch (e) {
-      console.error("Error clearing sessionStorage:", e);
+      // Error clearing sessionStorage
     }
 
     // Remove any auth-related cookies via JavaScript
@@ -174,8 +171,6 @@ class SecureLogout {
         "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" +
         window.location.hostname;
     }
-
-    console.log("Cookies cleared");
   }
 }
 

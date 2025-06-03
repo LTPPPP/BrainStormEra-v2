@@ -103,7 +103,6 @@
     });
 
     // Here you would typically make an API call to mark notifications as read in the database
-    console.log("Marking all notifications as read");
   }
 
   /**

@@ -448,7 +448,7 @@ function deleteAvatar() {
       }
     })
     .catch((error) => {
-      console.error("Error:", error);
+
       showNotification("An error occurred while deleting avatar", "error");
     });
 }

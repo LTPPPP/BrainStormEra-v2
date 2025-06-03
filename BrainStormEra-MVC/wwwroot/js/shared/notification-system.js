@@ -24,19 +24,19 @@ class NotificationSystem {
 
       // Connection event handlers
       this.connection.onreconnecting(() => {
-        console.log("SignalR reconnecting...");
+
         this.isConnected = false;
       });
 
       this.connection.onreconnected(() => {
-        console.log("SignalR reconnected");
+
         this.isConnected = true;
         this.reconnectAttempts = 0;
         this.joinGroups();
       });
 
       this.connection.onclose(async () => {
-        console.log("SignalR disconnected");
+
         this.isConnected = false;
         await this.handleReconnect();
       });
@@ -52,11 +52,11 @@ class NotificationSystem {
 
       // Start connection
       await this.connection.start();
-      console.log("SignalR Connected");
+
       this.isConnected = true;
       this.joinGroups();
     } catch (err) {
-      console.error("SignalR Connection Error: ", err);
+
       await this.handleReconnect();
     }
   }
@@ -66,26 +66,20 @@ class NotificationSystem {
       this.reconnectAttempts++;
       const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
 
-      console.log(
-        `Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`
-      );
-
       setTimeout(async () => {
         try {
           await this.connection.start();
-          console.log("Reconnected successfully");
+
           this.isConnected = true;
           this.reconnectAttempts = 0;
           this.joinGroups();
         } catch (err) {
-          console.error("Reconnection failed: ", err);
+
           await this.handleReconnect();
         }
       }, delay);
     } else {
-      console.error(
-        "Max reconnection attempts reached. Please refresh the page."
-      );
+
       this.showReconnectMessage();
     }
   }
@@ -110,7 +104,7 @@ class NotificationSystem {
         this.connection.invoke("JoinCourseGroup", courseId);
       }
     } catch (err) {
-      console.error("Error joining groups: ", err);
+
     }
   }
 
@@ -189,9 +183,6 @@ class NotificationSystem {
     }
 
     // Fallback for when header.js function is not available
-    console.warn(
-      "addNotificationToDropdown function not found, using fallback"
-    );
 
     // Add to dropdown (prepend to show newest first)
     const firstItem = dropdown.querySelector(".dropdown-item");
@@ -245,7 +236,7 @@ class NotificationSystem {
         this.updateNotificationBadge(data.count);
       }
     } catch (error) {
-      console.error("Error fetching unread count:", error);
+
     }
   }
 
@@ -256,11 +247,11 @@ class NotificationSystem {
         const audio = new Audio("/sounds/notification.mp3");
         audio.volume = 0.3;
         audio.play().catch((e) => {
-          console.log("Could not play notification sound:", e);
+
         });
       }
     } catch (error) {
-      console.log("Notification sound not available:", error);
+
     }
   }
 
@@ -294,10 +285,10 @@ class NotificationSystem {
 
       if (response.ok) {
         // The server will send updated count via SignalR
-        console.log("Notification marked as read");
+
       }
     } catch (error) {
-      console.error("Error marking notification as read:", error);
+
     }
   }
 
@@ -362,7 +353,7 @@ class NotificationSystem {
 
       return response.ok;
     } catch (error) {
-      console.error("Error sending notification:", error);
+
       return false;
     }
   }
@@ -389,7 +380,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (isAuthenticated) {
     window.notificationSystem = new NotificationSystem();
-    console.log("Notification system initialized");
+
   }
 });
 

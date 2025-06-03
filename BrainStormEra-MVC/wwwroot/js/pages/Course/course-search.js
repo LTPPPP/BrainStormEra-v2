@@ -175,7 +175,7 @@ class CourseSearchManager {
         }
       })
       .catch((error) => {
-        console.error("Error:", error);
+
         this.showError("Network error occurred. Please try again.");
       })
       .finally(() => {
@@ -588,7 +588,6 @@ class CourseSearchManager {
 
   showError(message) {
     // You can implement a toast notification or alert here
-    console.error("Search error:", message);
 
     // Simple alert for now - you can replace with a better notification system
     alert(message);
