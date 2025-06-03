@@ -207,8 +207,6 @@
   function showToast(message, type = "info") {
     if (window.showToast) {
       window.showToast(message, type);
-    } else {
-      console.log(`${type.toUpperCase()}: ${message}`);
     }
   }
 

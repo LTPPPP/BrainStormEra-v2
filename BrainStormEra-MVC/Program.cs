@@ -48,7 +48,10 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IResponseService, BrainStormEra_MVC.Services.ResponseService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.INotificationService, BrainStormEra_MVC.Services.NotificationService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAvatarService, BrainStormEra_MVC.Services.AvatarService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseImageService, BrainStormEra_MVC.Services.CourseImageService>();
             builder.Services.AddSingleton<BrainStormEra_MVC.Services.Interfaces.ICacheService, BrainStormEra_MVC.Services.CacheService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.CategorySeedService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.StatusSeedService>();
 
             // Add Authentication
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -106,7 +109,7 @@ namespace BrainStormEra_MVC
             }
             catch
             {
-                // Vẫn tiếp tục chạy ứng dụng nhưng ghi lại lỗi
+                // Continue running the application but log the error
             }
 
             var app = builder.Build();
@@ -122,12 +125,21 @@ namespace BrainStormEra_MVC
                     {
                         // Test a simple query to verify database structure
                         var accountCount = await context.Accounts.CountAsync();
+
+                        // Seed categories if they don't exist
+                        var categorySeeder = scope.ServiceProvider.GetRequiredService<BrainStormEra_MVC.Services.CategorySeedService>();
+                        await categorySeeder.SeedCategoriesAsync();
+
+                        // Seed statuses if they don't exist
+                        var statusSeeder = scope.ServiceProvider.GetRequiredService<BrainStormEra_MVC.Services.StatusSeedService>();
+                        await statusSeeder.SeedStatusesAsync();
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Database connection test failed
+                // Database connection test failed, but continue running
+                Console.WriteLine($"Database connection failed: {ex.Message}");
             }
 
             // Configure the HTTP request pipeline.

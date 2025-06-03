@@ -1,6 +1,5 @@
 -- Status data
-INSERT INTO status (status_id, status_name)
-VALUES 
+INSERT INTO status (status_id, status_name) VALUES
 (1, N'Active'),
 (2, N'Inactive'),
 (3, N'Pending'),
@@ -9,15 +8,13 @@ VALUES
 (6, N'Ban');
 
 -- Lesson type data
-INSERT INTO lesson_type (lesson_type_id, lesson_type_name)
-VALUES 
+INSERT INTO lesson_type (lesson_type_id, lesson_type_name) VALUES
 (1, N'Video'),
 (2, N'Text'),
 (3, N'Interactive');
 
 -- Payment method data
-INSERT INTO payment_method (payment_method_id, method_name, is_active)
-VALUES 
+INSERT INTO payment_method (payment_method_id, method_name, is_active) VALUES
 (1, N'Credit Card', 1),
 (2, N'PayPal', 1),
 (3, N'VNPay', 1),
@@ -25,217 +22,224 @@ VALUES
 (5, N'Momo', 1);
 
 -- Account data with corrected user roles (learner, admin, instructor)
-INSERT INTO account (user_id, user_role, username, password_hash, user_email, full_name, payment_point, date_of_birth, gender, phone_number, user_address, is_banned, account_created_at, account_updated_at)
-VALUES 
-('550e8400-e29b-41d4-a716-446655440001', 'instructor', 'john_doe', 'hashed_password_1', 'john.doe@email.com', N'John Doe', 100.00, '1985-03-15', 1, '0901234567', N'123 Main St, HCMC', 0, GETDATE(), GETDATE()),
-('550e8400-e29b-41d4-a716-446655440002', 'learner', 'jane_smith', 'hashed_password_2', 'jane.smith@email.com', N'Jane Smith', 50.00, '1992-07-22', 2, '0902345678', N'456 Elm St, HCMC', 0, GETDATE(), GETDATE()),
-('550e8400-e29b-41d4-a716-446655440003', 'admin', 'admin_user', 'hashed_password_3', 'admin@platform.com', N'Admin User', 0.00, '1980-01-01', 1, '0903456789', N'789 Admin Ave, HCMC', 0, GETDATE(), GETDATE()),
-('550e8400-e29b-41d4-a716-446655440004', 'learner', 'mike_wilson', 'hashed_password_4', 'mike.wilson@email.com', N'Mike Wilson', 75.25, '1988-11-10', 1, '0904567890', N'321 Oak St, HCMC', 0, GETDATE(), GETDATE()),
-('550e8400-e29b-41d4-a716-446655440005', 'instructor', 'sarah_johnson', 'hashed_password_5', 'sarah.johnson@email.com', N'Sarah Johnson', 200.00, '1990-05-18', 2, '0905678901', N'654 Pine St, HCMC', 0, GETDATE(), GETDATE());
+INSERT INTO account (user_id, user_role, username, password_hash, user_email, full_name,
+    payment_point, date_of_birth, gender, phone_number, user_address, is_banned,
+    account_created_at, account_updated_at)
+VALUES
+('usr1', 'instructor', 'john_doe', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'john_doe'), 2),
+ 'john.doe@email.com', N'John Doe', 100.00, '1985-03-15', 1, '0901234567', N'123 Main St, HCMC', 0, GETDATE(), GETDATE()),
+('usr2', 'learner', 'jane_smith', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'jane_password'), 2),
+ 'jane.smith@email.com', N'Jane Smith', 50.00, '1992-07-22', 2, '0902345678', N'456 Elm St, HCMC', 0, GETDATE(), GETDATE()),
+('usr3', 'admin', 'admin_user', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'admin123'), 2),
+ 'admin@platform.com', N'Admin User', 0.00, '1980-01-01', 1, '0903456789', N'789 Admin Ave, HCMC', 0, GETDATE(), GETDATE()),
+('usr4', 'learner', 'mike_wilson', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'mike123'), 2),
+ 'mike.wilson@email.com', N'Mike Wilson', 75.25, '1988-11-10', 1, '0904567890', N'321 Oak St, HCMC', 0, GETDATE(), GETDATE()),
+('usr5', 'instructor', 'sarah_johnson', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'sarah_pw'), 2),
+ 'sarah.johnson@email.com', N'Sarah Johnson', 200.00, '1990-05-18', 2, '0905678901', N'654 Pine St, HCMC', 0, GETDATE(), GETDATE());
 
 -- Course category data
 INSERT INTO course_category (course_category_id, course_category_name, category_description, category_icon, is_active, created_at, update_at)
-VALUES 
-('cat-550e8400-e29b-41d4-a716-446655440001', N'Programming', N'Programming and software development courses', N'code-icon.png', 1, GETDATE(), GETDATE()),
-('cat-550e8400-e29b-41d4-a716-446655440002', N'Design', N'Graphic design and UI/UX courses', N'design-icon.png', 1, GETDATE(), GETDATE()),
-('cat-550e8400-e29b-41d4-a716-446655440003', N'Business', N'Business and entrepreneurship courses', N'business-icon.png', 1, GETDATE(), GETDATE()),
-('cat-550e8400-e29b-41d4-a716-446655440004', N'Marketing', N'Digital marketing and advertising courses', N'marketing-icon.png', 1, GETDATE(), GETDATE()),
-('cat-550e8400-e29b-41d4-a716-446655440005', N'Language', N'Foreign language learning courses', N'language-icon.png', 1, GETDATE(), GETDATE());
+VALUES
+('cat1', N'Programming', N'Programming and software development courses', N'code-icon.png', 1, GETDATE(), GETDATE()),
+('cat2', N'Design', N'Graphic design and UI/UX courses', N'design-icon.png', 1, GETDATE(), GETDATE()),
+('cat3', N'Business', N'Business and entrepreneurship courses', N'business-icon.png', 1, GETDATE(), GETDATE()),
+('cat4', N'Marketing', N'Digital marketing and advertising courses', N'marketing-icon.png', 1, GETDATE(), GETDATE()),
+('cat5', N'Language', N'Foreign language learning courses', N'language-icon.png', 1, GETDATE(), GETDATE());
 
 -- Course data
 INSERT INTO course (course_id, author_id, course_name, course_description, course_status, course_image, price, estimated_duration, difficulty_level, is_featured, approval_status, approved_by, approved_at, course_created_at, course_updated_at)
-VALUES 
-('crs-550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440001', N'JavaScript Fundamentals', N'Complete JavaScript course for beginners', 1, N'js-course.jpg', 99.99, 1200, 2, 1, 'approved', '550e8400-e29b-41d4-a716-446655440003', GETDATE(), GETDATE(), GETDATE()),
-('crs-550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440005', N'UI/UX Design Masterclass', N'Learn modern UI/UX design principles', 1, N'design-course.jpg', 149.99, 1800, 3, 1, 'approved', '550e8400-e29b-41d4-a716-446655440003', GETDATE(), GETDATE(), GETDATE()),
-('crs-550e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440001', N'Python for Data Science', N'Data analysis with Python', 1, N'python-course.jpg', 199.99, 2400, 4, 0, 'approved', '550e8400-e29b-41d4-a716-446655440003', GETDATE(), GETDATE(), GETDATE()),
-('crs-550e8400-e29b-41d4-a716-446655440004', '550e8400-e29b-41d4-a716-446655440005', N'Digital Marketing Strategy', N'Complete digital marketing guide', 1, N'marketing-course.jpg', 79.99, 900, 2, 0, 'pending', NULL, NULL, GETDATE(), GETDATE()),
-('crs-550e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440001', N'React Development', N'Build modern web apps with React', 1, N'react-course.jpg', 129.99, 1500, 3, 1, 'approved', '550e8400-e29b-41d4-a716-446655440003', GETDATE(), GETDATE(), GETDATE());
+VALUES
+('crs1', 'usr1', N'JavaScript Fundamentals', N'Complete JavaScript course for beginners', 1, N'js-course.jpg', 99.99, 1200, 2, 1, 'approved', 'usr3', GETDATE(), GETDATE(), GETDATE()),
+('crs2', 'usr5', N'UI/UX Design Masterclass', N'Learn modern UI/UX design principles', 1, N'design-course.jpg', 149.99, 1800, 3, 1, 'approved', 'usr3', GETDATE(), GETDATE(), GETDATE()),
+('crs3', 'usr1', N'Python for Data Science', N'Data analysis with Python', 1, N'python-course.jpg', 199.99, 2400, 4, 0, 'approved', 'usr3', GETDATE(), GETDATE(), GETDATE()),
+('crs4', 'usr5', N'Digital Marketing Strategy', N'Complete digital marketing guide', 1, N'marketing-course.jpg', 79.99, 900, 2, 0, 'pending', NULL, NULL, GETDATE(), GETDATE()),
+('crs5', 'usr1', N'React Development', N'Build modern web apps with React', 1, N'react-course.jpg', 129.99, 1500, 3, 1, 'approved', 'usr3', GETDATE(), GETDATE(), GETDATE());
 
 -- Course category mapping data
 INSERT INTO course_category_mapping (course_id, course_category_id)
-VALUES 
-('crs-550e8400-e29b-41d4-a716-446655440001', 'cat-550e8400-e29b-41d4-a716-446655440001'),
-('crs-550e8400-e29b-41d4-a716-446655440002', 'cat-550e8400-e29b-41d4-a716-446655440002'),
-('crs-550e8400-e29b-41d4-a716-446655440003', 'cat-550e8400-e29b-41d4-a716-446655440001'),
-('crs-550e8400-e29b-41d4-a716-446655440004', 'cat-550e8400-e29b-41d4-a716-446655440004'),
-('crs-550e8400-e29b-41d4-a716-446655440005', 'cat-550e8400-e29b-41d4-a716-446655440001');
+VALUES
+('crs1', 'cat1'),
+('crs2', 'cat2'),
+('crs3', 'cat1'),
+('crs4', 'cat4'),
+('crs5', 'cat1');
 
 -- Chapter data
 INSERT INTO chapter (chapter_id, course_id, chapter_name, chapter_description, chapter_order, chapter_status, is_locked, chapter_created_at, chapter_updated_at)
-VALUES 
-('chp-550e8400-e29b-41d4-a716-446655440001', 'crs-550e8400-e29b-41d4-a716-446655440001', N'Introduction to JavaScript', N'Basic concepts and syntax', 1, 1, 0, GETDATE(), GETDATE()),
-('chp-550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440001', N'Variables and Data Types', N'Working with variables and data types', 2, 1, 1, GETDATE(), GETDATE()),
-('chp-550e8400-e29b-41d4-a716-446655440003', 'crs-550e8400-e29b-41d4-a716-446655440002', N'Design Principles', N'Fundamental design principles', 1, 1, 0, GETDATE(), GETDATE()),
-('chp-550e8400-e29b-41d4-a716-446655440004', 'crs-550e8400-e29b-41d4-a716-446655440002', N'Prototyping', N'Creating prototypes and wireframes', 2, 1, 1, GETDATE(), GETDATE()),
-('chp-550e8400-e29b-41d4-a716-446655440005', 'crs-550e8400-e29b-41d4-a716-446655440003', N'Python Basics', N'Getting started with Python', 1, 1, 0, GETDATE(), GETDATE());
+VALUES
+('chp1', 'crs1', N'Introduction to JavaScript', N'Basic concepts and syntax', 1, 1, 0, GETDATE(), GETDATE()),
+('chp2', 'crs1', N'Variables and Data Types', N'Working with variables and data types', 2, 1, 1, GETDATE(), GETDATE()),
+('chp3', 'crs2', N'Design Principles', N'Fundamental design principles', 1, 1, 0, GETDATE(), GETDATE()),
+('chp4', 'crs2', N'Prototyping', N'Creating prototypes and wireframes', 2, 1, 1, GETDATE(), GETDATE()),
+('chp5', 'crs3', N'Python Basics', N'Getting started with Python', 1, 1, 0, GETDATE(), GETDATE());
 
 -- Lesson data
 INSERT INTO lesson (lesson_id, chapter_id, lesson_name, lesson_description, lesson_content, lesson_order, lesson_type_id, lesson_status, is_locked, min_completion_percentage, min_time_spent, is_mandatory, lesson_created_at, lesson_updated_at)
-VALUES 
-('lsn-550e8400-e29b-41d4-a716-446655440001', 'chp-550e8400-e29b-41d4-a716-446655440001', N'What is JavaScript?', N'Introduction to JavaScript programming', N'JavaScript is a programming language...', 1, 1, 1, 0, 80.00, 300, 1, GETDATE(), GETDATE()),
-('lsn-550e8400-e29b-41d4-a716-446655440002', 'chp-550e8400-e29b-41d4-a716-446655440001', N'Setting up Environment', N'How to set up development environment', N'To start coding in JavaScript...', 2, 2, 1, 1, 90.00, 600, 1, GETDATE(), GETDATE()),
-('lsn-550e8400-e29b-41d4-a716-446655440003', 'chp-550e8400-e29b-41d4-a716-446655440002', N'Variable Declaration', N'How to declare variables', N'Variables are containers for data...', 1, 1, 1, 1, 85.00, 450, 1, GETDATE(), GETDATE()),
-('lsn-550e8400-e29b-41d4-a716-446655440004', 'chp-550e8400-e29b-41d4-a716-446655440003', N'Color Theory', N'Understanding colors in design', N'Color theory is fundamental...', 1, 1, 1, 0, 75.00, 400, 1, GETDATE(), GETDATE()),
-('lsn-550e8400-e29b-41d4-a716-446655440005', 'chp-550e8400-e29b-41d4-a716-446655440005', N'Installing Python', N'How to install Python', N'Python installation guide...', 1, 2, 1, 0, 100.00, 300, 1, GETDATE(), GETDATE());
+VALUES
+('lsn1', 'chp1', N'What is JavaScript?', N'Introduction to JavaScript programming', N'JavaScript is a programming language...', 1, 1, 1, 0, 80.00, 300, 1, GETDATE(), GETDATE()),
+('lsn2', 'chp1', N'Setting up Environment', N'How to set up development environment', N'To start coding in JavaScript...', 2, 2, 1, 1, 90.00, 600, 1, GETDATE(), GETDATE()),
+('lsn3', 'chp2', N'Variable Declaration', N'How to declare variables', N'Variables are containers for data...', 1, 1, 1, 1, 85.00, 450, 1, GETDATE(), GETDATE()),
+('lsn4', 'chp3', N'Color Theory', N'Understanding colors in design', N'Color theory is fundamental...', 1, 1, 1, 0, 75.00, 400, 1, GETDATE(), GETDATE()),
+('lsn5', 'chp5', N'Installing Python', N'How to install Python', N'Python installation guide...', 1, 2, 1, 0, 100.00, 300, 1, GETDATE(), GETDATE());
 
 -- Enrollment data
 INSERT INTO enrollment (enrollment_id, user_id, course_id, enrollment_status, approved, progress_percentage, current_lesson_id, enrollment_created_at, enrollment_updated_at)
-VALUES 
-('enr-550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440001', 1, 1, 25.50, 'lsn-550e8400-e29b-41d4-a716-446655440002', GETDATE(), GETDATE()),
-('enr-550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440004', 'crs-550e8400-e29b-41d4-a716-446655440001', 1, 1, 50.00, 'lsn-550e8400-e29b-41d4-a716-446655440003', GETDATE(), GETDATE()),
-('enr-550e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440002', 1, 1, 10.00, 'lsn-550e8400-e29b-41d4-a716-446655440004', GETDATE(), GETDATE()),
-('enr-550e8400-e29b-41d4-a716-446655440004', '550e8400-e29b-41d4-a716-446655440004', 'crs-550e8400-e29b-41d4-a716-446655440003', 1, 1, 5.00, 'lsn-550e8400-e29b-41d4-a716-446655440005', GETDATE(), GETDATE()),
-('enr-550e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440005', 1, 1, 0.00, NULL, GETDATE(), GETDATE());
+VALUES
+('enr1', 'usr2', 'crs1', 1, 1, 25.50, 'lsn2', GETDATE(), GETDATE()),
+('enr2', 'usr4', 'crs1', 1, 1, 50.00, 'lsn3', GETDATE(), GETDATE()),
+('enr3', 'usr2', 'crs2', 1, 1, 10.00, 'lsn4', GETDATE(), GETDATE()),
+('enr4', 'usr4', 'crs3', 1, 1, 5.00, 'lsn5', GETDATE(), GETDATE()),
+('enr5', 'usr2', 'crs5', 1, 1, 0.00, NULL, GETDATE(), GETDATE());
 
 -- Quiz data
 INSERT INTO quiz (quiz_id, lesson_id, quiz_name, quiz_description, time_limit, passing_score, max_attempts, quiz_status, is_final_quiz, quiz_created_at, quiz_updated_at)
-VALUES 
-('qz-550e8400-e29b-41d4-a716-446655440001', 'lsn-550e8400-e29b-41d4-a716-446655440001', N'JavaScript Basics Quiz', N'Test your JavaScript knowledge', 30, 70.00, 3, 1, 0, GETDATE(), GETDATE()),
-('qz-550e8400-e29b-41d4-a716-446655440002', 'lsn-550e8400-e29b-41d4-a716-446655440003', N'Variables Quiz', N'Quiz about JavaScript variables', 15, 80.00, 2, 1, 0, GETDATE(), GETDATE()),
-('qz-550e8400-e29b-41d4-a716-446655440003', 'lsn-550e8400-e29b-41d4-a716-446655440004', N'Color Theory Quiz', N'Test your color knowledge', 20, 75.00, 3, 1, 0, GETDATE(), GETDATE()),
-('qz-550e8400-e29b-41d4-a716-446655440004', NULL, N'JavaScript Final Exam', N'Complete JavaScript course exam', 60, 85.00, 1, 1, 1, GETDATE(), GETDATE()),
-('qz-550e8400-e29b-41d4-a716-446655440005', 'lsn-550e8400-e29b-41d4-a716-446655440005', N'Python Installation Quiz', N'Quick check on Python setup', 10, 90.00, 3, 1, 0, GETDATE(), GETDATE());
+VALUES
+('qz1', 'lsn1', N'JavaScript Basics Quiz', N'Test your JavaScript knowledge', 30, 70.00, 3, 1, 0, GETDATE(), GETDATE()),
+('qz2', 'lsn3', N'Variables Quiz', N'Quiz about JavaScript variables', 15, 80.00, 2, 1, 0, GETDATE(), GETDATE()),
+('qz3', 'lsn4', N'Color Theory Quiz', N'Test your color knowledge', 20, 75.00, 3, 1, 0, GETDATE(), GETDATE()),
+('qz4', NULL, N'JavaScript Final Exam', N'Complete JavaScript course exam', 60, 85.00, 1, 1, 1, GETDATE(), GETDATE()),
+('qz5', 'lsn5', N'Python Installation Quiz', N'Quick check on Python setup', 10, 90.00, 3, 1, 0, GETDATE(), GETDATE());
 
 -- Question data
 INSERT INTO question (question_id, quiz_id, question_text, question_type, points, question_order, explanation, question_created_at)
-VALUES 
-('qst-550e8400-e29b-41d4-a716-446655440001', 'qz-550e8400-e29b-41d4-a716-446655440001', N'What does JavaScript stand for?', 'multiple_choice', 2.00, 1, N'JavaScript is a programming language name, not an acronym', GETDATE()),
-('qst-550e8400-e29b-41d4-a716-446655440002', 'qz-550e8400-e29b-41d4-a716-446655440001', N'JavaScript is a compiled language', 'true_false', 1.00, 2, N'JavaScript is an interpreted language', GETDATE()),
-('qst-550e8400-e29b-41d4-a716-446655440003', 'qz-550e8400-e29b-41d4-a716-446655440002', N'Which keyword is used to declare a variable?', 'multiple_choice', 2.00, 1, N'var, let, and const are all valid', GETDATE()),
-('qst-550e8400-e29b-41d4-a716-446655440004', 'qz-550e8400-e29b-41d4-a716-446655440003', N'What are primary colors?', 'multiple_choice', 3.00, 1, N'Red, Blue, and Yellow are primary colors', GETDATE()),
-('qst-550e8400-e29b-41d4-a716-446655440005', 'qz-550e8400-e29b-41d4-a716-446655440005', N'Python is case-sensitive', 'true_false', 1.00, 1, N'Python is indeed case-sensitive', GETDATE());
+VALUES
+('qst1', 'qz1', N'What does JavaScript stand for?', 'multiple_choice', 2.00, 1, N'JavaScript is a programming language name, not an acronym', GETDATE()),
+('qst2', 'qz1', N'JavaScript is a compiled language', 'true_false', 1.00, 2, N'JavaScript is an interpreted language', GETDATE()),
+('qst3', 'qz2', N'Which keyword is used to declare a variable?', 'multiple_choice', 2.00, 1, N'var, let, and const are all valid', GETDATE()),
+('qst4', 'qz3', N'What are primary colors?', 'multiple_choice', 3.00, 1, N'Red, Blue, and Yellow are primary colors', GETDATE()),
+('qst5', 'qz5', N'Python is case-sensitive', 'true_false', 1.00, 1, N'Python is indeed case-sensitive', GETDATE());
 
 -- Answer option data
 INSERT INTO answer_option (option_id, question_id, option_text, is_correct, option_order)
-VALUES 
-('opt-550e8400-e29b-41d4-a716-446655440001', 'qst-550e8400-e29b-41d4-a716-446655440001', N'Java Script', 0, 1),
-('opt-550e8400-e29b-41d4-a716-446655440002', 'qst-550e8400-e29b-41d4-a716-446655440001', N'JavaScript (it''s just a name)', 1, 2),
-('opt-550e8400-e29b-41d4-a716-446655440003', 'qst-550e8400-e29b-41d4-a716-446655440001', N'Just Another Virtual Application Script', 0, 3),
-('opt-550e8400-e29b-41d4-a716-446655440004', 'qst-550e8400-e29b-41d4-a716-446655440003', N'var', 1, 1),
-('opt-550e8400-e29b-41d4-a716-446655440005', 'qst-550e8400-e29b-41d4-a716-446655440003', N'variable', 0, 2);
+VALUES
+('opt1', 'qst1', N'Java Script', 0, 1),
+('opt2', 'qst1', N'JavaScript (it''s just a name)', 1, 2),
+('opt3', 'qst1', N'Just Another Virtual Application Script', 0, 3),
+('opt4', 'qst3', N'var', 1, 1),
+('opt5', 'qst3', N'variable', 0, 2);
 
 -- Payment transaction data
 INSERT INTO payment_transaction (transaction_id, user_id, course_id, amount, payment_method_id, transaction_status, payment_gateway, payment_date, currency_code, transaction_created_at, transaction_updated_at)
-VALUES 
-('txn-550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440001', 99.99, 1, 'completed', 'Stripe', GETDATE(), 'USD', GETDATE(), GETDATE()),
-('txn-550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440004', 'crs-550e8400-e29b-41d4-a716-446655440001', 99.99, 2, 'completed', 'PayPal', GETDATE(), 'USD', GETDATE(), GETDATE()),
-('txn-550e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440002', 149.99, 3, 'completed', 'VNPay', GETDATE(), 'VND', GETDATE(), GETDATE()),
-('txn-550e8400-e29b-41d4-a716-446655440004', '550e8400-e29b-41d4-a716-446655440004', 'crs-550e8400-e29b-41d4-a716-446655440003', 199.99, 1, 'pending', 'Stripe', NULL, 'USD', GETDATE(), GETDATE()),
-('txn-550e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440005', 129.99, 5, 'failed', 'Momo', NULL, 'VND', GETDATE(), GETDATE());
+VALUES
+('txn1', 'usr2', 'crs1', 99.99, 1, 'completed', 'Stripe', GETDATE(), 'USD', GETDATE(), GETDATE()),
+('txn2', 'usr4', 'crs1', 99.99, 2, 'completed', 'PayPal', GETDATE(), 'USD', GETDATE(), GETDATE()),
+('txn3', 'usr2', 'crs2', 149.99, 3, 'completed', 'VNPay', GETDATE(), 'VND', GETDATE(), GETDATE()),
+('txn4', 'usr4', 'crs3', 199.99, 1, 'pending', 'Stripe', NULL, 'USD', GETDATE(), GETDATE()),
+('txn5', 'usr2', 'crs5', 129.99, 5, 'failed', 'Momo', NULL, 'VND', GETDATE(), GETDATE());
 
 -- User progress data
 INSERT INTO user_progress (user_id, lesson_id, is_completed, progress_percentage, time_spent, last_accessed_at, completed_at, access_count, first_accessed_at, is_unlocked, unlocked_at)
-VALUES 
-('550e8400-e29b-41d4-a716-446655440002', 'lsn-550e8400-e29b-41d4-a716-446655440001', 1, 100.00, 420, GETDATE(), GETDATE(), 3, DATEADD(day, -5, GETDATE()), 1, DATEADD(day, -5, GETDATE())),
-('550e8400-e29b-41d4-a716-446655440002', 'lsn-550e8400-e29b-41d4-a716-446655440002', 0, 45.00, 180, GETDATE(), NULL, 2, DATEADD(day, -2, GETDATE()), 1, DATEADD(day, -2, GETDATE())),
-('550e8400-e29b-41d4-a716-446655440004', 'lsn-550e8400-e29b-41d4-a716-446655440001', 1, 100.00, 380, DATEADD(day, -1, GETDATE()), DATEADD(day, -1, GETDATE()), 2, DATEADD(day, -3, GETDATE()), 1, DATEADD(day, -3, GETDATE())),
-('550e8400-e29b-41d4-a716-446655440004', 'lsn-550e8400-e29b-41d4-a716-446655440003', 0, 60.00, 250, GETDATE(), NULL, 1, GETDATE(), 1, GETDATE()),
-('550e8400-e29b-41d4-a716-446655440002', 'lsn-550e8400-e29b-41d4-a716-446655440004', 0, 25.00, 120, DATEADD(hour, -2, GETDATE()), NULL, 1, DATEADD(hour, -2, GETDATE()), 1, DATEADD(hour, -2, GETDATE()));
+VALUES
+('usr2', 'lsn1', 1, 100.00, 420, GETDATE(), GETDATE(), 3, DATEADD(day, -5, GETDATE()), 1, DATEADD(day, -5, GETDATE())),
+('usr2', 'lsn2', 0, 45.00, 180, GETDATE(), NULL, 2, DATEADD(day, -2, GETDATE()), 1, DATEADD(day, -2, GETDATE())),
+('usr4', 'lsn1', 1, 100.00, 380, DATEADD(day, -1, GETDATE()), DATEADD(day, -1, GETDATE()), 2, DATEADD(day, -3, GETDATE()), 1, DATEADD(day, -3, GETDATE())),
+('usr4', 'lsn3', 0, 60.00, 250, GETDATE(), NULL, 1, GETDATE(), 1, GETDATE()),
+('usr2', 'lsn4', 0, 25.00, 120, DATEADD(hour, -2, GETDATE()), NULL, 1, DATEADD(hour, -2, GETDATE()), 1, DATEADD(hour, -2, GETDATE()));
 
 -- Quiz attempt data
 INSERT INTO quiz_attempt (attempt_id, user_id, quiz_id, score, total_points, percentage_score, start_time, end_time, is_passed, attempt_number, time_spent)
-VALUES 
-('att-550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 'qz-550e8400-e29b-41d4-a716-446655440001', 2.5, 3.0, 83.33, DATEADD(minute, -30, GETDATE()), DATEADD(minute, -10, GETDATE()), 1, 1, 1200),
-('att-550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440004', 'qz-550e8400-e29b-41d4-a716-446655440001', 1.0, 3.0, 33.33, DATEADD(minute, -45, GETDATE()), DATEADD(minute, -30, GETDATE()), 0, 1, 900),
-('att-550e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440004', 'qz-550e8400-e29b-41d4-a716-446655440001', 2.0, 3.0, 66.67, DATEADD(minute, -20, GETDATE()), DATEADD(minute, -5, GETDATE()), 0, 2, 900),
-('att-550e8400-e29b-41d4-a716-446655440004', '550e8400-e29b-41d4-a716-446655440002', 'qz-550e8400-e29b-41d4-a716-446655440003', 2.5, 3.0, 83.33, DATEADD(hour, -1, GETDATE()), DATEADD(minute, -45, GETDATE()), 1, 1, 900),
-('att-550e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440004', 'qz-550e8400-e29b-41d4-a716-446655440005', 1.0, 1.0, 100.00, DATEADD(minute, -15, GETDATE()), DATEADD(minute, -10, GETDATE()), 1, 1, 300);
+VALUES
+('att1', 'usr2', 'qz1', 2.5, 3.0, 83.33, DATEADD(minute, -30, GETDATE()), DATEADD(minute, -10, GETDATE()), 1, 1, 1200),
+('att2', 'usr4', 'qz1', 1.0, 3.0, 33.33, DATEADD(minute, -45, GETDATE()), DATEADD(minute, -30, GETDATE()), 0, 1, 900),
+('att3', 'usr4', 'qz1', 2.0, 3.0, 66.67, DATEADD(minute, -20, GETDATE()), DATEADD(minute, -5, GETDATE()), 0, 2, 900),
+('att4', 'usr2', 'qz3', 2.5, 3.0, 83.33, DATEADD(hour, -1, GETDATE()), DATEADD(minute, -45, GETDATE()), 1, 1, 900),
+('att5', 'usr4', 'qz5', 1.0, 1.0, 100.00, DATEADD(minute, -15, GETDATE()), DATEADD(minute, -10, GETDATE()), 1, 1, 300);
 
 -- Certificate data
 INSERT INTO certificate (certificate_id, enrollment_id, user_id, course_id, certificate_code, certificate_name, certificate_url, issue_date, is_valid, final_score, certificate_created_at)
-VALUES 
-('cert-550e8400-e29b-41d4-a716-446655440001', 'enr-550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440001', 'CERT-JS-2024-001', N'JavaScript Fundamentals Certificate', N'https://certificates.platform.com/cert-001.pdf', GETDATE(), 1, 85.50, GETDATE()),
-('cert-550e8400-e29b-41d4-a716-446655440002', 'enr-550e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440002', 'CERT-UI-2024-001', N'UI/UX Design Certificate', N'https://certificates.platform.com/cert-002.pdf', GETDATE(), 1, 92.00, GETDATE()),
-('cert-550e8400-e29b-41d4-a716-446655440003', 'enr-550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440004', 'crs-550e8400-e29b-41d4-a716-446655440001', 'CERT-JS-2024-002', N'JavaScript Fundamentals Certificate', N'https://certificates.platform.com/cert-003.pdf', GETDATE(), 1, 78.25, GETDATE()),
-('cert-550e8400-e29b-41d4-a716-446655440004', 'enr-550e8400-e29b-41d4-a716-446655440004', '550e8400-e29b-41d4-a716-446655440004', 'crs-550e8400-e29b-41d4-a716-446655440003', 'CERT-PY-2024-001', N'Python for Data Science Certificate', N'https://certificates.platform.com/cert-004.pdf', GETDATE(), 1, 88.75, GETDATE()),
-('cert-550e8400-e29b-41d4-a716-446655440005', 'enr-550e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440005', 'CERT-RT-2024-001', N'React Development Certificate', N'https://certificates.platform.com/cert-005.pdf', GETDATE(), 1, 91.30, GETDATE());
+VALUES
+('cert1', 'enr1', 'usr2', 'crs1', 'CERT-JS-001', N'JavaScript Fundamentals Certificate', N'https://certificates.platform.com/cert-001.pdf', GETDATE(), 1, 85.50, GETDATE()),
+('cert2', 'enr3', 'usr2', 'crs2', 'CERT-UI-001', N'UI/UX Design Certificate', N'https://certificates.platform.com/cert-002.pdf', GETDATE(), 1, 92.00, GETDATE()),
+('cert3', 'enr2', 'usr4', 'crs1', 'CERT-JS-002', N'JavaScript Fundamentals Certificate', N'https://certificates.platform.com/cert-003.pdf', GETDATE(), 1, 78.25, GETDATE()),
+('cert4', 'enr4', 'usr4', 'crs3', 'CERT-PY-001', N'Python for Data Science Certificate', N'https://certificates.platform.com/cert-004.pdf', GETDATE(), 1, 88.75, GETDATE()),
+('cert5', 'enr5', 'usr2', 'crs5', 'CERT-RT-001', N'React Development Certificate', N'https://certificates.platform.com/cert-005.pdf', GETDATE(), 1, 91.30, GETDATE());
 
 -- Feedback data
 INSERT INTO feedback (feedback_id, course_id, user_id, star_rating, comment, feedback_date, hidden_status, is_verified_purchase, helpful_count, feedback_created_at, feedback_updated_at)
-VALUES 
-('fb-550e8400-e29b-41d4-a716-446655440001', 'crs-550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 5, N'Excellent course! Very well structured and easy to follow.', GETDATE(), 0, 1, 12, GETDATE(), GETDATE()),
-('fb-550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440004', 4, N'Good content but could use more practical examples.', GETDATE(), 0, 1, 8, GETDATE(), GETDATE()),
-('fb-550e8400-e29b-41d4-a716-446655440003', 'crs-550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440002', 5, N'Amazing design course! The instructor explains everything clearly.', GETDATE(), 0, 1, 15, GETDATE(), GETDATE()),
-('fb-550e8400-e29b-41d4-a716-446655440004', 'crs-550e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440004', 4, N'Great Python course for data science beginners.', GETDATE(), 0, 1, 6, GETDATE(), GETDATE()),
-('fb-550e8400-e29b-41d4-a716-446655440005', 'crs-550e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440002', 3, N'Course is okay but needs more updates on latest React features.', GETDATE(), 0, 1, 3, GETDATE(), GETDATE());
+VALUES
+('fb1', 'crs1', 'usr2', 5, N'Excellent course! Very well structured and easy to follow.', GETDATE(), 0, 1, 12, GETDATE(), GETDATE()),
+('fb2', 'crs1', 'usr4', 4, N'Good content but could use more practical examples.', GETDATE(), 0, 1, 8, GETDATE(), GETDATE()),
+('fb3', 'crs2', 'usr2', 5, N'Amazing design course! The instructor explains everything clearly.', GETDATE(), 0, 1, 15, GETDATE(), GETDATE()),
+('fb4', 'crs3', 'usr4', 4, N'Great Python course for data science beginners.', GETDATE(), 0, 1, 6, GETDATE(), GETDATE()),
+('fb5', 'crs5', 'usr2', 3, N'Course is okay but needs more updates on latest React features.', GETDATE(), 0, 1, 3, GETDATE(), GETDATE());
 
 -- Achievement data
 INSERT INTO achievement (achievement_id, achievement_name, achievement_description, achievement_icon, achievement_type, points_reward, achievement_created_at)
-VALUES 
-('ach-550e8400-e29b-41d4-a716-446655440001', N'First Course Completed', N'Complete your first course', N'first-course-icon.png', 'course_completion', 50, GETDATE()),
-('ach-550e8400-e29b-41d4-a716-446655440002', N'Quiz Master', N'Pass 10 quizzes with 90%+ score', N'quiz-master-icon.png', 'quiz_master', 100, GETDATE()),
-('ach-550e8400-e29b-41d4-a716-446655440003', N'Learning Streak', N'Study for 7 consecutive days', N'streak-icon.png', 'streak', 75, GETDATE()),
-('ach-550e8400-e29b-41d4-a716-446655440004', N'Course Creator', N'Publish your first course', N'instructor-icon.png', 'instructor', 200, GETDATE()),
-('ach-550e8400-e29b-41d4-a716-446655440005', N'Active Learner', N'Complete 5 courses', N'active-learner-icon.png', 'course_completion', 150, GETDATE());
+VALUES
+('ach1', N'First Course Completed', N'Complete your first course', N'first-course-icon.png', 'course_completion', 50, GETDATE()),
+('ach2', N'Quiz Master', N'Pass 10 quizzes with 90%+ score', N'quiz-master-icon.png', 'quiz_master', 100, GETDATE()),
+('ach3', N'Learning Streak', N'Study for 7 consecutive days', N'streak-icon.png', 'streak', 75, GETDATE()),
+('ach4', N'Course Creator', N'Publish your first course', N'instructor-icon.png', 'instructor', 200, GETDATE()),
+('ach5', N'Active Learner', N'Complete 5 courses', N'active-learner-icon.png', 'course_completion', 150, GETDATE());
 
 -- User achievement data
 INSERT INTO user_achievement (user_id, achievement_id, received_date, enrollment_id, related_course_id, points_earned)
-VALUES 
-('550e8400-e29b-41d4-a716-446655440002', 'ach-550e8400-e29b-41d4-a716-446655440001', GETDATE(), 'enr-550e8400-e29b-41d4-a716-446655440001', 'crs-550e8400-e29b-41d4-a716-446655440001', 50),
-('550e8400-e29b-41d4-a716-446655440004', 'ach-550e8400-e29b-41d4-a716-446655440001', GETDATE(), 'enr-550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440001', 50),
-('550e8400-e29b-41d4-a716-446655440002', 'ach-550e8400-e29b-41d4-a716-446655440002', GETDATE(), NULL, NULL, 100),
-('550e8400-e29b-41d4-a716-446655440001', 'ach-550e8400-e29b-41d4-a716-446655440004', GETDATE(), NULL, 'crs-550e8400-e29b-41d4-a716-446655440001', 200),
-('550e8400-e29b-41d4-a716-446655440005', 'ach-550e8400-e29b-41d4-a716-446655440004', GETDATE(), NULL, 'crs-550e8400-e29b-41d4-a716-446655440002', 200);
+VALUES
+('usr2', 'ach1', GETDATE(), 'enr1', 'crs1', 50),
+('usr4', 'ach1', GETDATE(), 'enr2', 'crs1', 50),
+('usr2', 'ach2', GETDATE(), NULL, NULL, 100),
+('usr1', 'ach4', GETDATE(), NULL, 'crs1', 200),
+('usr5', 'ach4', GETDATE(), NULL, 'crs2', 200);
 
 -- Notification data
 INSERT INTO notification (notification_id, user_id, course_id, notification_title, notification_content, notification_type, is_read, notification_created_at, created_by)
-VALUES 
-('not-550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440001', N'New lesson available', N'A new lesson has been added to your JavaScript course', 'course_update', 0, GETDATE(), '550e8400-e29b-41d4-a716-446655440001'),
-('not-550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440004', NULL, N'Achievement unlocked!', N'Congratulations! You have unlocked the "First Course Completed" achievement', 'achievement', 1, GETDATE(), '550e8400-e29b-41d4-a716-446655440003'),
-('not-550e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440002', 'crs-550e8400-e29b-41d4-a716-446655440005', N'Payment successful', N'Your payment for React Development course has been processed', 'payment', 1, GETDATE(), '550e8400-e29b-41d4-a716-446655440003'),
-('not-550e8400-e29b-41d4-a716-446655440004', '550e8400-e29b-41d4-a716-446655440001', NULL, N'System maintenance', N'Platform will be under maintenance on Sunday 2AM-4AM', 'system', 0, GETDATE(), '550e8400-e29b-41d4-a716-446655440003'),
-('not-550e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440004', 'crs-550e8400-e29b-41d4-a716-446655440003', N'Complete your course', N'You haven''t accessed your Python course for 3 days', 'reminder', 0, GETDATE(), '550e8400-e29b-41d4-a716-446655440003');
+VALUES
+('not1', 'usr2', 'crs1', N'New lesson available', N'A new lesson has been added to your JavaScript course', 'course_update', 0, GETDATE(), 'usr1'),
+('not2', 'usr4', NULL, N'Achievement unlocked!', N'Congratulations! You have unlocked the "First Course Completed" achievement', 'achievement', 1, GETDATE(), 'usr3'),
+('not3', 'usr2', 'crs5', N'Payment successful', N'Your payment for React Development course has been processed', 'payment', 1, GETDATE(), 'usr3'),
+('not4', 'usr1', NULL, N'System maintenance', N'Platform will be under maintenance on Sunday 2AM-4AM', 'system', 0, GETDATE(), 'usr3'),
+('not5', 'usr4', 'crs3', N'Complete your course', N'You haven''t accessed your Python course for 3 days', 'reminder', 0, GETDATE(), 'usr3');
 
 -- Conversation data
 INSERT INTO conversation (conversation_id, conversation_name, conversation_type, created_by, course_id, is_active, conversation_created_at, conversation_updated_at)
-VALUES 
-('conv-550e8400-e29b-41d4-a716-446655440001', NULL, 'private', '550e8400-e29b-41d4-a716-446655440002', NULL, 1, GETDATE(), GETDATE()),
-('conv-550e8400-e29b-41d4-a716-446655440002', N'JavaScript Study Group', 'group', '550e8400-e29b-41d4-a716-446655440001', 'crs-550e8400-e29b-41d4-a716-446655440001', 1, GETDATE(), GETDATE()),
-('conv-550e8400-e29b-41d4-a716-446655440003', NULL, 'private', '550e8400-e29b-41d4-a716-446655440004', NULL, 1, GETDATE(), GETDATE()),
-('conv-550e8400-e29b-41d4-a716-446655440004', N'Design Discussion', 'course_discussion', '550e8400-e29b-41d4-a716-446655440005', 'crs-550e8400-e29b-41d4-a716-446655440002', 1, GETDATE(), GETDATE()),
-('conv-550e8400-e29b-41d4-a716-446655440005', N'Python Help Group', 'group', '550e8400-e29b-41d4-a716-446655440001', 'crs-550e8400-e29b-41d4-a716-446655440003', 1, GETDATE(), GETDATE());
+VALUES
+('conv1', NULL, 'private', 'usr2', NULL, 1, GETDATE(), GETDATE()),
+('conv2', N'JavaScript Study Group', 'group', 'usr1', 'crs1', 1, GETDATE(), GETDATE()),
+('conv3', NULL, 'private', 'usr4', NULL, 1, GETDATE(), GETDATE()),
+('conv4', N'Design Discussion', 'course_discussion', 'usr5', 'crs2', 1, GETDATE(), GETDATE()),
+('conv5', N'Python Help Group', 'group', 'usr1', 'crs3', 1, GETDATE(), GETDATE());
 
 -- Message entity data
 INSERT INTO message_entity (message_id, sender_id, receiver_id, conversation_id, message_content, message_type, is_read, message_created_at, message_updated_at)
-VALUES 
-('msg-550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440001', 'conv-550e8400-e29b-41d4-a716-446655440001', N'Hi, I have a question about the JavaScript course', 'text', 1, GETDATE(), GETDATE()),
-('msg-550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 'conv-550e8400-e29b-41d4-a716-446655440001', N'Sure! What would you like to know?', 'text', 0, GETDATE(), GETDATE()),
-('msg-550e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440004', '550e8400-e29b-41d4-a716-446655440002', 'conv-550e8400-e29b-41d4-a716-446655440002', N'Great lesson on variables! Thanks for the clear explanation.', 'text', 1, GETDATE(), GETDATE()),
-('msg-550e8400-e29b-41d4-a716-446655440004', '550e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440002', 'conv-550e8400-e29b-41d4-a716-446655440004', N'Here are some additional design resources', 'link', 0, GETDATE(), GETDATE()),
-('msg-550e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440004', 'conv-550e8400-e29b-41d4-a716-446655440005', N'Welcome to the Python help group!', 'text', 1, GETDATE(), GETDATE());
+VALUES
+('msg1', 'usr2', 'usr1', 'conv1', N'Hi, I have a question about the JavaScript course', 'text', 1, GETDATE(), GETDATE()),
+('msg2', 'usr1', 'usr2', 'conv1', N'Sure! What would you like to know?', 'text', 0, GETDATE(), GETDATE()),
+('msg3', 'usr4', 'usr2', 'conv2', N'Great lesson on variables! Thanks for the clear explanation.', 'text', 1, GETDATE(), GETDATE()),
+('msg4', 'usr5', 'usr2', 'conv4', N'Here are some additional design resources', 'link', 0, GETDATE(), GETDATE()),
+('msg5', 'usr1', 'usr4', 'conv5', N'Welcome to the Python help group!', 'text', 1, GETDATE(), GETDATE());
 
 -- Conversation participant data
 INSERT INTO conversation_participant (conversation_id, user_id, participant_role, joined_at, is_active, last_read_at)
-VALUES 
-('conv-550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 'member', GETDATE(), 1, GETDATE()),
-('conv-550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440001', 'member', GETDATE(), 1, GETDATE()),
-('conv-550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440001', 'admin', GETDATE(), 1, GETDATE()),
-('conv-550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440002', 'member', GETDATE(), 1, GETDATE()),
-('conv-550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440004', 'member', GETDATE(), 1, GETDATE());
+VALUES
+('conv1', 'usr2', 'member', GETDATE(), 1, GETDATE()),
+('conv1', 'usr1', 'member', GETDATE(), 1, GETDATE()),
+('conv2', 'usr1', 'admin', GETDATE(), 1, GETDATE()),
+('conv2', 'usr2', 'member', GETDATE(), 1, GETDATE()),
+('conv2', 'usr4', 'member', GETDATE(), 1, GETDATE());
 
 -- Chatbot conversation data
 INSERT INTO chatbot_conversation (conversation_id, user_id, conversation_time, user_message, bot_response, conversation_context, feedback_rating)
-VALUES 
-('bot-550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', GETDATE(), N'How do I declare a variable in JavaScript?', N'You can declare a variable in JavaScript using var, let, or const keywords. For example: let myVariable = "Hello World";', N'{"topic": "javascript_variables", "lesson_context": "lesson_1"}', 5),
-('bot-550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440004', GETDATE(), N'What is the difference between let and var?', N'The main differences are: 1) let has block scope while var has function scope, 2) let cannot be redeclared in the same scope, 3) let creates a temporal dead zone.', N'{"topic": "javascript_scope", "previous_question": "variable_declaration"}', 4),
-('bot-550e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440002', GETDATE(), N'How to center a div in CSS?', N'You can center a div using: 1) Flexbox: display: flex; justify-content: center; align-items: center; 2) CSS Grid: display: grid; place-items: center; 3) Margin auto with fixed width.', N'{"topic": "css_centering", "course_context": "design_course"}', 5),
-('bot-550e8400-e29b-41d4-a716-446655440004', '550e8400-e29b-41d4-a716-446655440004', GETDATE(), N'What is pandas in Python?', N'Pandas is a powerful Python library for data manipulation and analysis. It provides data structures like DataFrame and Series for handling structured data efficiently.', N'{"topic": "python_pandas", "course_context": "data_science"}', 4),
-('bot-550e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440002', GETDATE(), N'How to install React?', N'You can install React using: 1) Create React App: npx create-react-app my-app 2) Vite: npm create vite@latest my-react-app -- --template react 3) Manual setup with webpack.', N'{"topic": "react_installation", "user_level": "beginner"}', 3);
+VALUES
+('bot1', 'usr2', GETDATE(), N'How do I declare a variable in JavaScript?', N'You can declare a variable in JavaScript using var, let, or const keywords. For example: let myVariable = "Hello World";', N'{"topic": "javascript_variables", "lesson_context": "lesson_1"}', 5),
+('bot2', 'usr4', GETDATE(), N'What is the difference between let and var?', N'The main differences are: 1) let has block scope while var has function scope, 2) let cannot be redeclared in the same scope, 3) let creates a temporal dead zone.', N'{"topic": "javascript_scope", "previous_question": "variable_declaration"}', 4),
+('bot3', 'usr2', GETDATE(), N'How to center a div in CSS?', N'You can center a div using: 1) Flexbox: display: flex; justify-content: center; align-items: center; 2) CSS Grid: display: grid; place-items: center; 3) Margin auto with fixed width.', N'{"topic": "css_centering", "course_context": "design_course"}', 5),
+('bot4', 'usr4', GETDATE(), N'What is pandas in Python?', N'Pandas is a powerful Python library for data manipulation and analysis. It provides data structures like DataFrame and Series for handling structured data efficiently.', N'{"topic": "python_pandas", "course_context": "data_science"}', 4),
+('bot5', 'usr2', GETDATE(), N'How to install React?', N'You can install React using: 1) Create React App: npx create-react-app my-app 2) Vite: npm create vite@latest my-react-app -- --template react 3) Manual setup with webpack.', N'{"topic": "react_installation", "user_level": "beginner"}', 3);
 
 -- User answer data (for completed quiz attempts)
 INSERT INTO user_answer (user_id, question_id, attempt_id, selected_option_id, answer_text, is_correct, points_earned)
-VALUES 
-('550e8400-e29b-41d4-a716-446655440002', 'qst-550e8400-e29b-41d4-a716-446655440001', 'att-550e8400-e29b-41d4-a716-446655440001', 'opt-550e8400-e29b-41d4-a716-446655440002', NULL, 1, 2.00),
-('550e8400-e29b-41d4-a716-446655440002', 'qst-550e8400-e29b-41d4-a716-446655440002', 'att-550e8400-e29b-41d4-a716-446655440001', NULL, N'False', 0, 0.00),
-('550e8400-e29b-41d4-a716-446655440004', 'qst-550e8400-e29b-41d4-a716-446655440001', 'att-550e8400-e29b-41d4-a716-446655440002', 'opt-550e8400-e29b-41d4-a716-446655440001', NULL, 0, 0.00),
-('550e8400-e29b-41d4-a716-446655440004', 'qst-550e8400-e29b-41d4-a716-446655440003', 'att-550e8400-e29b-41d4-a716-446655440003', 'opt-550e8400-e29b-41d4-a716-446655440004', NULL, 1, 2.00),
-('550e8400-e29b-41d4-a716-446655440004', 'qst-550e8400-e29b-41d4-a716-446655440005', 'att-550e8400-e29b-41d4-a716-446655440005', NULL, N'True', 1, 1.00);
+VALUES
+('usr2', 'qst1', 'att1', 'opt2', NULL, 1, 2.00),
+('usr2', 'qst2', 'att1', NULL, N'False', 0, 0.00),
+('usr4', 'qst1', 'att2', 'opt1', NULL, 0, 0.00),
+('usr4', 'qst3', 'att3', 'opt4', NULL, 1, 2.00),
+('usr4', 'qst5', 'att5', NULL, N'True', 1, 1.00);
 
 -- Lesson prerequisite data
 INSERT INTO lesson_prerequisite (lesson_id, prerequisite_lesson_id, prerequisite_type, required_score, required_time, created_at)
-VALUES 
-('lsn-550e8400-e29b-41d4-a716-446655440002', 'lsn-550e8400-e29b-41d4-a716-446655440001', 'completion', NULL, NULL, GETDATE()),
-('lsn-550e8400-e29b-41d4-a716-446655440003', 'lsn-550e8400-e29b-41d4-a716-446655440002', 'completion', NULL, NULL, GETDATE()),
-('lsn-550e8400-e29b-41d4-a716-446655440003', 'lsn-550e8400-e29b-41d4-a716-446655440001', 'quiz_pass', 70.00, NULL, GETDATE()),
-('lsn-550e8400-e29b-41d4-a716-446655440004', 'lsn-550e8400-e29b-41d4-a716-446655440001', 'time_spent', NULL, 300, GETDATE()),
-('lsn-550e8400-e29b-41d4-a716-446655440005', NULL, 'completion', NULL, NULL, GETDATE());
+VALUES
+('lsn2', 'lsn1', 'completion', NULL, NULL, GETDATE()),
+('lsn3', 'lsn2', 'completion', NULL, NULL, GETDATE()),
+('lsn3', 'lsn1', 'quiz_pass', 70.00, NULL, GETDATE()),
+('lsn4', 'lsn1', 'time_spent', NULL, 300, GETDATE()),
+('lsn5', NULL, 'completion', NULL, NULL, GETDATE());

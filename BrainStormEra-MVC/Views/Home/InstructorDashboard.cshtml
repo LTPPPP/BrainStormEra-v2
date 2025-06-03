@@ -1,184 +1,431 @@
 @model BrainStormEra_MVC.Models.ViewModels.InstructorDashboardViewModel
 @{
     ViewData["Title"] = "Instructor Dashboard";
+    Layout = null;
 }
+<!DOCTYPE html>
+<html lang="en">
 
-<div class="dashboard-container">
-    <!-- Welcome Section -->
-    <div class="welcome-section">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="welcome-title">Welcome to your Instructor Dashboard, @Model.InstructorName!</h1>
-                    <p class="welcome-subtitle">Manage your courses and connect with students.</p>
-                </div>
-                <div class="col-md-4 text-md-end">
-                    <a href="#" class="btn btn-primary create-course-btn">
-                        <i class="fas fa-plus me-2"></i>Create New Course
-                    </a>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/pages/Dashboard/instructor-dashboard.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/homePage.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/landing_page.css">
+    <link rel="stylesheet" href="~/css/components/placeholders.css">
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <div class="dashboard-container">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="container welcome-container">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="welcome-title">Welcome back, @(string.IsNullOrEmpty(Model.InstructorName) ?
+                                                        "Instructor" : Model.InstructorName)!</h1>
+                        <p class="welcome-subtitle">Manage your courses and track your teaching progress.</p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <a href="@Url.Action("CreateCourse", "Course")" class="btn btn-primary create-course-btn">
+                            <i class="fas fa-plus me-2"></i>Create New Course
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Main Content -->
-    <div class="container main-dashboard py-4">
-        <div class="row">
-            <!-- Left Column - Course Management -->
-            <div class="col-lg-8">
-                <!-- My Courses Section -->
-                <div class="dashboard-card mb-4">
-                    <div class="dashboard-card-header d-flex justify-content-between align-items-center">
-                        <h2>My Courses</h2>
-                        <a href="#" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
+        <!-- Main Content -->
+        <div class="container main-dashboard py-4">
+            <div class="row">
+                <!-- Course Management -->
+                <div class="col-12">
+                    <!-- Statistics Overview -->
+                    <div class="dashboard-card teaching-overview mb-4">
+                        <div class="dashboard-card-header">
+                            <h2>Teaching Overview</h2>
+                        </div>
+                        <div class="dashboard-card-body">
+                            <div class="stats-widget">
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-book"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h4 class="stat-value">@Model.TotalCourses</h4>
+                                        <p class="stat-label">Total Courses</p>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h4 class="stat-value">@Model.TotalStudents</h4>
+                                        <p class="stat-label">Total Students</p>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-coins"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h4 class="stat-value">@Model.TotalRevenue.ToString("N0")</h4>
+                                        <p class="stat-label">Payment Points</p>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h4 class="stat-value">@Model.AverageRating.ToString("F1")</h4>
+                                        <p class="stat-label">Average Rating</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="dashboard-card-body">
-                        @if (Model.RecentCourses.Any())
-                        {
-                            <div class="row">
-                                @foreach (var course in Model.RecentCourses)
-                                {
-                                    <div class="col-md-6 col-lg-4 mb-4">
-                                        <div class="course-card">
-                                            <div class="course-image">
-                                                <img src="@(course.CourseImage ?? "/img/default-course.png")" alt="@course.CourseName">
-                                                <div class="course-price">@(course.Price > 0 ? $"${course.Price}" : "Free")</div>
-                                            </div>                                            <div class="course-details">
-                                                <h3 class="course-title">@course.CourseName</h3>
-                                                <div class="course-stats">
-                                                    <span><i class="fas fa-user"></i> @course.EnrollmentCount students</span>
+
+                    <!-- My Courses Section -->
+                    <div class="dashboard-card mb-4">
+                        <div class="dashboard-card-header d-flex justify-content-between align-items-center">
+                            <h2>My Courses</h2>
+                            <a href="#" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
+                        </div>
+                        <div class="dashboard-card-body">
+                            @if (Model.RecentCourses.Any())
+                            {
+                                <div class="row g-4">
+                                    @foreach (var course in Model.RecentCourses)
+                                    {
+                                        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                                            <div class="course-card">
+                                                <div class="course-image">
+                                                    <img src="@course.CoursePicture" alt="@course.CourseName">
+                                                    @if (course.Price > 0)
+                                                    {
+                                                        <div class="course-price">$@course.Price</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="course-price free">Free</div>
+                                                    }
                                                 </div>
-                                                <a href="#" class="edit-btn">Edit Course</a>
+                                                <div class="course-details">
+                                                    <h3 class="course-title">@course.CourseName</h3>
+                                                    <p class="course-students">@course.EnrollmentCount students enrolled</p>
+                                                    <div class="course-actions">
+                                                        <a href="#" class="btn btn-sm btn-outline-primary me-2">
+                                                            <i class="fas fa-edit"></i> Edit
+                                                        </a>
+                                                        <a href="#" class="btn btn-sm btn-outline-success">
+                                                            <i class="fas fa-chart-line"></i> Analytics
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="empty-state">
+                                    <img src="/img/empty-courses.svg" alt="No courses" class="empty-state-img">
+                                    <h3>No courses yet</h3>
+                                    <p>Start creating your first course to share your knowledge with students!</p>
+                                    <a href="@Url.Action("CreateCourse", "Course")" class="btn btn-primary">Create
+                                        Course</a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Analytics Section -->
+                    <div class="row">
+                        <!-- Course Performance -->
+                        <div class="col-lg-6">
+                            <div class="dashboard-card">
+                                <div class="dashboard-card-header">
+                                    <h2>Course Performance</h2>
+                                </div>
+                                <div class="dashboard-card-body">
+                                    <div class="chart-container">
+                                        <canvas id="enrollmentChart" width="400" height="200"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Income Chart -->
+                        <div class="col-lg-6">
+                            <div class="dashboard-card">
+                                <div class="dashboard-card-header d-flex justify-content-between align-items-center">
+                                    <h2>Income Overview</h2>
+                                    <div class="filter-buttons">
+                                        <button class="btn btn-sm btn-outline-primary filter-btn active"
+                                            data-days="1">1D</button>
+                                        <button class="btn btn-sm btn-outline-primary filter-btn"
+                                            data-days="7">7D</button>
+                                        <button class="btn btn-sm btn-outline-primary filter-btn"
+                                            data-days="30">30D</button>
+                                        <button class="btn btn-sm btn-outline-primary filter-btn"
+                                            data-days="90">90D</button>
+                                    </div>
+                                </div>
+                                <div class="dashboard-card-body">
+                                    <div class="income-summary mb-3">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <div class="summary-item">
+                                                    <h5 class="text-muted mb-1">Total Income</h5>
+                                                    <h3 class="text-success mb-0" id="totalIncome">$0.00</h3>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="summary-item">
+                                                    <h5 class="text-muted mb-1">Payment Points</h5>
+                                                    <h3 class="text-info mb-0" id="totalPoints">
+                                                        @Model.TotalRevenue.ToString("N0")</h3>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="empty-state">
-                                <img src="/img/empty-courses.svg" alt="No courses" class="empty-state-img">
-                                <h3>No courses yet</h3>
-                                <p>You haven't created any courses yet. Start creating!</p>
-                                <a href="#" class="btn btn-primary">Create Course</a>
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <!-- Course Analytics Section -->
-                <div class="dashboard-card">
-                    <div class="dashboard-card-header">
-                        <h2>Course Analytics</h2>
-                    </div>
-                    <div class="dashboard-card-body">
-                        @if (Model.TotalCourses > 0)
-                        {
-                            <div class="analytics-summary">
-                                <p>Analyze your course performance to improve student engagement and learning outcomes.</p>
-                                <div class="chart-placeholder">
-                                    <div class="chart-loading">
-                                        <i class="fas fa-chart-bar"></i>
-                                        <span>Analytics loading...</span>
+                                    <div class="chart-container">
+                                        <canvas id="incomeChart" width="400" height="200"></canvas>
+                                    </div>
+                                    <div class="loading-spinner text-center" id="incomeLoading" style="display: none;">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        }
-                        else
-                        {
-                            <div class="empty-state">
-                                <img src="/img/empty-analytics.svg" alt="No analytics" class="empty-state-img">
-                                <h3>No analytics data</h3>
-                                <p>Analytics will be available once you have active courses with students.</p>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column - Notifications & Stats -->
-            <div class="col-lg-4">
-                <!-- Instructor Stats Widget -->
-                <div class="dashboard-card mb-4">
-                    <div class="dashboard-card-header">
-                        <h2>Instructor Stats</h2>
-                    </div>
-                    <div class="dashboard-card-body">
-                        <div class="stats-widget">
-                            <div class="stat-item">
-                                <div class="stat-icon">
-                                    <i class="fas fa-book"></i>
-                                </div>
-                                <div class="stat-content">
-                                    <h4 class="stat-value">@Model.TotalCourses</h4>
-                                    <p class="stat-label">Courses</p>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                                <div class="stat-content">
-                                    <h4 class="stat-value">@Model.TotalStudents</h4>
-                                    <p class="stat-label">Students</p>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon">
-                                    <i class="fas fa-dollar-sign"></i>
-                                </div>
-                                <div class="stat-content">
-                                    <h4 class="stat-value">$@Model.TotalRevenue.ToString("0.00")</h4>
-                                    <p class="stat-label">Revenue</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Notifications Section -->
-                <div class="dashboard-card">
-                    <div class="dashboard-card-header d-flex justify-content-between align-items-center">
-                        <h2>Notifications</h2>
-                        <a href="#" class="mark-all-read">Mark All Read</a>
-                    </div>
-                    <div class="dashboard-card-body">
-                        <div class="empty-state">
-                            <img src="/img/empty-notifications.svg" alt="No notifications" class="empty-state-img">
-                            <h3>No notifications</h3>
-                            <p>You're all caught up!</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-@section Scripts {
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Include toast notifications script -->
+    <script src="~/js/shared/toast-notifications.js"></script>
     <script src="~/js/pages/instructor-dashboard.js"></script>
-}
-                                <div class="stat-icon">
-                                    <i class="fas fa-star"></i>
-                                </div>
-                                <div class="stat-content">
-                                    <h4 class="stat-value">0</h4>
-                                    <p class="stat-label">Reviews</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/pages/instructor-dashboard.css">
-}
+    <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
 
-@section Scripts {
-    <script src="~/js/pages/instructor-dashboard.js"></script>
-}
+        // Enhanced course card interactions
+        document.addEventListener('DOMContentLoaded', function () {
+            const courseCards = document.querySelectorAll('.course-card');
+            courseCards.forEach(card => {
+                card.addEventListener('mouseenter', function () {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            // Initialize enrollment chart
+            const enrollmentCtx = document.getElementById('enrollmentChart').getContext('2d');
+            new Chart(enrollmentCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Enrollments',
+                        data: [12, 19, 15, 25, 22, 30],
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Initialize income chart
+            let incomeChart;
+            const incomeCtx = document.getElementById('incomeChart').getContext('2d');
+
+            function initIncomeChart(data) {
+                if (incomeChart) {
+                    incomeChart.destroy();
+                }
+
+                incomeChart = new Chart(incomeCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.map(item => item.Date),
+                        datasets: [{
+                            label: 'Income ($)',
+                            data: data.map(item => item.Amount),
+                            backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                            borderColor: 'rgba(40, 167, 69, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function (value) {
+                                        return '$' + value.toFixed(2);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return 'Income: $' + context.parsed.y.toFixed(2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Load income data
+            function loadIncomeData(days = 1) {
+                const loading = document.getElementById('incomeLoading');
+                const chartContainer = document.querySelector('#incomeChart').parentElement;
+
+                loading.style.display = 'block';
+                chartContainer.style.opacity = '0.5';
+
+                fetch(`/Home/GetIncomeData?days=${days}`)
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            initIncomeChart(result.data);
+
+                            // Update total income
+                            const totalIncome = result.data.reduce((sum, item) => sum + item.Amount, 0);
+                            document.getElementById('totalIncome').textContent = '$' + totalIncome.toFixed(2);
+                        } else {
+                            console.error('Failed to load income data:', result.message);
+                            showToast('Failed to load income data', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading income data:', error);
+                        showToast('Error loading income data', 'error');
+                    })
+                    .finally(() => {
+                        loading.style.display = 'none';
+                        chartContainer.style.opacity = '1';
+                    });
+            }
+
+            // Filter button handlers
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+
+                    // Load data for selected period
+                    const days = parseInt(this.getAttribute('data-days'));
+                    loadIncomeData(days);
+                });
+            });
+
+            // Load initial income data (1 day)
+            loadIncomeData(1);
+
+            // Toast notification function
+            function showToast(message, type = 'info') {
+                // Use existing toast notification system
+                if (window.showToast) {
+                    window.showToast(message, type);
+                } else {
+                    alert(message);
+                }
+            }
+
+            // Animate statistics on scroll
+            const statItems = document.querySelectorAll('.stat-item');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animationDelay = Math.random() * 0.5 + 's';
+                        entry.target.classList.add('animate__animated', 'animate__fadeInUp');
+                    }
+                });
+            });
+
+            statItems.forEach(item => observer.observe(item));
+        });
+    </script>
+
+</body>
+
+</html>

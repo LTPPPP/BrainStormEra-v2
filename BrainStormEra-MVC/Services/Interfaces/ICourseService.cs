@@ -11,5 +11,8 @@ namespace BrainStormEra_MVC.Services.Interfaces
         Task<bool> EnrollUserAsync(string userId, string courseId);
         Task<bool> IsUserEnrolledAsync(string userId, string courseId);
         Task<List<CourseCategoryViewModel>> GetCategoriesAsync();
+        Task<List<CategoryAutocompleteItem>> SearchCategoriesAsync(string searchTerm);
+        Task<string> CreateCourseAsync(CreateCourseViewModel model, string authorId);
+        Task<bool> UpdateCourseImageAsync(string courseId, string imagePath);
     }
 }

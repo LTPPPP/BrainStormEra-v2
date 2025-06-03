@@ -427,33 +427,73 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                // Optimized query to get instructor data and statistics in one go
-                var instructorData = await _context.Accounts
+                // Get instructor basic data including PaymentPoint
+                var user = await _context.Accounts
                     .AsNoTracking()
                     .Where(a => a.UserId == userId)
-                    .Select(a => new
-                    {
-                        a.FullName,
-                        a.Username,
-                        a.UserImage,
-                        TotalCourses = a.CourseAuthors.Count(),
-                        TotalStudents = a.CourseAuthors.SelectMany(c => c.Enrollments).Count()
-                    })
+                    .Select(a => new { a.Username, a.FullName, a.UserImage, a.PaymentPoint })
                     .FirstOrDefaultAsync();
 
-                if (instructorData == null)
+                if (user == null)
                 {
                     TempData["ErrorMessage"] = "Instructor account not found. Please log in again.";
                     return RedirectToAction("Index", "Login");
                 }
 
+                // Get instructor's courses with detailed stats
+                var instructorCourses = await _context.Courses
+                    .AsNoTracking()
+                    .Where(c => c.AuthorId == userId)
+                    .Include(c => c.Enrollments)
+                    .Select(c => new CourseViewModel
+                    {
+                        CourseId = c.CourseId,
+                        CourseName = c.CourseName,
+                        CoursePicture = c.CourseImage ?? "/img/default-course.png",
+                        Price = c.Price,
+                        CreatedBy = user.FullName ?? user.Username,
+                        Description = c.CourseDescription,
+                        EnrollmentCount = c.Enrollments.Count()
+                    })
+                    .ToListAsync();
+
+                // Calculate statistics
+                var totalCourses = instructorCourses.Count;
+                var totalStudents = instructorCourses.Sum(c => c.EnrollmentCount);
+                var totalRevenue = user.PaymentPoint ?? 0; // Use instructor's PaymentPoint as revenue
+
+                // Get notifications for instructor
+                var notifications = new List<NotificationViewModel>
+                {
+                    new NotificationViewModel
+                    {
+                        NotificationId = "1",
+                        Title = "Welcome to Instructor Dashboard!",
+                        Message = "Start creating amazing courses and help students learn.",
+                        CreatedAt = DateTime.Now.AddDays(-1),
+                        IsRead = false
+                    },
+                    new NotificationViewModel
+                    {
+                        NotificationId = "2",
+                        Title = "Course Creation Tips",
+                        Message = "Check out our guide for creating engaging course content.",
+                        CreatedAt = DateTime.Now.AddDays(-3),
+                        IsRead = true
+                    }
+                };
+
                 var viewModel = new InstructorDashboardViewModel
                 {
-                    InstructorName = instructorData.FullName ?? instructorData.Username,
-                    InstructorImage = instructorData.UserImage ?? "/img/default-avatar.svg",
-                    TotalCourses = instructorData.TotalCourses,
-                    TotalStudents = instructorData.TotalStudents,
-                    TotalRevenue = 0 // Calculate actual revenue if needed
+                    InstructorName = user.FullName ?? user.Username,
+                    InstructorImage = user.UserImage ?? "/img/default-avatar.svg",
+                    TotalCourses = totalCourses,
+                    TotalStudents = totalStudents,
+                    TotalRevenue = totalRevenue,
+                    TotalReviews = 0, // Calculate if needed
+                    AverageRating = 4.5, // Calculate if needed
+                    RecentCourses = instructorCourses.Take(5).ToList(),
+                    Notifications = notifications
                 };
 
                 return View(viewModel);
@@ -463,6 +503,81 @@ namespace BrainStormEra_MVC.Controllers
                 _logger.LogError(ex, "Error loading instructor dashboard");
                 TempData["ErrorMessage"] = "An error occurred while loading the dashboard. Please try again.";
                 return RedirectToAction("Index", "Home");
+            }
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Instructor,instructor")]
+        public async Task<IActionResult> GetIncomeData(int days = 30)
+        {
+            try
+            {
+                var userId = CurrentUserId;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new { success = false, message = "User not authenticated" });
+                }
+
+                var startDate = DateTime.Now.AddDays(-days);
+
+                // Try to get instructor's income from payment transactions
+                var incomeData = await _context.PaymentTransactions
+                    .AsNoTracking()
+                    .Include(pt => pt.Course)
+                    .Where(pt => pt.Course.AuthorId == userId &&
+                                pt.TransactionStatus == "Completed" &&
+                                pt.PaymentDate.HasValue &&
+                                pt.PaymentDate >= startDate &&
+                                pt.PaymentDate <= DateTime.Now)
+                    .GroupBy(pt => pt.PaymentDate!.Value.Date)
+                    .Select(g => new
+                    {
+                        Date = g.Key,
+                        Amount = g.Sum(pt => pt.NetAmount ?? pt.Amount)
+                    })
+                    .OrderBy(g => g.Date)
+                    .ToListAsync();
+
+                // If no payment transaction data, simulate some data based on enrollments
+                if (!incomeData.Any())
+                {
+                    var enrollmentData = await _context.Enrollments
+                        .AsNoTracking()
+                        .Include(e => e.Course)
+                        .Where(e => e.Course.AuthorId == userId &&
+                                   e.EnrollmentCreatedAt >= startDate &&
+                                   e.EnrollmentCreatedAt <= DateTime.Now)
+                        .GroupBy(e => e.EnrollmentCreatedAt.Date)
+                        .Select(g => new
+                        {
+                            Date = g.Key,
+                            Amount = g.Sum(e => e.Course.Price) // Use course price as simulated income
+                        })
+                        .OrderBy(g => g.Date)
+                        .ToListAsync();
+
+                    incomeData = enrollmentData;
+                }
+
+                // Fill in missing dates with 0 income
+                var result = new List<dynamic>();
+                for (int i = days - 1; i >= 0; i--)
+                {
+                    var date = DateTime.Now.AddDays(-i).Date;
+                    var income = incomeData.FirstOrDefault(x => x.Date == date);
+                    result.Add(new
+                    {
+                        Date = date.ToString(days <= 7 ? "MMM dd" : days <= 30 ? "MMM dd" : "MMM yyyy"),
+                        Amount = income?.Amount ?? 0
+                    });
+                }
+
+                return Json(new { success = true, data = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting income data for instructor: {UserId}", CurrentUserId);
+                return Json(new { success = false, message = "Error loading income data" });
             }
         }
 

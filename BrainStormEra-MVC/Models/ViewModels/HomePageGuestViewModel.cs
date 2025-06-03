@@ -114,5 +114,6 @@ namespace BrainStormEra_MVC.Models.ViewModels
 
         // Additional properties for view compatibility
         public string CourseCategoryName => CategoryName;
+        public string CourseCategoryId => CategoryId;
     }
 }

@@ -70,7 +70,6 @@ function initializeEnrollmentForm() {
           }
         })
         .catch((error) => {
-          console.error("Enrollment error:", error);
           showEnrollmentError(
             "An error occurred during enrollment. Please try again."
           );

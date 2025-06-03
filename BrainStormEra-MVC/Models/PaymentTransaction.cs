@@ -7,6 +7,10 @@ public partial class PaymentTransaction
 {
     public string TransactionId { get; set; } = null!;
 
+    public string? RecipientId { get; set; }
+
+    public string? PayoutNotes { get; set; }
+
     public string UserId { get; set; } = null!;
 
     public string CourseId { get; set; } = null!;
@@ -14,6 +18,8 @@ public partial class PaymentTransaction
     public decimal Amount { get; set; }
 
     public int? PaymentMethodId { get; set; }
+
+    public string? TransactionType { get; set; }
 
     public string? TransactionStatus { get; set; }
 
@@ -46,6 +52,8 @@ public partial class PaymentTransaction
     public virtual Course Course { get; set; } = null!;
 
     public virtual PaymentMethod? PaymentMethod { get; set; }
+
+    public virtual Account? Recipient { get; set; }
 
     public virtual Account User { get; set; } = null!;
 }

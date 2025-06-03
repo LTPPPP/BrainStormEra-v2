@@ -254,26 +254,167 @@ namespace BrainStormEra_MVC.Services
 
         public async Task<List<CourseCategoryViewModel>> GetCategoriesAsync()
         {
-            var cacheKey = "CourseCategories";
-
-            if (_cache.TryGetValue(cacheKey, out List<CourseCategoryViewModel>? cachedCategories))
+            try
             {
-                return cachedCategories!;
-            }
+                var cacheKey = "CourseCategories";
 
-            var categories = await _context.CourseCategories
-                .AsNoTracking()
-                .Where(cc => cc.IsActive == true)
-                .Select(cc => new CourseCategoryViewModel
+                if (_cache.TryGetValue(cacheKey, out List<CourseCategoryViewModel>? cachedCategories))
                 {
-                    CategoryId = cc.CourseCategoryId,
-                    CategoryName = cc.CourseCategoryName,
-                    CourseCount = cc.Courses.Count(c => c.CourseStatus == 1)
-                })
-                .ToListAsync();
+                    return cachedCategories!;
+                }
 
-            _cache.Set(cacheKey, categories, CacheExpiration);
-            return categories;
+                _logger.LogInformation("Loading categories from database");
+
+                var categories = await _context.CourseCategories
+                    .AsNoTracking()
+                    .Where(cc => cc.IsActive == true)
+                    .Select(cc => new CourseCategoryViewModel
+                    {
+                        CategoryId = cc.CourseCategoryId,
+                        CategoryName = cc.CourseCategoryName ?? "Unknown Category",
+                        CategoryDescription = cc.CategoryDescription,
+                        CategoryIcon = cc.CategoryIcon ?? "fas fa-tag",
+                        CourseCount = cc.Courses.Count(c => c.CourseStatus == 1)
+                    })
+                    .ToListAsync();
+
+                _logger.LogInformation("Loaded {Count} categories from database", categories.Count);
+
+                // Log each category for debugging
+                foreach (var category in categories)
+                {
+                    _logger.LogInformation("Category: ID={CategoryId}, Name={CategoryName}", category.CategoryId, category.CategoryName);
+                }
+
+                _cache.Set(cacheKey, categories, CacheExpiration);
+                return categories;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading categories from database");
+                return new List<CourseCategoryViewModel>();
+            }
+        }
+
+        public async Task<List<CategoryAutocompleteItem>> SearchCategoriesAsync(string searchTerm)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    return new List<CategoryAutocompleteItem>();
+                }
+
+                _logger.LogInformation("Searching categories with term: {SearchTerm}", searchTerm);
+
+                var categories = await _context.CourseCategories
+                    .AsNoTracking()
+                    .Where(cc => cc.IsActive == true && cc.CourseCategoryName.Contains(searchTerm))
+                    .OrderBy(cc => cc.CourseCategoryName)
+                    .Take(10)
+                    .Select(cc => new CategoryAutocompleteItem
+                    {
+                        CategoryId = cc.CourseCategoryId,
+                        CategoryName = cc.CourseCategoryName ?? "Unknown Category",
+                        CategoryIcon = cc.CategoryIcon ?? "fas fa-tag"
+                    })
+                    .ToListAsync();
+
+                _logger.LogInformation("Found {Count} categories for search term: {SearchTerm}", categories.Count, searchTerm);
+
+                // Log each category for debugging
+                foreach (var category in categories)
+                {
+                    _logger.LogInformation("Category: ID={CategoryId}, Name={CategoryName}", category.CategoryId, category.CategoryName);
+                }
+
+                return categories;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching categories with term: {SearchTerm}", searchTerm);
+                return new List<CategoryAutocompleteItem>();
+            }
+        }
+
+        public async Task<string> CreateCourseAsync(CreateCourseViewModel model, string authorId)
+        {
+            try
+            {
+                var courseId = Guid.NewGuid().ToString();
+
+                var course = new Course
+                {
+                    CourseId = courseId,
+                    AuthorId = authorId,
+                    CourseName = model.CourseName,
+                    CourseDescription = model.CourseDescription,
+                    Price = model.Price,
+                    EstimatedDuration = model.EstimatedDuration,
+                    DifficultyLevel = model.DifficultyLevel,
+                    IsFeatured = model.IsFeatured,
+                    EnforceSequentialAccess = model.EnforceSequentialAccess,
+                    AllowLessonPreview = model.AllowLessonPreview,
+                    CourseStatus = 2, // Inactive status
+                    ApprovalStatus = "Pending",
+                    CourseCreatedAt = DateTime.UtcNow,
+                    CourseUpdatedAt = DateTime.UtcNow,
+                    CourseImage = "/img/default-course.png" // Default image, will be updated if file is uploaded
+                };
+
+                _context.Courses.Add(course);
+
+                // Add categories
+                if (model.SelectedCategories.Any())
+                {
+                    var categories = await _context.CourseCategories
+                        .Where(cc => model.SelectedCategories.Contains(cc.CourseCategoryId))
+                        .ToListAsync();
+
+                    foreach (var category in categories)
+                    {
+                        course.CourseCategories.Add(category);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Clear cache since we added a new course
+                _cache.Remove("CourseCategories");
+
+                return courseId;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating course for author {AuthorId}", authorId);
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateCourseImageAsync(string courseId, string imagePath)
+        {
+            try
+            {
+                var course = await _context.Courses.FindAsync(courseId);
+                if (course == null)
+                {
+                    _logger.LogWarning("Course not found for image update: {CourseId}", courseId);
+                    return false;
+                }
+
+                course.CourseImage = imagePath;
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Course image updated successfully for course {CourseId}: {ImagePath}", courseId, imagePath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating course image for course {CourseId}", courseId);
+                return false;
+            }
         }
 
         private string GetDifficultyLevelText(byte? level)

@@ -430,6 +430,64 @@
   transform: translateY(-1px) !important;
 }
 
+/* Payment Points Display */
+.payment-points {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.points-container {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 2px solid #f1c40f;
+  border-radius: 25px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(241, 196, 15, 0.2);
+}
+
+.points-container i {
+  font-size: 1rem;
+  color: #f39c12;
+}
+
+.points-value {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #d35400;
+  min-width: 20px;
+  text-align: center;
+}
+
+.points-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #8e44ad;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive adjustments for payment points */
+@media (max-width: 768px) {
+  .points-container {
+    padding: 4px 8px;
+  }
+
+  .points-label {
+    display: none;
+  }
+
+  .points-container i {
+    font-size: 0.9rem;
+  }
+
+  .points-value {
+    font-size: 0.85rem;
+  }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .notification-dropdown {

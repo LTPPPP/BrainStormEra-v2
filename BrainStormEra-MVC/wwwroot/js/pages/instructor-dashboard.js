@@ -57,13 +57,7 @@
       button.addEventListener("click", createRippleEffect);
     });
 
-    // Create course button
-    if (elements.createCourseBtn) {
-      elements.createCourseBtn.addEventListener("click", function (e) {
-        e.preventDefault();
-        showToast("Coming soon: Course creation functionality");
-      });
-    }
+    // Create course button - now links to actual CreateCourse action
 
     // Edit course buttons
     if (elements.editButtons) {

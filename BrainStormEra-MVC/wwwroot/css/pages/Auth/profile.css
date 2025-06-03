@@ -351,6 +351,27 @@
   margin-bottom: 25px;
 }
 
+/* Form Section Styling */
+.form-section {
+  margin: 30px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border-left: 4px solid #667eea;
+}
+
+.section-title {
+  color: #495057;
+  font-weight: 600;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+.section-title i {
+  margin-right: 8px;
+  color: #667eea;
+}
+
 .form-label {
   font-weight: 600;
   color: #495057;

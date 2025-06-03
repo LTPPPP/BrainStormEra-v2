@@ -86,9 +86,9 @@ namespace BrainStormEra_MVC.Controllers
                 // Convert gender short to string
                 string genderString = user.Gender switch
                 {
-                    1 => "Nam",
-                    2 => "Nữ",
-                    3 => "Khác",
+                    1 => "Male",
+                    2 => "Female",
+                    3 => "Other",
                     _ => null
                 }; var viewModel = new UserProfileViewModel
                 {
@@ -103,6 +103,11 @@ namespace BrainStormEra_MVC.Controllers
                     UserImage = user.UserImage ?? "",
                     Role = CurrentUserRole ?? "",
                     CreatedAt = user.AccountCreatedAt,
+
+                    // Bank Information
+                    BankAccountNumber = user.BankAccountNumber ?? "",
+                    BankName = user.BankName ?? "",
+                    AccountHolderName = user.AccountHolderName ?? "",
 
                     // Statistics
                     TotalCourses = IsLearner ? enrolledCoursesCount : createdCoursesCount,
@@ -157,6 +162,9 @@ namespace BrainStormEra_MVC.Controllers
                     UserAddress = user.UserAddress ?? "",
                     DateOfBirth = user.DateOfBirth?.ToDateTime(TimeOnly.MinValue),
                     Gender = genderString ?? "",
+                    BankAccountNumber = user.BankAccountNumber ?? "",
+                    BankName = user.BankName ?? "",
+                    AccountHolderName = user.AccountHolderName ?? "",
                     CurrentImagePath = user.UserImage ?? ""
                 };
 
@@ -200,6 +208,11 @@ namespace BrainStormEra_MVC.Controllers
                 user.PhoneNumber = model.PhoneNumber;
                 user.UserAddress = model.UserAddress;
                 user.DateOfBirth = model.DateOfBirth.HasValue ? DateOnly.FromDateTime(model.DateOfBirth.Value) : null;
+
+                // Update bank information
+                user.BankAccountNumber = model.BankAccountNumber;
+                user.BankName = model.BankName;
+                user.AccountHolderName = model.AccountHolderName;
 
                 // Convert gender string to short
                 user.Gender = model.Gender switch
