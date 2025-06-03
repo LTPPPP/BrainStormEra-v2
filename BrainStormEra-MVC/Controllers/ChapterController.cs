@@ -183,7 +183,6 @@ namespace BrainStormEra_MVC.Controllers
             var inappropriateWords = new[] { "test", "dummy", "placeholder", "xxx", "delete", "remove" };
             return inappropriateWords.Any(word => content.ToLower().Contains(word.ToLower()));
         }
-
         [HttpPost]
         [Authorize(Roles = "Instructor,instructor")]
         [ValidateAntiForgeryToken]
@@ -194,22 +193,199 @@ namespace BrainStormEra_MVC.Controllers
                 var userId = User.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return Json(new { success = false, message = "User not authenticated" });
+                    TempData["ErrorMessage"] = "User not authenticated";
+                    return RedirectToAction("Details", "Course", new { id = courseId });
                 }
 
                 var success = await _chapterService.DeleteChapterAsync(id, userId);
                 if (success)
                 {
-                    return Json(new { success = true, message = "Chapter deleted successfully!" });
+                    TempData["SuccessMessage"] = "Chapter deleted successfully!";
+                    return RedirectToAction("Details", "Course", new { id = courseId });
                 }
                 else
                 {
-                    return Json(new { success = false, message = "Chapter not found or you are not authorized to delete this chapter." });
+                    TempData["ErrorMessage"] = "Chapter not found or you are not authorized to delete this chapter.";
+                    return RedirectToAction("Details", "Course", new { id = courseId });
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting chapter {ChapterId} by user {UserId}", id, User.FindFirst("UserId")?.Value);
+                TempData["ErrorMessage"] = "An error occurred while deleting the chapter.";
+                return RedirectToAction("Details", "Course", new { id = courseId });
+            }
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Instructor,instructor")]
+        public async Task<IActionResult> EditChapter(string id)
+        {
+            try
+            {
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    TempData["ErrorMessage"] = "User not authenticated";
+                    return RedirectToAction("Index", "Login");
+                }
+
+                var chapter = await GetChapterForEditAsync(id, userId);
+                if (chapter == null)
+                {
+                    TempData["ErrorMessage"] = "Chapter not found or you are not authorized to edit this chapter.";
+                    return RedirectToAction("Index", "Course");
+                }
+
+                return View("~/Views/Chapters/EditChapter.cshtml", chapter);
             }
             catch (Exception)
             {
-                return Json(new { success = false, message = "An error occurred while deleting the chapter." });
+                TempData["ErrorMessage"] = "An error occurred while loading the edit chapter page.";
+                return RedirectToAction("Index", "Course");
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Instructor,instructor")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditChapter(string id, CreateChapterViewModel model)
+        {
+            var userId = User.FindFirst("UserId")?.Value;
+
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    TempData["ErrorMessage"] = "User not authenticated";
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Additional server-side validation
+                await ValidateChapterModelForEdit(model, userId, id);
+
+                if (ModelState.IsValid)
+                {
+                    var success = await _chapterService.UpdateChapterAsync(id, model, userId);
+                    if (success)
+                    {
+                        TempData["SuccessMessage"] = $"Chapter '{model.ChapterName}' has been successfully updated!";
+                        _logger.LogInformation("Chapter updated successfully: {ChapterId} by user {UserId}", id, userId);
+
+                        return RedirectToAction("Details", "Course", new { id = model.CourseId });
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "Failed to update chapter. Please try again.");
+                    }
+                }
+
+                // If model state is invalid, reload the form with existing chapters
+                await ReloadEditChapterViewModel(model, userId, id);
+
+                var errorMessages = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                TempData["ErrorMessage"] = "Please correct the following errors: " + string.Join("; ", errorMessages);
+                return View("~/Views/Chapters/EditChapter.cshtml", model);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("Unauthorized access attempt: {Message} by user {UserId}", ex.Message, userId);
+                TempData["ErrorMessage"] = "You are not authorized to edit this chapter.";
+                return RedirectToAction("Details", "Course", new { id = model.CourseId });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning("Validation error updating chapter: {Message}", ex.Message);
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    await ReloadEditChapterViewModel(model, userId, id);
+                }
+                TempData["ErrorMessage"] = ex.Message;
+                return View("~/Views/Chapters/EditChapter.cshtml", model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating chapter {ChapterId} by user {UserId}", id, userId);
+                TempData["ErrorMessage"] = "An unexpected error occurred while updating the chapter. Please try again.";
+                return RedirectToAction("Details", "Course", new { id = model.CourseId });
+            }
+        }        /// <summary>
+                 /// Gets a chapter for editing
+                 /// </summary>
+        private async Task<CreateChapterViewModel?> GetChapterForEditAsync(string chapterId, string userId)
+        {
+            try
+            {
+                return await _chapterService.GetChapterForEditAsync(chapterId, userId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting chapter for edit: {ChapterId}", chapterId);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Validates chapter model for editing with additional business rules
+        /// </summary>
+        private async Task ValidateChapterModelForEdit(CreateChapterViewModel model, string userId, string chapterId)
+        {
+            // Check if chapter name already exists in the course (excluding current chapter)
+            var existingChapters = await _chapterService.GetChaptersByCourseIdAsync(model.CourseId);
+            if (existingChapters.Any(c => c.ChapterId != chapterId && string.Equals(c.ChapterName.Trim(), model.ChapterName.Trim(), StringComparison.OrdinalIgnoreCase)))
+            {
+                ModelState.AddModelError(nameof(model.ChapterName), "A chapter with this name already exists in the course.");
+            }
+
+            // Check if chapter order already exists (excluding current chapter)
+            if (existingChapters.Any(c => c.ChapterId != chapterId && c.ChapterOrder == model.ChapterOrder))
+            {
+                ModelState.AddModelError(nameof(model.ChapterOrder), $"Chapter order {model.ChapterOrder} is already taken. Please choose a different order.");
+            }
+
+            // Validate unlock prerequisite
+            if (model.IsLocked && !string.IsNullOrEmpty(model.UnlockAfterChapterId))
+            {
+                var prerequisiteChapter = existingChapters.FirstOrDefault(c => c.ChapterId == model.UnlockAfterChapterId);
+                if (prerequisiteChapter == null)
+                {
+                    ModelState.AddModelError(nameof(model.UnlockAfterChapterId), "Selected prerequisite chapter not found.");
+                }
+                else if (prerequisiteChapter.ChapterOrder >= model.ChapterOrder)
+                {
+                    ModelState.AddModelError(nameof(model.UnlockAfterChapterId), "Prerequisite chapter must come before this chapter in the course sequence.");
+                }
+            }
+
+            // Validate chapter name doesn't contain inappropriate content
+            if (ContainsInappropriateContent(model.ChapterName))
+            {
+                ModelState.AddModelError(nameof(model.ChapterName), "Chapter name contains inappropriate content.");
+            }
+        }
+
+        /// <summary>
+        /// Reloads the edit chapter view model with existing data
+        /// </summary>
+        private async Task ReloadEditChapterViewModel(CreateChapterViewModel model, string userId, string chapterId)
+        {
+            try
+            {
+                var viewModel = await GetChapterForEditAsync(chapterId, userId);
+                if (viewModel != null)
+                {
+                    model.CourseName = viewModel.CourseName;
+                    model.CourseDescription = viewModel.CourseDescription;
+                    model.ExistingChapters = viewModel.ExistingChapters;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reloading edit chapter view model for chapter {ChapterId}", chapterId);
             }
         }
     }

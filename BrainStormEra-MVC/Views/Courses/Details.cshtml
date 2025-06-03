@@ -38,11 +38,30 @@
         <div class="loader"></div>
     </div>
 
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
     <!-- Header -->
     @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
 
     <!-- Course Details Container -->
-    <div class="course-details-container">        
+    <div class="course-details-container">
+        @Html.AntiForgeryToken()        
         <!-- Course Header -->
         <div class="course-header">
             <div class="course-header-bg"></div>
@@ -429,6 +448,24 @@
                                                     <h4>@chapter.ChapterOrder. @chapter.ChapterName</h4>
                                                     <div class="section-meta">
                                                         <span>@chapter.Lessons.Count lessons</span>
+                                                        @if (ViewBag.IsAuthor == true)
+                                                        {
+                                                            <div class="chapter-actions me-3">
+                                                                <button type="button" class="btn btn-sm btn-outline-primary me-2 edit-chapter-btn" 
+                                                                        data-chapter-id="@chapter.ChapterId" 
+                                                                        data-chapter-name="@chapter.ChapterName"
+                                                                        title="Edit Chapter">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger delete-chapter-btn" 
+                                                                        data-chapter-id="@chapter.ChapterId" 
+                                                                        data-chapter-name="@chapter.ChapterName"
+                                                                        data-chapter-order="@chapter.ChapterOrder"
+                                                                        title="Delete Chapter">
+                                                                    <i class="fas fa-trash-alt"></i>
+                                                                </button>
+                                                            </div>
+                                                        }
                                                         <i class="fas fa-chevron-down"></i>
                                                     </div>
                                                 </div>
@@ -699,6 +736,91 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/global.js"></script>
     <script src="~/js/pages/Course/courses.js"></script>
+    <script src="~/js/components/toast-notifications.js"></script>
+
+    <!-- Chapter Management JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Edit Chapter functionality
+            const editButtons = document.querySelectorAll('.edit-chapter-btn');
+            editButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const chapterId = this.getAttribute('data-chapter-id');
+                    const editUrl = '@Url.Action("EditChapter", "Chapter")' + '/' + chapterId;
+                    window.location.href = editUrl;
+                });
+            });
+
+            // Delete Chapter functionality
+            const deleteButtons = document.querySelectorAll('.delete-chapter-btn');
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteChapterModal'));
+            let currentChapterId = null;
+
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    currentChapterId = this.getAttribute('data-chapter-id');
+                    const chapterName = this.getAttribute('data-chapter-name');
+                    const chapterOrder = this.getAttribute('data-chapter-order');
+
+                    // Update modal content
+                    document.getElementById('deleteChapterName').textContent = chapterName;
+                    document.getElementById('deleteChapterOrder').textContent = chapterOrder;
+
+                    // Show modal
+                    deleteModal.show();
+                });
+            });
+
+            // Confirm delete action
+            document.getElementById('confirmDeleteChapter').addEventListener('click', function() {
+                if (!currentChapterId) return;
+
+                // Show loading state
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
+                this.disabled = true;
+
+                // Create form and submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("DeleteChapter", "Chapter")';
+
+                // Add anti-forgery token
+                const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (token) {
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token.value;
+                    form.appendChild(tokenInput);
+                }
+
+                // Add chapter ID
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'id';
+                idInput.value = currentChapterId;
+                form.appendChild(idInput);
+
+                // Add course ID for redirect
+                const courseIdInput = document.createElement('input');
+                courseIdInput.type = 'hidden';
+                courseIdInput.name = 'courseId';
+                courseIdInput.value = '@Model.CourseId';
+                form.appendChild(courseIdInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            });
+
+            // Reset modal when closed
+            document.getElementById('deleteChapterModal').addEventListener('hidden.bs.modal', function() {
+                currentChapterId = null;
+                const confirmBtn = document.getElementById('confirmDeleteChapter');
+                confirmBtn.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Delete Chapter';
+                confirmBtn.disabled = false;
+            });
+        });
+    </script>
 
     <!-- Enrollment Success Modal -->
     <div class="modal fade" id="enrollmentModal" tabindex="-1" aria-labelledby="enrollmentModalLabel"
@@ -716,6 +838,46 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="continueLearning" style="display: none;">Continue
                         Learning</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Chapter Confirmation Modal -->
+    <div class="modal fade" id="deleteChapterModal" tabindex="-1" aria-labelledby="deleteChapterModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteChapterModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Delete Chapter
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning me-2"></i>
+                        <strong>Warning:</strong> This action cannot be undone!
+                    </div>
+                    <p>Are you sure you want to delete the following chapter?</p>
+                    <div class="bg-light p-3 rounded">
+                        <h6 class="mb-1"><strong id="deleteChapterName">Chapter Name</strong></h6>
+                        <small class="text-muted">Chapter <span id="deleteChapterOrder">1</span> in this course</small>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-danger mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            All lessons within this chapter will also be permanently deleted.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteChapter">
+                        <i class="fas fa-trash-alt me-2"></i>Delete Chapter
+                    </button>
                 </div>
             </div>
         </div>

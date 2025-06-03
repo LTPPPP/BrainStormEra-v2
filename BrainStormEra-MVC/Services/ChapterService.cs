@@ -239,5 +239,63 @@ namespace BrainStormEra_MVC.Services
                 return new List<ChapterViewModel>();
             }
         }
+
+        public async Task<CreateChapterViewModel?> GetChapterForEditAsync(string chapterId, string authorId)
+        {
+            try
+            {
+                var chapter = await _context.Chapters
+                    .Include(c => c.Course)
+                    .ThenInclude(course => course.Chapters)
+                    .ThenInclude(ch => ch.Lessons)
+                    .ThenInclude(l => l.LessonType)
+                    .FirstOrDefaultAsync(c => c.ChapterId == chapterId && c.Course.AuthorId == authorId);
+
+                if (chapter == null)
+                {
+                    _logger.LogWarning("Chapter not found or user not authorized: {ChapterId} for user {AuthorId}", chapterId, authorId);
+                    return null;
+                }
+
+                var existingChapters = chapter.Course.Chapters
+                    .Where(c => c.ChapterId != chapterId) // Exclude current chapter
+                    .OrderBy(c => c.ChapterOrder)
+                    .Select(c => new ChapterViewModel
+                    {
+                        ChapterId = c.ChapterId,
+                        ChapterName = c.ChapterName,
+                        ChapterDescription = c.ChapterDescription ?? "",
+                        ChapterOrder = c.ChapterOrder ?? 0,
+                        Lessons = c.Lessons?.Select(l => new LessonViewModel
+                        {
+                            LessonId = l.LessonId,
+                            LessonName = l.LessonName,
+                            LessonDescription = l.LessonDescription ?? "",
+                            LessonOrder = l.LessonOrder,
+                            LessonType = l.LessonType?.LessonTypeName ?? "Content",
+                            EstimatedDuration = 0,
+                            IsLocked = l.IsLocked ?? false
+                        }).ToList() ?? new List<LessonViewModel>()
+                    }).ToList();
+
+                return new CreateChapterViewModel
+                {
+                    CourseId = chapter.CourseId,
+                    CourseName = chapter.Course.CourseName,
+                    CourseDescription = chapter.Course.CourseDescription ?? "",
+                    ChapterName = chapter.ChapterName,
+                    ChapterDescription = chapter.ChapterDescription ?? "",
+                    ChapterOrder = chapter.ChapterOrder ?? 1,
+                    IsLocked = chapter.IsLocked ?? false,
+                    UnlockAfterChapterId = chapter.UnlockAfterChapterId,
+                    ExistingChapters = existingChapters
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting chapter for edit: {ChapterId}", chapterId);
+                return null;
+            }
+        }
     }
 }

@@ -1,0 +1,723 @@
+@model BrainStormEra_MVC.Models.ViewModels.CreateChapterViewModel
+@{
+    ViewData["Title"] = "Edit Chapter";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="Edit chapter for your course on BrainStormEra">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css"> <!-- Preview changes CSS -->
+    <link rel="stylesheet" href="~/css/components/preview-changes.css">
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1 class="mb-3">
+                        <i class="fas fa-edit me-3"></i>
+                        Edit Chapter
+                    </h1>
+                    <p class="lead mb-0">Update your chapter in: <strong>@Model.CourseName</strong></p>
+                    <div class="mt-4">
+                        <span class="badge bg-light text-dark fs-6 me-3">
+                            <i class="fas fa-clock me-1"></i> Quick updates
+                        </span>
+                        <span class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-book me-1"></i> Improve your content
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="create-course-container">
+        <form asp-controller="Chapter" asp-action="EditChapter" asp-route-id="@ViewBag.ChapterId" method="post"
+            id="editChapterForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="CourseId" />
+
+            <!-- Chapter Information Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Chapter Information
+                </h3>
+                <p class="text-muted mb-4">Update the details about your chapter</p>
+
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="mb-4">
+                            <label asp-for="ChapterName" class="form-label">
+                                <i class="fas fa-book me-2"></i>Chapter Name *
+                            </label>
+                            <input asp-for="ChapterName" class="form-control"
+                                placeholder="e.g., Introduction to HTML & CSS Basics" maxlength="200" />
+                            <span asp-validation-for="ChapterName" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                Choose a clear, descriptive title that tells students what they'll learn
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="ChapterDescription" class="form-label">
+                                <i class="fas fa-align-left me-2"></i>Chapter Description
+                            </label>
+                            <textarea asp-for="ChapterDescription" class="form-control" rows="5"
+                                placeholder="Describe what students will learn in this chapter, the key concepts covered, and any practical exercises included..."
+                                maxlength="1000"></textarea>
+                            <span asp-validation-for="ChapterDescription" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Provide a clear overview to help students understand the chapter's value
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="mb-4">
+                            <label asp-for="ChapterOrder" class="form-label">
+                                <i class="fas fa-sort-numeric-up me-2"></i>Chapter Order *
+                            </label>
+                            <input asp-for="ChapterOrder" type="number" class="form-control" min="1" max="999" />
+                            <span asp-validation-for="ChapterOrder" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                The position of this chapter in the course sequence
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6 class="fw-bold text-primary">
+                                <i class="fas fa-tips me-2"></i>Chapter Tips
+                            </h6>
+                            <ul class="small mb-0 ps-3">
+                                <li>Keep chapters focused on one main topic</li>
+                                <li>Use descriptive names for easy navigation</li>
+                                <li>Consider the logical learning progression</li>
+                                <li>Balance content length for better engagement</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chapter Settings Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-cog me-2"></i>
+                    Chapter Settings
+                </h3>
+                <p class="text-muted mb-4">Configure access and prerequisites for this chapter</p>
+
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="form-check form-switch custom-cursor-default-hover" style="padding-left: 2rem;">
+                            <input asp-for="IsLocked" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsLocked" class="form-check-label">
+                                <i class="fas fa-lock me-2 text-warning"></i>
+                                <strong>Lock Chapter</strong>
+                                <div class="small text-muted mt-1">Students must unlock this chapter through
+                                    prerequisites</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    @if (Model.ExistingChapters.Any())
+                    {
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label asp-for="UnlockAfterChapterId" class="form-label">
+                                    <i class="fas fa-unlock me-2"></i>Unlock After Chapter
+                                </label>
+                                <select asp-for="UnlockAfterChapterId" class="form-select">
+                                    <option value="">No prerequisite - Available immediately</option>
+                                    @foreach (var chapter in Model.ExistingChapters.OrderBy(c => c.ChapterOrder))
+                                    {
+                                        <option value="@chapter.ChapterId">Chapter @chapter.ChapterOrder: @chapter.ChapterName
+                                        </option>
+                                    }
+                                </select>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Choose which chapter must be completed first (only applies if locked)
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Other Chapters Section -->
+            @if (Model.ExistingChapters.Any())
+            {
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-list me-2"></i>
+                        Other Chapters in Course
+                    </h3>
+                    <p class="text-muted mb-4">Other chapters in "<strong>@Model.CourseName</strong>"</p>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="existing-chapters-container">
+                                <div class="existing-chapters-list">
+                                    @foreach (var chapter in Model.ExistingChapters.OrderBy(c => c.ChapterOrder))
+                                    {
+                                        <div class="chapter-item">
+                                            <div class="chapter-order">
+                                                <span class="order-number">@chapter.ChapterOrder</span>
+                                            </div>
+                                            <div class="chapter-info">
+                                                <h5 class="chapter-title">@chapter.ChapterName</h5>
+                                                @if (!string.IsNullOrEmpty(chapter.ChapterDescription))
+                                                {
+                                                    <p class="chapter-desc text-muted">@chapter.ChapterDescription</p>
+                                                }
+                                                <span class="chapter-status">
+                                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                                    Published
+                                                </span>
+                                            </div>
+                                            <div class="chapter-actions">
+                                                <i class="fas fa-grip-lines text-muted"></i>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Action Buttons -->
+            <div class="form-section">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })"
+                        class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Back to Course
+                    </a>
+                    <div class="d-flex gap-3">
+                        <button type="button" class="btn btn-secondary btn-lg" id="previewBtn">
+                            <i class="fas fa-eye me-2"></i>
+                            Preview Changes
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-lg" id="updateChapterBtn">
+                            <i class="fas fa-save me-2"></i>
+                            Update Chapter
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div> <!-- Preview Changes Modal -->
+    <div class="modal fade" id="previewChangesModal" tabindex="-1" aria-labelledby="previewChangesModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-gradient-primary text-white">
+                    <h5 class="modal-title d-flex align-items-center" id="previewChangesModalLabel">
+                        <i class="fas fa-eye me-2"></i>
+                        Preview Chapter Changes
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <!-- Preview Header -->
+                    <div class="preview-header p-4 bg-light border-bottom">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="text-muted mb-1">Previewing changes for:</h6>
+                                <h4 class="mb-0 text-primary" id="previewCourseName">@Model.CourseName</h4>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <span class="badge bg-info fs-6">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Real-time Preview
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comparison View -->
+                    <div class="comparison-container">
+                        <div class="row g-0">
+                            <!-- Current Version -->
+                            <div class="col-md-6 border-end">
+                                <div class="comparison-section current-version">
+                                    <div class="section-header p-3 bg-secondary bg-opacity-10">
+                                        <h6 class="mb-0 d-flex align-items-center">
+                                            <i class="fas fa-history me-2 text-secondary"></i>
+                                            Current Version
+                                        </h6>
+                                    </div>
+                                    <div class="section-content p-4">
+                                        <div class="preview-chapter-card">
+                                            <div class="chapter-header d-flex align-items-start">
+                                                <div class="chapter-number me-3">
+                                                    <span class="badge bg-secondary fs-6"
+                                                        id="currentChapterOrder">@Model.ChapterOrder</span>
+                                                </div>
+                                                <div class="chapter-info flex-grow-1">
+                                                    <h5 class="chapter-title mb-2" id="currentChapterName">
+                                                        @Model.ChapterName</h5>
+                                                    <div class="chapter-description text-muted"
+                                                        id="currentChapterDescription">
+                                                        @if (string.IsNullOrEmpty(Model.ChapterDescription))
+                                                        {
+                                                            <em>No description provided</em>
+                                                        }
+                                                        else
+                                                        {
+                                                            @Model.ChapterDescription
+                                                        }
+                                                    </div>
+                                                    <div class="chapter-meta mt-3">
+                                                        <div class="d-flex flex-wrap gap-3">
+                                                            <span class="meta-item">
+                                                                <i class="fas fa-list me-1"></i>
+                                                                <span id="currentLessonCount">0</span> lessons
+                                                            </span>
+                                                            <span class="meta-item">
+                                                                <i class="fas fa-lock me-1"></i>
+                                                                <span id="currentLockStatus">@(Model.IsLocked ? "Locked"
+                                                                                                                                        : "Unlocked")</span>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Updated Version -->
+                            <div class="col-md-6">
+                                <div class="comparison-section updated-version">
+                                    <div class="section-header p-3 bg-primary bg-opacity-10">
+                                        <h6 class="mb-0 d-flex align-items-center">
+                                            <i class="fas fa-magic me-2 text-primary"></i>
+                                            Updated Version
+                                            <span class="badge bg-success ms-2 pulse-animation">
+                                                <i class="fas fa-sparkles me-1"></i>
+                                                New
+                                            </span>
+                                        </h6>
+                                    </div>
+                                    <div class="section-content p-4">
+                                        <div class="preview-chapter-card updated">
+                                            <div class="chapter-header d-flex align-items-start">
+                                                <div class="chapter-number me-3">
+                                                    <span class="badge bg-primary fs-6"
+                                                        id="updatedChapterOrder">@Model.ChapterOrder</span>
+                                                </div>
+                                                <div class="chapter-info flex-grow-1">
+                                                    <h5 class="chapter-title mb-2" id="updatedChapterName">
+                                                        @Model.ChapterName</h5>
+                                                    <div class="chapter-description text-muted"
+                                                        id="updatedChapterDescription">
+                                                        @if (string.IsNullOrEmpty(Model.ChapterDescription))
+                                                        {
+                                                            <em>No description provided</em>
+                                                        }
+                                                        else
+                                                        {
+                                                            @Model.ChapterDescription
+                                                        }
+                                                    </div>
+                                                    <div class="chapter-meta mt-3">
+                                                        <div class="d-flex flex-wrap gap-3">
+                                                            <span class="meta-item">
+                                                                <i class="fas fa-list me-1"></i>
+                                                                <span id="updatedLessonCount">0</span> lessons
+                                                            </span>
+                                                            <span class="meta-item">
+                                                                <i class="fas fa-lock me-1"></i>
+                                                                <span id="updatedLockStatus">@(Model.IsLocked ? "Locked"
+                                                                                                                                        : "Unlocked")</span>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Changes Summary -->
+                    <div class="changes-summary p-4 bg-light border-top">
+                        <h6 class="mb-3 d-flex align-items-center">
+                            <i class="fas fa-list-ul me-2 text-info"></i>
+                            Summary of Changes
+                        </h6>
+                        <div id="changesList" class="changes-list">
+                            <!-- Changes will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>
+                        Close Preview
+                    </button>
+                    <button type="button" class="btn btn-primary btn-lg" id="proceedWithChanges">
+                        <i class="fas fa-check me-2"></i>
+                        Looks Good, Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Footer partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml") <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/components/toast-notifications.js"></script>
+    <script src="~/js/pages/Course/create-chapter.js"></script>
+
+    <!-- Professional Preview Changes JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Store original values for comparison
+            const originalValues = {
+                chapterName: '@Html.Raw(Html.Encode(Model.ChapterName))',
+                chapterDescription: '@Html.Raw(Html.Encode(Model.ChapterDescription ?? ""))',
+                chapterOrder: @Model.ChapterOrder,
+                isLocked: @(Model.IsLocked.ToString().ToLower()),
+                unlockAfterChapterId: '@(Model.UnlockAfterChapterId?.ToString() ?? "")'
+            };
+
+            // Form elements
+            const form = document.getElementById('editChapterForm');
+            const previewBtn = document.getElementById('previewBtn');
+            const modal = new bootstrap.Modal(document.getElementById('previewChangesModal'));
+            const proceedBtn = document.getElementById('proceedWithChanges');
+
+            // Preview modal elements
+            const elements = {
+                // Current version elements
+                currentChapterName: document.getElementById('currentChapterName'),
+                currentChapterDescription: document.getElementById('currentChapterDescription'),
+                currentChapterOrder: document.getElementById('currentChapterOrder'),
+                currentLockStatus: document.getElementById('currentLockStatus'),
+
+                // Updated version elements
+                updatedChapterName: document.getElementById('updatedChapterName'),
+                updatedChapterDescription: document.getElementById('updatedChapterDescription'),
+                updatedChapterOrder: document.getElementById('updatedChapterOrder'),
+                updatedLockStatus: document.getElementById('updatedLockStatus'),
+
+                // Changes list
+                changesList: document.getElementById('changesList')
+            };
+
+            // Form input elements
+            const inputs = {
+                chapterName: document.querySelector('input[name="ChapterName"]'),
+                chapterDescription: document.querySelector('textarea[name="ChapterDescription"]'),
+                chapterOrder: document.querySelector('input[name="ChapterOrder"]'),
+                isLocked: document.querySelector('input[name="IsLocked"]'),
+                unlockAfterChapterId: document.querySelector('select[name="UnlockAfterChapterId"]')
+            };
+
+            // Real-time preview updates
+            Object.keys(inputs).forEach(key => {
+                if (inputs[key]) {
+                    inputs[key].addEventListener('input', updateLivePreview);
+                    if (inputs[key].type === 'checkbox') {
+                        inputs[key].addEventListener('change', updateLivePreview);
+                    }
+                }
+            });
+
+            function updateLivePreview() {
+                const currentValues = getCurrentFormValues();
+                updatePreviewContent(currentValues);
+                updateChangesHighlight(currentValues);
+            }
+
+            function getCurrentFormValues() {
+                return {
+                    chapterName: inputs.chapterName?.value || '',
+                    chapterDescription: inputs.chapterDescription?.value || '',
+                    chapterOrder: parseInt(inputs.chapterOrder?.value) || 1,
+                    isLocked: inputs.isLocked?.checked || false,
+                    unlockAfterChapterId: inputs.unlockAfterChapterId?.value || ''
+                };
+            }
+
+            function updatePreviewContent(currentValues) {
+                // Update current version (keep original values)
+                elements.currentChapterName.textContent = originalValues.chapterName;
+                elements.currentChapterDescription.innerHTML = originalValues.chapterDescription || '<em>No description provided</em>';
+                elements.currentChapterOrder.textContent = originalValues.chapterOrder;
+                elements.currentLockStatus.textContent = originalValues.isLocked ? 'Locked' : 'Unlocked';
+
+                // Update new version with current form values
+                elements.updatedChapterName.textContent = currentValues.chapterName || 'Untitled Chapter';
+                elements.updatedChapterDescription.innerHTML = currentValues.chapterDescription || '<em>No description provided</em>';
+                elements.updatedChapterOrder.textContent = currentValues.chapterOrder;
+                elements.updatedLockStatus.textContent = currentValues.isLocked ? 'Locked' : 'Unlocked';
+            }
+
+            function updateChangesHighlight(currentValues) {
+                // Add visual indicators for changed fields
+                const updatedCard = document.querySelector('.preview-chapter-card.updated');
+
+                // Reset all highlights
+                updatedCard.querySelectorAll('.changed-field').forEach(el => {
+                    el.classList.remove('changed-field');
+                });
+
+                // Highlight changed fields
+                if (currentValues.chapterName !== originalValues.chapterName) {
+                    elements.updatedChapterName.classList.add('changed-field');
+                }
+                if (currentValues.chapterDescription !== originalValues.chapterDescription) {
+                    elements.updatedChapterDescription.classList.add('changed-field');
+                }
+                if (currentValues.chapterOrder !== originalValues.chapterOrder) {
+                    elements.updatedChapterOrder.parentElement.classList.add('changed-field');
+                }
+                if (currentValues.isLocked !== originalValues.isLocked) {
+                    elements.updatedLockStatus.classList.add('changed-field');
+                }
+            }
+
+            function generateChangesList(currentValues) {
+                const changes = [];
+
+                if (currentValues.chapterName !== originalValues.chapterName) {
+                    changes.push({
+                        field: 'Chapter Name',
+                        from: originalValues.chapterName,
+                        to: currentValues.chapterName,
+                        icon: 'fas fa-book'
+                    });
+                }
+
+                if (currentValues.chapterDescription !== originalValues.chapterDescription) {
+                    changes.push({
+                        field: 'Description',
+                        from: originalValues.chapterDescription || 'No description',
+                        to: currentValues.chapterDescription || 'No description',
+                        icon: 'fas fa-align-left'
+                    });
+                }
+
+                if (currentValues.chapterOrder !== originalValues.chapterOrder) {
+                    changes.push({
+                        field: 'Chapter Order',
+                        from: originalValues.chapterOrder.toString(),
+                        to: currentValues.chapterOrder.toString(),
+                        icon: 'fas fa-sort-numeric-up'
+                    });
+                }
+
+                if (currentValues.isLocked !== originalValues.isLocked) {
+                    changes.push({
+                        field: 'Lock Status',
+                        from: originalValues.isLocked ? 'Locked' : 'Unlocked',
+                        to: currentValues.isLocked ? 'Locked' : 'Unlocked',
+                        icon: 'fas fa-lock'
+                    });
+                }
+
+                return changes;
+            }
+
+            function renderChangesList(changes) {
+                if (changes.length === 0) {
+                    elements.changesList.innerHTML = `
+                        <div class="alert alert-info mb-0 stagger-animation">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No changes detected. All fields have the same values as before.
+                        </div>
+                    `;
+                    return;
+                }
+
+                const changesHtml = changes.map((change, index) => `
+                    <div class="change-item stagger-animation" style="animation-delay: ${index * 0.1}s">
+                        <div class="d-flex align-items-start">
+                            <div class="change-icon me-3">
+                                <i class="${change.icon} text-warning"></i>
+                            </div>
+                            <div class="change-content flex-grow-1">
+                                <div class="change-field fw-bold text-dark">${change.field}</div>
+                                <div class="change-details">
+                                    <div class="from-value">
+                                        <span class="label">From:</span>
+                                        <span class="value text-muted">"${change.from}"</span>
+                                    </div>
+                                    <div class="to-value">
+                                        <span class="label">To:</span>
+                                        <span class="value text-primary fw-bold">"${change.to}"</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="change-status">
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                elements.changesList.innerHTML = changesHtml;
+            }            // Preview button click handler
+            previewBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                // Validate form before preview
+                const form = document.getElementById('editChapterForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                // Add loading state
+                previewBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating Preview...';
+                previewBtn.disabled = true;
+
+                setTimeout(() => {
+                    const currentValues = getCurrentFormValues();
+                    const changes = generateChangesList(currentValues);
+
+                    updatePreviewContent(currentValues);
+                    renderChangesList(changes);
+
+                    // Add animation classes
+                    document.querySelectorAll('.stagger-animation').forEach((el, index) => {
+                        el.style.animationDelay = `${index * 0.1}s`;
+                    });
+
+                    modal.show();
+
+                    // Reset button state
+                    previewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Preview Changes';
+                    previewBtn.disabled = false;
+                }, 500);
+            });            // Proceed with changes button
+            proceedBtn.addEventListener('click', function () {
+                // Add loading state to proceed button
+                proceedBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving Changes...';
+                proceedBtn.disabled = true;
+
+                modal.hide();
+
+                // Add success animation to the form
+                form.classList.add('saving-animation');
+
+                setTimeout(() => {
+                    form.submit();
+                }, 300);
+            });
+
+            // Form validation enhancement
+            form.addEventListener('submit', function (e) {
+                const submitBtn = document.getElementById('updateChapterBtn');
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating Chapter...';
+                submitBtn.disabled = true;
+
+                // Disable all form controls during submission
+                const formControls = form.querySelectorAll('input, textarea, select, button');
+                formControls.forEach(control => control.disabled = true);
+            });// Initialize preview content on load
+            updateLivePreview();
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function (e) {
+                // Ctrl/Cmd + P to preview changes
+                if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                    e.preventDefault();
+                    if (!previewBtn.disabled) {
+                        previewBtn.click();
+                    }
+                }
+
+                // Ctrl/Cmd + S to save changes
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    if (!document.getElementById('updateChapterBtn').disabled) {
+                        form.submit();
+                    }
+                }
+
+                // Escape to close modal
+                if (e.key === 'Escape') {
+                    const modalElement = document.getElementById('previewChangesModal');
+                    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                    if (modalInstance && modalElement.classList.contains('show')) {
+                        modalInstance.hide();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
+

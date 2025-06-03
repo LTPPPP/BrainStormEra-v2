@@ -1535,6 +1535,48 @@
   font-size: 0.9rem;
 }
 
+/* Chapter Actions */
+.chapter-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.section-header:hover .chapter-actions {
+  opacity: 1;
+}
+
+.chapter-actions .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.chapter-actions .btn-outline-primary {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.chapter-actions .btn-outline-primary:hover {
+  background-color: var(--primary-color);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.chapter-actions .btn-outline-danger {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.chapter-actions .btn-outline-danger:hover {
+  background-color: #dc3545;
+  color: white;
+  transform: translateY(-1px);
+}
+
 .section-meta i {
   transition: transform 0.3s ease;
 }
