@@ -428,5 +428,168 @@ namespace BrainStormEra_MVC.Services
                 _ => "All Levels"
             };
         }
+
+        public async Task<CreateCourseViewModel?> GetCourseForEditAsync(string courseId, string authorId)
+        {
+            try
+            {
+                var course = await _context.Courses
+                    .Include(c => c.CourseCategories)
+                    .FirstOrDefaultAsync(c => c.CourseId == courseId && c.AuthorId == authorId);
+
+                if (course == null)
+                {
+                    _logger.LogWarning("Course not found or user not authorized to edit course {CourseId}", courseId);
+                    return null;
+                }
+
+                var viewModel = new CreateCourseViewModel
+                {
+                    CourseName = course.CourseName,
+                    CourseDescription = course.CourseDescription ?? string.Empty,
+                    Price = course.Price,
+                    EstimatedDuration = course.EstimatedDuration,
+                    DifficultyLevel = course.DifficultyLevel ?? 1,
+                    IsFeatured = course.IsFeatured ?? false,
+                    EnforceSequentialAccess = course.EnforceSequentialAccess ?? true,
+                    AllowLessonPreview = course.AllowLessonPreview ?? false,
+                    SelectedCategories = course.CourseCategories
+                        .Select(cc => cc.CourseCategoryId)
+                        .ToList(),
+                    AvailableCategories = await GetCategoriesAsync()
+                };
+
+                return viewModel;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting course for edit: {CourseId}", courseId);
+                return null;
+            }
+        }
+
+        public async Task<bool> UpdateCourseAsync(string courseId, CreateCourseViewModel model, string authorId)
+        {
+            try
+            {
+                var course = await _context.Courses
+                    .Include(c => c.CourseCategories)
+                    .FirstOrDefaultAsync(c => c.CourseId == courseId && c.AuthorId == authorId);
+
+                if (course == null)
+                {
+                    _logger.LogWarning("Course not found or user not authorized to update course {CourseId}", courseId);
+                    return false;
+                }
+
+                // Update course properties
+                course.CourseName = model.CourseName;
+                course.CourseDescription = model.CourseDescription;
+                course.Price = model.Price;
+                course.EstimatedDuration = model.EstimatedDuration;
+                course.DifficultyLevel = model.DifficultyLevel;
+                course.IsFeatured = model.IsFeatured;
+                course.EnforceSequentialAccess = model.EnforceSequentialAccess;
+                course.AllowLessonPreview = model.AllowLessonPreview;
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                // Update categories
+                var existingCategoryIds = course.CourseCategories.Select(cc => cc.CourseCategoryId).ToList();
+                var newCategoryIds = model.SelectedCategories;
+
+                // Remove categories that are no longer selected
+                var categoriesToRemove = course.CourseCategories
+                    .Where(cc => !newCategoryIds.Contains(cc.CourseCategoryId))
+                    .ToList();
+
+                foreach (var category in categoriesToRemove)
+                {
+                    course.CourseCategories.Remove(category);
+                }
+
+                // Add new categories
+                var categoriesToAddIds = newCategoryIds
+                    .Where(id => !existingCategoryIds.Contains(id))
+                    .ToList();
+
+                if (categoriesToAddIds.Any())
+                {
+                    var categoriesToAdd = await _context.CourseCategories
+                        .Where(cc => categoriesToAddIds.Contains(cc.CourseCategoryId))
+                        .ToListAsync();
+
+                    foreach (var category in categoriesToAdd)
+                    {
+                        course.CourseCategories.Add(category);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Course updated successfully: {CourseId}", courseId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating course {CourseId}", courseId);
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteCourseAsync(string courseId, string authorId)
+        {
+            try
+            {
+                var course = await _context.Courses
+                    .Include(c => c.Enrollments)
+                    .Include(c => c.CourseCategories)
+                    .Include(c => c.Chapters)
+                        .ThenInclude(ch => ch.Lessons)
+                    .FirstOrDefaultAsync(c => c.CourseId == courseId && c.AuthorId == authorId);
+
+                if (course == null)
+                {
+                    _logger.LogWarning("Course not found or user not authorized to delete course {CourseId}", courseId);
+                    return false;
+                }
+
+                // Check if course has enrollments
+                if (course.Enrollments.Any())
+                {
+                    _logger.LogWarning("Cannot delete course {CourseId} as it has enrolled students", courseId);
+                    return false;
+                }
+
+                // Remove related entities
+                // Remove lessons from chapters
+                var allLessons = course.Chapters.SelectMany(ch => ch.Lessons).ToList();
+                if (allLessons.Any())
+                {
+                    _context.Lessons.RemoveRange(allLessons);
+                }
+
+                // Remove chapters
+                if (course.Chapters.Any())
+                {
+                    _context.Chapters.RemoveRange(course.Chapters);
+                }
+
+                // Clear course-category relationships
+                course.CourseCategories.Clear();
+
+                // Remove the course
+                _context.Courses.Remove(course);
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Course deleted successfully: {CourseId}", courseId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting course {CourseId}", courseId);
+                return false;
+            }
+        }
     }
 }

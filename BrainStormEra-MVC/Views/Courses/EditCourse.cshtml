@@ -1,0 +1,429 @@
+@model BrainStormEra_MVC.Models.ViewModels.CreateCourseViewModel
+@{
+    ViewData["Title"] = "Edit Course";
+    Layout = null;
+    var courseId = ViewBag.CourseId as string;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="Edit your course on BrainStormEra">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1 class="mb-3">
+                        <i class="fas fa-edit me-3"></i>
+                        Edit Your Course
+                    </h1>
+                    <p class="lead mb-0">Update your course content and settings</p>
+                    <div class="mt-4">
+                        <span class="badge bg-light text-dark fs-6 me-3">
+                            <i class="fas fa-clock me-1"></i> Keep your content fresh
+                        </span>
+                        <span class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-users me-1"></i> Improve student experience
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="create-course-container">
+        <form asp-action="EditCourse" asp-route-id="@courseId" method="post" enctype="multipart/form-data"
+            id="editCourseForm">
+            @Html.AntiForgeryToken()
+
+            <!-- Course Information Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Course Information
+                </h3>
+                <p class="text-muted mb-4">Update your course details and description</p>
+
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="mb-4">
+                            <label asp-for="CourseName" class="form-label">
+                                <i class="fas fa-book me-2"></i>Course Name *
+                            </label>
+                            <input asp-for="CourseName" class="form-control"
+                                placeholder="e.g., Complete Web Development Bootcamp" maxlength="100" />
+                            <span asp-validation-for="CourseName" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                Choose a clear, descriptive title that tells students what they'll learn
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="CourseDescription" class="form-label">
+                                <i class="fas fa-align-left me-2"></i>Course Description *
+                            </label>
+                            <textarea asp-for="CourseDescription" class="form-control" rows="6"
+                                placeholder="Describe what students will learn, the skills they'll gain, and any prerequisites..."></textarea>
+                            <span asp-validation-for="CourseDescription" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Minimum 50 characters. Include learning outcomes and course benefits.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="mb-4">
+                            <label asp-for="CourseImage" class="form-label">
+                                <i class="fas fa-image me-2"></i>Update Course Thumbnail
+                            </label>
+                            <input asp-for="CourseImage" type="file" class="form-control" accept="image/*" />
+                            <div class="form-text">
+                                <i class="fas fa-camera me-1"></i>
+                                Upload a new image to replace the current thumbnail
+                                <br><small>JPG, PNG, or GIF. Max 5MB. Leave empty to keep current image.</small>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6 class="fw-bold text-primary">
+                                <i class="fas fa-tips me-2"></i>Image Tips
+                            </h6>
+                            <ul class="small mb-0 ps-3">
+                                <li>Use bright, engaging colors</li>
+                                <li>Include relevant icons or symbols</li>
+                                <li>Avoid too much text</li>
+                                <li>Test on mobile devices</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-tags me-2"></i>
+                    Course Categories
+                </h3>
+                <p class="text-muted mb-4">Update your course categories to improve discoverability</p>
+
+                <div class="mb-4">
+                    <label class="form-label">
+                        <i class="fas fa-search me-2"></i>Search and Select Categories *
+                    </label>
+                    <div class="category-input-container">
+                        <input type="text" id="categoryInput" class="form-control"
+                            placeholder="Start typing to search categories (e.g., 'programming', 'design')"
+                            autocomplete="off" />
+                        <i class="fas fa-spinner fa-spin category-loading-icon"></i>
+                        <div id="categorySuggestions" class="category-suggestions"></div>
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </div>
+                    <span asp-validation-for="SelectedCategories" class="text-danger"></span>
+
+                    <div id="selectedCategories" class="selected-categories">
+                        <div class="text-muted text-center w-100">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Selected categories will appear here
+                        </div>
+                    </div>
+
+                    <div class="form-text mt-3">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Select 2-5 relevant categories to help students discover your course
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Details Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-cog me-2"></i>
+                    Course Details
+                </h3>
+                <p class="text-muted mb-4">Update your course pricing and difficulty level</p>
+
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="mb-4">
+                            <label asp-for="Price" class="form-label">
+                                <i class="fas fa-dollar-sign me-2"></i>Course Price (USD) *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </span>
+                                <input asp-for="Price" type="number" step="0.01" class="form-control" placeholder="0.00"
+                                    min="0" max="999.99" />
+                            </div>
+                            <span asp-validation-for="Price" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-gift me-1"></i>
+                                Set to $0.00 for free courses. Premium courses typically range from $19.99 to $199.99
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="EstimatedDuration" class="form-label">
+                                <i class="fas fa-clock me-2"></i>Estimated Duration (Hours)
+                            </label>
+                            <input asp-for="EstimatedDuration" type="number" class="form-control" placeholder="e.g., 12"
+                                min="1" max="200" />
+                            <span asp-validation-for="EstimatedDuration" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Total estimated learning time including videos, readings, and exercises
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-signal me-2"></i>Difficulty Level *
+                            </label>
+                            <div class="difficulty-options">
+                                <div class="difficulty-option">
+                                    <input asp-for="DifficultyLevel" type="radio" value="1" id="beginner" />
+                                    <label for="beginner" class="difficulty-label">
+                                        <i class="fas fa-seedling"></i>
+                                        <strong>Beginner</strong>
+                                        <div class="small text-muted mt-2">Perfect for newcomers</div>
+                                    </label>
+                                </div>
+                                <div class="difficulty-option">
+                                    <input asp-for="DifficultyLevel" type="radio" value="2" id="intermediate" />
+                                    <label for="intermediate" class="difficulty-label">
+                                        <i class="fas fa-chart-line"></i>
+                                        <strong>Intermediate</strong>
+                                        <div class="small text-muted mt-2">Some experience needed</div>
+                                    </label>
+                                </div>
+                                <div class="difficulty-option">
+                                    <input asp-for="DifficultyLevel" type="radio" value="3" id="advanced" />
+                                    <label for="advanced" class="difficulty-label">
+                                        <i class="fas fa-rocket"></i>
+                                        <strong>Advanced</strong>
+                                        <div class="small text-muted mt-2">For experienced learners</div>
+                                    </label>
+                                </div>
+                                <div class="difficulty-option">
+                                    <input asp-for="DifficultyLevel" type="radio" value="4" id="expert" />
+                                    <label for="expert" class="difficulty-label">
+                                        <i class="fas fa-crown"></i>
+                                        <strong>Expert</strong>
+                                        <div class="small text-muted mt-2">Professional mastery</div>
+                                    </label>
+                                </div>
+                            </div>
+                            <span asp-validation-for="DifficultyLevel" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Settings Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-sliders-h me-2"></i>
+                    Course Settings
+                </h3>
+                <p class="text-muted mb-4">Configure how students will interact with your course</p>
+
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsFeatured" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsFeatured" class="form-check-label">
+                                <i class="fas fa-star me-2 text-warning"></i>
+                                <strong>Featured Course</strong>
+                                <div class="small text-muted mt-1">Highlight this course for increased visibility</div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-check form-switch">
+                            <input asp-for="EnforceSequentialAccess" class="form-check-input" type="checkbox" />
+                            <label asp-for="EnforceSequentialAccess" class="form-check-label">
+                                <i class="fas fa-sort-numeric-up me-2 text-info"></i>
+                                <strong>Sequential Learning</strong>
+                                <div class="small text-muted mt-1">Students must complete lessons in order</div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-check form-switch">
+                            <input asp-for="AllowLessonPreview" class="form-check-input" type="checkbox" />
+                            <label asp-for="AllowLessonPreview" class="form-check-label">
+                                <i class="fas fa-eye me-2 text-success"></i>
+                                <strong>Preview Allowed</strong>
+                                <div class="small text-muted mt-1">Let students preview some lessons</div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-4 bg-info bg-opacity-10 rounded-3 border border-info border-opacity-25">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-info-circle text-info me-3 mt-1"></i>
+                        <div>
+                            <h6 class="fw-bold text-info mb-2">Course Settings Guide</h6>
+                            <ul class="small mb-0 text-muted">
+                                <li><strong>Featured:</strong> Boosts course visibility in search results and
+                                    recommendations</li>
+                                <li><strong>Sequential:</strong> Recommended for structured learning paths with
+                                    dependencies</li>
+                                <li><strong>Preview:</strong> Allows potential students to sample your teaching style
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8 text-center">
+                        <h5 class="mb-4 text-muted">Ready to update your course?</h5>
+
+                        <button type="submit" class="btn btn-create btn-lg me-3">
+                            <i class="fas fa-save me-2"></i>
+                            Update Course
+                        </button>
+
+                        <a href="@Url.Action("InstructorDashboard", "Home")" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Cancel
+                        </a>
+
+                        <div class="mt-4">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Your changes will be saved and may require approval for certain updates
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hidden inputs for selected categories -->
+            <div id="selectedCategoriesInputs"></div>
+        </form>
+    </div>
+
+    <!-- Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" defer></script>
+    <!-- Include toast notifications script -->
+    <script src="~/js/shared/toast-notifications.js"></script>
+    <!-- Custom JS -->
+    <script src="~/js/components/loader.js"></script>
+    <script src="~/js/pages/Course/create-course.js"></script>
+    <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+
+        // Change header style on scroll
+        window.addEventListener('scroll', function () {
+            const header = document.querySelector('header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Pre-populate selected categories on page load        
+            document.addEventListener('DOMContentLoaded', function() {            
+            const selectedCategories = @Html.Raw(Json.Serializ e(Model.SelectedCategories ?? new List<string>()));
+            const availableCategories = @Html.Raw(Json.Serialize(Model.AvailableCategories));
+
+            if (selectedCategories.length > 0 && availableCategories.length > 0) {
+                // Clear the placeholder text
+                const selectedCategoriesContainer = document.getElementById('selectedCategories');
+                selectedCategoriesContainer.innerHTML = '';
+
+                // Add each selected category
+                selectedCategories.forEach(categoryId => {
+                    const category = availableCategories.find(c => c.courseCategoryId === categoryId);
+                    if (category) {
+                        addSelectedCategory(categoryId, category.courseCategoryName, category.courseCategoryIcon);
+                    }
+                });
+            }
+        });
+    </script>
+
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+    }
+</body>
+
+</html>

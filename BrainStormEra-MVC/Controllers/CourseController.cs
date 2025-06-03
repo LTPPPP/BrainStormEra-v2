@@ -225,5 +225,120 @@ namespace BrainStormEra_MVC.Controllers
                 return Json(new List<CategoryAutocompleteItem>());
             }
         }
+
+        [HttpGet]
+        [Authorize(Roles = "Instructor,instructor")]
+        public async Task<IActionResult> EditCourse(string id)
+        {
+            try
+            {
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    TempData["ErrorMessage"] = "User not authenticated";
+                    return RedirectToAction("Index", "Login");
+                }
+
+                var model = await _courseService.GetCourseForEditAsync(id, userId);
+                if (model == null)
+                {
+                    TempData["ErrorMessage"] = "Course not found or you are not authorized to edit this course.";
+                    return RedirectToAction("InstructorDashboard", "Home");
+                }
+
+                ViewBag.CourseId = id;
+                return View("~/Views/Courses/EditCourse.cshtml", model);
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An error occurred while loading the edit course page.";
+                return RedirectToAction("InstructorDashboard", "Home");
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Instructor,instructor")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCourse(string id, CreateCourseViewModel model)
+        {
+            try
+            {
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    TempData["ErrorMessage"] = "User not authenticated";
+                    return RedirectToAction("Index", "Login");
+                }
+
+                if (ModelState.IsValid)
+                {
+                    var success = await _courseService.UpdateCourseAsync(id, model, userId);
+                    if (success)
+                    {
+                        // Handle course image upload if provided
+                        if (model.CourseImage != null)
+                        {
+                            var uploadResult = await _courseImageService.UploadCourseImageAsync(model.CourseImage, id);
+                            if (uploadResult.Success && !string.IsNullOrEmpty(uploadResult.ImagePath))
+                            {
+                                await _courseService.UpdateCourseImageAsync(id, uploadResult.ImagePath);
+                            }
+                            else
+                            {
+                                TempData["WarningMessage"] = uploadResult.ErrorMessage ?? "Failed to upload course image.";
+                            }
+                        }
+
+                        TempData["SuccessMessage"] = "Course updated successfully!";
+                        return RedirectToAction("InstructorDashboard", "Home");
+                    }
+                    else
+                    {
+                        TempData["ErrorMessage"] = "Course not found or you are not authorized to edit this course.";
+                        return RedirectToAction("InstructorDashboard", "Home");
+                    }
+                }
+
+                // If model state is invalid, reload the form with categories
+                model.AvailableCategories = await _courseService.GetCategoriesAsync();
+                TempData["ErrorMessage"] = "Please correct the errors below and try again.";
+                ViewBag.CourseId = id;
+                return View("~/Views/Courses/EditCourse.cshtml", model);
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An error occurred while updating the course. Please try again.";
+                return RedirectToAction("InstructorDashboard", "Home");
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Instructor,instructor")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCourse(string id)
+        {
+            try
+            {
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new { success = false, message = "User not authenticated" });
+                }
+
+                var success = await _courseService.DeleteCourseAsync(id, userId);
+                if (success)
+                {
+                    return Json(new { success = true, message = "Course deleted successfully!" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Course not found, you are not authorized to delete this course, or the course has enrolled students." });
+                }
+            }
+            catch (Exception)
+            {
+                return Json(new { success = false, message = "An error occurred while deleting the course." });
+            }
+        }
     }
 }
