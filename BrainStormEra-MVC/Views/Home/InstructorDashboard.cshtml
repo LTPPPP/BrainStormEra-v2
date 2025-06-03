@@ -157,6 +157,10 @@
                                                     <h3 class="course-title">@course.CourseName</h3>
                                                     <p class="course-students">@course.EnrollmentCount students enrolled</p>
                                                     <div class="course-actions">
+                                                        <a href="@Url.Action("Details", "Course", new { id = course.CourseId })"
+                                                            class="btn btn-sm btn-outline-info" title="View Course Details">
+                                                            <i class="fas fa-eye"></i> View Details
+                                                        </a>
                                                         <a href="@Url.Action("EditCourse", "Course", new { id = course.CourseId })"
                                                             class="btn btn-sm btn-outline-primary" title="Edit Course">
                                                             <i class="fas fa-edit"></i> Edit

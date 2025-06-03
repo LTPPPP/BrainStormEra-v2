@@ -1,0 +1,262 @@
+@model BrainStormEra_MVC.Models.ViewModels.CreateChapterViewModel
+@{
+    ViewData["Title"] = "Create Chapter";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="Create a new chapter for your course on BrainStormEra">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1 class="page-title">
+                        <i class="fas fa-plus-circle me-3"></i>
+                        Create New Chapter
+                    </h1>
+                    <p class="page-subtitle">Add a new chapter to your course: <strong>@Model.CourseName</strong></p>
+                    <div class="breadcrumb-nav">
+                        <a href="@Url.Action("InstructorDashboard", "Home")" class="breadcrumb-link">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                        <i class="fas fa-chevron-right"></i>
+                        <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })" class="breadcrumb-link">
+                            Course Details
+                        </a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span class="breadcrumb-current">Create Chapter</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <form asp-controller="Chapter" asp-action="CreateChapter" method="post" class="create-course-form" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="CourseId" />
+
+                <!-- Chapter Information Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Chapter Information
+                    </h3>
+                    <p class="text-muted mb-4">Provide details about your new chapter</p>
+                    
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="mb-4">
+                                <label asp-for="ChapterName" class="form-label">
+                                    <i class="fas fa-book me-2"></i>Chapter Name *
+                                </label>
+                                <input asp-for="ChapterName" class="form-control" 
+                                       placeholder="e.g., Introduction to Web Development" 
+                                       maxlength="200" />
+                                <span asp-validation-for="ChapterName" class="text-danger"></span>
+                                <div class="form-text">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Choose a clear, descriptive title for this chapter
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label asp-for="ChapterDescription" class="form-label">
+                                    <i class="fas fa-align-left me-2"></i>Chapter Description
+                                </label>
+                                <textarea asp-for="ChapterDescription" class="form-control" rows="4" 
+                                          placeholder="Describe what students will learn in this chapter..."
+                                          maxlength="1000"></textarea>
+                                <span asp-validation-for="ChapterDescription" class="text-danger"></span>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Optional: Provide a brief overview of the chapter content
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="mb-4">
+                                <label asp-for="ChapterOrder" class="form-label">
+                                    <i class="fas fa-sort-numeric-up me-2"></i>Chapter Order *
+                                </label>
+                                <input asp-for="ChapterOrder" type="number" class="form-control" min="1" max="999" />
+                                <span asp-validation-for="ChapterOrder" class="text-danger"></span>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    The position of this chapter in the course
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsLocked" class="form-check-input" type="checkbox" />
+                                    <label asp-for="IsLocked" class="form-check-label">
+                                        <i class="fas fa-lock me-2"></i>
+                                        <strong>Lock Chapter</strong>
+                                        <div class="small text-muted mt-1">Students must unlock this chapter</div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            @if (Model.ExistingChapters.Any())
+                            {
+                                <div class="mb-4">
+                                    <label asp-for="UnlockAfterChapterId" class="form-label">
+                                        <i class="fas fa-unlock me-2"></i>Unlock After Chapter
+                                    </label>
+                                    <select asp-for="UnlockAfterChapterId" class="form-select">
+                                        <option value="">No prerequisite</option>
+                                        @foreach (var chapter in Model.ExistingChapters)
+                                        {
+                                            <option value="@chapter.ChapterId">@chapter.ChapterOrder. @chapter.ChapterName</option>
+                                        }
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Choose which chapter must be completed first
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Existing Chapters Section -->
+                @if (Model.ExistingChapters.Any())
+                {
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-list me-2"></i>
+                            Existing Chapters
+                        </h3>
+                        <p class="text-muted mb-4">Current chapters in this course</p>
+                        
+                        <div class="existing-chapters-list">
+                            @foreach (var chapter in Model.ExistingChapters.OrderBy(c => c.ChapterOrder))
+                            {
+                                <div class="chapter-item">
+                                    <div class="chapter-order">@chapter.ChapterOrder</div>
+                                    <div class="chapter-info">
+                                        <h5>@chapter.ChapterName</h5>
+                                        @if (!string.IsNullOrEmpty(chapter.ChapterDescription))
+                                        {
+                                            <p class="text-muted">@chapter.ChapterDescription</p>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8 text-center">
+                            <h5 class="mb-4 text-muted">Ready to create your chapter?</h5>
+                            <div class="action-buttons">
+                                <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })" 
+                                   class="btn btn-outline-secondary btn-lg me-3">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Course
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-plus-circle me-2"></i>Create Chapter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Include Footer partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" defer></script>
+    <!-- Include toast notifications script -->
+    <script src="~/js/shared/toast-notifications.js"></script>
+    <!-- Custom JS -->
+    <script src="~/js/components/loader.js"></script>
+    <script src="~/js/pages/Course/create-course.js"></script>
+    <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+
+        // Change header style on scroll
+        window.addEventListener('scroll', function () {
+            const header = document.querySelector('header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+    }
+</body>
+
+</html>

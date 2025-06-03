@@ -39,6 +39,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IUserService, BrainStormEra_MVC.Services.UserService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseService, BrainStormEra_MVC.Services.CourseService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseRepository, BrainStormEra_MVC.Services.Repositories.CourseRepository>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IChapterService, BrainStormEra_MVC.Services.ChapterService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IEnrollmentService, BrainStormEra_MVC.Services.EnrollmentService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAchievementService, BrainStormEra_MVC.Services.AchievementService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAchievementRepository, BrainStormEra_MVC.Services.Repositories.AchievementRepository>();

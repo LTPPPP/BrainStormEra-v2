@@ -251,7 +251,19 @@
                                     }
                                 </div>
 
-                                @if (Model.IsEnrolled)
+                                @if (ViewBag.IsAuthor == true)
+                                {
+                                    <div class="alert alert-info text-center">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>You are the instructor of this course</strong>
+                                        <div class="small mt-2">
+                                            <a href="@Url.Action("EditCourse", "Course", new { id = Model.CourseId })" class="btn btn-outline-primary btn-sm me-2">
+                                                <i class="fas fa-edit me-1"></i>Edit Course
+                                            </a>
+                                        </div>
+                                    </div>
+                                }
+                                else if (Model.IsEnrolled)
                                 {
                                     <button class="btn btn-success btn-lg w-100 mb-3" disabled>
                                         <i class="fas fa-check-circle me-2"></i>Enrolled
@@ -391,8 +403,21 @@
                             <div class="tab-pane fade" id="curriculum" role="tabpanel">
                                 <div class="course-curriculum">
                                     <div class="curriculum-header">
-                                        <h3>Course Curriculum</h3>
-                                        <p>@Model.Chapters.Count chapters • @Model.Chapters.Sum(c => c.Lessons.Count) lessons</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h3>Course Curriculum</h3>
+                                                <p>@Model.Chapters.Count chapters • @Model.Chapters.Sum(c => c.Lessons.Count) lessons</p>
+                                            </div>
+                                            @if (ViewBag.IsAuthor == true)
+                                            {
+                                                <div>
+                                                    <a href="@Url.Action("CreateChapter", "Chapter", new { courseId = Model.CourseId })" 
+                                                       class="btn btn-primary">
+                                                        <i class="fas fa-plus me-2"></i>Create Chapter
+                                                    </a>
+                                                </div>
+                                            }
+                                        </div>
                                     </div>
 
                                     <div class="curriculum-sections">

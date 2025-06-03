@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace BrainStormEra_MVC.Controllers
 {
-    public class CourseController : Controller
+    public class CourseController : BaseController
     {
         private readonly ICourseService _courseService;
         private readonly ICourseImageService _courseImageService;
@@ -25,7 +25,18 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var viewModel = await _courseService.GetCoursesAsync(search, category, page, pageSize);
+                CourseListViewModel viewModel;
+
+                // Check if user is instructor and should see only their courses
+                if (CurrentUserRole?.Equals("Instructor", StringComparison.OrdinalIgnoreCase) == true && !string.IsNullOrEmpty(CurrentUserId))
+                {
+                    viewModel = await _courseService.GetInstructorCoursesAsync(CurrentUserId, search, category, page, pageSize);
+                }
+                else
+                {
+                    viewModel = await _courseService.GetCoursesAsync(search, category, page, pageSize);
+                }
+
                 return View("~/Views/Courses/Index.cshtml", viewModel);
             }
             catch (Exception)
@@ -44,19 +55,26 @@ namespace BrainStormEra_MVC.Controllers
 
             try
             {
-                var viewModel = await _courseService.GetCourseDetailAsync(id);
+                // Get current user ID if authenticated
+                string? currentUserId = null;
+                if (User.Identity?.IsAuthenticated == true)
+                {
+                    currentUserId = User.FindFirst("UserId")?.Value;
+                }
+
+                var viewModel = await _courseService.GetCourseDetailAsync(id, currentUserId);
                 if (viewModel == null)
                 {
                     return NotFound();
                 }
 
-                if (User.Identity?.IsAuthenticated == true)
+                if (User.Identity?.IsAuthenticated == true && !string.IsNullOrEmpty(currentUserId))
                 {
-                    var userId = User.FindFirst("UserId")?.Value;
-                    if (!string.IsNullOrEmpty(userId))
-                    {
-                        viewModel.IsEnrolled = await _courseService.IsUserEnrolledAsync(userId, id);
-                    }
+                    viewModel.IsEnrolled = await _courseService.IsUserEnrolledAsync(currentUserId, id);
+
+                    // Check if current user is the course author
+                    ViewBag.IsAuthor = viewModel.AuthorId == currentUserId;
+                    ViewBag.CurrentUserId = currentUserId;
                 }
 
                 viewModel.CanEnroll = !viewModel.IsEnrolled;

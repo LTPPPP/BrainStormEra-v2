@@ -34,6 +34,7 @@ namespace BrainStormEra_MVC.Models.ViewModels
         public string CourseDescription { get; set; } = string.Empty;
         public string CourseImage { get; set; } = string.Empty;
         public decimal Price { get; set; }
+        public string AuthorId { get; set; } = string.Empty;
         public string AuthorName { get; set; } = string.Empty;
         public string AuthorImage { get; set; } = string.Empty;
         public double AverageRating { get; set; }

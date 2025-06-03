@@ -112,6 +112,7 @@ namespace BrainStormEra_MVC.Services
                     CourseDescription = course.CourseDescription ?? "",
                     CourseImage = course.CourseImage ?? "/img/defaults/default-course.svg",
                     Price = course.Price,
+                    AuthorId = course.AuthorId,
                     AuthorName = course.Author.FullName ?? course.Author.Username,
                     AuthorImage = course.Author.UserImage ?? "/img/defaults/default-avatar.svg",
                     EstimatedDuration = course.EstimatedDuration ?? 0,
@@ -165,6 +166,77 @@ namespace BrainStormEra_MVC.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading course detail {CourseId}", courseId);
+                return null;
+            }
+        }
+        public async Task<CourseDetailViewModel?> GetCourseDetailAsync(string courseId, string? currentUserId = null)
+        {
+            try
+            {
+                var course = await _courseRepository.GetCourseDetailAsync(courseId, currentUserId);
+                if (course == null) return null;
+
+                var viewModel = new CourseDetailViewModel
+                {
+                    CourseId = course.CourseId,
+                    CourseName = course.CourseName,
+                    CourseDescription = course.CourseDescription ?? "",
+                    CourseImage = course.CourseImage ?? "/img/defaults/default-course.svg",
+                    Price = course.Price,
+                    AuthorId = course.AuthorId,
+                    AuthorName = course.Author.FullName ?? course.Author.Username,
+                    AuthorImage = course.Author.UserImage ?? "/img/defaults/default-avatar.svg",
+                    EstimatedDuration = course.EstimatedDuration ?? 0,
+                    DifficultyLevel = GetDifficultyLevelText(course.DifficultyLevel),
+                    Categories = course.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
+                    TotalStudents = course.Enrollments.Count,
+                    CourseCreatedAt = course.CourseCreatedAt,
+                    CourseUpdatedAt = course.CourseUpdatedAt
+                };
+
+                if (course.Feedbacks.Any(f => f.StarRating.HasValue))
+                {
+                    viewModel.AverageRating = (double)Math.Round((decimal)course.Feedbacks.Where(f => f.StarRating.HasValue).Average(f => f.StarRating!.Value), 1);
+                    viewModel.TotalReviews = course.Feedbacks.Count;
+                }
+
+                viewModel.Chapters = course.Chapters.Select(ch => new ChapterViewModel
+                {
+                    ChapterId = ch.ChapterId,
+                    ChapterName = ch.ChapterName,
+                    ChapterDescription = ch.ChapterDescription ?? "",
+                    ChapterOrder = ch.ChapterOrder ?? 0,
+                    Lessons = ch.Lessons.Select(l => new LessonViewModel
+                    {
+                        LessonId = l.LessonId,
+                        LessonName = l.LessonName,
+                        LessonDescription = l.LessonDescription ?? "",
+                        LessonOrder = l.LessonOrder,
+                        LessonType = l.LessonType?.LessonTypeName ?? "Video",
+                        EstimatedDuration = 0,
+                        IsLocked = l.IsLocked ?? false
+                    }).ToList()
+                }).ToList();
+
+                viewModel.Reviews = course.Feedbacks
+                    .OrderByDescending(f => f.FeedbackCreatedAt)
+                    .Take(10)
+                    .Select(f => new ReviewViewModel
+                    {
+                        ReviewId = f.FeedbackId,
+                        UserName = f.User.FullName ?? f.User.Username,
+                        UserImage = f.User.UserImage ?? "/img/defaults/default-avatar.svg",
+                        StarRating = f.StarRating ?? 0,
+                        ReviewComment = f.Comment ?? "",
+                        ReviewDate = f.FeedbackCreatedAt,
+                        IsVerifiedPurchase = f.IsVerifiedPurchase ?? false
+                    }).ToList();
+
+                return viewModel;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading course detail {CourseId} for user {UserId}", courseId, currentUserId);
                 return null;
             }
         }
@@ -589,6 +661,78 @@ namespace BrainStormEra_MVC.Services
             {
                 _logger.LogError(ex, "Error deleting course {CourseId}", courseId);
                 return false;
+            }
+        }
+
+        public async Task<CourseListViewModel> GetInstructorCoursesAsync(string authorId, string? search, string? category, int page, int pageSize)
+        {
+            try
+            {
+                var query = _context.Courses
+                    .AsNoTracking()
+                    .Where(c => c.AuthorId == authorId); // Filter by instructor's authorId
+
+                query = query.Include(c => c.Author)
+                           .Include(c => c.Enrollments)
+                           .Include(c => c.CourseCategories);
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(c => c.CourseName.Contains(search) ||
+                                           c.CourseDescription!.Contains(search));
+                }
+
+                if (!string.IsNullOrWhiteSpace(category))
+                {
+                    query = query.Where(c => c.CourseCategories
+                        .Any(cc => cc.CourseCategoryName == category));
+                }
+
+                var totalCourses = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling((double)totalCourses / pageSize);
+
+                var courses = await query
+                    .OrderByDescending(c => c.CourseCreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(c => new CourseViewModel
+                    {
+                        CourseId = c.CourseId,
+                        CourseName = c.CourseName,
+                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                        Description = c.CourseDescription,
+                        Price = c.Price,
+                        CreatedBy = c.Author.FullName ?? c.Author.Username,
+                        CourseCategories = c.CourseCategories
+                            .Select(cc => cc.CourseCategoryName)
+                            .ToList(),
+                        EnrollmentCount = c.Enrollments.Count()
+                    })
+                    .ToListAsync();
+
+                foreach (var course in courses)
+                {
+                    course.StarRating = 4;
+                }
+
+                var categories = await GetCategoriesAsync();
+
+                return new CourseListViewModel
+                {
+                    Courses = courses,
+                    Categories = categories,
+                    SearchQuery = search,
+                    SelectedCategory = category,
+                    CurrentPage = page,
+                    TotalPages = totalPages,
+                    TotalCourses = totalCourses,
+                    PageSize = pageSize
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading instructor courses for authorId: {AuthorId}", authorId);
+                return new CourseListViewModel();
             }
         }
     }
