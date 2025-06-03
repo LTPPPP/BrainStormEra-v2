@@ -78,7 +78,8 @@
                         data-name="@achievement.AchievementName" data-description="@achievement.AchievementDescription"
                         data-icon="@achievement.AchievementIcon" data-date="@achievement.ReceivedDate">
                         <img src="@achievement.AchievementIcon" alt="@achievement.AchievementName"
-                            class="achievement-image mx-auto">
+                            class="achievement-image mx-auto" 
+                            onerror="this.onerror=null; this.src='/img/defaults/default-achievement.svg';">
                         <div class="achievement-card-body">
                             <h5 class="achievement-title-text">@achievement.AchievementName</h5>
                         </div>
@@ -104,7 +105,8 @@
                 </div>
                 <div class="modal-body text-center">
                     <img id="achievement-icon" src="" alt="Achievement Icon"
-                        class="achievement-modal-image img-fluid mb-3">
+                        class="achievement-modal-image img-fluid mb-3"
+                        onerror="this.onerror=null; this.src='/img/defaults/default-achievement.svg';">
                     <h5 id="achievement-name" class="achievement-modal-title"></h5>
                     <p id="achievement-description" class="achievement-modal-description"></p>
                     <p class="achievement-modal-date"><strong>Date Received:</strong> <span
@@ -171,7 +173,7 @@
                 // Set modal content
                 document.getElementById('achievement-name').textContent = achievementName || 'N/A';
                 document.getElementById('achievement-description').textContent = formattedDescription || 'N/A';
-                document.getElementById('achievement-icon').setAttribute('src', achievementIcon || '/path/to/default/icon.png');
+                document.getElementById('achievement-icon').setAttribute('src', achievementIcon || '/img/defaults/default-achievement.svg');
                 document.getElementById('achievement-date').textContent = formattedDate || 'N/A';
             });
 

@@ -82,7 +82,8 @@
                                     @if (!string.IsNullOrEmpty(Model.CurrentImagePath))
                                     {
                                         <img id="profileImagePreview" src="@Url.Action("GetAvatar", "Profile")"
-                                            alt="Profile Image" class="profile-image-preview" />
+                                            alt="Profile Image" class="profile-image-preview"
+                                            onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';" />
                                     }
                                     else
                                     {

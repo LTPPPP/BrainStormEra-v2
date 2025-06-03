@@ -12,6 +12,7 @@ body {
   margin-bottom: 0;
   position: relative;
   overflow: hidden;
+  margin-top: 6rem;
 }
 
 .page-header::before {
@@ -753,6 +754,129 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Image Loading States and Error Handling */
+.image-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.image-container img {
+  transition: opacity 0.3s ease;
+}
+
+.image-container.loading img {
+  opacity: 0.5;
+}
+
+.image-container .image-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #6c757d;
+  font-size: 3rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 12px;
+}
+
+.image-container.error .image-placeholder,
+.image-container.loading .image-placeholder {
+  opacity: 1;
+}
+
+.image-error-fallback {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.image-error-fallback i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.8;
+}
+
+.image-error-fallback .error-text {
+  font-weight: 500;
+}
+
+/* Course image specific styles */
+.course-image-preview {
+  position: relative;
+  aspect-ratio: 16/9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  transition: all 0.3s ease;
+}
+
+.course-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.course-image-preview:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+}
+
+/* Fallback for broken images */
+img[src=""],
+img:not([src]) {
+  opacity: 0;
+}
+
+img[alt]:after {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #6c757d;
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  content: "\f03e";
+  font-size: 3rem;
+  text-align: center;
+  line-height: 200px;
+  border-radius: 12px;
+  border: 2px solid #dee2e6;
+}
+
+/* Loading spinner for images */
+@keyframes imageLoad {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.image-loaded {
+  animation: imageLoad 0.5s ease-in-out;
 }
 
 /* Responsive Design */

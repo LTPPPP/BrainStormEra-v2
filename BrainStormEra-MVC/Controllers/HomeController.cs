@@ -244,7 +244,7 @@ namespace BrainStormEra_MVC.Controllers
                     {
                         CourseId = c.CourseId,
                         CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/default-course.png",
+                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
                         Price = c.Price,
                         CreatedBy = c.AuthorName,
                         Description = c.CourseDescription,
@@ -337,7 +337,7 @@ namespace BrainStormEra_MVC.Controllers
                     {
                         CourseId = e.CourseId,
                         CourseName = e.Course.CourseName,
-                        CourseImage = e.Course.CourseImage ?? "/img/default-course.png",
+                        CourseImage = e.Course.CourseImage ?? "/img/defaults/default-course.svg",
                         AuthorName = e.Course.Author.FullName ?? e.Course.Author.Username,
                         EnrolledDate = e.EnrollmentCreatedAt,
                         LastAccessDate = e.EnrollmentUpdatedAt, // Use EnrollmentUpdatedAt as last access
@@ -355,7 +355,7 @@ namespace BrainStormEra_MVC.Controllers
                     {
                         CourseId = c.CourseId,
                         CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/default-course.png",
+                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
                         Price = c.Price,
                         CreatedBy = c.Author.FullName ?? c.Author.Username,
                         Description = c.CourseDescription
@@ -449,7 +449,7 @@ namespace BrainStormEra_MVC.Controllers
                     {
                         CourseId = c.CourseId,
                         CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/default-course.png",
+                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
                         Price = c.Price,
                         CreatedBy = user.FullName ?? user.Username,
                         Description = c.CourseDescription,

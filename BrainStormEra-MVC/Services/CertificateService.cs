@@ -34,7 +34,7 @@ namespace BrainStormEra_MVC.Services
                 {
                     CourseId = e.CourseId,
                     CourseName = e.Course.CourseName,
-                    CourseImage = e.Course.CourseImage ?? "/img/default-course.png",
+                    CourseImage = e.Course.CourseImage ?? "/img/defaults/default-course.svg",
                     AuthorName = e.Course.Author.FullName ?? e.Course.Author.Username,
                     CompletedDate = e.CertificateIssuedDate!.Value.ToDateTime(TimeOnly.MinValue),
                     EnrollmentDate = e.EnrollmentCreatedAt,
@@ -70,7 +70,7 @@ namespace BrainStormEra_MVC.Services
                     CourseId = certificateData.CourseId,
                     CourseName = certificateData.Course.CourseName,
                     CourseDescription = certificateData.Course.CourseDescription ?? "",
-                    CourseImage = certificateData.Course.CourseImage ?? "/img/default-course.png",
+                    CourseImage = certificateData.Course.CourseImage ?? "/img/defaults/default-course.svg",
                     LearnerName = certificateData.User.FullName ?? certificateData.User.Username,
                     LearnerEmail = certificateData.User.UserEmail,
                     InstructorName = certificateData.Course.Author.FullName ?? certificateData.Course.Author.Username,

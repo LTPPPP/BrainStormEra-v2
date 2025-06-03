@@ -65,7 +65,8 @@
         <div class="text-center mb-5 w-100 position-relative welcome-header-container">
             <div class="header-placeholder">
                 <div class="logo-header-container">
-                    <img src="~/img/logo/Main_Logo.jpg" alt="BrainStormEra Logo" class="logo-header-img">
+                    <img src="~/img/logo/Main_Logo.jpg" alt="BrainStormEra Logo" class="logo-header-img"
+                        onerror="this.onerror=null; this.src='/img/defaults/default-logo.svg';">
                 </div>
                 <div class="header-text">
                     <h1>Welcome to BrainStormEra</h1>
@@ -118,7 +119,8 @@
                         <a href="javascript:void(0);" onclick="viewDetailCourse('@c.CourseId')">
                             <div class="card course-card h-100">
                                 <div class="card-img-container">
-                                    <img src="@c.CoursePicture" class="card-img-top" alt="@c.CourseName">
+                                    <img src="@c.CoursePicture" class="card-img-top" alt="@c.CourseName"
+                                        onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
                                     <div class="overlay">
                                         <div class="overlay-content">View Course</div>
                                     </div>

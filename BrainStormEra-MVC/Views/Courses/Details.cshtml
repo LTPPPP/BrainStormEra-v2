@@ -233,7 +233,8 @@
                     <div class="col-lg-4">
                         <div class="course-preview-card">
                             <div class="course-preview-image">
-                                <img src="@Model.CourseImage" alt="@Model.CourseName" class="img-fluid">
+                                <img src="@Model.CourseImage" alt="@Model.CourseName" class="img-fluid"
+                                     onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
                                 <div class="play-button">
                                     <i class="fas fa-play"></i>
                                 </div>
@@ -445,7 +446,8 @@
                                     <div class="instructor-card">
                                         <div class="instructor-avatar">
                                             <img src="@Model.AuthorImage" alt="@Model.AuthorName"
-                                                class="img-fluid rounded-circle">
+                                                class="img-fluid rounded-circle"
+                                                onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
                                         </div>
                                         <div class="instructor-details">
                                             <h3>@Model.AuthorName</h3>
@@ -536,7 +538,8 @@
                                                 <div class="review-item">
                                                     <div class="reviewer-info">
                                                         <img src="@review.UserImage" alt="@review.UserName"
-                                                            class="reviewer-avatar">
+                                                            class="reviewer-avatar"
+                                                            onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
                                                         <div class="reviewer-details">
                                                             <h5>@review.UserName</h5>
                                                             <div class="review-rating">

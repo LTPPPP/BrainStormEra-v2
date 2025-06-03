@@ -1,54 +1,55 @@
 @model dynamic
 
 <div class="text-center">
-    <img src="@Model.AchievementIcon" alt="Achievement Icon" class="achievement-modal-image img-fluid mb-3">
+    <img src="@Model.AchievementIcon" alt="Achievement Icon" class="achievement-modal-image img-fluid mb-3"
+        onerror="this.onerror=null; this.src='/img/defaults/default-achievement.svg';">
     <h5 class="achievement-modal-title">@Model.AchievementName</h5>
     <p class="achievement-modal-description">Award for completed @Model.AchievementDescription courses</p>
     <p class="achievement-modal-date">
-        <strong>Date Received:</strong> 
+        <strong>Date Received:</strong>
         <span>@Model.ReceivedDate.ToString("dd-MMM-yy")</span>
     </p>
     @if (Model.PointsEarned != null)
     {
         <p class="achievement-modal-points">
-            <strong>Points Earned:</strong> 
+            <strong>Points Earned:</strong>
             <span class="badge bg-success">@Model.PointsEarned</span>
         </p>
     }
     @if (!string.IsNullOrEmpty(Model.RelatedCourseName))
     {
         <p class="achievement-modal-course">
-            <strong>Related Course:</strong> 
+            <strong>Related Course:</strong>
             <span class="text-primary">@Model.RelatedCourseName</span>
         </p>
     }
 </div>
-        
-        @if (Model.PointsEarned != null && Model.PointsEarned > 0)
-        {
-            <div class="detail-item">
-                <strong>Points Earned:</strong>
-                <p class="mb-3">
-                    <span class="badge bg-success">@Model.PointsEarned points</span>
-                </p>
-            </div>
-        }
-        
-        @if (!string.IsNullOrEmpty(Model.RelatedCourseName))
-        {
-            <div class="detail-item">
-                <strong>Related Course:</strong>
-                <p class="mb-3">
-                    <span class="badge bg-info">@Model.RelatedCourseName</span>
-                </p>
-            </div>
-        }
+
+@if (Model.PointsEarned != null && Model.PointsEarned > 0)
+{
+    <div class="detail-item">
+        <strong>Points Earned:</strong>
+        <p class="mb-3">
+            <span class="badge bg-success">@Model.PointsEarned points</span>
+        </p>
     </div>
-    
-    <div class="text-center mt-4">
-        <div class="achievement-badge-large">
-            <i class="fas fa-medal text-warning fa-2x"></i>
-            <span class="badge-text">Achievement Unlocked!</span>
-        </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.RelatedCourseName))
+{
+    <div class="detail-item">
+        <strong>Related Course:</strong>
+        <p class="mb-3">
+            <span class="badge bg-info">@Model.RelatedCourseName</span>
+        </p>
     </div>
+}
+</div>
+
+<div class="text-center mt-4">
+    <div class="achievement-badge-large">
+        <i class="fas fa-medal text-warning fa-2x"></i>
+        <span class="badge-text">Achievement Unlocked!</span>
+    </div>
+</div>
 </div>

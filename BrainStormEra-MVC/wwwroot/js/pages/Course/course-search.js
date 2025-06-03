@@ -175,7 +175,6 @@ class CourseSearchManager {
         }
       })
       .catch((error) => {
-
         this.showError("Network error occurred. Please try again.");
       })
       .finally(() => {
@@ -222,7 +221,7 @@ class CourseSearchManager {
                     <div class="course-image">
                         <img src="${course.coursePicture}" alt="${
           course.courseName
-        }" loading="lazy">
+        }" loading="lazy" onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
                         <div class="course-overlay">
                             <a href="/Course/Details/${
                               course.courseId

@@ -142,7 +142,8 @@
                                         <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
                                             <div class="course-card">
                                                 <div class="course-image">
-                                                    <img src="@course.CoursePicture" alt="@course.CourseName">
+                                                    <img src="@course.CoursePicture" alt="@course.CourseName"
+                                                        onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
                                                     @if (course.Price > 0)
                                                     {
                                                         <div class="course-price">$@course.Price</div>
@@ -179,7 +180,8 @@
                             else
                             {
                                 <div class="empty-state">
-                                    <img src="/img/empty-courses.svg" alt="No courses" class="empty-state-img">
+                                    <img src="/img/empty-courses.svg" alt="No courses" class="empty-state-img"
+                                        onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
                                     <h3>No courses yet</h3>
                                     <p>Start creating your first course to share your knowledge with students!</p>
                                     <a href="@Url.Action("CreateCourse", "Course")" class="btn btn-primary">Create
@@ -494,5 +496,3 @@
 </body>
 
 </html>
-
-
