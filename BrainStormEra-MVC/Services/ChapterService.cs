@@ -15,13 +15,13 @@ namespace BrainStormEra_MVC.Services
             _context = context;
             _logger = logger;
         }
-
         public async Task<string> CreateChapterAsync(CreateChapterViewModel model, string authorId)
         {
             try
             {
                 // Verify that the user is the author of the course
                 var course = await _context.Courses
+                    .Include(c => c.Chapters)
                     .FirstOrDefaultAsync(c => c.CourseId == model.CourseId && c.AuthorId == authorId);
 
                 if (course == null)
@@ -30,18 +30,44 @@ namespace BrainStormEra_MVC.Services
                     throw new UnauthorizedAccessException("You are not authorized to add chapters to this course.");
                 }
 
+                // Additional validation for chapter order uniqueness
+                if (course.Chapters.Any(c => c.ChapterOrder == model.ChapterOrder))
+                {
+                    throw new ArgumentException($"Chapter order {model.ChapterOrder} is already taken in this course.");
+                }
+
+                // Validate chapter name uniqueness
+                if (course.Chapters.Any(c => string.Equals(c.ChapterName.Trim(), model.ChapterName.Trim(), StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new ArgumentException($"A chapter with the name '{model.ChapterName}' already exists in this course.");
+                }
+
+                // Validate prerequisite chapter exists and is before this chapter
+                if (model.IsLocked && !string.IsNullOrEmpty(model.UnlockAfterChapterId))
+                {
+                    var prerequisiteChapter = course.Chapters.FirstOrDefault(c => c.ChapterId == model.UnlockAfterChapterId);
+                    if (prerequisiteChapter == null)
+                    {
+                        throw new ArgumentException("Selected prerequisite chapter does not exist.");
+                    }
+                    if (prerequisiteChapter.ChapterOrder >= model.ChapterOrder)
+                    {
+                        throw new ArgumentException("Prerequisite chapter must come before this chapter in the sequence.");
+                    }
+                }
+
                 var chapterId = Guid.NewGuid().ToString();
 
                 var chapter = new Chapter
                 {
                     ChapterId = chapterId,
                     CourseId = model.CourseId,
-                    ChapterName = model.ChapterName,
-                    ChapterDescription = model.ChapterDescription,
+                    ChapterName = model.ChapterName.Trim(),
+                    ChapterDescription = string.IsNullOrEmpty(model.ChapterDescription) ? null : model.ChapterDescription.Trim(),
                     ChapterOrder = model.ChapterOrder,
                     ChapterStatus = 1, // Active status
                     IsLocked = model.IsLocked,
-                    UnlockAfterChapterId = model.UnlockAfterChapterId,
+                    UnlockAfterChapterId = string.IsNullOrEmpty(model.UnlockAfterChapterId) ? null : model.UnlockAfterChapterId,
                     ChapterCreatedAt = DateTime.UtcNow,
                     ChapterUpdatedAt = DateTime.UtcNow
                 };
@@ -49,13 +75,23 @@ namespace BrainStormEra_MVC.Services
                 _context.Chapters.Add(chapter);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Chapter created successfully: {ChapterId} for course {CourseId}", chapterId, model.CourseId);
+                _logger.LogInformation("Chapter created successfully: {ChapterId} for course {CourseId} by author {AuthorId}", chapterId, model.CourseId, authorId);
                 return chapterId;
+            }
+            catch (ArgumentException)
+            {
+                // Re-throw argument exceptions for controller to handle
+                throw;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Re-throw unauthorized exceptions for controller to handle
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating chapter for course {CourseId}", model.CourseId);
-                throw;
+                _logger.LogError(ex, "Error creating chapter for course {CourseId} by author {AuthorId}", model.CourseId, authorId);
+                throw new InvalidOperationException("An error occurred while creating the chapter. Please try again.", ex);
             }
         }
         public async Task<CreateChapterViewModel?> GetCreateChapterViewModelAsync(string courseId, string authorId)
