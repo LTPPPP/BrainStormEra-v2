@@ -398,9 +398,9 @@
             }
         });
 
-        // Pre-populate selected categories on page load        
-            document.addEventListener('DOMContentLoaded', function() {            
-            const selectedCategories = @Html.Raw(Json.Serializ e(Model.SelectedCategories ?? new List<string>()));
+        // Pre-populate selected categories on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            const selectedCategories = @Html.Raw(Json.Serialize(Model.SelectedCategories ?? new List<string>()));
             const availableCategories = @Html.Raw(Json.Serialize(Model.AvailableCategories));
 
             if (selectedCategories.length > 0 && availableCategories.length > 0) {
