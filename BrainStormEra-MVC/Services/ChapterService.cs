@@ -58,17 +58,19 @@ namespace BrainStormEra_MVC.Services
                 throw;
             }
         }
-
         public async Task<CreateChapterViewModel?> GetCreateChapterViewModelAsync(string courseId, string authorId)
         {
             try
             {
                 var course = await _context.Courses
                     .Include(c => c.Chapters)
+                    .ThenInclude(ch => ch.Lessons)
+                    .ThenInclude(l => l.LessonType)
                     .FirstOrDefaultAsync(c => c.CourseId == courseId && c.AuthorId == authorId);
 
                 if (course == null)
                 {
+                    _logger.LogWarning("Course not found or user not authorized: {CourseId} for user {AuthorId}", courseId, authorId);
                     return null;
                 }
 
@@ -79,7 +81,17 @@ namespace BrainStormEra_MVC.Services
                         ChapterId = c.ChapterId,
                         ChapterName = c.ChapterName,
                         ChapterDescription = c.ChapterDescription ?? "",
-                        ChapterOrder = c.ChapterOrder ?? 0
+                        ChapterOrder = c.ChapterOrder ?? 0,
+                        Lessons = c.Lessons?.Select(l => new LessonViewModel
+                        {
+                            LessonId = l.LessonId,
+                            LessonName = l.LessonName,
+                            LessonDescription = l.LessonDescription ?? "",
+                            LessonOrder = l.LessonOrder,
+                            LessonType = l.LessonType?.LessonTypeName ?? "Content",
+                            EstimatedDuration = 0, // Calculate if needed
+                            IsLocked = l.IsLocked ?? false
+                        }).ToList() ?? new List<LessonViewModel>()
                     }).ToList();
 
                 var nextChapterOrder = existingChapters.Any() ? existingChapters.Max(c => c.ChapterOrder) + 1 : 1;
@@ -88,6 +100,7 @@ namespace BrainStormEra_MVC.Services
                 {
                     CourseId = courseId,
                     CourseName = course.CourseName,
+                    CourseDescription = course.CourseDescription ?? "",
                     ChapterOrder = nextChapterOrder,
                     ExistingChapters = existingChapters
                 };
