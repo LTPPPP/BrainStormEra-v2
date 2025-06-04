@@ -18,7 +18,6 @@ namespace BrainStormEra_MVC.Models.ViewModels
         [StringLength(1000, ErrorMessage = "Lesson description cannot exceed 1000 characters")]
         [Display(Name = "Lesson Description")]
         public string? Description { get; set; }
-
         [Required(ErrorMessage = "Lesson content is required")]
         [Display(Name = "Lesson Content")]
         public string Content { get; set; } = null!;
@@ -26,6 +25,25 @@ namespace BrainStormEra_MVC.Models.ViewModels
         [Required(ErrorMessage = "Lesson type is required")]
         [Display(Name = "Lesson Type")]
         public int LessonTypeId { get; set; }
+
+        // Fields for Video Lesson Type (Option 1)
+        [Display(Name = "Video URL")]
+        [Url(ErrorMessage = "Please enter a valid URL")]
+        public string? VideoUrl { get; set; }
+
+        [Display(Name = "Upload Video File")]
+        public IFormFile? VideoFile { get; set; }
+
+        // Fields for Text Lesson Type (Option 2)
+        [Display(Name = "Text Content")]
+        public string? TextContent { get; set; }
+
+        // Fields for Document Lesson Type (Option 3)
+        [Display(Name = "Upload Documents")]
+        public List<IFormFile>? DocumentFiles { get; set; }
+
+        [Display(Name = "Document Description")]
+        public string? DocumentDescription { get; set; }
         [Range(1, int.MaxValue, ErrorMessage = "Lesson order must be a positive number")]
         [Display(Name = "Lesson Order")]
         public int Order { get; set; } = 1;

@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="~/css/components/header.css">
     <link rel="stylesheet" href="~/css/components/loader.css">
     <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
+    <link rel="stylesheet" href="~/css/pages/Lesson/lesson-types.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
     <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
@@ -84,7 +85,7 @@
 
     <!-- Main Content -->
     <div class="create-course-container">
-        <form asp-action="CreateLesson" method="post" id="createLessonForm">
+        <form asp-action="CreateLesson" method="post" enctype="multipart/form-data" id="createLessonForm">
             @Html.AntiForgeryToken()
             <input asp-for="ChapterId" type="hidden" />
             <input asp-for="CourseId" type="hidden" />
@@ -127,15 +128,16 @@
 
                 <div class="row">
                     <div class="col-lg-6">
-                        <div class="mb-4">
-                            <label asp-for="LessonTypeId" class="form-label">
+                        <div class="mb-4"> <label asp-for="LessonTypeId" class="form-label">
                                 <i class="fas fa-tag me-2"></i>Lesson Type *
                             </label>
-                            <select asp-for="LessonTypeId" class="form-control">
+                            <select asp-for="LessonTypeId" class="form-control" id="lessonTypeSelect">
                                 <option value="">Select lesson type</option>
                                 @foreach (var lessonType in Model.LessonTypes)
                                 {
-                                    <option value="@lessonType.LessonTypeId">@lessonType.LessonTypeName</option>
+                                    <option value="@lessonType.LessonTypeId" data-type-name="@lessonType.LessonTypeName">
+                                        @lessonType.LessonTypeName
+                                    </option>
                                 }
                             </select>
                             <span asp-validation-for="LessonTypeId" class="text-danger"></span>
@@ -158,17 +160,139 @@
                         <i class="fas fa-info-circle me-1"></i>
                         Help students understand what they'll learn (optional but recommended)
                     </div>
+                </div> <!-- Dynamic Content Sections Based on Lesson Type -->
+
+                <!-- Option 1: Video Content Section -->
+                <div id="videoContentSection" class="lesson-type-section" style="display: none;">
+                    <h4 class="mb-3">
+                        <i class="fas fa-video me-2 text-primary"></i>Video Content
+                    </h4>
+
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label asp-for="VideoUrl" class="form-label">
+                                    <i class="fas fa-link me-2"></i>Video URL (YouTube or other)
+                                </label>
+                                <input asp-for="VideoUrl" class="form-control"
+                                    placeholder="https://www.youtube.com/watch?v=..." />
+                                <span asp-validation-for="VideoUrl" class="text-danger"></span>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Paste a YouTube link or other video URL
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label asp-for="VideoFile" class="form-label">
+                                    <i class="fas fa-upload me-2"></i>Or Upload Video File
+                                </label>
+                                <input asp-for="VideoFile" type="file" class="form-control" accept="video/*" />
+                                <div class="form-text">
+                                    <i class="fas fa-file-video me-1"></i>
+                                    Accepted formats: MP4, AVI, MOV, WMV (Max 100MB)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Content" class="form-label">
+                            <i class="fas fa-file-alt me-2"></i>Video Description *
+                        </label>
+                        <textarea asp-for="Content" class="form-control" rows="6"
+                            placeholder="Describe what students will learn from this video" maxlength="5000"></textarea>
+                        <span asp-validation-for="Content" class="text-danger"></span>
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <label asp-for="Content" class="form-label">
-                        <i class="fas fa-file-alt me-2"></i>Lesson Content *
-                    </label>
-                    <textarea asp-for="Content" class="form-control" rows="8"
-                        placeholder="Enter the main content for this lesson" maxlength="5000"></textarea>
-                    <span asp-validation-for="Content" class="text-danger"></span>
-                    <div class="form-text">
-                        <i class="fas fa-edit me-1"></i>
-                        Add the main teaching content for this lesson
+
+                <!-- Option 2: Text Content Section -->
+                <div id="textContentSection" class="lesson-type-section" style="display: none;">
+                    <h4 class="mb-3">
+                        <i class="fas fa-edit me-2 text-success"></i>Text Content
+                    </h4>
+
+                    <div class="mb-4">
+                        <label asp-for="TextContent" class="form-label">
+                            <i class="fas fa-paragraph me-2"></i>Rich Text Content *
+                        </label>
+                        <textarea asp-for="TextContent" class="form-control" rows="12"
+                            placeholder="Enter your lesson content here. You can use formatting, lists, and detailed explanations..."
+                            maxlength="10000"></textarea>
+                        <span asp-validation-for="TextContent" class="text-danger"></span>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Write detailed explanations, examples, and exercises for students
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Content" class="form-label">
+                            <i class="fas fa-file-alt me-2"></i>Lesson Summary *
+                        </label>
+                        <textarea asp-for="Content" class="form-control" rows="4"
+                            placeholder="Provide a brief summary of this text lesson" maxlength="1000"></textarea>
+                        <span asp-validation-for="Content" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Option 3: Document/File Content Section -->
+                <div id="documentContentSection" class="lesson-type-section" style="display: none;">
+                    <h4 class="mb-3">
+                        <i class="fas fa-file-pdf me-2 text-danger"></i>Document Content
+                    </h4>
+
+                    <div class="mb-4">
+                        <label asp-for="DocumentFiles" class="form-label">
+                            <i class="fas fa-upload me-2"></i>Upload Documents *
+                        </label>
+                        <input asp-for="DocumentFiles" type="file" class="form-control" multiple
+                            accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.xls,.xlsx" />
+                        <div class="form-text">
+                            <i class="fas fa-file me-1"></i>
+                            Accepted formats: PDF, DOC, DOCX, PPT, PPTX, TXT, XLS, XLSX (Max 10MB each)
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="DocumentDescription" class="form-label">
+                            <i class="fas fa-info me-2"></i>Document Description
+                        </label>
+                        <textarea asp-for="DocumentDescription" class="form-control" rows="4"
+                            placeholder="Explain what students will find in these documents and how to use them"
+                            maxlength="1000"></textarea>
+                        <div class="form-text">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Help students understand how to use the uploaded materials
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Content" class="form-label">
+                            <i class="fas fa-file-alt me-2"></i>Lesson Instructions *
+                        </label>
+                        <textarea asp-for="Content" class="form-control" rows="6"
+                            placeholder="Provide instructions on how students should work with the documents"
+                            maxlength="5000"></textarea>
+                        <span asp-validation-for="Content" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Default Content Section (when no lesson type is selected) -->
+                <div id="defaultContentSection" class="lesson-type-section">
+                    <div class="mb-4">
+                        <label asp-for="Content" class="form-label">
+                            <i class="fas fa-file-alt me-2"></i>Lesson Content *
+                        </label>
+                        <textarea asp-for="Content" class="form-control" rows="8"
+                            placeholder="Select a lesson type above to see specific content options" maxlength="5000"
+                            readonly></textarea>
+                        <span asp-validation-for="Content" class="text-danger"></span>
+                        <div class="form-text">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            Please select a lesson type first to enable content input
+                        </div>
                     </div>
                 </div>
             </div>
@@ -345,6 +469,138 @@
                 document.querySelector('.bse-sticky-header').classList.remove('bse-scrolled');
             }
         }); document.addEventListener('DOMContentLoaded', function () {
+            // Lesson type dynamic content handling
+            const lessonTypeSelect = document.querySelector('#LessonTypeId');
+            const videoContentSection = document.querySelector('#videoContentSection');
+            const textContentSection = document.querySelector('#textContentSection');
+            const documentContentSection = document.querySelector('#documentContentSection');
+            const defaultContentSection = document.querySelector('#defaultContentSection');
+
+            // Function to hide all content sections
+            function hideAllContentSections() {
+                const sections = [videoContentSection, textContentSection, documentContentSection, defaultContentSection];
+                sections.forEach(section => {
+                    if (section) {
+                        section.style.display = 'none';
+                        section.style.opacity = '0';
+                    }
+                });
+            }
+
+            // Function to show a specific section with animation
+            function showContentSection(section) {
+                if (section) {
+                    section.style.display = 'block';
+                    setTimeout(() => {
+                        section.style.transition = 'opacity 0.3s ease';
+                        section.style.opacity = '1';
+                    }, 10);
+                }
+            }
+
+            // Function to clear form fields in hidden sections
+            function clearSectionFields(section) {
+                if (section) {
+                    const inputs = section.querySelectorAll('input, textarea');
+                    inputs.forEach(input => {
+                        if (input.type !== 'file') {
+                            input.value = '';
+                        } else {
+                            input.value = null;
+                        }
+                    });
+                }
+            }            // Handle lesson type change
+            if (lessonTypeSelect) {
+                lessonTypeSelect.addEventListener('change', function () {
+                    const selectedValue = this.value;
+                    const selectedOption = this.options[this.selectedIndex];
+                    const typeName = selectedOption.getAttribute('data-type-name');
+
+                    hideAllContentSections();
+
+                    // Clear all section fields first
+                    clearSectionFields(videoContentSection);
+                    clearSectionFields(textContentSection);
+                    clearSectionFields(documentContentSection);
+
+                    // Show appropriate section based on lesson type name
+                    if (typeName) {
+                        const lowerTypeName = typeName.toLowerCase();
+                        if (lowerTypeName.includes('video') || lowerTypeName.includes('multimedia')) {
+                            showContentSection(videoContentSection);
+                            // Make video URL or file required
+                            const videoUrl = document.querySelector('#VideoUrl');
+                            const videoFile = document.querySelector('#VideoFile');
+                            if (videoUrl) videoUrl.removeAttribute('readonly');
+                            if (videoFile) videoFile.removeAttribute('disabled');
+                        } else if (lowerTypeName.includes('text') || lowerTypeName.includes('reading') || lowerTypeName.includes('article')) {
+                            showContentSection(textContentSection);
+                            // Make text content required
+                            const textContent = document.querySelector('#TextContent');
+                            if (textContent) textContent.removeAttribute('readonly');
+                        } else if (lowerTypeName.includes('document') || lowerTypeName.includes('file') || lowerTypeName.includes('pdf')) {
+                            showContentSection(documentContentSection);
+                            // Make document files required
+                            const documentFiles = document.querySelector('#DocumentFiles');
+                            if (documentFiles) documentFiles.removeAttribute('disabled');
+                        } else {
+                            // For any other type or if we can't determine, show default
+                            showContentSection(defaultContentSection);
+                            const defaultContent = document.querySelector('#defaultContentSection #Content');
+                            if (defaultContent) defaultContent.removeAttribute('readonly');
+                        }
+                    } else {
+                        showContentSection(defaultContentSection);
+                        // Keep default content readonly until type is selected
+                        const defaultContent = document.querySelector('#defaultContentSection #Content');
+                        if (defaultContent) defaultContent.setAttribute('readonly', 'readonly');
+                    }
+                });
+
+                // Initialize on page load
+                lessonTypeSelect.dispatchEvent(new Event('change'));
+            }
+
+            // Video URL validation for YouTube and other video platforms
+            const videoUrlInput = document.querySelector('#VideoUrl');
+            if (videoUrlInput) {
+                videoUrlInput.addEventListener('blur', function () {
+                    const url = this.value.trim();
+                    if (url) {
+                        const videoUrlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|vimeo\.com|dailymotion\.com)/i;
+                        if (!videoUrlPattern.test(url)) {
+                            this.classList.add('is-invalid');
+                            // You can add custom validation message here
+                        } else {
+                            this.classList.remove('is-invalid');
+                            this.classList.add('is-valid');
+                        }
+                    }
+                });
+            }
+
+            // File size validation
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => {
+                input.addEventListener('change', function () {
+                    const files = this.files;
+                    let maxSize = 100 * 1024 * 1024; // 100MB for video
+                    if (this.accept && this.accept.includes('.pdf')) {
+                        maxSize = 10 * 1024 * 1024; // 10MB for documents
+                    }
+
+                    for (let file of files) {
+                        if (file.size > maxSize) {
+                            alert(`File "${file.name}" is too large. Maximum size is ${maxSize / (1024 * 1024)}MB.`);
+                            this.value = '';
+                            break;
+                        }
+                    }
+                });
+            });
+
+            // Advanced settings toggles
             // Handle conditional visibility for advanced settings
             const isLockedCheckbox = document.querySelector('#IsLocked');
             const unlockAfterSection = document.querySelector('#unlockAfterSection');
@@ -504,3 +760,4 @@
 </body>
 
 </html>
+   

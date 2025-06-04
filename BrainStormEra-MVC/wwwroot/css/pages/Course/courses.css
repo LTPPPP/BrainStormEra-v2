@@ -1707,6 +1707,32 @@
   margin-left: auto;
 }
 
+/* Lesson name with text truncation */
+.lesson-name-truncated {
+  flex: 1;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px; /* Adjust this value as needed */
+}
+
+/* Lesson type with icon */
+.lesson-type-with-icon {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.lesson-type-with-icon i {
+  margin-right: 0;
+  width: auto;
+}
+
 /* Instructor Info */
 .instructor-card {
   display: flex;
@@ -2731,7 +2757,6 @@
 
 .lock-icon {
   color: var(--warning-color);
-  margin-left: auto;
 }
 
 /* Chapter Description */

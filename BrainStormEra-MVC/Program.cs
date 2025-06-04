@@ -54,6 +54,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddSingleton<BrainStormEra_MVC.Services.Interfaces.ICacheService, BrainStormEra_MVC.Services.CacheService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.CategorySeedService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.StatusSeedService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.LessonTypeSeedService>();
 
             // Add Authentication
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -135,6 +136,10 @@ namespace BrainStormEra_MVC
                         // Seed statuses if they don't exist
                         var statusSeeder = scope.ServiceProvider.GetRequiredService<BrainStormEra_MVC.Services.StatusSeedService>();
                         await statusSeeder.SeedStatusesAsync();
+
+                        // Seed lesson types if they don't exist
+                        var lessonTypeSeeder = scope.ServiceProvider.GetRequiredService<BrainStormEra_MVC.Services.LessonTypeSeedService>();
+                        await lessonTypeSeeder.SeedLessonTypesAsync();
                     }
                 }
             }

@@ -479,25 +479,27 @@
                                                         }
                                                         @{
                                                             var orderedLessons = chapter.Lessons.OrderBy(l => l.LessonOrder).ToList();
+                                                            var lessonsByType = orderedLessons.GroupBy(l => l.LessonType).OrderBy(g => g.Key).ToList();
                                                             bool hasMoreThan5Lessons = orderedLessons.Count > 5;
                                                         }
                                                         <div class="lessons-container @(hasMoreThan5Lessons ? "scrollable-lessons" : "")">
-                                                            @foreach (var lesson in orderedLessons)
+                                                            @foreach (var lessonGroup in lessonsByType)
                                                             {
-                                                                <div class="lecture-item @(lesson.IsLocked ? "locked" : "")">
-                                                                    <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : "fa-file-alt")"></i>
-                                                                    <span>@lesson.LessonName</span>
-                                                                    @if (lesson.EstimatedDuration > 0)
+                                                                <div class="mb-2">
+                                                                    @foreach (var lesson in lessonGroup.OrderBy(l => l.LessonOrder))
                                                                     {
-                                                                        <span class="lecture-duration">@lesson.EstimatedDuration min</span>
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        <span class="lecture-duration">@lesson.LessonType</span>
-                                                                    }
-                                                                    @if (lesson.IsLocked)
-                                                                    {
-                                                                        <i class="fas fa-lock lock-icon"></i>
+                                                                        <div class="lecture-item @(lesson.IsLocked ? "locked" : "")">
+                                                                            <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
+                                                                            <span class="lesson-name-truncated">@lesson.LessonName</span>
+                                                                            <span class="lesson-type-with-icon">
+                                                                                <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
+                                                                                @lesson.LessonType
+                                                                            </span>
+                                                                            @if (lesson.IsLocked)
+                                                                            {
+                                                                                <i class="fas fa-lock lock-icon"></i>
+                                                                            }
+                                                                        </div>
                                                                     }
                                                                 </div>
                                                             }
@@ -514,7 +516,7 @@
                                                         @if (ViewBag.IsAuthor == true)
                                                         {
                                                             <div class="lesson-actions mt-3 text-center">
-                                                                <a href="@Url.Action("CreateLesson", "Lesson", new { chapterId = chapter.ChapterId })" 
+                                                                <a href="@Url.Action("SelectLessonType", "Lesson", new { chapterId = chapter.ChapterId })" 
                                                                    class="btn btn-sm btn-outline-primary">
                                                                     <i class="fas fa-plus me-2"></i>Create Lesson
                                                                 </a>
