@@ -1289,7 +1289,7 @@
     rgba(255, 255, 255, 0.2),
     transparent
   );
-  transition: left 0.5s ease;
+  transition: left 0.5s;
 }
 
 .enroll-btn:hover::before {
@@ -2934,22 +2934,33 @@
   box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .settings-card-title {
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-  }
+/* Simplified styling for lesson-actions section in course detail */
+.lesson-actions.mt-3.text-center {
+  margin-top: 1rem;
+  text-align: center;
+  padding: 0.5rem 0;
+}
 
-  .settings-card-body {
-    padding: 1rem;
-  }
+.lesson-actions.mt-3.text-center .btn {
+  font-size: 0.875rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.25rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: none;
+  background: transparent;
+  border: 1px solid #007bff;
+  color: #007bff;
+}
 
-  .advanced-switch {
-    padding: 0.75rem;
-  }
+.lesson-actions.mt-3.text-center .btn:hover {
+  background-color: #007bff;
+  color: white;
+}
 
-  .lesson-item-card {
-    padding: 0.5rem 0.75rem;
-  }
+.lesson-actions.mt-3.text-center .btn i {
+  font-size: 0.875rem;
+  margin: 0;
 }
