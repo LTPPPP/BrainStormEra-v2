@@ -1,4 +1,5 @@
 using BrainStormEra_MVC.Models;
+using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -155,6 +156,200 @@ namespace BrainStormEra_MVC.Services
 
             return await _context.Lessons
                 .AnyAsync(l => l.LessonId == unlockAfterLessonId && l.ChapterId == chapterId);
+        }
+
+        public async Task<CreateLessonViewModel?> GetLessonForEditAsync(string lessonId, string authorId)
+        {
+            try
+            {
+                Console.WriteLine($"=== GetLessonForEditAsync Called ===");
+                Console.WriteLine($"LessonId: {lessonId}");
+                Console.WriteLine($"AuthorId: {authorId}");
+
+                var lesson = await _context.Lessons
+                    .Include(l => l.Chapter)
+                    .ThenInclude(c => c.Course)
+                    .Where(l => l.LessonId == lessonId && l.Chapter.Course.AuthorId == authorId)
+                    .FirstOrDefaultAsync();
+
+                Console.WriteLine($"Lesson found: {lesson != null}");
+                if (lesson != null)
+                {
+                    Console.WriteLine($"Lesson Name: {lesson.LessonName}");
+                    Console.WriteLine($"Course AuthorId: {lesson.Chapter.Course.AuthorId}");
+                    Console.WriteLine($"Requested AuthorId: {authorId}");
+                }
+
+                if (lesson == null)
+                    return null;
+
+                // Get lesson types
+                var lessonTypes = await GetLessonTypesAsync();
+
+                // Get existing lessons in the same chapter (excluding current lesson)
+                var existingLessons = await _context.Lessons
+                    .Where(l => l.ChapterId == lesson.ChapterId && l.LessonId != lessonId)
+                    .OrderBy(l => l.LessonOrder)
+                    .ToListAsync();
+
+                var viewModel = new CreateLessonViewModel
+                {
+                    ChapterId = lesson.ChapterId,
+                    CourseId = lesson.Chapter.CourseId,
+                    LessonName = lesson.LessonName,
+                    Description = lesson.LessonDescription,
+                    Content = lesson.LessonContent ?? string.Empty,
+                    LessonTypeId = lesson.LessonTypeId ?? 1,
+                    Order = lesson.LessonOrder,
+                    IsLocked = lesson.IsLocked ?? false,
+                    UnlockAfterLessonId = lesson.UnlockAfterLessonId,
+                    IsMandatory = lesson.IsMandatory ?? true,
+                    RequiresQuizPass = lesson.RequiresQuizPass ?? false,
+                    MinQuizScore = lesson.MinQuizScore,
+                    MinCompletionPercentage = lesson.MinCompletionPercentage,
+                    MinTimeSpent = lesson.MinTimeSpent,
+                    CourseName = lesson.Chapter.Course.CourseName,
+                    ChapterName = lesson.Chapter.ChapterName,
+                    ChapterOrder = lesson.Chapter.ChapterOrder ?? 1,
+                    LessonTypes = lessonTypes,
+                    ExistingLessons = existingLessons,
+
+                    // Parse lesson content based on lesson type
+                    VideoUrl = lesson.LessonTypeId == 1 ? ExtractVideoUrl(lesson.LessonContent) : null,
+                    TextContent = lesson.LessonTypeId == 2 ? lesson.LessonContent : null,
+                    DocumentDescription = lesson.LessonTypeId == 3 ? lesson.LessonContent : null
+                };
+
+                return viewModel;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetLessonForEditAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<bool> UpdateLessonAsync(string lessonId, CreateLessonViewModel model, string authorId)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    // Get the existing lesson with authorization check
+                    var existingLesson = await _context.Lessons
+                        .Include(l => l.Chapter)
+                        .ThenInclude(c => c.Course)
+                        .Where(l => l.LessonId == lessonId && l.Chapter.Course.AuthorId == authorId)
+                        .FirstOrDefaultAsync();
+
+                    if (existingLesson == null)
+                        return false;
+
+                    var oldOrder = existingLesson.LessonOrder;
+                    var newOrder = model.Order;
+
+                    // Handle lesson order changes
+                    if (oldOrder != newOrder)
+                    {
+                        await HandleLessonOrderChangeAsync(existingLesson.ChapterId, lessonId, oldOrder, newOrder);
+                    }
+
+                    // Update lesson properties
+                    existingLesson.LessonName = model.LessonName;
+                    existingLesson.LessonDescription = model.Description;
+                    existingLesson.LessonTypeId = model.LessonTypeId;
+                    existingLesson.LessonOrder = model.Order;
+                    existingLesson.IsLocked = model.IsLocked;
+                    existingLesson.UnlockAfterLessonId = string.IsNullOrEmpty(model.UnlockAfterLessonId) ? null : model.UnlockAfterLessonId;
+                    existingLesson.IsMandatory = model.IsMandatory;
+                    existingLesson.RequiresQuizPass = model.RequiresQuizPass;
+                    existingLesson.MinQuizScore = model.MinQuizScore;
+                    existingLesson.MinCompletionPercentage = model.MinCompletionPercentage;
+                    existingLesson.MinTimeSpent = model.MinTimeSpent;
+                    existingLesson.LessonUpdatedAt = DateTime.Now;
+
+                    // Update lesson content based on lesson type
+                    existingLesson.LessonContent = ProcessLessonContent(model);
+
+                    _context.Lessons.Update(existingLesson);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in UpdateLessonAsync: {ex.Message}");
+                    await transaction.RollbackAsync();
+                    return false;
+                }
+            });
+        }
+
+        public async Task<bool> IsDuplicateLessonNameForEditAsync(string lessonName, string chapterId, string currentLessonId)
+        {
+            return await _context.Lessons
+                .AnyAsync(l => l.LessonName.ToLower().Trim() == lessonName.ToLower().Trim()
+                              && l.ChapterId == chapterId
+                              && l.LessonId != currentLessonId);
+        }
+
+        private async Task HandleLessonOrderChangeAsync(string chapterId, string lessonId, int oldOrder, int newOrder)
+        {
+            if (oldOrder < newOrder)
+            {
+                // Moving lesson down: decrease order of lessons between old and new position
+                var lessonsToUpdate = await _context.Lessons
+                    .Where(l => l.ChapterId == chapterId
+                               && l.LessonId != lessonId
+                               && l.LessonOrder > oldOrder
+                               && l.LessonOrder <= newOrder)
+                    .ToListAsync();
+
+                foreach (var lesson in lessonsToUpdate)
+                {
+                    lesson.LessonOrder--;
+                    lesson.LessonUpdatedAt = DateTime.Now;
+                }
+            }
+            else if (oldOrder > newOrder)
+            {
+                // Moving lesson up: increase order of lessons between new and old position
+                var lessonsToUpdate = await _context.Lessons
+                    .Where(l => l.ChapterId == chapterId
+                               && l.LessonId != lessonId
+                               && l.LessonOrder >= newOrder
+                               && l.LessonOrder < oldOrder)
+                    .ToListAsync();
+
+                foreach (var lesson in lessonsToUpdate)
+                {
+                    lesson.LessonOrder++;
+                    lesson.LessonUpdatedAt = DateTime.Now;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private string ProcessLessonContent(CreateLessonViewModel model)
+        {
+            return model.LessonTypeId switch
+            {
+                1 => model.VideoUrl ?? string.Empty, // Video lesson
+                2 => model.TextContent ?? string.Empty, // Text lesson
+                3 => model.DocumentDescription ?? string.Empty, // Document lesson
+                _ => model.Content
+            };
+        }
+
+        private string? ExtractVideoUrl(string? lessonContent)
+        {
+            // For video lessons, the content is typically just the URL
+            // You might need to adjust this based on how video content is stored
+            return lessonContent;
         }
     }
 }

@@ -1,4 +1,5 @@
 using BrainStormEra_MVC.Models;
+using BrainStormEra_MVC.Models.ViewModels;
 
 namespace BrainStormEra_MVC.Services.Interfaces
 {
@@ -13,5 +14,8 @@ namespace BrainStormEra_MVC.Services.Interfaces
         Task<bool> UpdateLessonOrdersAsync(string chapterId, int insertOrder);
         Task<IEnumerable<Lesson>> GetLessonsInChapterAsync(string chapterId);
         Task<bool> ValidateUnlockAfterLessonAsync(string chapterId, string? unlockAfterLessonId);
+        Task<CreateLessonViewModel?> GetLessonForEditAsync(string lessonId, string authorId);
+        Task<bool> UpdateLessonAsync(string lessonId, CreateLessonViewModel model, string authorId);
+        Task<bool> IsDuplicateLessonNameForEditAsync(string lessonName, string chapterId, string currentLessonId);
     }
 }

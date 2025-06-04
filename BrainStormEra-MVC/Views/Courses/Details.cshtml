@@ -495,6 +495,17 @@
                                                                                 <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
                                                                                 @lesson.LessonType
                                                                             </span>
+                                                                            @if (ViewBag.IsAuthor == true)
+                                                                            {
+                                                                                <div class="lesson-actions">
+                                                                                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-lesson-btn" 
+                                                                                            data-lesson-id="@lesson.LessonId" 
+                                                                                            data-lesson-name="@lesson.LessonName"
+                                                                                            title="Edit Lesson">
+                                                                                        <i class="fas fa-edit"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            }
                                                                             @if (lesson.IsLocked)
                                                                             {
                                                                                 <i class="fas fa-lock lock-icon"></i>
@@ -797,6 +808,16 @@
                 button.addEventListener('click', function() {
                     const chapterId = this.getAttribute('data-chapter-id');
                     const editUrl = '@Url.Action("EditChapter", "Chapter")' + '/' + chapterId;
+                    window.location.href = editUrl;
+                });
+            });
+
+            // Edit Lesson functionality
+            const editLessonButtons = document.querySelectorAll('.edit-lesson-btn');
+            editLessonButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const lessonId = this.getAttribute('data-lesson-id');
+                    const editUrl = '@Url.Action("EditLesson", "Lesson")' + '/' + lessonId;
                     window.location.href = editUrl;
                 });
             });

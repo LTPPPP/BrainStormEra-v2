@@ -710,5 +710,198 @@ namespace BrainStormEra_MVC.Controllers
             model.LessonTypes = await _lessonService.GetLessonTypesAsync();
             model.ExistingLessons = (await _lessonService.GetLessonsInChapterAsync(model.ChapterId)).ToList();
         }
+
+        // Edit Lesson Methods
+        [HttpGet]
+        public async Task<IActionResult> EditLesson(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest("Lesson ID is required");
+            }
+
+            var userId = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var viewModel = await _lessonService.GetLessonForEditAsync(id, userId);
+            if (viewModel == null)
+            {
+                return NotFound("Lesson not found or you don't have permission to edit it");
+            }
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditLesson(string id, CreateLessonViewModel model)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest("Lesson ID is required");
+            }
+
+            var userId = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Invalid request data.";
+                return RedirectToAction("EditLesson", new { id });
+            }
+
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    // Additional validations
+                    var validationErrors = await ValidateEditLessonModel(model, id);
+
+                    if (validationErrors.Count == 0)
+                    {
+                        // Update lesson content based on lesson type
+                        await ProcessEditLessonContent(model);
+
+                        var result = await _lessonService.UpdateLessonAsync(id, model, userId);
+
+                        if (result)
+                        {
+                            TempData["SuccessMessage"] = $"Lesson '{model.LessonName}' has been updated successfully!";
+
+                            var chapter = await _lessonService.GetChapterByIdAsync(model.ChapterId);
+                            return RedirectToAction("Details", "Course", new { id = chapter?.CourseId, tab = "curriculum" });
+                        }
+                        else
+                        {
+                            TempData["ErrorMessage"] = "An error occurred while updating the lesson. Please try again.";
+                        }
+                    }
+                    else
+                    {
+                        foreach (var error in validationErrors)
+                        {
+                            ModelState.AddModelError(error.Key, error.Value);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception occurred while updating lesson {LessonId}", id);
+                TempData["ErrorMessage"] = "An unexpected error occurred while updating the lesson. Please try again.";
+            }
+
+            // Reload data and return view
+            await ReloadViewModelData(model);
+            return View(model);
+        }
+
+        private async Task<Dictionary<string, string>> ValidateEditLessonModel(CreateLessonViewModel model, string currentLessonId)
+        {
+            var errors = new Dictionary<string, string>();
+
+            // Check for duplicate lesson name (excluding current lesson)
+            if (await _lessonService.IsDuplicateLessonNameForEditAsync(model.LessonName, model.ChapterId, currentLessonId))
+            {
+                errors.Add("LessonName", "A lesson with this name already exists in this chapter.");
+            }
+
+            // Validate content based on lesson type (reuse existing validation logic)
+            switch (model.LessonTypeId)
+            {
+                case 1: // Video lesson type
+                    if (string.IsNullOrEmpty(model.VideoUrl) && (model.VideoFile == null || model.VideoFile.Length == 0))
+                    {
+                        errors.Add("Video", "Please provide either a video URL or upload a video file.");
+                    }
+                    if (!string.IsNullOrEmpty(model.VideoUrl) && !IsValidVideoUrl(model.VideoUrl))
+                    {
+                        errors.Add("VideoUrl", "Please enter a valid video URL (YouTube, Vimeo, etc.).");
+                    }
+                    if (model.VideoFile != null && model.VideoFile.Length > 100 * 1024 * 1024) // 100MB
+                    {
+                        errors.Add("VideoFile", "Video file size must not exceed 100MB.");
+                    }
+                    break;
+                case 2: // Text lesson type
+                    if (string.IsNullOrEmpty(model.TextContent))
+                    {
+                        errors.Add("TextContent", "Text content is required for text lessons.");
+                    }
+                    break;
+                case 3: // Document lesson type
+                    // For edit, documents are optional (existing ones might be kept)
+                    if (model.DocumentFiles != null)
+                    {
+                        foreach (var file in model.DocumentFiles)
+                        {
+                            if (file.Length > 10 * 1024 * 1024) // 10MB
+                            {
+                                errors.Add("DocumentFiles", $"Document file '{file.FileName}' exceeds 10MB size limit.");
+                                break;
+                            }
+                        }
+                    }
+                    break;
+            }
+
+            // Validate unlock after lesson if specified
+            if (!string.IsNullOrEmpty(model.UnlockAfterLessonId))
+            {
+                if (!await _lessonService.ValidateUnlockAfterLessonAsync(model.ChapterId, model.UnlockAfterLessonId))
+                {
+                    errors.Add("UnlockAfterLessonId", "The specified unlock lesson does not exist in this chapter.");
+                }
+            }
+
+            // Validate quiz requirements
+            if (model.RequiresQuizPass && (!model.MinQuizScore.HasValue || model.MinQuizScore < 0 || model.MinQuizScore > 100))
+            {
+                errors.Add("MinQuizScore", "Minimum quiz score must be between 0 and 100 when quiz pass is required.");
+            }
+
+            // Validate completion percentage
+            if (model.MinCompletionPercentage.HasValue && (model.MinCompletionPercentage < 0 || model.MinCompletionPercentage > 100))
+            {
+                errors.Add("MinCompletionPercentage", "Minimum completion percentage must be between 0 and 100.");
+            }
+
+            // Validate lesson order
+            if (model.Order <= 0)
+            {
+                errors.Add("Order", "Lesson order must be a positive number.");
+            }
+
+            return errors;
+        }
+
+        private async Task ProcessEditLessonContent(CreateLessonViewModel model)
+        {
+            // Process content based on lesson type, similar to create but for editing
+            switch (model.LessonTypeId)
+            {
+                case 1: // Video lesson
+                    if (model.VideoFile != null && model.VideoFile.Length > 0)
+                    {
+                        // Handle new video file upload
+                        await ProcessVideoContent(model);
+                    }
+                    break;
+                case 3: // Document lesson
+                    if (model.DocumentFiles != null && model.DocumentFiles.Any(f => f.Length > 0))
+                    {
+                        // Handle new document uploads
+                        await ProcessDocumentContent(model);
+                    }
+                    break;
+                    // Text lessons don't need special file processing
+            }
+        }
     }
 }

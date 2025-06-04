@@ -1,0 +1,612 @@
+@model CreateLessonViewModel
+@{
+    ViewData["Title"] = "Edit Lesson";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="Edit lesson for your course on BrainStormEra">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
+    <link rel="stylesheet" href="~/css/pages/Lesson/lesson-types.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1 class="mb-3">
+                        <i class="fas fa-edit me-3"></i>
+                        Edit Lesson
+                    </h1>
+                    <p class="lead mb-0">Update content for your course: <strong>@Model.CourseName</strong></p>
+                    <div class="mt-4">
+                        <span class="badge bg-light text-dark fs-6 me-3">
+                            <i class="fas fa-clock me-1"></i> Quick updates
+                        </span>
+                        <span class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-book me-1"></i> Chapter: @Model.ChapterName
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="create-course-container">
+        <form asp-action="EditLesson" method="post" enctype="multipart/form-data" id="editLessonForm">
+            @Html.AntiForgeryToken()
+            <input asp-for="ChapterId" type="hidden" />
+            <input asp-for="CourseId" type="hidden" />
+            <input asp-for="ChapterName" type="hidden" />
+            <input asp-for="CourseName" type="hidden" />
+
+            <!-- Lesson Information Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Lesson Information
+                </h3>
+                <p class="text-muted mb-4">Update details about your lesson and how it fits into your chapter</p>
+
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="mb-4">
+                            <label asp-for="LessonName" class="form-label">
+                                <i class="fas fa-book me-2"></i>Lesson Name *
+                            </label>
+                            <input asp-for="LessonName" class="form-control"
+                                placeholder="e.g., Introduction to Variables and Data Types" maxlength="200" />
+                            <span asp-validation-for="LessonName" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="mb-4">
+                            <label asp-for="Order" class="form-label">
+                                <i class="fas fa-sort-numeric-up me-2"></i>Lesson Order *
+                            </label>
+                            <input asp-for="Order" class="form-control" type="number" min="1" />
+                            <span asp-validation-for="Order" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lesson Type Selection -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="mb-4">
+                            <label asp-for="LessonTypeId" class="form-label">
+                                <i class="fas fa-layer-group me-2"></i>Lesson Type *
+                            </label>
+                            <select asp-for="LessonTypeId" class="form-select"
+                                asp-items="@(new SelectList(Model.LessonTypes, "LessonTypeId", "LessonTypeName"))">
+                                <option value="">Select lesson type...</option>
+                            </select>
+                            <span asp-validation-for="LessonTypeId" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Changing lesson type may require updating content
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label">
+                                <i class="fas fa-align-left me-2"></i>Lesson Description
+                            </label>
+                            <textarea asp-for="Description" class="form-control" rows="3"
+                                placeholder="Brief description of what students will learn (optional)"
+                                maxlength="1000"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Help students understand what they'll learn (optional but recommended)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Content Sections Based on Lesson Type -->
+
+            <!-- Option 1: Video Content Section -->
+            <div id="videoContentSection" class="lesson-type-section" style="display: none;">
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-video me-2 text-primary"></i>Video Content
+                    </h3>
+                    <p class="text-muted mb-4">Update your video content through URL or file upload</p>
+
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label asp-for="VideoUrl" class="form-label">
+                                    <i class="fas fa-link me-2"></i>Video URL (YouTube or other)
+                                </label>
+                                <input asp-for="VideoUrl" class="form-control"
+                                    placeholder="https://www.youtube.com/watch?v=..." />
+                                <span asp-validation-for="VideoUrl" class="text-danger"></span>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Embed video from YouTube, Vimeo, or provide direct URL
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label asp-for="VideoFile" class="form-label">
+                                    <i class="fas fa-upload me-2"></i>Upload New Video File
+                                </label>
+                                <input asp-for="VideoFile" class="form-control" type="file" accept="video/*" />
+                                <span asp-validation-for="VideoFile" class="text-danger"></span>
+                                <div class="form-text">
+                                    <i class="fas fa-file-video me-1"></i>
+                                    Max size: 100MB. Supports MP4, AVI, MOV formats
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Content" class="form-label">
+                            <i class="fas fa-file-alt me-2"></i>Video Description *
+                        </label>
+                        <textarea asp-for="Content" class="form-control" rows="6"
+                            placeholder="Describe what students will learn from this video" maxlength="5000"></textarea>
+                        <span asp-validation-for="Content" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Option 2: Text Content Section -->
+            <div id="textContentSection" class="lesson-type-section" style="display: none;">
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-edit me-2 text-success"></i>Text Content
+                    </h3>
+                    <p class="text-muted mb-4">Update comprehensive text-based learning content</p>
+
+                    <div class="mb-4">
+                        <label asp-for="TextContent" class="form-label">
+                            <i class="fas fa-paragraph me-2"></i>Rich Text Content *
+                        </label>
+                        <textarea asp-for="TextContent" class="form-control" rows="12"
+                            placeholder="Enter your lesson content here. You can use formatting, lists, and detailed explanations..."
+                            maxlength="10000"></textarea>
+                        <span asp-validation-for="TextContent" class="text-danger"></span>
+                        <div class="form-text">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Write comprehensive content with examples, explanations, and step-by-step instructions
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Content" class="form-label">
+                            <i class="fas fa-file-alt me-2"></i>Additional Notes
+                        </label>
+                        <textarea asp-for="Content" class="form-control" rows="4"
+                            placeholder="Any additional instructions or notes for students (optional)"
+                            maxlength="5000"></textarea>
+                        <span asp-validation-for="Content" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Option 3: Document Content Section -->
+            <div id="documentContentSection" class="lesson-type-section" style="display: none;">
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-file-upload me-2 text-info"></i>Document Content
+                    </h3>
+                    <p class="text-muted mb-4">Update interactive materials and documents for hands-on learning</p>
+
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label asp-for="DocumentFiles" class="form-label">
+                                    <i class="fas fa-paperclip me-2"></i>Upload Additional Documents
+                                </label>
+                                <input asp-for="DocumentFiles" class="form-control" type="file" multiple
+                                    accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip" />
+                                <span asp-validation-for="DocumentFiles" class="text-danger"></span>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Upload new files to add to existing content. Max 10MB per file
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label asp-for="DocumentDescription" class="form-label">
+                                    <i class="fas fa-comment-alt me-2"></i>Document Description
+                                </label>
+                                <textarea asp-for="DocumentDescription" class="form-control" rows="4"
+                                    placeholder="Describe the purpose and usage of the uploaded documents"
+                                    maxlength="1000"></textarea>
+                                <span asp-validation-for="DocumentDescription" class="text-danger"></span>
+                                <div class="form-text">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Help students understand how to use the uploaded materials
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Content" class="form-label">
+                            <i class="fas fa-file-alt me-2"></i>Lesson Instructions *
+                        </label>
+                        <textarea asp-for="Content" class="form-control" rows="6"
+                            placeholder="Provide instructions on how students should work with the documents"
+                            maxlength="5000"></textarea>
+                        <span asp-validation-for="Content" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Default Content Section (when no lesson type is selected) -->
+            <div id="defaultContentSection" class="lesson-type-section">
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-file-alt me-2"></i>Lesson Content
+                    </h3>
+                    <p class="text-muted mb-4">Update your lesson content</p>
+
+                    <div class="mb-4">
+                        <label asp-for="Content" class="form-label">
+                            <i class="fas fa-file-alt me-2"></i>Lesson Content *
+                        </label>
+                        <textarea asp-for="Content" class="form-control" rows="8"
+                            placeholder="Select a lesson type above to see specific content options" maxlength="5000"
+                            readonly></textarea>
+                        <span asp-validation-for="Content" class="text-danger"></span>
+                        <div class="form-text">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            Please select a lesson type first to enable content input
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- Advanced Settings Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-cog me-2"></i>
+                    Advanced Settings
+                </h3>
+                <p class="text-muted mb-4">Configure lesson access, requirements, and completion criteria</p>
+
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="form-check form-switch custom-cursor-default-hover mb-4"
+                            style="padding-left: 2rem;">
+                            <input asp-for="IsLocked" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsLocked" class="form-check-label">
+                                <i class="fas fa-lock me-2 text-warning"></i>
+                                <strong>Lock Lesson</strong>
+                                <div class="small text-muted mt-1">Students must unlock this lesson through
+                                    prerequisites</div>
+                            </label>
+                        </div>
+
+                        @if (Model.HasExistingLessons)
+                        {
+                            <div class="mb-4" id="unlockAfterSection" style="display: none;">
+                                <label asp-for="UnlockAfterLessonId" class="form-label">
+                                    <i class="fas fa-unlock me-2"></i>Unlock After Lesson
+                                </label>
+                                <select asp-for="UnlockAfterLessonId" class="form-select">
+                                    <option value="">No prerequisite - Available immediately</option>
+                                    @foreach (var lesson in Model.ExistingLessons.OrderBy(l => l.LessonOrder))
+                                    {
+                                        <option value="@lesson.LessonId">Lesson @lesson.LessonOrder: @lesson.LessonName</option>
+                                    }
+                                </select>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Choose which lesson must be completed first (only applies if locked)
+                                </div>
+                            </div>
+                        }
+
+                        <div class="form-check form-switch custom-cursor-default-hover mb-4"
+                            style="padding-left: 2rem;">
+                            <input asp-for="IsMandatory" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsMandatory" class="form-check-label">
+                                <i class="fas fa-exclamation-circle me-2 text-info"></i>
+                                <strong>Mandatory Lesson</strong>
+                                <div class="small text-muted mt-1">Students must complete this lesson to progress</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="form-check form-switch custom-cursor-default-hover mb-4"
+                            style="padding-left: 2rem;">
+                            <input asp-for="RequiresQuizPass" class="form-check-input" type="checkbox" />
+                            <label asp-for="RequiresQuizPass" class="form-check-label">
+                                <i class="fas fa-question-circle me-2 text-success"></i>
+                                <strong>Requires Quiz Pass</strong>
+                                <div class="small text-muted mt-1">Students must pass a quiz to complete this lesson
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="mb-4" id="quizScoreSection" style="display: none;">
+                            <label asp-for="MinQuizScore" class="form-label">
+                                <i class="fas fa-percentage me-2"></i>Minimum Quiz Score (%)
+                            </label>
+                            <input asp-for="MinQuizScore" type="number" class="form-control" min="0" max="100"
+                                placeholder="70" />
+                            <span asp-validation-for="MinQuizScore" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Students must achieve this score to pass the lesson quiz
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="mb-4">
+                            <label asp-for="MinCompletionPercentage" class="form-label">
+                                <i class="fas fa-chart-line me-2"></i>Minimum Completion Percentage (%)
+                            </label>
+                            <input asp-for="MinCompletionPercentage" type="number" class="form-control" min="0"
+                                max="100" placeholder="100" />
+                            <span asp-validation-for="MinCompletionPercentage" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Percentage of lesson content that must be viewed/completed
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="mb-4">
+                            <label asp-for="MinTimeSpent" class="form-label">
+                                <i class="fas fa-clock me-2"></i>Minimum Time Spent (minutes)
+                            </label>
+                            <input asp-for="MinTimeSpent" type="number" class="form-control" min="0" max="9999"
+                                placeholder="0" />
+                            <span asp-validation-for="MinTimeSpent" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Minimum time students must spend on this lesson
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-section">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="@Url.Action("Details", "Course", new { id = Model.CourseId, tab = "curriculum" })"
+                        class="btn btn-outline-secondary" style="font-size: 0.8rem; padding: 0.5rem 1rem;">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Course
+                    </a>
+                    <button type="submit" class="btn btn-primary" style="font-size: 0.8rem; padding: 0.5rem 1rem;">
+                        <i class="fas fa-save me-2"></i>Update Lesson
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Include Footer partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/components/toast-notifications.js"></script>
+    <script src="~/js/components/loader.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Dynamic content section handling
+            const lessonTypeSelect = document.querySelector('#LessonTypeId');
+            const videoContentSection = document.querySelector('#videoContentSection');
+            const textContentSection = document.querySelector('#textContentSection');
+            const documentContentSection = document.querySelector('#documentContentSection');
+            const defaultContentSection = document.querySelector('#defaultContentSection');
+
+            // Function to hide all content sections
+            function hideAllContentSections() {
+                const sections = [videoContentSection, textContentSection, documentContentSection, defaultContentSection];
+                sections.forEach(section => {
+                    if (section) {
+                        section.style.display = 'none';
+                        section.style.opacity = '0';
+                    }
+                });
+            }
+
+            // Function to show a specific section with animation
+            function showContentSection(section) {
+                if (section) {
+                    section.style.display = 'block';
+                    setTimeout(() => {
+                        section.style.transition = 'opacity 0.3s ease';
+                        section.style.opacity = '1';
+                    }, 10);
+                }
+            }
+
+            // Handle lesson type change
+            if (lessonTypeSelect) {
+                lessonTypeSelect.addEventListener('change', function () {
+                    const selectedValue = this.value;
+                    const selectedOption = this.options[this.selectedIndex];
+                    const typeName = selectedOption.text;
+
+                    hideAllContentSections();
+
+                    // Show appropriate section based on lesson type
+                    if (typeName) {
+                        const lowerTypeName = typeName.toLowerCase();
+                        if (lowerTypeName.includes('video') || lowerTypeName.includes('multimedia')) {
+                            showContentSection(videoContentSection);
+                        } else if (lowerTypeName.includes('text') || lowerTypeName.includes('reading') || lowerTypeName.includes('article')) {
+                            showContentSection(textContentSection);
+                        } else if (lowerTypeName.includes('document') || lowerTypeName.includes('file') || lowerTypeName.includes('pdf') || lowerTypeName.includes('interactive')) {
+                            showContentSection(documentContentSection);
+                        } else {
+                            showContentSection(defaultContentSection);
+                        }
+                    } else {
+                        showContentSection(defaultContentSection);
+                    }
+                });
+
+                // Initialize with current selection
+                lessonTypeSelect.dispatchEvent(new Event('change'));
+            }            // Toggle unlock after section based on isLocked checkbox
+            const isLockedCheckbox = document.querySelector('input[name="IsLocked"]');
+            const unlockAfterSection = document.getElementById('unlockAfterSection');
+            const requiresQuizCheckbox = document.querySelector('input[name="RequiresQuizPass"]');
+            const quizScoreSection = document.getElementById('quizScoreSection');
+
+            // Toggle unlock after lesson section
+            if (isLockedCheckbox && unlockAfterSection) {
+                function toggleUnlockSection() {
+                    if (isLockedCheckbox.checked) {
+                        unlockAfterSection.style.display = 'block';
+                        unlockAfterSection.style.animation = 'fadeIn 0.3s ease';
+                    } else {
+                        unlockAfterSection.style.display = 'none';
+                        const unlockSelect = unlockAfterSection.querySelector('select');
+                        if (unlockSelect) unlockSelect.value = '';
+                    }
+                }
+
+                isLockedCheckbox.addEventListener('change', toggleUnlockSection);
+                // Initialize on page load
+                toggleUnlockSection();
+            }
+
+            // Toggle quiz score section
+            if (requiresQuizCheckbox && quizScoreSection) {
+                function toggleQuizScoreSection() {
+                    if (requiresQuizCheckbox.checked) {
+                        quizScoreSection.style.display = 'block';
+                        quizScoreSection.style.animation = 'fadeIn 0.3s ease';
+                        const minQuizScoreInput = document.querySelector('input[name="MinQuizScore"]');
+                        if (minQuizScoreInput && !minQuizScoreInput.value) {
+                            minQuizScoreInput.value = '70';
+                        }
+                    } else {
+                        quizScoreSection.style.display = 'none';
+                        const minQuizScoreInput = document.querySelector('input[name="MinQuizScore"]');
+                        if (minQuizScoreInput) minQuizScoreInput.value = '';
+                    }
+                }
+
+                requiresQuizCheckbox.addEventListener('change', toggleQuizScoreSection);
+                // Initialize on page load
+                toggleQuizScoreSection();
+            }
+
+            // Video URL validation for YouTube and other video platforms
+            const videoUrlInput = document.querySelector('#VideoUrl');
+            if (videoUrlInput) {
+                videoUrlInput.addEventListener('blur', function () {
+                    const url = this.value.trim();
+                    if (url) {
+                        const videoUrlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|vimeo\.com|dailymotion\.com)/i;
+                        if (!videoUrlPattern.test(url)) {
+                            this.classList.add('is-invalid');
+                        } else {
+                            this.classList.remove('is-invalid');
+                            this.classList.add('is-valid');
+                        }
+                    }
+                });
+            }
+
+            // File size validation
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => {
+                input.addEventListener('change', function () {
+                    const files = this.files;
+                    for (let file of files) {
+                        const maxSize = this.id === 'VideoFile' ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB for video, 10MB for documents
+                        if (file.size > maxSize) {
+                            alert(`File "${file.name}" is too large. Maximum allowed size is ${maxSize / (1024 * 1024)}MB.`);
+                            this.value = '';
+                            break;
+                        }
+                    }
+                });
+            });
+
+            // Form submission validation
+            const form = document.getElementById('editLessonForm');
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    const lessonTypeValue = lessonTypeSelect ? lessonTypeSelect.value : '';
+
+                    if (!lessonTypeValue) {
+                        e.preventDefault();
+                        alert('Please select a lesson type.');
+                        lessonTypeSelect.focus();
+                        return false;
+                    }
+
+                    // Additional validation can be added here
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
