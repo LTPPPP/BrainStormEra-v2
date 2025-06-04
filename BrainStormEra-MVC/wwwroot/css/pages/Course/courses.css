@@ -37,7 +37,7 @@
     var(--primary-dark) 100%
   );
   color: var(--text-light);
-  padding: 4rem 0;
+  padding: 2rem 0;
   margin-bottom: 2rem;
   overflow: hidden;
 }
@@ -102,11 +102,6 @@
 .stat-item i {
   font-size: 1.2rem;
   color: rgba(255, 255, 255, 0.9);
-}
-
-/* Main Content */
-.main-content {
-  padding: 2rem 0;
 }
 
 /* Filters Section */

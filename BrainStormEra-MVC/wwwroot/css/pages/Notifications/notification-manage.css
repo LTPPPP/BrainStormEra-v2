@@ -36,7 +36,6 @@
 .main-content {
   position: relative;
   z-index: 1;
-  padding-top: 6rem;
   padding-bottom: 4rem;
 }
 
@@ -449,7 +448,6 @@ textarea.form-control {
 /* Responsive Design */
 @media (max-width: 768px) {
   .main-content {
-    padding-top: 4rem;
     padding-bottom: 2rem;
   }
 
