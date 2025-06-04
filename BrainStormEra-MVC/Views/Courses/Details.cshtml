@@ -272,12 +272,14 @@
 
                                 @if (ViewBag.IsAuthor == true)
                                 {
-                                    <div class="alert alert-info text-center">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        <strong>You are the instructor of this course</strong>
-                                        <div class="small mt-2">
-                                            <a href="@Url.Action("EditCourse", "Course", new { id = Model.CourseId })" class="btn btn-outline-primary btn-sm me-2">
-                                                <i class="fas fa-edit me-1"></i>Edit Course
+                                    <div class="instructor-notification">
+                                        <div class="instructor-notification-icon">
+                                            <i class="fas fa-crown"></i>
+                                        </div>
+                                        <h3 class="instructor-notification-title">You are the instructor of this course</h3>
+                                        <div class="instructor-notification-actions">
+                                            <a href="@Url.Action("EditCourse", "Course", new { id = Model.CourseId })" class="instructor-action-btn">
+                                                <i class="fas fa-edit"></i>Edit Course
                                             </a>
                                         </div>
                                     </div>
