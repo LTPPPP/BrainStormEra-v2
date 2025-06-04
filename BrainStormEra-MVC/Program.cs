@@ -52,6 +52,11 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAvatarService, BrainStormEra_MVC.Services.AvatarService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseImageService, BrainStormEra_MVC.Services.CourseImageService>();
             builder.Services.AddSingleton<BrainStormEra_MVC.Services.Interfaces.ICacheService, BrainStormEra_MVC.Services.CacheService>();
+
+            // Add Safe Delete Service for secure delete operations
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ISafeDeleteService, BrainStormEra_MVC.Services.SafeDeleteService>();
+
+            // Seed services
             builder.Services.AddScoped<BrainStormEra_MVC.Services.CategorySeedService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.StatusSeedService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.LessonTypeSeedService>();

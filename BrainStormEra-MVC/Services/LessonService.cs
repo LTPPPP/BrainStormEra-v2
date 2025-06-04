@@ -352,13 +352,22 @@ namespace BrainStormEra_MVC.Services
             return lessonContent;
         }
 
+        /// <summary>
+        /// Delete lesson - performs smart delete (soft/hard based on user progress)
+        /// </summary>
+        /// <param name="lessonId">Lesson ID to delete</param>
+        /// <param name="authorId">Author ID for authorization</param>
+        /// <returns>Success result</returns>
         public async Task<bool> DeleteLessonAsync(string lessonId, string authorId)
         {
             try
             {
                 var lesson = await _context.Lessons
                     .Include(l => l.Chapter)
-                    .ThenInclude(c => c.Course)
+                        .ThenInclude(c => c.Course)
+                    .Include(l => l.UserProgresses)
+                    .Include(l => l.Quizzes)
+                        .ThenInclude(q => q.QuizAttempts)
                     .FirstOrDefaultAsync(l => l.LessonId == lessonId && l.Chapter.Course.AuthorId == authorId);
 
                 if (lesson == null)
@@ -366,14 +375,36 @@ namespace BrainStormEra_MVC.Services
                     return false;
                 }
 
-                // Remove the lesson
-                _context.Lessons.Remove(lesson);
-                await _context.SaveChangesAsync();
+                // Check if lesson has user progress or quiz attempts
+                var hasUserProgress = lesson.UserProgresses.Any();
+                var hasQuizAttempts = lesson.Quizzes.Any(q => q.QuizAttempts.Any());
+                var isDependency = await _context.Lessons.AnyAsync(l => l.UnlockAfterLessonId == lessonId);
+
+                if (hasUserProgress || hasQuizAttempts || isDependency)
+                {
+                    // Soft delete - set status to Archived
+                    lesson.LessonStatus = 4; // Archived
+                    lesson.LessonUpdatedAt = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+
+                    // Log the operation
+                    Console.WriteLine($"Lesson {lessonId} soft deleted (archived) due to user progress/dependencies");
+                }
+                else
+                {
+                    // Hard delete - remove completely as there's no user data to preserve
+                    _context.Lessons.Remove(lesson);
+                    await _context.SaveChangesAsync();
+
+                    // Log the operation
+                    Console.WriteLine($"Lesson {lessonId} hard deleted - no user progress or dependencies");
+                }
 
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Error deleting lesson {lessonId}: {ex.Message}");
                 return false;
             }
         }
