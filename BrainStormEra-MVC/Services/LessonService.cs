@@ -351,5 +351,31 @@ namespace BrainStormEra_MVC.Services
             // You might need to adjust this based on how video content is stored
             return lessonContent;
         }
+
+        public async Task<bool> DeleteLessonAsync(string lessonId, string authorId)
+        {
+            try
+            {
+                var lesson = await _context.Lessons
+                    .Include(l => l.Chapter)
+                    .ThenInclude(c => c.Course)
+                    .FirstOrDefaultAsync(l => l.LessonId == lessonId && l.Chapter.Course.AuthorId == authorId);
+
+                if (lesson == null)
+                {
+                    return false;
+                }
+
+                // Remove the lesson
+                _context.Lessons.Remove(lesson);
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
     }
 }

@@ -17,5 +17,6 @@ namespace BrainStormEra_MVC.Services.Interfaces
         Task<CreateLessonViewModel?> GetLessonForEditAsync(string lessonId, string authorId);
         Task<bool> UpdateLessonAsync(string lessonId, CreateLessonViewModel model, string authorId);
         Task<bool> IsDuplicateLessonNameForEditAsync(string lessonName, string chapterId, string currentLessonId);
+        Task<bool> DeleteLessonAsync(string lessonId, string authorId);
     }
 }

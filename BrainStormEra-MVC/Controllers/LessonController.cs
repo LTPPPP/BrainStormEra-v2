@@ -903,5 +903,39 @@ namespace BrainStormEra_MVC.Controllers
                     // Text lessons don't need special file processing
             }
         }
+
+        [HttpPost]
+        [Authorize(Roles = "Instructor,instructor")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteLesson(string id, string courseId)
+        {
+            try
+            {
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    TempData["ErrorMessage"] = "User not authenticated";
+                    return RedirectToAction("Details", "Course", new { id = courseId });
+                }
+
+                var success = await _lessonService.DeleteLessonAsync(id, userId);
+                if (success)
+                {
+                    TempData["SuccessMessage"] = "Lesson deleted successfully!";
+                    return RedirectToAction("Details", "Course", new { id = courseId });
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Lesson not found or you are not authorized to delete this lesson.";
+                    return RedirectToAction("Details", "Course", new { id = courseId });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting lesson {LessonId} by user {UserId}", id, User.FindFirst("UserId")?.Value);
+                TempData["ErrorMessage"] = "An error occurred while deleting the lesson.";
+                return RedirectToAction("Details", "Course", new { id = courseId });
+            }
+        }
     }
 }

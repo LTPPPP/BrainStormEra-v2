@@ -504,6 +504,13 @@
                                                                                             title="Edit Lesson">
                                                                                         <i class="fas fa-edit"></i>
                                                                                     </button>
+                                                                                    <button type="button" class="btn btn-sm btn-outline-danger delete-lesson-btn" 
+                                                                                            data-lesson-id="@lesson.LessonId" 
+                                                                                            data-lesson-name="@lesson.LessonName"
+                                                                                            data-lesson-type="@lesson.LessonType"
+                                                                                            title="Delete Lesson">
+                                                                                        <i class="fas fa-trash-alt"></i>
+                                                                                    </button>
                                                                                 </div>
                                                                             }
                                                                             @if (lesson.IsLocked)
@@ -890,6 +897,75 @@
                 confirmBtn.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Delete Chapter';
                 confirmBtn.disabled = false;
             });
+
+            // Delete Lesson functionality
+            const deleteLessonButtons = document.querySelectorAll('.delete-lesson-btn');
+            const deleteLessonModal = new bootstrap.Modal(document.getElementById('deleteLessonModal'));
+            let currentLessonId = null;
+
+            deleteLessonButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    currentLessonId = this.getAttribute('data-lesson-id');
+                    const lessonName = this.getAttribute('data-lesson-name');
+                    const lessonType = this.getAttribute('data-lesson-type');
+
+                    // Update modal content
+                    document.getElementById('deleteLessonName').textContent = lessonName;
+                    document.getElementById('deleteLessonType').textContent = lessonType;
+
+                    // Show modal
+                    deleteLessonModal.show();
+                });
+            });
+
+            // Confirm delete lesson action
+            document.getElementById('confirmDeleteLesson').addEventListener('click', function() {
+                if (!currentLessonId) return;
+
+                // Show loading state
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
+                this.disabled = true;
+
+                // Create form and submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("DeleteLesson", "Lesson")';
+
+                // Add anti-forgery token
+                const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (token) {
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token.value;
+                    form.appendChild(tokenInput);
+                }
+
+                // Add lesson ID
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'id';
+                idInput.value = currentLessonId;
+                form.appendChild(idInput);
+
+                // Add course ID for redirect
+                const courseIdInput = document.createElement('input');
+                courseIdInput.type = 'hidden';
+                courseIdInput.name = 'courseId';
+                courseIdInput.value = '@Model.CourseId';
+                form.appendChild(courseIdInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            });
+
+            // Reset lesson modal when closed
+            document.getElementById('deleteLessonModal').addEventListener('hidden.bs.modal', function() {
+                currentLessonId = null;
+                const confirmBtn = document.getElementById('confirmDeleteLesson');
+                confirmBtn.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Delete Lesson';
+                confirmBtn.disabled = false;
+            });
         });
     </script>
 
@@ -948,6 +1024,46 @@
                     </button>
                     <button type="button" class="btn btn-danger" id="confirmDeleteChapter">
                         <i class="fas fa-trash-alt me-2"></i>Delete Chapter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Lesson Confirmation Modal -->
+    <div class="modal fade" id="deleteLessonModal" tabindex="-1" aria-labelledby="deleteLessonModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteLessonModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Delete Lesson
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning me-2"></i>
+                        <strong>Warning:</strong> This action cannot be undone!
+                    </div>
+                    <p>Are you sure you want to delete the following lesson?</p>
+                    <div class="bg-light p-3 rounded">
+                        <h6 class="mb-1"><strong id="deleteLessonName">Lesson Name</strong></h6>
+                        <small class="text-muted"><span id="deleteLessonType">Video</span> lesson</small>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-danger mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            This lesson and all its content will be permanently deleted.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteLesson">
+                        <i class="fas fa-trash-alt me-2"></i>Delete Lesson
                     </button>
                 </div>
             </div>
