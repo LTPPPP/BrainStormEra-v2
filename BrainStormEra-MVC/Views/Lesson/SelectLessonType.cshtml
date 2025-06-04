@@ -1,0 +1,310 @@
+@model SelectLessonTypeViewModel
+@{
+    ViewData["Title"] = "Select Lesson Type";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="Choose the type of lesson you want to create">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+    
+    <style>
+        .lesson-type-card {
+            border: 2px solid #e0e6ed;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: white;
+            height: 100%;
+        }
+        
+        .lesson-type-card:hover {
+            border-color: #007bff;
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .lesson-type-card.selected {
+            border-color: #007bff;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.2);
+        }
+        
+        .lesson-type-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .lesson-type-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+        
+        .lesson-type-description {
+            color: #6c757d;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        
+        .lesson-type-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .lesson-type-features li {
+            padding: 0.25rem 0;
+            color: #495057;
+        }
+        
+        .lesson-type-features li i {
+            color: #28a745;
+            margin-right: 0.5rem;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4rem 0;
+            margin-bottom: 3rem;
+        }
+        
+        .btn-continue {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            border: none;
+            padding: 12px 2rem;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-continue:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+        
+        .btn-continue:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1 class="mb-3">
+                        <i class="fas fa-layer-group me-3"></i>
+                        Choose Lesson Type
+                    </h1>
+                    <p class="lead mb-0">What type of lesson would you like to create?</p>
+                    <div class="mt-4">
+                        <span class="badge bg-light text-dark fs-6 me-3">
+                            <i class="fas fa-book me-1"></i> Course: @Model.CourseName
+                        </span>
+                        <span class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-bookmark me-1"></i> Chapter: @Model.ChapterName
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <form asp-action="SelectLessonType" method="post" id="selectLessonTypeForm">
+            @Html.AntiForgeryToken()
+            <input asp-for="ChapterId" type="hidden" />
+            <input asp-for="CourseId" type="hidden" />
+            <input asp-for="ChapterName" type="hidden" />
+            <input asp-for="CourseName" type="hidden" />
+            <input asp-for="ChapterOrder" type="hidden" />
+            
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <!-- Validation Summary -->
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger mb-4">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Please correct the following errors:</strong>
+                            <div asp-validation-summary="All" class="mt-2"></div>
+                        </div>
+                    }
+
+                    <div class="row g-4">
+                        <!-- Video Lesson Type -->
+                        <div class="col-lg-4">
+                            <div class="lesson-type-card" data-lesson-type="1">
+                                <div class="text-center">
+                                    <i class="fas fa-video lesson-type-icon text-primary"></i>
+                                    <h3 class="lesson-type-title">Video Lesson</h3>
+                                    <p class="lesson-type-description">
+                                        Create engaging video-based lessons with YouTube links or uploaded video files.
+                                    </p>
+                                    <ul class="lesson-type-features text-start">
+                                        <li><i class="fas fa-check"></i> YouTube integration</li>
+                                        <li><i class="fas fa-check"></i> Video file upload</li>
+                                        <li><i class="fas fa-check"></i> Video descriptions</li>
+                                        <li><i class="fas fa-check"></i> Progress tracking</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Text Lesson Type -->
+                        <div class="col-lg-4">
+                            <div class="lesson-type-card" data-lesson-type="2">
+                                <div class="text-center">
+                                    <i class="fas fa-file-text lesson-type-icon text-success"></i>
+                                    <h3 class="lesson-type-title">Text Lesson</h3>
+                                    <p class="lesson-type-description">
+                                        Create comprehensive text-based lessons with rich formatting and detailed content.
+                                    </p>
+                                    <ul class="lesson-type-features text-start">
+                                        <li><i class="fas fa-check"></i> Rich text editor</li>
+                                        <li><i class="fas fa-check"></i> Detailed explanations</li>
+                                        <li><i class="fas fa-check"></i> Code examples</li>
+                                        <li><i class="fas fa-check"></i> Reading time tracking</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interactive/Document Lesson Type -->
+                        <div class="col-lg-4">
+                            <div class="lesson-type-card" data-lesson-type="3">
+                                <div class="text-center">
+                                    <i class="fas fa-file-pdf lesson-type-icon text-danger"></i>
+                                    <h3 class="lesson-type-title">Interactive Lesson</h3>
+                                    <p class="lesson-type-description">
+                                        Upload documents, PDFs, presentations, and interactive materials for hands-on learning.
+                                    </p>
+                                    <ul class="lesson-type-features text-start">
+                                        <li><i class="fas fa-check"></i> Multiple file uploads</li>
+                                        <li><i class="fas fa-check"></i> PDF documents</li>
+                                        <li><i class="fas fa-check"></i> Presentations</li>
+                                        <li><i class="fas fa-check"></i> Interactive exercises</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden input for selected lesson type -->
+                    <input asp-for="SelectedLessonTypeId" type="hidden" id="selectedLessonTypeInput" />
+                    <span asp-validation-for="SelectedLessonTypeId" class="text-danger"></span>
+
+                    <!-- Action Buttons -->
+                    <div class="text-center mt-5 mb-5">
+                        <a href="@Url.Action("Details", "Course", new { id = Model.CourseId, tab = "curriculum" })" 
+                           class="btn btn-outline-secondary me-3">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Course
+                        </a>
+                        <button type="submit" class="btn btn-continue text-white" id="continueBtn" disabled>
+                            <i class="fas fa-arrow-right me-2"></i>Continue to Create Lesson
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Include Footer partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/components/toast-notifications.js"></script>
+    <script src="~/js/components/loader.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const lessonTypeCards = document.querySelectorAll('.lesson-type-card');
+            const selectedLessonTypeInput = document.getElementById('selectedLessonTypeInput');
+            const continueBtn = document.getElementById('continueBtn');
+            
+            lessonTypeCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    // Remove selected class from all cards
+                    lessonTypeCards.forEach(c => c.classList.remove('selected'));
+                    
+                    // Add selected class to clicked card
+                    this.classList.add('selected');
+                    
+                    // Set the selected lesson type value
+                    const lessonType = this.getAttribute('data-lesson-type');
+                    selectedLessonTypeInput.value = lessonType;
+                    
+                    // Enable continue button
+                    continueBtn.disabled = false;
+                    continueBtn.classList.remove('disabled');
+                });
+            });
+            
+            // Form submission
+            document.getElementById('selectLessonTypeForm').addEventListener('submit', function(e) {
+                if (!selectedLessonTypeInput.value) {
+                    e.preventDefault();
+                    alert('Please select a lesson type before continuing.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

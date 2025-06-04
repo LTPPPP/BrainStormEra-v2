@@ -179,8 +179,12 @@ namespace BrainStormEra_MVC.Services
                 _logger.LogError(ex, "Error updating chapter {ChapterId}", chapterId);
                 return false;
             }
-        }
-
+        }        /// <summary>
+                 /// Delete chapter - performs soft delete by setting status to Archived
+                 /// </summary>
+                 /// <param name="chapterId">Chapter ID to delete</param>
+                 /// <param name="authorId">Author ID for authorization</param>
+                 /// <returns>Success result</returns>
         public async Task<bool> DeleteChapterAsync(string chapterId, string authorId)
         {
             try
@@ -188,6 +192,7 @@ namespace BrainStormEra_MVC.Services
                 var chapter = await _context.Chapters
                     .Include(c => c.Course)
                     .Include(c => c.Lessons)
+                        .ThenInclude(l => l.UserProgresses)
                     .FirstOrDefaultAsync(c => c.ChapterId == chapterId && c.Course.AuthorId == authorId);
 
                 if (chapter == null)
@@ -196,16 +201,42 @@ namespace BrainStormEra_MVC.Services
                     return false;
                 }
 
-                // Remove associated lessons first
-                if (chapter.Lessons.Any())
+                // Check if any lessons in this chapter have user progress
+                var hasUserProgress = chapter.Lessons.Any(l => l.UserProgresses.Any());
+                if (hasUserProgress)
                 {
-                    _context.Lessons.RemoveRange(chapter.Lessons);
+                    _logger.LogInformation("Chapter {ChapterId} has user progress, performing soft delete", chapterId);
+
+                    // Soft delete - set status to Archived
+                    chapter.ChapterStatus = 4; // Archived
+                    chapter.ChapterUpdatedAt = DateTime.UtcNow;
+
+                    // Also archive all lessons in this chapter
+                    foreach (var lesson in chapter.Lessons)
+                    {
+                        lesson.LessonStatus = 4; // Archived
+                        lesson.LessonUpdatedAt = DateTime.UtcNow;
+                    }
+
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Chapter soft deleted (archived) successfully: {ChapterId}", chapterId);
+                }
+                else
+                {
+                    // Hard delete if no user progress
+                    _logger.LogInformation("Chapter {ChapterId} has no user progress, performing hard delete", chapterId);
+
+                    // Remove associated lessons first
+                    if (chapter.Lessons.Any())
+                    {
+                        _context.Lessons.RemoveRange(chapter.Lessons);
+                    }
+
+                    _context.Chapters.Remove(chapter);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Chapter hard deleted successfully: {ChapterId}", chapterId);
                 }
 
-                _context.Chapters.Remove(chapter);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Chapter deleted successfully: {ChapterId}", chapterId);
                 return true;
             }
             catch (Exception ex)

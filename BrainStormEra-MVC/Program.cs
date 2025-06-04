@@ -40,6 +40,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseService, BrainStormEra_MVC.Services.CourseService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseRepository, BrainStormEra_MVC.Services.Repositories.CourseRepository>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IChapterService, BrainStormEra_MVC.Services.ChapterService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ILessonService, BrainStormEra_MVC.Services.LessonService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IEnrollmentService, BrainStormEra_MVC.Services.EnrollmentService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAchievementService, BrainStormEra_MVC.Services.AchievementService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAchievementRepository, BrainStormEra_MVC.Services.Repositories.AchievementRepository>();
@@ -51,8 +52,14 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAvatarService, BrainStormEra_MVC.Services.AvatarService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseImageService, BrainStormEra_MVC.Services.CourseImageService>();
             builder.Services.AddSingleton<BrainStormEra_MVC.Services.Interfaces.ICacheService, BrainStormEra_MVC.Services.CacheService>();
+
+            // Add Safe Delete Service for secure delete operations
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ISafeDeleteService, BrainStormEra_MVC.Services.SafeDeleteService>();
+
+            // Seed services
             builder.Services.AddScoped<BrainStormEra_MVC.Services.CategorySeedService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.StatusSeedService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.LessonTypeSeedService>();
 
             // Add Authentication
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -134,6 +141,10 @@ namespace BrainStormEra_MVC
                         // Seed statuses if they don't exist
                         var statusSeeder = scope.ServiceProvider.GetRequiredService<BrainStormEra_MVC.Services.StatusSeedService>();
                         await statusSeeder.SeedStatusesAsync();
+
+                        // Seed lesson types if they don't exist
+                        var lessonTypeSeeder = scope.ServiceProvider.GetRequiredService<BrainStormEra_MVC.Services.LessonTypeSeedService>();
+                        await lessonTypeSeeder.SeedLessonTypesAsync();
                     }
                 }
             }

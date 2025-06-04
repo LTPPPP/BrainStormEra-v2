@@ -533,7 +533,6 @@
 
 /* Dashboard Container */
 .dashboard-container {
-  padding-top: 60px; /* Add space for the fixed header */
   position: relative;
   z-index: 1;
 }

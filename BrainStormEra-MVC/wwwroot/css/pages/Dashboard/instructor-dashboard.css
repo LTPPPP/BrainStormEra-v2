@@ -3,7 +3,6 @@
   min-height: 100vh;
   background: #ffffff;
   position: relative;
-  padding-top: 80px; /* Add padding to account for fixed header */
 }
 
 .welcome-section {

@@ -11,7 +11,8 @@ INSERT INTO status (status_id, status_name) VALUES
 INSERT INTO lesson_type (lesson_type_id, lesson_type_name) VALUES
 (1, N'Video'),
 (2, N'Text'),
-(3, N'Interactive');
+(3, N'File'),
+(4, N'Dicuss');
 
 -- Payment method data
 INSERT INTO payment_method (payment_method_id, method_name, is_active) VALUES

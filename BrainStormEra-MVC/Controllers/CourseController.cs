@@ -46,7 +46,7 @@ namespace BrainStormEra_MVC.Controllers
             }
         }
 
-        public async Task<IActionResult> Details(string id)
+        public async Task<IActionResult> Details(string id, string? tab = null)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -76,6 +76,9 @@ namespace BrainStormEra_MVC.Controllers
                     ViewBag.IsAuthor = viewModel.AuthorId == currentUserId;
                     ViewBag.CurrentUserId = currentUserId;
                 }
+
+                // Pass the tab parameter to the view for automatic navigation
+                ViewBag.ActiveTab = tab;
 
                 viewModel.CanEnroll = !viewModel.IsEnrolled;
                 return View("~/Views/Courses/Details.cshtml", viewModel);

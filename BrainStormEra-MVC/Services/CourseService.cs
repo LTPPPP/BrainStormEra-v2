@@ -608,6 +608,12 @@ namespace BrainStormEra_MVC.Services
             }
         }
 
+        /// <summary>
+        /// Delete course - performs soft delete by setting status to Archived
+        /// </summary>
+        /// <param name="courseId">Course ID to delete</param>
+        /// <param name="authorId">Author ID for authorization</param>
+        /// <returns>Success result</returns>
         public async Task<bool> DeleteCourseAsync(string courseId, string authorId)
         {
             try
@@ -625,36 +631,34 @@ namespace BrainStormEra_MVC.Services
                     return false;
                 }
 
-                // Check if course has enrollments
-                if (course.Enrollments.Any())
+                // Check if course has active enrollments
+                var activeEnrollments = course.Enrollments.Where(e => e.EnrollmentStatus != 4).Count(); // Not Archived
+                if (activeEnrollments > 0)
                 {
-                    _logger.LogWarning("Cannot delete course {CourseId} as it has enrolled students", courseId);
+                    _logger.LogWarning("Cannot delete course {CourseId} as it has {Count} active enrollment(s)", courseId, activeEnrollments);
                     return false;
                 }
 
-                // Remove related entities
-                // Remove lessons from chapters
-                var allLessons = course.Chapters.SelectMany(ch => ch.Lessons).ToList();
-                if (allLessons.Any())
+                // Perform soft delete by setting status to Archived (4)
+                course.CourseStatus = 4; // Archived
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                // Also archive related chapters and lessons
+                foreach (var chapter in course.Chapters)
                 {
-                    _context.Lessons.RemoveRange(allLessons);
+                    chapter.ChapterStatus = 4; // Archived
+                    chapter.ChapterUpdatedAt = DateTime.UtcNow;
+
+                    foreach (var lesson in chapter.Lessons)
+                    {
+                        lesson.LessonStatus = 4; // Archived
+                        lesson.LessonUpdatedAt = DateTime.UtcNow;
+                    }
                 }
-
-                // Remove chapters
-                if (course.Chapters.Any())
-                {
-                    _context.Chapters.RemoveRange(course.Chapters);
-                }
-
-                // Clear course-category relationships
-                course.CourseCategories.Clear();
-
-                // Remove the course
-                _context.Courses.Remove(course);
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Course deleted successfully: {CourseId}", courseId);
+                _logger.LogInformation("Course soft deleted (archived) successfully: {CourseId}", courseId);
                 return true;
             }
             catch (Exception ex)

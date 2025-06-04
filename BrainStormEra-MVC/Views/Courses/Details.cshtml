@@ -272,12 +272,14 @@
 
                                 @if (ViewBag.IsAuthor == true)
                                 {
-                                    <div class="alert alert-info text-center">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        <strong>You are the instructor of this course</strong>
-                                        <div class="small mt-2">
-                                            <a href="@Url.Action("EditCourse", "Course", new { id = Model.CourseId })" class="btn btn-outline-primary btn-sm me-2">
-                                                <i class="fas fa-edit me-1"></i>Edit Course
+                                    <div class="instructor-notification">
+                                        <div class="instructor-notification-icon">
+                                            <i class="fas fa-crown"></i>
+                                        </div>
+                                        <h3 class="instructor-notification-title">You are the instructor of this course</h3>
+                                        <div class="instructor-notification-actions">
+                                            <a href="@Url.Action("EditCourse", "Course", new { id = Model.CourseId })" class="instructor-action-btn">
+                                                <i class="fas fa-edit"></i>Edit Course
                                             </a>
                                         </div>
                                     </div>
@@ -477,23 +479,67 @@
                                                                 <p>@chapter.ChapterDescription</p>
                                                             </div>
                                                         }
-                                                        @foreach (var lesson in chapter.Lessons.OrderBy(l => l.LessonOrder))
+                                                        @{
+                                                            var orderedLessons = chapter.Lessons.OrderBy(l => l.LessonOrder).ToList();
+                                                            var lessonsByType = orderedLessons.GroupBy(l => l.LessonType).OrderBy(g => g.Key).ToList();
+                                                            bool hasMoreThan5Lessons = orderedLessons.Count > 5;
+                                                        }
+                                                        <div class="lessons-container @(hasMoreThan5Lessons ? "scrollable-lessons" : "")">
+                                                            @foreach (var lessonGroup in lessonsByType)
+                                                            {
+                                                                <div class="mb-2">
+                                                                    @foreach (var lesson in lessonGroup.OrderBy(l => l.LessonOrder))
+                                                                    {
+                                                                        <div class="lecture-item @(lesson.IsLocked ? "locked" : "")">
+                                                                            <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
+                                                                            <span class="lesson-name-truncated">@lesson.LessonName</span>
+                                                                            <span class="lesson-type-with-icon">
+                                                                                <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
+                                                                                @lesson.LessonType
+                                                                            </span>
+                                                                            @if (ViewBag.IsAuthor == true)
+                                                                            {
+                                                                                <div class="lesson-actions">
+                                                                                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-lesson-btn" 
+                                                                                            data-lesson-id="@lesson.LessonId" 
+                                                                                            data-lesson-name="@lesson.LessonName"
+                                                                                            title="Edit Lesson">
+                                                                                        <i class="fas fa-edit"></i>
+                                                                                    </button>
+                                                                                    <button type="button" class="btn btn-sm btn-outline-danger delete-lesson-btn" 
+                                                                                            data-lesson-id="@lesson.LessonId" 
+                                                                                            data-lesson-name="@lesson.LessonName"
+                                                                                            data-lesson-type="@lesson.LessonType"
+                                                                                            title="Delete Lesson">
+                                                                                        <i class="fas fa-trash-alt"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            }
+                                                                            @if (lesson.IsLocked)
+                                                                            {
+                                                                                <i class="fas fa-lock lock-icon"></i>
+                                                                            }
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                        @if (hasMoreThan5Lessons)
                                                         {
-                                                            <div class="lecture-item @(lesson.IsLocked ? "locked" : "")">
-                                                                <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : "fa-file-alt")"></i>
-                                                                <span>@lesson.LessonName</span>
-                                                                @if (lesson.EstimatedDuration > 0)
-                                                                {
-                                                                    <span class="lecture-duration">@lesson.EstimatedDuration min</span>
-                                                                }
-                                                                else
-                                                                {
-                                                                    <span class="lecture-duration">@lesson.LessonType</span>
-                                                                }
-                                                                @if (lesson.IsLocked)
-                                                                {
-                                                                    <i class="fas fa-lock lock-icon"></i>
-                                                                }
+                                                            <div class="lessons-scroll-indicator">
+                                                                <small class="text-muted">
+                                                                    <i class="fas fa-info-circle"></i>
+                                                                    Scroll to see all @orderedLessons.Count lessons
+                                                                </small>
+                                                            </div>
+                                                        }
+                                                        @if (ViewBag.IsAuthor == true)
+                                                        {
+                                                            <div class="lesson-actions mt-3 text-center" style="justify-content: center;">
+                                                                <a href="@Url.Action("SelectLessonType", "Lesson", new { chapterId = chapter.ChapterId })" 
+                                                                   class="btn btn-sm btn-outline-primary">
+                                                                    <i class="fas fa-plus me-2"></i>Create Lesson
+                                                                </a>
                                                             </div>
                                                         }
                                                     </div>
@@ -741,12 +787,46 @@
     <!-- Chapter Management JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Auto-navigate to specified tab if provided
+            @if (!string.IsNullOrEmpty(ViewBag.ActiveTab))
+            {
+                <text>
+                const activeTab = '@ViewBag.ActiveTab';
+                const tabButton = document.querySelector(`[data-bs-target="#${activeTab}"]`);
+                if (tabButton) {
+                    const tab = new bootstrap.Tab(tabButton);
+                    tab.show();
+                    
+                    // Update URL hash without triggering scroll
+                    history.replaceState(null, null, `#${activeTab}`);
+                    
+                    // Scroll to the tab section after a short delay to ensure tab is rendered
+                    setTimeout(() => {
+                        const tabContent = document.getElementById(activeTab);
+                        if (tabContent) {
+                            tabContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }, 300);
+                }
+                </text>
+            }
+
             // Edit Chapter functionality
             const editButtons = document.querySelectorAll('.edit-chapter-btn');
             editButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     const chapterId = this.getAttribute('data-chapter-id');
                     const editUrl = '@Url.Action("EditChapter", "Chapter")' + '/' + chapterId;
+                    window.location.href = editUrl;
+                });
+            });
+
+            // Edit Lesson functionality
+            const editLessonButtons = document.querySelectorAll('.edit-lesson-btn');
+            editLessonButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const lessonId = this.getAttribute('data-lesson-id');
+                    const editUrl = '@Url.Action("EditLesson", "Lesson")' + '/' + lessonId;
                     window.location.href = editUrl;
                 });
             });
@@ -819,6 +899,75 @@
                 confirmBtn.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Delete Chapter';
                 confirmBtn.disabled = false;
             });
+
+            // Delete Lesson functionality
+            const deleteLessonButtons = document.querySelectorAll('.delete-lesson-btn');
+            const deleteLessonModal = new bootstrap.Modal(document.getElementById('deleteLessonModal'));
+            let currentLessonId = null;
+
+            deleteLessonButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    currentLessonId = this.getAttribute('data-lesson-id');
+                    const lessonName = this.getAttribute('data-lesson-name');
+                    const lessonType = this.getAttribute('data-lesson-type');
+
+                    // Update modal content
+                    document.getElementById('deleteLessonName').textContent = lessonName;
+                    document.getElementById('deleteLessonType').textContent = lessonType;
+
+                    // Show modal
+                    deleteLessonModal.show();
+                });
+            });
+
+            // Confirm delete lesson action
+            document.getElementById('confirmDeleteLesson').addEventListener('click', function() {
+                if (!currentLessonId) return;
+
+                // Show loading state
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
+                this.disabled = true;
+
+                // Create form and submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("DeleteLesson", "Lesson")';
+
+                // Add anti-forgery token
+                const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (token) {
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token.value;
+                    form.appendChild(tokenInput);
+                }
+
+                // Add lesson ID
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'id';
+                idInput.value = currentLessonId;
+                form.appendChild(idInput);
+
+                // Add course ID for redirect
+                const courseIdInput = document.createElement('input');
+                courseIdInput.type = 'hidden';
+                courseIdInput.name = 'courseId';
+                courseIdInput.value = '@Model.CourseId';
+                form.appendChild(courseIdInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            });
+
+            // Reset lesson modal when closed
+            document.getElementById('deleteLessonModal').addEventListener('hidden.bs.modal', function() {
+                currentLessonId = null;
+                const confirmBtn = document.getElementById('confirmDeleteLesson');
+                confirmBtn.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Delete Lesson';
+                confirmBtn.disabled = false;
+            });
         });
     </script>
 
@@ -877,6 +1026,46 @@
                     </button>
                     <button type="button" class="btn btn-danger" id="confirmDeleteChapter">
                         <i class="fas fa-trash-alt me-2"></i>Delete Chapter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Lesson Confirmation Modal -->
+    <div class="modal fade" id="deleteLessonModal" tabindex="-1" aria-labelledby="deleteLessonModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteLessonModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Delete Lesson
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning me-2"></i>
+                        <strong>Warning:</strong> This action cannot be undone!
+                    </div>
+                    <p>Are you sure you want to delete the following lesson?</p>
+                    <div class="bg-light p-3 rounded">
+                        <h6 class="mb-1"><strong id="deleteLessonName">Lesson Name</strong></h6>
+                        <small class="text-muted"><span id="deleteLessonType">Video</span> lesson</small>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-danger mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            This lesson and all its content will be permanently deleted.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteLesson">
+                        <i class="fas fa-trash-alt me-2"></i>Delete Lesson
                     </button>
                 </div>
             </div>
