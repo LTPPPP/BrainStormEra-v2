@@ -477,23 +477,38 @@
                                                                 <p>@chapter.ChapterDescription</p>
                                                             </div>
                                                         }
-                                                        @foreach (var lesson in chapter.Lessons.OrderBy(l => l.LessonOrder))
+                                                        @{
+                                                            var orderedLessons = chapter.Lessons.OrderBy(l => l.LessonOrder).ToList();
+                                                            bool hasMoreThan5Lessons = orderedLessons.Count > 5;
+                                                        }
+                                                        <div class="lessons-container @(hasMoreThan5Lessons ? "scrollable-lessons" : "")">
+                                                            @foreach (var lesson in orderedLessons)
+                                                            {
+                                                                <div class="lecture-item @(lesson.IsLocked ? "locked" : "")">
+                                                                    <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : "fa-file-alt")"></i>
+                                                                    <span>@lesson.LessonName</span>
+                                                                    @if (lesson.EstimatedDuration > 0)
+                                                                    {
+                                                                        <span class="lecture-duration">@lesson.EstimatedDuration min</span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="lecture-duration">@lesson.LessonType</span>
+                                                                    }
+                                                                    @if (lesson.IsLocked)
+                                                                    {
+                                                                        <i class="fas fa-lock lock-icon"></i>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                        @if (hasMoreThan5Lessons)
                                                         {
-                                                            <div class="lecture-item @(lesson.IsLocked ? "locked" : "")">
-                                                                <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : "fa-file-alt")"></i>
-                                                                <span>@lesson.LessonName</span>
-                                                                @if (lesson.EstimatedDuration > 0)
-                                                                {
-                                                                    <span class="lecture-duration">@lesson.EstimatedDuration min</span>
-                                                                }
-                                                                else
-                                                                {
-                                                                    <span class="lecture-duration">@lesson.LessonType</span>
-                                                                }
-                                                                @if (lesson.IsLocked)
-                                                                {
-                                                                    <i class="fas fa-lock lock-icon"></i>
-                                                                }
+                                                            <div class="lessons-scroll-indicator">
+                                                                <small class="text-muted">
+                                                                    <i class="fas fa-info-circle"></i>
+                                                                    Scroll to see all @orderedLessons.Count lessons
+                                                                </small>
                                                             </div>
                                                         }
                                                         @if (ViewBag.IsAuthor == true)
@@ -750,6 +765,30 @@
     <!-- Chapter Management JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Auto-navigate to specified tab if provided
+            @if (!string.IsNullOrEmpty(ViewBag.ActiveTab))
+            {
+                <text>
+                const activeTab = '@ViewBag.ActiveTab';
+                const tabButton = document.querySelector(`[data-bs-target="#${activeTab}"]`);
+                if (tabButton) {
+                    const tab = new bootstrap.Tab(tabButton);
+                    tab.show();
+                    
+                    // Update URL hash without triggering scroll
+                    history.replaceState(null, null, `#${activeTab}`);
+                    
+                    // Scroll to the tab section after a short delay to ensure tab is rendered
+                    setTimeout(() => {
+                        const tabContent = document.getElementById(activeTab);
+                        if (tabContent) {
+                            tabContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }, 300);
+                }
+                </text>
+            }
+
             // Edit Chapter functionality
             const editButtons = document.querySelectorAll('.edit-chapter-btn');
             editButtons.forEach(button => {

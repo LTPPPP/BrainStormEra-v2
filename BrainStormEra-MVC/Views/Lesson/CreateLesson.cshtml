@@ -87,6 +87,7 @@
         <form asp-action="CreateLesson" method="post" id="createLessonForm">
             @Html.AntiForgeryToken()
             <input asp-for="ChapterId" type="hidden" />
+            <input asp-for="CourseId" type="hidden" />
             <input asp-for="ChapterName" type="hidden" />
             <input asp-for="CourseName" type="hidden" />
 
@@ -145,7 +146,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="mb-4">
                     <label asp-for="Description" class="form-label">
                         <i class="fas fa-align-left me-2"></i>Lesson Description
@@ -159,22 +159,158 @@
                         Help students understand what they'll learn (optional but recommended)
                     </div>
                 </div>
-
                 <div class="mb-4">
                     <label asp-for="Content" class="form-label">
-                        <i class="fas fa-file-alt me-2"></i>Lesson Content
+                        <i class="fas fa-file-alt me-2"></i>Lesson Content *
                     </label>
                     <textarea asp-for="Content" class="form-control" rows="8"
-                        placeholder="Enter the main content for this lesson (optional)" maxlength="5000"></textarea>
+                        placeholder="Enter the main content for this lesson" maxlength="5000"></textarea>
                     <span asp-validation-for="Content" class="text-danger"></span>
                     <div class="form-text">
                         <i class="fas fa-edit me-1"></i>
-                        Add the main teaching content for this lesson (optional)
+                        Add the main teaching content for this lesson
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Settings Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-cog me-2"></i>
+                    Advanced Settings
+                </h3>
+                <p class="text-muted mb-4">Configure lesson access, requirements, and completion criteria</p>
+
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="form-check form-switch custom-cursor-default-hover mb-4"
+                            style="padding-left: 2rem;">
+                            <input asp-for="IsLocked" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsLocked" class="form-check-label">
+                                <i class="fas fa-lock me-2 text-warning"></i>
+                                <strong>Lock Lesson</strong>
+                                <div class="small text-muted mt-1">Students must unlock this lesson through
+                                    prerequisites</div>
+                            </label>
+                        </div>
+
+                        @if (Model.HasExistingLessons)
+                        {
+                            <div class="mb-4" id="unlockAfterSection" style="display: none;">
+                                <label asp-for="UnlockAfterLessonId" class="form-label">
+                                    <i class="fas fa-unlock me-2"></i>Unlock After Lesson
+                                </label>
+                                <select asp-for="UnlockAfterLessonId" class="form-select">
+                                    <option value="">No prerequisite - Available immediately</option>
+                                    @foreach (var lesson in Model.ExistingLessons.OrderBy(l => l.LessonOrder))
+                                    {
+                                        <option value="@lesson.LessonId">Lesson @lesson.LessonOrder: @lesson.LessonName</option>
+                                    }
+                                </select>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Choose which lesson must be completed first (only applies if locked)
+                                </div>
+                            </div>
+                        }
+
+                        <div class="form-check form-switch custom-cursor-default-hover mb-4"
+                            style="padding-left: 2rem;">
+                            <input asp-for="IsMandatory" class="form-check-input" type="checkbox" checked />
+                            <label asp-for="IsMandatory" class="form-check-label">
+                                <i class="fas fa-exclamation-circle me-2 text-info"></i>
+                                <strong>Mandatory Lesson</strong>
+                                <div class="small text-muted mt-1">Students must complete this lesson to progress</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="form-check form-switch custom-cursor-default-hover mb-4"
+                            style="padding-left: 2rem;">
+                            <input asp-for="RequiresQuizPass" class="form-check-input" type="checkbox" />
+                            <label asp-for="RequiresQuizPass" class="form-check-label">
+                                <i class="fas fa-question-circle me-2 text-success"></i>
+                                <strong>Requires Quiz Pass</strong>
+                                <div class="small text-muted mt-1">Students must pass a quiz to complete this lesson
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="mb-4" id="quizScoreSection" style="display: none;">
+                            <label asp-for="MinQuizScore" class="form-label">
+                                <i class="fas fa-percentage me-2"></i>Minimum Quiz Score (%)
+                            </label>
+                            <input asp-for="MinQuizScore" type="number" class="form-control" min="0" max="100"
+                                placeholder="70" />
+                            <span asp-validation-for="MinQuizScore" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Students must achieve this score to pass the lesson quiz
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="mb-4">
+                            <label asp-for="MinCompletionPercentage" class="form-label">
+                                <i class="fas fa-chart-line me-2"></i>Minimum Completion Percentage (%)
+                            </label>
+                            <input asp-for="MinCompletionPercentage" type="number" class="form-control" min="0"
+                                max="100" placeholder="100" />
+                            <span asp-validation-for="MinCompletionPercentage" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Percentage of lesson content that must be viewed/completed
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="mb-4">
+                            <label asp-for="MinTimeSpent" class="form-label">
+                                <i class="fas fa-clock me-2"></i>Minimum Time Spent (minutes)
+                            </label>
+                            <input asp-for="MinTimeSpent" type="number" class="form-control" min="0" max="9999"
+                                placeholder="0" />
+                            <span asp-validation-for="MinTimeSpent" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Minimum time students must spend on this lesson
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="d-flex justify-content-between align-items-center mt-5">
+                @if (Model.HasExistingLessons)
+                {
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="fw-bold text-primary">
+                            <i class="fas fa-list me-2"></i>Existing Lessons in This Chapter
+                        </h6>
+                        <div class="row">
+                            @foreach (var lesson in Model.ExistingLessons.OrderBy(l => l.LessonOrder))
+                            {
+                                <div class="col-md-6 mb-2">
+                                    <div class="d-flex align-items-center"> <span
+                                            class="badge bg-secondary me-2">@lesson.LessonOrder</span>
+                                        <span class="small">@lesson.LessonName</span>
+                                        @if (lesson.IsLocked == true)
+                                        {
+                                            <i class="fas fa-lock text-warning ms-2" title="Locked lesson"></i>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-section">
+                <div class="d-flex justify-content-between align-items-center">
                     <a href="javascript:history.back()" class="btn btn-outline-secondary"
                         style="font-size: 0.8rem; padding: 0.5rem 1rem;">
                         <i class="fas fa-arrow-left me-2"></i>Back to Course
@@ -208,9 +344,66 @@
             } else {
                 document.querySelector('.bse-sticky-header').classList.remove('bse-scrolled');
             }
-        });
+        }); document.addEventListener('DOMContentLoaded', function () {
+            // Handle conditional visibility for advanced settings
+            const isLockedCheckbox = document.querySelector('#IsLocked');
+            const unlockAfterSection = document.querySelector('#unlockAfterSection');
+            const requiresQuizCheckbox = document.querySelector('#RequiresQuizPass');
+            const quizScoreSection = document.querySelector('#quizScoreSection');
 
-        document.addEventListener('DOMContentLoaded', function () {
+            // Toggle unlock after lesson section
+            if (isLockedCheckbox && unlockAfterSection) {
+                isLockedCheckbox.addEventListener('change', function () {
+                    if (this.checked) {
+                        unlockAfterSection.style.display = 'block';
+                        unlockAfterSection.style.animation = 'fadeIn 0.3s ease';
+                    } else {
+                        unlockAfterSection.style.display = 'none';
+                        document.querySelector('#UnlockAfterLessonId').value = '';
+                    }
+                });
+            }
+
+            // Toggle quiz score section
+            if (requiresQuizCheckbox && quizScoreSection) {
+                requiresQuizCheckbox.addEventListener('change', function () {
+                    if (this.checked) {
+                        quizScoreSection.style.display = 'block';
+                        quizScoreSection.style.animation = 'fadeIn 0.3s ease';
+                        document.querySelector('#MinQuizScore').value = '70';
+                    } else {
+                        quizScoreSection.style.display = 'none';
+                        document.querySelector('#MinQuizScore').value = '';
+                    }
+                });
+            }
+
+            // Lesson order validation
+            const orderInput = document.querySelector('#Order');
+            const existingOrders = [@string.Join(",", Model.ExistingLessons.Select(l => l.LessonOrder))];
+
+            if (orderInput) {
+                orderInput.addEventListener('blur', function () {
+                    const value = parseInt(this.value);
+                    const existingError = this.parentNode.querySelector('.order-validation-error');
+
+                    if (existingError) {
+                        existingError.remove();
+                    }
+
+                    if (value && existingOrders.includes(value)) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'order-validation-error text-danger small mt-1';
+                        errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>This lesson order is already taken';
+                        this.parentNode.appendChild(errorDiv);
+                        this.classList.add('is-invalid');
+                    } else if (value && value > 0) {
+                        this.classList.remove('is-invalid');
+                        this.classList.add('is-valid');
+                    }
+                });
+            }
+
             // Auto-resize textarea
             const textareas = document.querySelectorAll('textarea');
             textareas.forEach(textarea => {

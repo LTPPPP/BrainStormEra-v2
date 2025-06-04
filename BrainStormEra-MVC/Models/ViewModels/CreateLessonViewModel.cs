@@ -5,7 +5,9 @@ namespace BrainStormEra_MVC.Models.ViewModels
     public class CreateLessonViewModel
     {
         [Required]
-        public string ChapterId { get; set; } = null!; [Required]
+        public string ChapterId { get; set; } = null!;
+
+        [Required]
         public string CourseId { get; set; } = null!;
 
         [Required(ErrorMessage = "Lesson name is required")]
@@ -24,14 +26,9 @@ namespace BrainStormEra_MVC.Models.ViewModels
         [Required(ErrorMessage = "Lesson type is required")]
         [Display(Name = "Lesson Type")]
         public int LessonTypeId { get; set; }
-
         [Range(1, int.MaxValue, ErrorMessage = "Lesson order must be a positive number")]
         [Display(Name = "Lesson Order")]
         public int Order { get; set; } = 1;
-
-        [Display(Name = "Estimated Duration (minutes)")]
-        [Range(0, 9999, ErrorMessage = "Duration must be between 0 and 9999 minutes")]
-        public int? EstimatedDuration { get; set; }
 
         [Display(Name = "Is Locked")]
         public bool IsLocked { get; set; } = false;
@@ -54,13 +51,16 @@ namespace BrainStormEra_MVC.Models.ViewModels
 
         [Display(Name = "Minimum Time Spent (minutes)")]
         [Range(0, 9999, ErrorMessage = "Minimum time spent must be between 0 and 9999 minutes")]
-        public int? MinTimeSpent { get; set; }
-
-        // Additional properties for the view
+        public int? MinTimeSpent { get; set; }        // Additional properties for the view
         public string CourseName { get; set; } = null!;
         public string ChapterName { get; set; } = null!;
         public int ChapterOrder { get; set; }
         public IEnumerable<LessonType> LessonTypes { get; set; } = new List<LessonType>();
         public List<Lesson> ExistingLessons { get; set; } = new List<Lesson>();
+
+        // Helper properties for UI
+        public bool HasExistingLessons => ExistingLessons.Any();
+        public int TotalLessonsInChapter => ExistingLessons.Count;
+        public bool IsFirstLesson => !ExistingLessons.Any();
     }
 }

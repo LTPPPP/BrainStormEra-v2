@@ -1580,6 +1580,100 @@
   padding: 0;
 }
 
+/* Lesson Container Styling */
+.lessons-container {
+  transition: all 0.3s ease;
+}
+
+.lessons-container.scrollable-lessons {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--bg-white);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom scrollbar for lesson container */
+.lessons-container.scrollable-lessons::-webkit-scrollbar {
+  width: 8px;
+}
+
+.lessons-container.scrollable-lessons::-webkit-scrollbar-track {
+  background: var(--bg-light);
+  border-radius: 4px;
+}
+
+.lessons-container.scrollable-lessons::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.lessons-container.scrollable-lessons::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+/* Lessons scroll indicator */
+.lessons-scroll-indicator {
+  padding: 0.5rem 1rem;
+  text-align: center;
+  background: var(--bg-light);
+  border-radius: 0 0 8px 8px;
+  border: 1px solid var(--border-light);
+  border-top: none;
+  margin-bottom: 1rem;
+}
+
+.lessons-scroll-indicator i {
+  margin-right: 0.5rem;
+  color: var(--primary-color);
+}
+
+/* Enhanced lecture item styling for scrollable container */
+.scrollable-lessons .lecture-item {
+  margin: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
+.scrollable-lessons .lecture-item:first-child {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.scrollable-lessons .lecture-item:last-child {
+  border-bottom: none;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+/* Fade effect for scrollable content */
+.lessons-container.scrollable-lessons::before {
+  content: "";
+  position: sticky;
+  top: 0;
+  display: block;
+  height: 20px;
+  background: linear-gradient(to bottom, var(--bg-white), transparent);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.lessons-container.scrollable-lessons::after {
+  content: "";
+  position: sticky;
+  bottom: 0;
+  display: block;
+  height: 20px;
+  background: linear-gradient(to top, var(--bg-white), transparent);
+  z-index: 1;
+  pointer-events: none;
+  margin-top: -20px;
+}
+
 .lecture-item {
   display: flex;
   align-items: center;
