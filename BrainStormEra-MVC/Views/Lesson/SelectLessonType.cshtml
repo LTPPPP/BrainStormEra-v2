@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
     <link rel="stylesheet" href="~/css/components/chatbot.css">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
     <!-- User meta tags for chatbot -->
     @if (Context.Session.GetString("UserId") != null)
     {
@@ -33,7 +34,7 @@
     }
     <!-- Toast notifications CSS -->
     <link rel="stylesheet" href="~/css/components/toast-notifications.css">
-    
+
     <style>
         .lesson-type-card {
             border: 2px solid #e0e6ed;
@@ -45,61 +46,61 @@
             background: white;
             height: 100%;
         }
-        
+
         .lesson-type-card:hover {
             border-color: #007bff;
             box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15);
             transform: translateY(-2px);
         }
-        
+
         .lesson-type-card.selected {
             border-color: #007bff;
             background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
             box-shadow: 0 8px 25px rgba(0, 123, 255, 0.2);
         }
-        
+
         .lesson-type-icon {
             font-size: 3rem;
             margin-bottom: 1rem;
             display: block;
         }
-        
+
         .lesson-type-title {
             font-size: 1.5rem;
             font-weight: 600;
             margin-bottom: 1rem;
             color: #2c3e50;
         }
-        
+
         .lesson-type-description {
             color: #6c757d;
             line-height: 1.6;
             margin-bottom: 1.5rem;
         }
-        
+
         .lesson-type-features {
             list-style: none;
             padding: 0;
             margin: 0;
         }
-        
+
         .lesson-type-features li {
             padding: 0.25rem 0;
             color: #495057;
         }
-        
+
         .lesson-type-features li i {
             color: #28a745;
             margin-right: 0.5rem;
         }
-        
+
         .page-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 4rem 0;
             margin-bottom: 3rem;
         }
-        
+
         .btn-continue {
             background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
             border: none;
@@ -108,12 +109,12 @@
             border-radius: 8px;
             transition: all 0.3s ease;
         }
-        
+
         .btn-continue:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
         }
-        
+
         .btn-continue:disabled {
             background: #6c757d;
             cursor: not-allowed;
@@ -151,7 +152,7 @@
     @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
 
     <!-- Page Header -->
-    <div class="page-header">
+    <div class="page-header create-page">
         <div class="container">
             <div class="row">
                 <div class="col-12 text-center">
@@ -182,7 +183,7 @@
             <input asp-for="ChapterName" type="hidden" />
             <input asp-for="CourseName" type="hidden" />
             <input asp-for="ChapterOrder" type="hidden" />
-            
+
             <div class="row justify-content-center">
                 <div class="col-lg-10">
                     <!-- Validation Summary -->
@@ -222,7 +223,8 @@
                                     <i class="fas fa-file-text lesson-type-icon text-success"></i>
                                     <h3 class="lesson-type-title">Text Lesson</h3>
                                     <p class="lesson-type-description">
-                                        Create comprehensive text-based lessons with rich formatting and detailed content.
+                                        Create comprehensive text-based lessons with rich formatting and detailed
+                                        content.
                                     </p>
                                     <ul class="lesson-type-features text-start">
                                         <li><i class="fas fa-check"></i> Rich text editor</li>
@@ -241,7 +243,8 @@
                                     <i class="fas fa-file-pdf lesson-type-icon text-danger"></i>
                                     <h3 class="lesson-type-title">Interactive Lesson</h3>
                                     <p class="lesson-type-description">
-                                        Upload documents, PDFs, presentations, and interactive materials for hands-on learning.
+                                        Upload documents, PDFs, presentations, and interactive materials for hands-on
+                                        learning.
                                     </p>
                                     <ul class="lesson-type-features text-start">
                                         <li><i class="fas fa-check"></i> Multiple file uploads</li>
@@ -260,8 +263,8 @@
 
                     <!-- Action Buttons -->
                     <div class="text-center mt-5 mb-5">
-                        <a href="@Url.Action("Details", "Course", new { id = Model.CourseId, tab = "curriculum" })" 
-                           class="btn btn-outline-secondary me-3">
+                        <a href="@Url.Action("Details", "Course", new { id = Model.CourseId, tab = "curriculum" })"
+                            class="btn btn-outline-secondary me-3">
                             <i class="fas fa-arrow-left me-2"></i>Back to Course
                         </a>
                         <button type="submit" class="btn btn-continue text-white" id="continueBtn" disabled>
@@ -280,33 +283,33 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/components/toast-notifications.js"></script>
     <script src="~/js/components/loader.js"></script>
-    
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const lessonTypeCards = document.querySelectorAll('.lesson-type-card');
             const selectedLessonTypeInput = document.getElementById('selectedLessonTypeInput');
             const continueBtn = document.getElementById('continueBtn');
-            
+
             lessonTypeCards.forEach(card => {
-                card.addEventListener('click', function() {
+                card.addEventListener('click', function () {
                     // Remove selected class from all cards
                     lessonTypeCards.forEach(c => c.classList.remove('selected'));
-                    
+
                     // Add selected class to clicked card
                     this.classList.add('selected');
-                    
+
                     // Set the selected lesson type value
                     const lessonType = this.getAttribute('data-lesson-type');
                     selectedLessonTypeInput.value = lessonType;
-                    
+
                     // Enable continue button
                     continueBtn.disabled = false;
                     continueBtn.classList.remove('disabled');
                 });
             });
-            
+
             // Form submission
-            document.getElementById('selectLessonTypeForm').addEventListener('submit', function(e) {
+            document.getElementById('selectLessonTypeForm').addEventListener('submit', function (e) {
                 if (!selectedLessonTypeInput.value) {
                     e.preventDefault();
                     alert('Please select a lesson type before continuing.');
@@ -323,4 +326,6 @@
         <script src="~/js/components/chatbot.js"></script>
     }
 </body>
+
 </html>
+

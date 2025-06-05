@@ -24,8 +24,8 @@
     <link rel="stylesheet" href="~/css/pages/Course/courses.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
     <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
-    <!-- User Management specific styles -->
-    <link rel="stylesheet" href="~/css/pages/User/user-management.css">
+    <!-- User Management specific styles -->    <link rel="stylesheet" href="~/css/pages/User/user-management.css">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
     <link rel="stylesheet" href="~/css/components/toast-notifications.css">
     <link rel="stylesheet" href="~/css/components/chatbot.css">
     
@@ -65,12 +65,10 @@
     </div>
 
     <!-- Include Header partial view -->
-    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
-
-    <!-- Main Content -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")    <!-- Main Content -->
     <div class="container main-content">
         <!-- Enhanced Page Header -->
-        <div class="page-header">
+        <div class="page-header management-page">
             <div class="row align-items-center">
                 <div class="col-lg-8">
                     <h1 class="page-title">

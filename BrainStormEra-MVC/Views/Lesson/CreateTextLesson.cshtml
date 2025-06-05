@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
     <link rel="stylesheet" href="~/css/components/chatbot.css">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
     <!-- User meta tags for chatbot -->
     @if (Context.Session.GetString("UserId") != null)
     {
@@ -63,7 +64,7 @@
     @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
 
     <!-- Page Header -->
-    <div class="page-header">
+    <div class="page-header create-page">
         <div class="container">
             <div class="row">
                 <div class="col-12 text-center">
@@ -130,7 +131,8 @@
                         <i class="fas fa-align-left me-2"></i>Lesson Description
                     </label>
                     <textarea asp-for="Description" class="form-control" rows="3"
-                        placeholder="Brief description of what students will learn (optional)" maxlength="1000"></textarea>
+                        placeholder="Brief description of what students will learn (optional)"
+                        maxlength="1000"></textarea>
                     <span asp-validation-for="Description" class="text-danger"></span>
                 </div>
             </div>
@@ -147,8 +149,7 @@
                     <label asp-for="TextContent" class="form-label">
                         <i class="fas fa-paragraph me-2"></i>Main Lesson Content *
                     </label>
-                    <textarea asp-for="TextContent" class="form-control" rows="15"
-                        placeholder="Enter your detailed lesson content here. You can include:
+                    <textarea asp-for="TextContent" class="form-control" rows="15" placeholder="Enter your detailed lesson content here. You can include:
 • Explanations and concepts
 • Code examples
 • Step-by-step instructions
@@ -238,7 +239,8 @@ Write in a clear, educational format that helps students understand the topic th
                             <label asp-for="MinQuizScore" class="form-label">
                                 <i class="fas fa-percentage me-2"></i>Minimum Quiz Score (%)
                             </label>
-                            <input asp-for="MinQuizScore" type="number" class="form-control" min="0" max="100" placeholder="70" />
+                            <input asp-for="MinQuizScore" type="number" class="form-control" min="0" max="100"
+                                placeholder="70" />
                             <span asp-validation-for="MinQuizScore" class="text-danger"></span>
                         </div>
                     </div>
@@ -250,7 +252,8 @@ Write in a clear, educational format that helps students understand the topic th
                             <label asp-for="MinCompletionPercentage" class="form-label">
                                 <i class="fas fa-chart-line me-2"></i>Minimum Completion (%)
                             </label>
-                            <input asp-for="MinCompletionPercentage" type="number" class="form-control" min="0" max="100" placeholder="100" />
+                            <input asp-for="MinCompletionPercentage" type="number" class="form-control" min="0"
+                                max="100" placeholder="100" />
                             <span asp-validation-for="MinCompletionPercentage" class="text-danger"></span>
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
@@ -276,8 +279,8 @@ Write in a clear, educational format that helps students understand the topic th
 
             <!-- Action Buttons -->
             <div class="form-section text-center">
-                <a href="@Url.Action("SelectLessonType", new { chapterId = Model.ChapterId })" 
-                   class="btn btn-outline-secondary me-3">
+                <a href="@Url.Action("SelectLessonType", new { chapterId = Model.ChapterId })"
+                    class="btn btn-outline-secondary me-3">
                     <i class="fas fa-arrow-left me-2"></i>Back to Lesson Types
                 </a>
                 <button type="submit" class="btn btn-success">
@@ -294,15 +297,15 @@ Write in a clear, educational format that helps students understand the topic th
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/components/toast-notifications.js"></script>
     <script src="~/js/components/loader.js"></script>
-    
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Toggle unlock after section based on isLocked checkbox
             const isLockedCheckbox = document.querySelector('input[name="IsLocked"]');
             const unlockAfterSection = document.getElementById('unlockAfterSection');
-            
+
             if (isLockedCheckbox && unlockAfterSection) {
-                isLockedCheckbox.addEventListener('change', function() {
+                isLockedCheckbox.addEventListener('change', function () {
                     if (this.checked) {
                         unlockAfterSection.style.display = 'block';
                     } else {
@@ -310,13 +313,13 @@ Write in a clear, educational format that helps students understand the topic th
                     }
                 });
             }
-            
+
             // Toggle quiz score section based on requiresQuizPass checkbox
             const requiresQuizPassCheckbox = document.querySelector('input[name="RequiresQuizPass"]');
             const quizScoreSection = document.getElementById('quizScoreSection');
-            
+
             if (requiresQuizPassCheckbox && quizScoreSection) {
-                requiresQuizPassCheckbox.addEventListener('change', function() {
+                requiresQuizPassCheckbox.addEventListener('change', function () {
                     if (this.checked) {
                         quizScoreSection.style.display = 'block';
                     } else {
@@ -328,7 +331,7 @@ Write in a clear, educational format that helps students understand the topic th
             // Auto-resize textarea based on content
             const textContent = document.querySelector('textarea[name="TextContent"]');
             if (textContent) {
-                textContent.addEventListener('input', function() {
+                textContent.addEventListener('input', function () {
                     this.style.height = 'auto';
                     this.style.height = this.scrollHeight + 'px';
                 });
@@ -344,4 +347,6 @@ Write in a clear, educational format that helps students understand the topic th
         <script src="~/js/components/chatbot.js"></script>
     }
 </body>
+
 </html>
+

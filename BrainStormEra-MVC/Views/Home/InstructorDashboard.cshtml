@@ -28,7 +28,7 @@
     <link rel="stylesheet" href="~/css/components/chatbot.css">
     <!-- Load page loader script -->
     <script src="~/js/components/loader.js"></script>
-    
+
     @* User authentication meta tags for JavaScript access *@
     @if (User.Identity?.IsAuthenticated == true)
     {
@@ -65,10 +65,13 @@
     <!-- Include Header partial view -->
     @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
 
+    <!-- Page Header Theme CSS -->
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
+
     <div class="dashboard-container">
         @Html.AntiForgeryToken()
         <!-- Welcome Section -->
-        <div class="welcome-section">
+        <div class="page-header dashboard-page welcome-section">
             <div class="container welcome-container">
                 <div class="row align-items-center">
                     <div class="col-md-8">

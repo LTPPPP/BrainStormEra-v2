@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="~/css/components/header.css">
     <link rel="stylesheet" href="~/css/components/loader.css">
     <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
     <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
     <link rel="stylesheet" href="~/css/components/chatbot.css">
@@ -69,7 +70,7 @@
     @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
 
     <!-- Page Header -->
-    <div class="page-header">
+    <div class="page-header edit-page">
         <div class="container">
             <div class="row">
                 <div class="col-12 text-center">
@@ -438,7 +439,7 @@
         @{
             await Html.RenderPartialAsync("_ValidationScriptsPartial");
         }
-        
+
         <!-- Chatbot JavaScript for authenticated users -->
         @if (Context.Session.GetString("UserId") != null)
         {
