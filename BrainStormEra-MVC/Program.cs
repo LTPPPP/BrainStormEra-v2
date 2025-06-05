@@ -56,6 +56,11 @@ namespace BrainStormEra_MVC
             // Add Safe Delete Service for secure delete operations
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ISafeDeleteService, BrainStormEra_MVC.Services.SafeDeleteService>();
 
+            // Add Chatbot Service
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IChatbotService, BrainStormEra_MVC.Services.ChatbotService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IPageContextService, BrainStormEra_MVC.Services.PageContextService>();
+            builder.Services.AddHttpClient<BrainStormEra_MVC.Services.ChatbotService>();
+
             // Seed services
             builder.Services.AddScoped<BrainStormEra_MVC.Services.CategorySeedService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.StatusSeedService>();

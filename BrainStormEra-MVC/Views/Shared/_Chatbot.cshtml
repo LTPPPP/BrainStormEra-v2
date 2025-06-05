@@ -1,0 +1,8 @@
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <!-- Chatbot will be initialized by JavaScript -->
+    <div id="chatbot-root"></div>
+    
+    @* Add anti-forgery token for AJAX requests *@
+    @Html.AntiForgeryToken()
+}
