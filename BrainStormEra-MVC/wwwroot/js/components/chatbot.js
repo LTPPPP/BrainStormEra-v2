@@ -4,16 +4,21 @@ class ChatbotManager {
     this.messages = [];
     this.isTyping = false;
     this.conversationHistory = [];
-    this.typingSpeed = 100; // milliseconds per character (adjustable)
+    this.typingSpeed = 10; // milliseconds per character (adjustable)
+    this.isPageVisible = true;
+    this.pendingResponse = false;
+    this.currentTypewriterTask = null;
+    this.queuedResponses = [];
     this.init();
   }
   init() {
     this.createChatbotHTML();
     this.bindEvents();
+    this.setupVisibilityTracking();
     this.loadConversationHistory();
     // Add welcome message with typewriter effect
     setTimeout(() => {
-      this.addMessage("Xin chào! Tôi có thể giúp gì cho bạn? 😊", "bot");
+      this.addMessage("Hello! How can I help you today? 😊", "bot");
     }, 500);
   }
   createChatbotHTML() {
@@ -31,7 +36,7 @@ class ChatbotManager {
                             <img src="/img/logo/logowithoutbackground.png" alt="Bot" class="bot-avatar" />
                             <div>
                                 <div class="bot-name">BrainStormEra</div>
-                                <div class="bot-status">Trực tuyến</div>
+                                <div class="bot-status">Online</div>
                             </div>
                         </div>
                         <button class="chatbot-close" id="chatbot-close">
@@ -46,7 +51,7 @@ class ChatbotManager {
                         <textarea 
                             class="chatbot-input-field" 
                             id="chatbot-input" 
-                            placeholder="Nhập tin nhắn..."
+                            placeholder="Type your message..."
                             rows="1"
                             style="height: 40px; overflow-y: hidden;"
                         ></textarea>
@@ -60,7 +65,6 @@ class ChatbotManager {
 
     document.body.insertAdjacentHTML("beforeend", chatbotHTML);
   }
-
   bindEvents() {
     const bubble = document.getElementById("chatbot-bubble");
     const window = document.getElementById("chatbot-window");
@@ -97,7 +101,28 @@ class ChatbotManager {
       }
     });
   }
+  // Setup page visibility tracking
+  setupVisibilityTracking() {
+    document.addEventListener("visibilitychange", () => {
+      const wasVisible = this.isPageVisible;
+      this.isPageVisible = !document.hidden;
 
+      // If page becomes visible after being hidden
+      if (this.isPageVisible && !wasVisible) {
+        // Show notification if there were pending responses
+        if (this.pendingResponse) {
+          this.showNotification();
+          this.pendingResponse = false;
+        }
+
+        // Resume any paused typewriter effects
+        this.resumeTypewriterEffects();
+
+        // Process any queued responses
+        this.processQueuedResponses();
+      }
+    });
+  }
   toggleChatbot() {
     const window = document.getElementById("chatbot-window");
     this.isOpen = !this.isOpen;
@@ -106,6 +131,8 @@ class ChatbotManager {
       window.classList.add("show");
       this.scrollToBottom();
       document.getElementById("chatbot-input").focus();
+      // Clear notifications when chatbot is opened
+      this.clearNotification();
     } else {
       window.classList.remove("show");
     }
@@ -153,11 +180,22 @@ class ChatbotManager {
           lessonId: pageInfo.lessonId,
         }),
       });
-
       const data = await response.json();
 
       if (response.ok) {
-        this.addMessage(data.message, "bot", data.conversationId);
+        // If page is not visible, queue the response
+        if (!this.isPageVisible) {
+          this.queuedResponses.push({
+            message: data.message,
+            conversationId: data.conversationId,
+            timestamp: Date.now(),
+          });
+          this.pendingResponse = true;
+          // Show browser notification if possible
+          this.showBrowserNotification("New chatbot response available!");
+        } else {
+          this.addMessage(data.message, "bot", data.conversationId);
+        }
       } else {
         this.handleError(new Error(data.error || "API Error"), message);
       }
@@ -184,7 +222,7 @@ class ChatbotManager {
   addMessage(content, sender, conversationId = null) {
     const messagesContainer = document.getElementById("chatbot-messages");
     const isUser = sender === "user";
-    const timestamp = new Date().toLocaleTimeString("vi-VN", {
+    const timestamp = new Date().toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -231,22 +269,60 @@ class ChatbotManager {
     element.innerHTML = "";
     element.classList.add("typing");
 
+    // Create a unique task ID for this typewriter effect
+    const taskId = Date.now() + Math.random();
+    this.currentTypewriterTask = {
+      id: taskId,
+      element: element,
+      text: plainText,
+      formattedText: formattedText,
+      currentIndex: 0,
+      paused: false,
+    };
+
     for (let i = 0; i < plainText.length; i++) {
+      // Check if this task is still current and not paused
+      if (
+        this.currentTypewriterTask?.id !== taskId ||
+        this.currentTypewriterTask?.paused
+      ) {
+        // Save progress and exit
+        if (
+          this.currentTypewriterTask &&
+          this.currentTypewriterTask.id === taskId
+        ) {
+          this.currentTypewriterTask.currentIndex = i;
+        }
+        return;
+      }
+
       element.textContent += plainText[i];
       this.scrollToBottom();
 
-      // Use configurable typing speed
-      await new Promise((resolve) => setTimeout(resolve, this.typingSpeed));
+      // Use configurable typing speed, but pause if page is not visible
+      if (this.isPageVisible) {
+        await new Promise((resolve) => setTimeout(resolve, this.typingSpeed));
+      } else {
+        // Page is not visible, pause the effect
+        this.currentTypewriterTask.currentIndex = i + 1;
+        this.currentTypewriterTask.paused = true;
+        return;
+      }
     }
 
-    // Remove typing cursor and apply formatting
+    // Complete the typewriter effect
     element.classList.remove("typing");
     element.innerHTML = formattedText;
     this.scrollToBottom();
+
+    // Clear current task
+    if (this.currentTypewriterTask?.id === taskId) {
+      this.currentTypewriterTask = null;
+    }
   } // Simple error handling with typewriter effect
   handleError(error, userMessage) {
     console.error("Chatbot error:", error);
-    let errorMessage = "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.";
+    let errorMessage = "Sorry, an error occurred. Please try again later.";
     this.addMessage(errorMessage, "bot");
   }
   autoResizeTextarea(textarea) {
@@ -292,7 +368,7 @@ class ChatbotManager {
   }
   getCurrentPageContext() {
     const title = document.title;
-    return `Trang hiện tại: ${title}`;
+    return `Current page: ${title}`;
   }
 
   getPageInfo() {
@@ -349,7 +425,6 @@ class ChatbotManager {
     // Simplified - no history loading for simple chat
     return;
   }
-
   // Simple notification methods
   showNotification() {
     const bubble = document.getElementById("chatbot-bubble");
@@ -365,6 +440,99 @@ class ChatbotManager {
     const badge = document.querySelector(".chatbot-bubble .notification-badge");
     if (badge) {
       badge.remove();
+    }
+  }
+
+  // Resume paused typewriter effects when page becomes visible
+  async resumeTypewriterEffects() {
+    if (this.currentTypewriterTask && this.currentTypewriterTask.paused) {
+      const task = this.currentTypewriterTask;
+      task.paused = false;
+
+      const element = task.element;
+      const plainText = task.text;
+      const formattedText = task.formattedText;
+      let currentIndex = task.currentIndex;
+
+      // Continue from where we left off
+      for (let i = currentIndex; i < plainText.length; i++) {
+        // Check if task is still current and not paused again
+        if (
+          this.currentTypewriterTask?.id !== task.id ||
+          this.currentTypewriterTask?.paused
+        ) {
+          if (
+            this.currentTypewriterTask &&
+            this.currentTypewriterTask.id === task.id
+          ) {
+            this.currentTypewriterTask.currentIndex = i;
+          }
+          return;
+        }
+
+        element.textContent += plainText[i];
+        this.scrollToBottom();
+
+        if (this.isPageVisible) {
+          await new Promise((resolve) => setTimeout(resolve, this.typingSpeed));
+        } else {
+          // Page became invisible again, pause
+          this.currentTypewriterTask.currentIndex = i + 1;
+          this.currentTypewriterTask.paused = true;
+          return;
+        }
+      }
+
+      // Complete the typewriter effect
+      element.classList.remove("typing");
+      element.innerHTML = formattedText;
+      this.scrollToBottom();
+
+      // Clear current task
+      if (this.currentTypewriterTask?.id === task.id) {
+        this.currentTypewriterTask = null;
+      }
+    }
+  }
+
+  // Process queued responses when page becomes visible
+  processQueuedResponses() {
+    if (this.queuedResponses.length > 0) {
+      // Process responses one by one
+      const response = this.queuedResponses.shift();
+      this.addMessage(response.message, "bot", response.conversationId);
+
+      // If there are more responses, process them after a delay
+      if (this.queuedResponses.length > 0) {
+        setTimeout(() => {
+          this.processQueuedResponses();
+        }, 1000); // 1 second delay between responses
+      }
+    }
+  }
+
+  // Show browser notification when page is not visible
+  showBrowserNotification(message) {
+    // Check if notifications are supported and permission is granted
+    if ("Notification" in window) {
+      if (Notification.permission === "granted") {
+        new Notification("BrainStormEra Chat", {
+          body: message,
+          icon: "/img/logo/logowithoutbackground.png",
+          badge: "/img/logo/logowithoutbackground.png",
+        });
+      } else if (Notification.permission !== "denied") {
+        // Request permission
+        Notification.requestPermission().then((permission) => {
+          if (permission === "granted") {
+            new Notification("BrainStormEra Chat", {
+              body: message,
+              icon: "/img/logo/logowithoutbackground.png",
+              badge: "/img/logo/logowithoutbackground.png",
+            });
+          }
+        });
+      }
     }
   }
 }

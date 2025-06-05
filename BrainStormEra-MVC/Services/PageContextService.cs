@@ -36,17 +36,15 @@ namespace BrainStormEra_MVC.Services
                 var lessonContext = await GetLessonContextAsync(lessonId);
                 if (!string.IsNullOrEmpty(lessonContext))
                     context.Add(lessonContext);
-            }
-
-            // Add page type context
+            }            // Add page type context
             if (path.Contains("/Course"))
-                context.Add("Người dùng đang xem trang khóa học");
+                context.Add("User is viewing course page");
             else if (path.Contains("/Chapter"))
-                context.Add("Người dùng đang xem trang chương học");
+                context.Add("User is viewing chapter page");
             else if (path.Contains("/Lesson"))
-                context.Add("Người dùng đang xem trang bài học");
+                context.Add("User is viewing lesson page");
             else if (path.Contains("/Home"))
-                context.Add("Người dùng đang ở trang chủ");
+                context.Add("User is on home page");
 
             return string.Join(". ", context);
         }
@@ -57,16 +55,14 @@ namespace BrainStormEra_MVC.Services
                 var course = await _context.Courses
                     .Include(c => c.CourseCategories)
                     .Include(c => c.Author)
-                    .FirstOrDefaultAsync(c => c.CourseId == courseId);
-
-                if (course == null) return "";
+                    .FirstOrDefaultAsync(c => c.CourseId == courseId); if (course == null) return "";
 
                 var categories = course.CourseCategories?.Select(cc => cc.CourseCategoryName).ToList() ?? new List<string>();
-                var categoryText = categories.Any() ? string.Join(", ", categories) : "Chưa phân loại";
+                var categoryText = categories.Any() ? string.Join(", ", categories) : "Uncategorized";
 
-                return $"Khóa học hiện tại: '{course.CourseName}' thuộc danh mục {categoryText}, " +
-                       $"được giảng dạy bởi {course.Author?.FullName}. " +
-                       $"Mô tả: {course.CourseDescription?.Substring(0, Math.Min(100, course.CourseDescription?.Length ?? 0))}";
+                return $"Current course: '{course.CourseName}' in category {categoryText}, " +
+                       $"taught by {course.Author?.FullName}. " +
+                       $"Description: {course.CourseDescription?.Substring(0, Math.Min(100, course.CourseDescription?.Length ?? 0))}";
             }
             catch
             {
@@ -79,12 +75,10 @@ namespace BrainStormEra_MVC.Services
             {
                 var chapter = await _context.Chapters
                     .Include(c => c.Course)
-                    .FirstOrDefaultAsync(c => c.ChapterId == chapterId);
+                    .FirstOrDefaultAsync(c => c.ChapterId == chapterId); if (chapter == null) return "";
 
-                if (chapter == null) return "";
-
-                return $"Chương hiện tại: '{chapter.ChapterName}' trong khóa học '{chapter.Course?.CourseName}'. " +
-                       $"Thứ tự chương: {chapter.ChapterOrder}";
+                return $"Current chapter: '{chapter.ChapterName}' in course '{chapter.Course?.CourseName}'. " +
+                       $"Chapter order: {chapter.ChapterOrder}";
             }
             catch
             {
@@ -99,14 +93,12 @@ namespace BrainStormEra_MVC.Services
                     .Include(l => l.Chapter)
                         .ThenInclude(c => c.Course)
                     .Include(l => l.LessonType)
-                    .FirstOrDefaultAsync(l => l.LessonId == lessonId);
+                    .FirstOrDefaultAsync(l => l.LessonId == lessonId); if (lesson == null) return "";
 
-                if (lesson == null) return "";
-
-                return $"Bài học hiện tại: '{lesson.LessonName}' thuộc chương '{lesson.Chapter?.ChapterName}' " +
-                       $"của khóa học '{lesson.Chapter?.Course?.CourseName}'. " +
-                       $"Loại bài học: {lesson.LessonType?.LessonTypeName}. " +
-                       $"Thứ tự bài: {lesson.LessonOrder}";
+                return $"Current lesson: '{lesson.LessonName}' in chapter '{lesson.Chapter?.ChapterName}' " +
+                       $"of course '{lesson.Chapter?.Course?.CourseName}'. " +
+                       $"Lesson type: {lesson.LessonType?.LessonTypeName}. " +
+                       $"Lesson order: {lesson.LessonOrder}";
             }
             catch
             {

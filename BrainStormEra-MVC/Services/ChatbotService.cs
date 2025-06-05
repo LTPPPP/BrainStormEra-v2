@@ -111,10 +111,8 @@ namespace BrainStormEra_MVC.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var responseJson = await response.Content.ReadAsStringAsync();
-                    var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseJson);
-
-                    var botResponse = geminiResponse?.candidates?.FirstOrDefault()?.content?.parts?.FirstOrDefault()?.text
-                        ?? "Xin lỗi, tôi không thể xử lý câu hỏi của bạn lúc này. Vui lòng thử lại sau.";
+                    var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseJson); var botResponse = geminiResponse?.candidates?.FirstOrDefault()?.content?.parts?.FirstOrDefault()?.text
+                        ?? "Sorry, I cannot process your question at this time. Please try again later.";
 
                     // Cache common educational responses for 1 hour
                     if (IsCommonEducationalQuestion(userMessage))
@@ -138,13 +136,13 @@ namespace BrainStormEra_MVC.Services
                 else
                 {
                     _logger.LogError($"Gemini API error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
-                    return "Xin lỗi, có lỗi xảy ra khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.";
+                    return "Sorry, an error occurred while processing your question. Please try again later.";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in ChatbotService.GetResponseAsync");
-                return "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.";
+                return "Sorry, an error occurred. Please try again later.";
             }
         }
 
@@ -192,46 +190,43 @@ namespace BrainStormEra_MVC.Services
                 .ToList() ?? new List<string>();
 
             var completedLessons = user.UserProgresses?.Count(up => up.IsCompleted == true) ?? 0;
-            var totalLessons = user.UserProgresses?.Count() ?? 0;
-
-            var contextBuilder = new StringBuilder();
-            contextBuilder.AppendLine($"Người dùng {user.FullName} ({user.UserEmail})");
+            var totalLessons = user.UserProgresses?.Count() ?? 0; var contextBuilder = new StringBuilder();
+            contextBuilder.AppendLine($"User {user.FullName} ({user.UserEmail})");
 
             if (enrolledCourses.Any())
             {
-                contextBuilder.AppendLine($"Đang theo học: {string.Join(", ", enrolledCourses)}");
+                contextBuilder.AppendLine($"Currently enrolled in: {string.Join(", ", enrolledCourses)}");
             }
 
             if (totalLessons > 0)
             {
                 var completionRate = (double)completedLessons / totalLessons * 100;
-                contextBuilder.AppendLine($"Tiến độ học tập: {completedLessons}/{totalLessons} bài ({completionRate:F1}%)");
+                contextBuilder.AppendLine($"Learning progress: {completedLessons}/{totalLessons} lessons ({completionRate:F1}%)");
             }
 
             return contextBuilder.ToString();
         }
-
         private string BuildSystemPrompt(string userContext, string? pageContext)
         {
             var prompt = new StringBuilder();
-            prompt.AppendLine("Bạn là BrainStorm Bot, trợ lý AI thông minh của nền tảng học tập BrainStormEra.");
-            prompt.AppendLine("Nhiệm vụ của bạn là:");
-            prompt.AppendLine("1. Hỗ trợ học sinh trong việc học tập và trả lời câu hỏi học thuật");
-            prompt.AppendLine("2. Cung cấp thông tin về các khóa học, bài học và nội dung trên nền tảng");
-            prompt.AppendLine("3. Giúp giải thích các khái niệm khó hiểu một cách dễ hiểu");
-            prompt.AppendLine("4. Động viên và hướng dẫn học sinh trong quá trình học tập");
+            prompt.AppendLine("You are BrainStorm Bot, the intelligent AI assistant of the BrainStormEra learning platform.");
+            prompt.AppendLine("Your tasks are:");
+            prompt.AppendLine("1. Support students in learning and answering academic questions");
+            prompt.AppendLine("2. Provide information about courses, lessons and content on the platform");
+            prompt.AppendLine("3. Help explain difficult concepts in an easy-to-understand way");
+            prompt.AppendLine("4. Encourage and guide students during their learning process");
             prompt.AppendLine();
-            prompt.AppendLine("Hãy trả lời bằng tiếng Việt, ngắn gọn, thân thiện và hữu ích.");
-            prompt.AppendLine("Nếu không biết câu trả lời, hãy thành thật nói và gợi ý cách tìm hiểu thêm.");
+            prompt.AppendLine("Please respond in English, concisely, friendly and helpfully.");
+            prompt.AppendLine("If you don't know the answer, be honest and suggest ways to find out more.");
 
             if (!string.IsNullOrEmpty(userContext))
             {
-                prompt.AppendLine($"Thông tin người dùng: {userContext}");
+                prompt.AppendLine($"User information: {userContext}");
             }
 
             if (!string.IsNullOrEmpty(pageContext))
             {
-                prompt.AppendLine($"Ngữ cảnh trang hiện tại: {pageContext}");
+                prompt.AppendLine($"Current page context: {pageContext}");
             }
 
             return prompt.ToString();
@@ -253,13 +248,12 @@ namespace BrainStormEra_MVC.Services
                 .Take(limit)
                 .ToListAsync();
         }
-
         private string BuildHistoryContext(List<ChatbotConversation> history)
         {
             if (!history.Any()) return "";
 
             var context = new StringBuilder();
-            context.AppendLine("Lịch sử trò chuyện gần đây:");
+            context.AppendLine("Recent conversation history:");
 
             foreach (var conversation in history.OrderBy(c => c.ConversationTime))
             {
@@ -269,13 +263,12 @@ namespace BrainStormEra_MVC.Services
 
             return context.ToString();
         }
-
         private bool IsCommonEducationalQuestion(string message)
         {
             var commonKeywords = new[]
             {
-                "là gì", "định nghĩa", "khái niệm", "giải thích", "hướng dẫn",
-                "cách thức", "phương pháp", "ví dụ", "công thức", "nguyên lý"
+                "what is", "definition", "concept", "explain", "guide",
+                "how to", "method", "example", "formula", "principle"
             };
 
             return commonKeywords.Any(keyword =>
