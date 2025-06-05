@@ -4,7 +4,7 @@ class ChatbotManager {
     this.messages = [];
     this.isTyping = false;
     this.conversationHistory = [];
-    this.typingSpeed = 10; // milliseconds per character (adjustable)
+    this.typingSpeed = 5; // milliseconds per character (adjustable)
     this.isPageVisible = true;
     this.pendingResponse = false;
     this.currentTypewriterTask = null;
@@ -16,7 +16,6 @@ class ChatbotManager {
     this.bindEvents();
     this.setupVisibilityTracking();
     this.loadConversationHistory();
-    // Add welcome message with typewriter effect
     setTimeout(() => {
       this.addMessage("Hello! How can I help you today? 😊", "bot");
     }, 500);
@@ -39,9 +38,14 @@ class ChatbotManager {
                                 <div class="bot-status">Online</div>
                             </div>
                         </div>
-                        <button class="chatbot-close" id="chatbot-close">
-                            <i class="fas fa-times"></i>
-                        </button>
+                        <div class="chatbot-header-actions">
+                            <button class="chatbot-new-chat-btn" id="chatbot-new-chat" title="Start New Chat">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button class="chatbot-close" id="chatbot-close">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>                    <!-- Messages Area -->
                     <div class="chatbot-messages" id="chatbot-messages">
                     </div>
@@ -69,12 +73,16 @@ class ChatbotManager {
     const bubble = document.getElementById("chatbot-bubble");
     const window = document.getElementById("chatbot-window");
     const closeBtn = document.getElementById("chatbot-close");
+    const newChatBtn = document.getElementById("chatbot-new-chat");
     const sendBtn = document.getElementById("chatbot-send");
     const input = document.getElementById("chatbot-input");
 
     // Toggle chatbot window
     bubble.addEventListener("click", () => this.toggleChatbot());
     closeBtn.addEventListener("click", () => this.closeChatbot());
+
+    // New chat button
+    newChatBtn.addEventListener("click", () => this.startNewChat());
 
     // Send message
     sendBtn.addEventListener("click", () => this.sendMessage());
@@ -145,13 +153,15 @@ class ChatbotManager {
   }
   async sendMessage() {
     const input = document.getElementById("chatbot-input");
+    const sendBtn = document.getElementById("chatbot-send");
     const message = input.value.trim();
 
     if (!message || this.isTyping) return;
 
-    // Clear input
+    // Clear input and disable UI
     input.value = "";
     this.autoResizeTextarea(input);
+    this.disableInput();
 
     // Add user message
     this.addMessage(message, "user");
@@ -203,6 +213,7 @@ class ChatbotManager {
       this.handleError(error, message);
     } finally {
       this.hideTypingIndicator();
+      this.enableInput();
     }
   } // Simple message formatting
   formatMessage(message) {
@@ -259,6 +270,34 @@ class ChatbotManager {
     }
 
     this.scrollToBottom();
+  }
+
+  // Disable input during bot response
+  disableInput() {
+    const input = document.getElementById("chatbot-input");
+    const sendBtn = document.getElementById("chatbot-send");
+
+    if (input) {
+      input.disabled = true;
+      input.placeholder = "Bot is typing...";
+    }
+    if (sendBtn) {
+      sendBtn.disabled = true;
+    }
+  }
+
+  // Enable input after bot response
+  enableInput() {
+    const input = document.getElementById("chatbot-input");
+    const sendBtn = document.getElementById("chatbot-send");
+
+    if (input) {
+      input.disabled = false;
+      input.placeholder = "Type your message...";
+    }
+    if (sendBtn) {
+      sendBtn.disabled = false;
+    }
   } // Typewriter effect for bot messages
   async typewriterEffect(element, text) {
     const formattedText = this.formatMessage(text);
@@ -308,22 +347,24 @@ class ChatbotManager {
         this.currentTypewriterTask.paused = true;
         return;
       }
-    }
-
-    // Complete the typewriter effect
+    } // Complete the typewriter effect
     element.classList.remove("typing");
     element.innerHTML = formattedText;
     this.scrollToBottom();
 
-    // Clear current task
+    // Clear current task and reset typing state
     if (this.currentTypewriterTask?.id === taskId) {
       this.currentTypewriterTask = null;
+      this.isTyping = false;
+      this.enableInput();
     }
   } // Simple error handling with typewriter effect
   handleError(error, userMessage) {
     console.error("Chatbot error:", error);
     let errorMessage = "Sorry, an error occurred. Please try again later.";
     this.addMessage(errorMessage, "bot");
+    // Ensure input is enabled after error
+    this.enableInput();
   }
   autoResizeTextarea(textarea) {
     textarea.style.height = "auto";
@@ -339,6 +380,7 @@ class ChatbotManager {
   showTypingIndicator() {
     const messagesContainer = document.getElementById("chatbot-messages");
     this.isTyping = true;
+    this.disableInput();
 
     const typingHTML = `
             <div class="message typing-indicator" id="typing-indicator">
@@ -358,13 +400,13 @@ class ChatbotManager {
     messagesContainer.insertAdjacentHTML("beforeend", typingHTML);
     this.scrollToBottom();
   }
-
   hideTypingIndicator() {
     const typingIndicator = document.getElementById("typing-indicator");
     if (typingIndicator) {
       typingIndicator.remove();
     }
-    this.isTyping = false;
+    // Note: Don't reset isTyping here as the typewriter effect might still be running
+    // The typewriter effect will handle resetting isTyping when it completes
   }
   getCurrentPageContext() {
     const title = document.title;
@@ -481,23 +523,26 @@ class ChatbotManager {
           this.currentTypewriterTask.paused = true;
           return;
         }
-      }
-
-      // Complete the typewriter effect
+      } // Complete the typewriter effect
       element.classList.remove("typing");
       element.innerHTML = formattedText;
       this.scrollToBottom();
 
-      // Clear current task
+      // Clear current task and reset typing state
       if (this.currentTypewriterTask?.id === task.id) {
         this.currentTypewriterTask = null;
+        this.isTyping = false;
+        this.enableInput();
       }
     }
   }
-
   // Process queued responses when page becomes visible
   processQueuedResponses() {
     if (this.queuedResponses.length > 0) {
+      // Set typing state for queued response
+      this.isTyping = true;
+      this.disableInput();
+
       // Process responses one by one
       const response = this.queuedResponses.shift();
       this.addMessage(response.message, "bot", response.conversationId);
@@ -533,6 +578,50 @@ class ChatbotManager {
           }
         });
       }
+    }
+  }
+
+  async startNewChat() {
+    try {
+      // Show confirmation dialog
+      if (
+        !confirm(
+          "Are you sure you want to start a new chat? This will clear the current conversation."
+        )
+      ) {
+        return;
+      }
+
+      // Clear current messages from UI
+      const messagesContainer = document.getElementById("chatbot-messages");
+      messagesContainer.innerHTML = "";
+
+      // Reset conversation state
+      this.messages = [];
+      this.conversationHistory = [];
+
+      // Call API to start new conversation
+      const response = await fetch("/api/chatbot/new-conversation", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          RequestVerificationToken: this.getAntiForgeryToken(),
+        },
+      });
+
+      if (response.ok) {
+        // Add welcome message for new chat
+        setTimeout(() => {
+          this.addMessage(
+            "Hello! I'm here to help you with a fresh conversation. How can I assist you today? 😊",
+            "bot"
+          );
+        }, 500);
+      } else {
+        console.error("Failed to start new conversation");
+      }
+    } catch (error) {
+      console.error("Error starting new chat:", error);
     }
   }
 }

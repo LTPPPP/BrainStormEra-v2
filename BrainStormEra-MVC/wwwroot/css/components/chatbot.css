@@ -116,6 +116,30 @@
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+.chatbot-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chatbot-new-chat-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chatbot-new-chat-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 /* Chat Messages Area */
 .chatbot-messages {
   flex: 1;
