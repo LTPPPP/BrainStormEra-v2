@@ -1,182 +1,95 @@
 using BrainStormEra_MVC.Models;
+using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
 using BrainStormEra_MVC.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using System.Collections.Concurrent;
 
 namespace BrainStormEra_MVC.Services
 {
     public class UserService : IUserService
     {
         private readonly BrainStormEraContext _context;
-        private readonly ILogger<UserService> _logger;
         private readonly IMemoryCache _cache;
+        private readonly ILogger<UserService> _logger;
+        private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(10);
 
-        // Increased cache duration for frequently accessed data
-        private static readonly TimeSpan CacheExpirationTime = TimeSpan.FromMinutes(30);
-        private static readonly TimeSpan SlidingExpirationTime = TimeSpan.FromMinutes(10);
-
-        // Cache keys
-        private const string UserByUsernameKey = "User_By_Username_{0}";
-        private const string UserByEmailKey = "User_By_Email_{0}";
-
-        // Concurrent cache to avoid lock contention for frequently accessed data
-        private static readonly ConcurrentDictionary<string, DateTimeOffset> _usernameLookupCache = new();
-        private static readonly ConcurrentDictionary<string, DateTimeOffset> _emailLookupCache = new();
-
-        // Cache cleanup interval (run every 1 hour)
-        private static readonly TimeSpan CacheCleanupInterval = TimeSpan.FromHours(1);
-        private readonly Timer _cleanupTimer;
-
-        public UserService(BrainStormEraContext context, ILogger<UserService> logger, IMemoryCache cache)
+        public UserService(
+            BrainStormEraContext context,
+            IMemoryCache cache,
+            ILogger<UserService> logger)
         {
             _context = context;
-            _logger = logger;
             _cache = cache;
-
-            // Start cache cleanup timer
-            _cleanupTimer = new Timer(CleanupExpiredCache, null, CacheCleanupInterval, CacheCleanupInterval);
+            _logger = logger;
         }
 
         public async Task<Account?> GetUserByUsernameAsync(string username)
         {
-            if (string.IsNullOrEmpty(username))
-                return null;
-
-            string cacheKey = string.Format(UserByUsernameKey, username);
-
-            if (!_cache.TryGetValue(cacheKey, out Account? user))
+            try
             {
-                user = await _context.Accounts
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(a => a.Username == username);
-
-                if (user != null)
-                {
-                    var cacheOptions = new MemoryCacheEntryOptions()
-                        .SetAbsoluteExpiration(CacheExpirationTime)
-                        .SetSlidingExpiration(SlidingExpirationTime)
-                        .SetPriority(CacheItemPriority.High);
-
-                    _cache.Set(cacheKey, user, cacheOptions);
-                    _usernameLookupCache.TryAdd(username, DateTimeOffset.UtcNow.Add(CacheExpirationTime));
-                }
+                return await _context.Accounts
+                    .FirstOrDefaultAsync(u => u.Username == username);
             }
-
-            return user;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving user by username: {Username}", username);
+                throw;
+            }
         }
 
         public async Task<Account?> GetUserByEmailAsync(string email)
         {
-            if (string.IsNullOrEmpty(email))
-                return null;
-
-            string cacheKey = string.Format(UserByEmailKey, email);
-
-            if (!_cache.TryGetValue(cacheKey, out Account? user))
+            try
             {
-                user = await _context.Accounts
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(a => a.UserEmail == email);
-
-                if (user != null)
-                {
-                    var cacheOptions = new MemoryCacheEntryOptions()
-                        .SetAbsoluteExpiration(CacheExpirationTime)
-                        .SetSlidingExpiration(SlidingExpirationTime)
-                        .SetPriority(CacheItemPriority.High);
-
-                    _cache.Set(cacheKey, user, cacheOptions);
-                    _emailLookupCache.TryAdd(email, DateTimeOffset.UtcNow.Add(CacheExpirationTime));
-                }
+                return await _context.Accounts
+                    .FirstOrDefaultAsync(u => u.UserEmail == email);
             }
-
-            return user;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving user by email: {Email}", email);
+                throw;
+            }
         }
 
         public async Task<bool> UsernameExistsAsync(string username)
         {
-            // Check in-memory cache first
-            if (_usernameLookupCache.TryGetValue(username, out var expiryTime))
+            try
             {
-                if (expiryTime > DateTimeOffset.UtcNow)
-                {
-                    return true;
-                }
-                // Remove expired entry
-                _usernameLookupCache.TryRemove(username, out _);
+                return await _context.Accounts.AnyAsync(u => u.Username == username);
             }
-
-            // Check database
-            bool exists = await _context.Accounts
-                .AsNoTracking()
-                .AnyAsync(a => a.Username == username);
-
-            // Cache positive results
-            if (exists)
+            catch (Exception ex)
             {
-                _usernameLookupCache.TryAdd(username, DateTimeOffset.UtcNow.Add(CacheExpirationTime));
+                _logger.LogError(ex, "Error checking username existence: {Username}", username);
+                throw;
             }
-
-            return exists;
         }
 
         public async Task<bool> EmailExistsAsync(string email)
         {
-            // Check in-memory cache first
-            if (_emailLookupCache.TryGetValue(email, out var expiryTime))
+            try
             {
-                if (expiryTime > DateTimeOffset.UtcNow)
-                {
-                    return true;
-                }
-                // Remove expired entry
-                _emailLookupCache.TryRemove(email, out _);
+                return await _context.Accounts.AnyAsync(u => u.UserEmail == email);
             }
-
-            // Check database
-            bool exists = await _context.Accounts
-                .AsNoTracking()
-                .AnyAsync(a => a.UserEmail == email);
-
-            // Cache positive results
-            if (exists)
+            catch (Exception ex)
             {
-                _emailLookupCache.TryAdd(email, DateTimeOffset.UtcNow.Add(CacheExpirationTime));
+                _logger.LogError(ex, "Error checking email existence: {Email}", email);
+                throw;
             }
-
-            return exists;
         }
 
         public async Task<bool> CreateUserAsync(Account user)
         {
             try
             {
-                if (user == null)
-                    return false;
-
                 _context.Accounts.Add(user);
                 await _context.SaveChangesAsync();
-
-                // Update cache
-                var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetAbsoluteExpiration(CacheExpirationTime)
-                    .SetSlidingExpiration(SlidingExpirationTime)
-                    .SetPriority(CacheItemPriority.High);
-
-                _cache.Set(string.Format(UserByUsernameKey, user.Username), user, cacheOptions);
-                _cache.Set(string.Format(UserByEmailKey, user.UserEmail), user, cacheOptions);
-
-                _usernameLookupCache.TryAdd(user.Username, DateTimeOffset.UtcNow.Add(CacheExpirationTime));
-                _emailLookupCache.TryAdd(user.UserEmail, DateTimeOffset.UtcNow.Add(CacheExpirationTime));
-
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating user {Username}", user?.Username);
-                return false;
+                _logger.LogError(ex, "Error creating user");
+                throw;
             }
         }
 
@@ -184,37 +97,20 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                if (user == null)
-                    return false;
-
-                user.AccountUpdatedAt = DateTime.UtcNow;
                 _context.Accounts.Update(user);
                 await _context.SaveChangesAsync();
-
-                // Update cache
-                InvalidateUserCache(user);
-
-                var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetAbsoluteExpiration(CacheExpirationTime)
-                    .SetSlidingExpiration(SlidingExpirationTime)
-                    .SetPriority(CacheItemPriority.High);
-
-                _cache.Set(string.Format(UserByUsernameKey, user.Username), user, cacheOptions);
-                _cache.Set(string.Format(UserByEmailKey, user.UserEmail), user, cacheOptions);
-
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating user {UserId}", user?.UserId);
-                return false;
+                _logger.LogError(ex, "Error updating user");
+                throw;
             }
         }
 
-        public Task<bool> VerifyPasswordAsync(string password, string storedHash)
+        public async Task<bool> VerifyPasswordAsync(string password, string storedHash)
         {
-            // This is a CPU-bound operation, so run it on a ThreadPool thread
-            return Task.Run(() => PasswordHasher.VerifyPassword(password, storedHash));
+            return await Task.FromResult(PasswordHasher.VerifyPassword(password, storedHash));
         }
 
         public async Task UpdateLastLoginAsync(string userId)
@@ -225,24 +121,13 @@ namespace BrainStormEra_MVC.Services
                 if (user != null)
                 {
                     user.LastLogin = DateTime.UtcNow;
-                    user.AccountUpdatedAt = DateTime.UtcNow;
                     await _context.SaveChangesAsync();
-
-                    // Update cache
-                    InvalidateUserCache(user);
-
-                    var cacheOptions = new MemoryCacheEntryOptions()
-                        .SetAbsoluteExpiration(CacheExpirationTime)
-                        .SetSlidingExpiration(SlidingExpirationTime)
-                        .SetPriority(CacheItemPriority.High);
-
-                    _cache.Set(string.Format(UserByUsernameKey, user.Username), user, cacheOptions);
-                    _cache.Set(string.Format(UserByEmailKey, user.UserEmail), user, cacheOptions);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating last login for user {UserId}", userId);
+                _logger.LogError(ex, "Error updating last login for user: {UserId}", userId);
+                throw;
             }
         }
 
@@ -251,67 +136,314 @@ namespace BrainStormEra_MVC.Services
             try
             {
                 var user = await _context.Accounts.FindAsync(userId);
-                if (user != null)
-                {
-                    user.IsBanned = isBanned;
-                    user.AccountUpdatedAt = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
+                if (user == null)
+                    return false;
 
-                    // Update cache
-                    InvalidateUserCache(user);
-
-                    return true;
-                }
-                return false;
+                user.IsBanned = isBanned;
+                await _context.SaveChangesAsync();
+                return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error banning user {UserId}", userId);
-                return false;
+                _logger.LogError(ex, "Error updating ban status for user: {UserId}", userId);
+                throw;
             }
         }
 
-        private void InvalidateUserCache(Account user)
-        {
-            if (user == null) return;
-
-            _cache.Remove(string.Format(UserByUsernameKey, user.Username));
-            _cache.Remove(string.Format(UserByEmailKey, user.UserEmail));
-
-            _usernameLookupCache.TryRemove(user.Username, out _);
-            _emailLookupCache.TryRemove(user.UserEmail, out _);
-        }
-
-        private void CleanupExpiredCache(object? state)
+        public async Task<List<EnrolledUserViewModel>> GetEnrolledUsersForInstructorAsync(string instructorId, string? courseId = null, string? search = null, string? statusFilter = null, int page = 1, int pageSize = 10)
         {
             try
             {
-                var now = DateTimeOffset.UtcNow;
+                var query = _context.Enrollments
+                    .Include(e => e.User)
+                    .Include(e => e.Course)
+                    .Where(e => e.Course.AuthorId == instructorId);
 
-                // Clean up username cache
-                foreach (var item in _usernameLookupCache)
+                if (!string.IsNullOrWhiteSpace(courseId))
                 {
-                    if (item.Value < now)
-                    {
-                        _usernameLookupCache.TryRemove(item.Key, out _);
-                        _cache.Remove(string.Format(UserByUsernameKey, item.Key));
-                    }
+                    query = query.Where(e => e.CourseId == courseId);
                 }
 
-                // Clean up email cache
-                foreach (var item in _emailLookupCache)
+                if (!string.IsNullOrWhiteSpace(search))
                 {
-                    if (item.Value < now)
-                    {
-                        _emailLookupCache.TryRemove(item.Key, out _);
-                        _cache.Remove(string.Format(UserByEmailKey, item.Key));
-                    }
+                    query = query.Where(e => e.User.FullName!.Contains(search) ||
+                                           e.User.UserEmail.Contains(search) ||
+                                           e.User.Username.Contains(search));
                 }
+
+                if (!string.IsNullOrWhiteSpace(statusFilter))
+                {
+                    var status = int.Parse(statusFilter);
+                    query = query.Where(e => e.EnrollmentStatus == status);
+                }
+
+                var enrollments = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(e => new EnrolledUserViewModel
+                    {
+                        UserId = e.User.UserId,
+                        Username = e.User.Username,
+                        FullName = e.User.FullName ?? "",
+                        Email = e.User.UserEmail,
+                        UserImage = e.User.UserImage ?? "/img/defaults/default-avatar.svg",
+                        CourseId = e.CourseId,
+                        CourseName = e.Course.CourseName,
+                        EnrollmentDate = e.EnrollmentCreatedAt,
+                        LastAccessDate = e.EnrollmentUpdatedAt,
+                        ProgressPercentage = e.ProgressPercentage ?? 0,
+                        EnrollmentStatus = e.EnrollmentStatus,
+                        CurrentLessonName = e.CurrentLessonId != null ? "Current Lesson" : null,
+                        LastAccessedLessonName = e.LastAccessedLessonId != null ? "Last Lesson" : null
+                    })
+                    .ToListAsync();
+
+                return enrollments;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error cleaning up user cache");
+                _logger.LogError(ex, "Error retrieving enrolled users for instructor: {InstructorId}", instructorId);
+                throw;
             }
+        }
+
+        public async Task<UserDetailViewModel?> GetUserDetailForInstructorAsync(string instructorId, string userId)
+        {
+            try
+            {
+                var user = await _context.Accounts
+                    .Include(u => u.Enrollments.Where(e => e.Course.AuthorId == instructorId))
+                        .ThenInclude(e => e.Course)
+                    .Include(u => u.UserAchievements)
+                        .ThenInclude(ua => ua.Achievement)
+                    .FirstOrDefaultAsync(u => u.UserId == userId);
+
+                if (user == null)
+                    return null;
+
+                var enrollments = user.Enrollments.Select(e => new UserCourseEnrollment
+                {
+                    CourseId = e.CourseId,
+                    CourseName = e.Course.CourseName,
+                    CourseImage = e.Course.CourseImage ?? "/img/defaults/default-course.svg",
+                    EnrollmentDate = e.EnrollmentCreatedAt,
+                    LastAccessDate = e.EnrollmentUpdatedAt,
+                    ProgressPercentage = e.ProgressPercentage ?? 0,
+                    CurrentLessonName = e.CurrentLessonId != null ? "Current Lesson" : null,
+                    LastAccessedLessonName = e.LastAccessedLessonId != null ? "Last Lesson" : null,
+                    EnrollmentStatus = e.EnrollmentStatus
+                }).ToList(); var achievements = user.UserAchievements.Select(ua => new UserAchievementSummary
+                {
+                    AchievementName = ua.Achievement.AchievementName ?? ua.Achievement.AchievementType ?? "",
+                    Description = ua.Achievement.AchievementDescription ?? "",
+                    EarnedDate = ua.ReceivedDate.ToDateTime(TimeOnly.MinValue),
+                    AchievementIcon = ua.Achievement.AchievementIcon ?? GetAchievementIcon(ua.Achievement.AchievementType ?? "default")
+                }).ToList();
+
+                return new UserDetailViewModel
+                {
+                    UserId = user.UserId,
+                    Username = user.Username,
+                    FullName = user.FullName ?? "",
+                    Email = user.UserEmail,
+                    PhoneNumber = user.PhoneNumber,
+                    UserImage = user.UserImage ?? "/img/defaults/default-avatar.svg",
+                    AccountCreatedAt = user.AccountCreatedAt,
+                    Enrollments = enrollments,
+                    Achievements = achievements,
+                    TotalCertificates = user.Certificates.Count,
+                    OverallProgress = enrollments.Any() ? (double)enrollments.Average(e => e.ProgressPercentage) : 0
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving user detail for instructor: {InstructorId}, user: {UserId}", instructorId, userId);
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateUserEnrollmentProgressAsync(string instructorId, string userId, string courseId, decimal progressPercentage, string? currentLessonId = null)
+        {
+            try
+            {
+                var enrollment = await _context.Enrollments
+                    .Include(e => e.Course)
+                    .FirstOrDefaultAsync(e => e.UserId == userId &&
+                                           e.CourseId == courseId &&
+                                           e.Course.AuthorId == instructorId);
+
+                if (enrollment == null)
+                    return false;
+
+                enrollment.ProgressPercentage = progressPercentage;
+                enrollment.CurrentLessonId = currentLessonId;
+                enrollment.EnrollmentUpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user enrollment progress");
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateUserEnrollmentStatusAsync(string instructorId, string userId, string courseId, int status)
+        {
+            try
+            {
+                var enrollment = await _context.Enrollments
+                    .Include(e => e.Course)
+                    .FirstOrDefaultAsync(e => e.UserId == userId &&
+                                           e.CourseId == courseId &&
+                                           e.Course.AuthorId == instructorId);
+
+                if (enrollment == null)
+                    return false;
+
+                enrollment.EnrollmentStatus = status;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user enrollment status");
+                throw;
+            }
+        }
+
+        public async Task<List<CourseFilterOption>> GetInstructorCoursesForFilterAsync(string instructorId)
+        {
+            try
+            {
+                return await _context.Courses
+                    .Where(c => c.AuthorId == instructorId)
+                    .Select(c => new CourseFilterOption
+                    {
+                        CourseId = c.CourseId,
+                        CourseName = c.CourseName,
+                        EnrollmentCount = c.Enrollments.Count
+                    })
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving instructor courses for filter");
+                throw;
+            }
+        }
+
+        public async Task<UserManagementViewModel> GetUserManagementDataAsync(string instructorId, string? courseId = null, string? search = null, string? statusFilter = null, int page = 1, int pageSize = 10)
+        {
+            try
+            {
+                var instructor = await _context.Accounts.FindAsync(instructorId);
+                var enrolledUsers = await GetEnrolledUsersForInstructorAsync(instructorId, courseId, search, statusFilter, page, pageSize);
+                var courseFilters = await GetInstructorCoursesForFilterAsync(instructorId);
+
+                var totalQuery = _context.Enrollments
+                    .Include(e => e.Course)
+                    .Where(e => e.Course.AuthorId == instructorId);
+
+                if (!string.IsNullOrWhiteSpace(courseId))
+                {
+                    totalQuery = totalQuery.Where(e => e.CourseId == courseId);
+                }
+
+                var totalUsers = await totalQuery.CountAsync();
+                var activeUsers = await totalQuery.CountAsync(e => e.EnrollmentStatus == 1);
+                var completedUsers = await totalQuery.CountAsync(e => e.EnrollmentStatus == 3);
+                var averageProgress = totalUsers > 0 ? await totalQuery.AverageAsync(e => (double)(e.ProgressPercentage ?? 0)) : 0;
+
+                return new UserManagementViewModel
+                {
+                    InstructorId = instructorId,
+                    InstructorName = instructor?.FullName ?? "Unknown",
+                    EnrolledUsers = enrolledUsers,
+                    CourseFilters = courseFilters,
+                    SelectedCourseId = courseId,
+                    SearchQuery = search,
+                    StatusFilter = statusFilter,
+                    CurrentPage = page,
+                    TotalPages = (int)Math.Ceiling((double)totalUsers / pageSize),
+                    TotalUsers = totalUsers,
+                    PageSize = pageSize,
+                    TotalEnrolledUsers = totalUsers,
+                    ActiveUsers = activeUsers,
+                    CompletedUsers = completedUsers,
+                    AverageProgress = averageProgress
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving user management data for instructor: {InstructorId}", instructorId);
+                throw;
+            }
+        }
+
+        public async Task<bool> UnenrollUserFromCourseAsync(string instructorId, string userId, string courseId)
+        {
+            try
+            {
+                var enrollment = await _context.Enrollments
+                    .Include(e => e.Course)
+                    .FirstOrDefaultAsync(e => e.UserId == userId &&
+                                           e.CourseId == courseId &&
+                                           e.Course.AuthorId == instructorId);
+
+                if (enrollment == null)
+                    return false;
+
+                _context.Enrollments.Remove(enrollment);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error unenrolling user from course");
+                throw;
+            }
+        }
+
+        public async Task<int> BulkUpdateUserStatusAsync(string instructorId, List<string> userIds, string courseId, int status)
+        {
+            try
+            {
+                var enrollments = await _context.Enrollments
+                    .Include(e => e.Course)
+                    .Where(e => userIds.Contains(e.UserId) &&
+                               e.CourseId == courseId &&
+                               e.Course.AuthorId == instructorId)
+                    .ToListAsync();
+
+                foreach (var enrollment in enrollments)
+                {
+                    enrollment.EnrollmentStatus = status;
+                }
+
+                await _context.SaveChangesAsync();
+                return enrollments.Count;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing bulk user status update");
+                throw;
+            }
+        }
+
+        // Helper methods
+        private string GetAchievementIcon(string achievementType)
+        {
+            return achievementType.ToLower() switch
+            {
+                "completion" => "fas fa-trophy",
+                "streak" => "fas fa-fire",
+                "perfect_score" => "fas fa-star",
+                "first_course" => "fas fa-graduation-cap",
+                "speed_learner" => "fas fa-bolt",
+                _ => "fas fa-medal"
+            };
         }
     }
 }

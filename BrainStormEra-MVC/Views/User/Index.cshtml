@@ -1,0 +1,718 @@
+@model BrainStormEra_MVC.Models.ViewModels.UserManagementViewModel
+@{
+    ViewData["Title"] = "User Management";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="BrainStormEra - Manage enrolled users and track student progress">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/Course/courses.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <!-- User Management specific styles -->
+    <link rel="stylesheet" href="~/css/pages/User/user-management.css">
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+    <link rel="stylesheet" href="~/css/components/chatbot.css">
+    
+    @* User authentication meta tags for JavaScript access *@
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <meta name="user-id" content="@User.FindFirst("UserId")?.Value" />
+        <meta name="user-role" content="@User.FindFirst("UserRole")?.Value" />
+        <meta name="user-name" content="@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)" />
+    }
+    
+    <script src="~/js/components/loader.js"></script>
+</head>
+
+<body>
+    <!-- Toast notification data containers -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Main Content -->
+    <div class="container main-content">
+        <!-- Enhanced Page Header -->
+        <div class="page-header">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="page-title">
+                        <i class="fas fa-users"></i>
+                        User Management
+                    </h1>
+                    <p class="page-subtitle">Manage enrolled students and track their learning progress</p>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <div class="header-actions">
+                        <button type="button" class="btn btn-outline-primary me-2" onclick="exportUserData()">
+                            <i class="fas fa-download me-1"></i>Export CSV
+                        </button>
+                        <div class="dropdown d-inline-block">
+                            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-cog me-1"></i>Actions
+                            </button>                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="refreshUserList()"><i class="fas fa-sync me-2"></i>Refresh</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-users text-primary"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">@Model.TotalUsers</h3>
+                        <p class="stats-label">Total Enrolled</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-chart-line text-success"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">@Model.ActiveUsers</h3>
+                        <p class="stats-label">Active Students</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-graduation-cap text-warning"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">@Model.CompletedUsers</h3>
+                        <p class="stats-label">Completed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-book-open text-info"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">@Model.CourseFilters.Count</h3>
+                        <p class="stats-label">Your Courses</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="filters-section mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3" id="filterForm">
+                        <div class="col-md-3">                            <label for="courseFilter" class="form-label">
+                                <i class="fas fa-book me-1"></i>Course
+                            </label>
+                            <select name="courseId" id="courseFilter" class="form-select">
+                                <option value="">All Courses</option>
+                                @foreach (var course in Model.CourseFilters)
+                                {
+                                    var isSelected = Model.SelectedCourseId == course.CourseId;
+                                    @if (isSelected)
+                                    {
+                                        <option value="@course.CourseId" selected>
+                                            @course.CourseName (@course.EnrolledCount students)
+                                        </option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@course.CourseId">
+                                            @course.CourseName (@course.EnrolledCount students)
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">                            <label for="statusFilter" class="form-label">
+                                <i class="fas fa-flag me-1"></i>Status
+                            </label>
+                            <select name="status" id="statusFilter" class="form-select">
+                                <option value="">All Status</option>
+                                @{
+                                    var selectedStatus = Model.SelectedStatus;
+                                }
+                                @if (selectedStatus == "Active")
+                                {
+                                    <option value="Active" selected>Active</option>
+                                }
+                                else
+                                {
+                                    <option value="Active">Active</option>
+                                }
+                                @if (selectedStatus == "Completed")
+                                {
+                                    <option value="Completed" selected>Completed</option>
+                                }
+                                else
+                                {
+                                    <option value="Completed">Completed</option>
+                                }
+                                @if (selectedStatus == "Inactive")
+                                {
+                                    <option value="Inactive" selected>Inactive</option>
+                                }
+                                else
+                                {
+                                    <option value="Inactive">Inactive</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="searchBox" class="form-label">
+                                <i class="fas fa-search me-1"></i>Search Users
+                            </label>
+                            <div class="input-group">
+                                <input type="text" name="search" id="searchBox" class="form-control" 
+                                       placeholder="Search by name or email..." value="@Model.SearchTerm">
+                                <button class="btn btn-outline-secondary" type="submit">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                                    <i class="fas fa-times me-1"></i>Clear
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="users-section">
+            @if (Model.Users.Any())
+            {
+                <div class="card">                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>Enrolled Users
+                            <span class="badge bg-primary ms-2">@Model.TotalUsers</span>
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="usersTable">                                <thead class="table-light">
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Course</th>
+                                        <th>Progress</th>
+                                        <th>Status</th>
+                                        <th>Enrolled Date</th>
+                                        <th>Last Activity</th>
+                                        <th width="120">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var user in Model.Users)
+                                    {                                        <tr data-user-id="@user.UserId" data-course-id="@user.CourseId">
+                                            <td>
+                                                <div class="user-info">
+                                                    <div class="user-avatar">
+                                                        <img src="@Url.Action("GetAvatar", "Profile", new { userId = user.UserId })" 
+                                                             alt="@user.FullName" class="rounded-circle"
+                                                             onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
+                                                    </div>
+                                                    <div class="user-details">
+                                                        <h6 class="mb-0">
+                                                            <a href="@Url.Action("Detail", "User", new { userId = user.UserId, courseId = user.CourseId })" 
+                                                               class="text-decoration-none">
+                                                                @user.FullName
+                                                            </a>
+                                                        </h6>
+                                                        <small class="text-muted">@user.Email</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="course-name">@user.CourseName</span>
+                                            </td>
+                                            <td>
+                                                <div class="progress-container">
+                                                    <div class="progress" style="height: 6px;">
+                                                        <div class="progress-bar" role="progressbar" 
+                                                             style="width: @user.ProgressPercentage%"
+                                                             aria-valuenow="@user.ProgressPercentage" 
+                                                             aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                    <small class="text-muted">@user.ProgressPercentage%</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-@(user.Status.ToLower() switch 
+                                                { 
+                                                    "active" => "success", 
+                                                    "completed" => "primary", 
+                                                    "inactive" => "warning", 
+                                                    _ => "secondary" 
+                                                })">
+                                                    @user.Status
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <small>@user.EnrolledDate.ToString("MMM dd, yyyy")</small>
+                                            </td>
+                                            <td>
+                                                <small class="@(user.LastActivity.HasValue && (DateTime.Now - user.LastActivity.Value).TotalDays <= 7 ? "text-success" : "text-muted")">
+                                                    @(user.LastActivity?.ToString("MMM dd, yyyy") ?? "Never")
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                                            type="button" data-bs-toggle="dropdown">
+                                                        <i class="fas fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li>
+                                                            <a class="dropdown-item" 
+                                                               href="@Url.Action("Detail", "User", new { userId = user.UserId, courseId = user.CourseId })">
+                                                                <i class="fas fa-eye me-2"></i>View Details
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item" href="#" 
+                                                               onclick="updateProgress('@user.UserId', '@user.CourseId')">
+                                                                <i class="fas fa-chart-line me-2"></i>Update Progress
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item" href="#" 
+                                                               onclick="changeStatus('@user.UserId', '@user.CourseId', '@user.Status')">
+                                                                <i class="fas fa-flag me-2"></i>Change Status
+                                                            </a>
+                                                        </li>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a class="dropdown-item text-danger" href="#" 
+                                                               onclick="unenrollUser('@user.UserId', '@user.CourseId', '@user.FullName', '@user.CourseName')">
+                                                                <i class="fas fa-user-times me-2"></i>Unenroll
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <div class="pagination-wrapper mt-4">
+                        <nav aria-label="Users pagination">
+                            <ul class="pagination justify-content-center">
+                                @if (Model.HasPreviousPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", "User", new { 
+                                            courseId = Model.SelectedCourseId, 
+                                            status = Model.SelectedStatus, 
+                                            search = Model.SearchTerm, 
+                                            page = Model.CurrentPage - 1 })">
+                                            <i class="fas fa-chevron-left"></i>
+                                            Previous
+                                        </a>
+                                    </li>
+                                }
+
+                                @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                                {
+                                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Index", "User", new { 
+                                            courseId = Model.SelectedCourseId, 
+                                            status = Model.SelectedStatus, 
+                                            search = Model.SearchTerm, 
+                                            page = i })">
+                                            @i
+                                        </a>
+                                    </li>
+                                }
+
+                                @if (Model.HasNextPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", "User", new { 
+                                            courseId = Model.SelectedCourseId, 
+                                            status = Model.SelectedStatus, 
+                                            search = Model.SearchTerm, 
+                                            page = Model.CurrentPage + 1 })">
+                                            Next
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                        <div class="pagination-info text-center mt-2">
+                            Showing @((Model.CurrentPage - 1) * Model.PageSize + 1) to @(Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalUsers)) of @Model.TotalUsers users
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="no-users">
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h3>No enrolled users found</h3>
+                            @if (!string.IsNullOrEmpty(Model.SearchTerm) || !string.IsNullOrEmpty(Model.SelectedCourseId) || !string.IsNullOrEmpty(Model.SelectedStatus))
+                            {
+                                <p>Try adjusting your search criteria or filters.</p>
+                                <button class="btn btn-primary" onclick="clearFilters()">
+                                    <i class="fas fa-times me-1"></i>Clear Filters
+                                </button>
+                            }
+                            else
+                            {
+                                <p>No students have enrolled in your courses yet.</p>
+                                <a href="@Url.Action("Index", "Course")" class="btn btn-primary">
+                                    <i class="fas fa-book me-1"></i>View Courses
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>    <!-- Progress Update Modal -->
+    <div class="modal fade" id="progressModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Progress</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="progressForm">
+                        <input type="hidden" id="progressUserId">
+                        <input type="hidden" id="progressCourseId">
+                        <div class="mb-3">
+                            <label for="progressPercentage" class="form-label">Progress Percentage</label>
+                            <input type="range" class="form-range" id="progressPercentage" min="0" max="100" value="0">
+                            <div class="d-flex justify-content-between">
+                                <small>0%</small>
+                                <span id="progressValue" class="fw-bold">0%</span>
+                                <small>100%</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="progressNotes" class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" id="progressNotes" rows="3" 
+                                      placeholder="Add any notes about the progress update..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProgress()">Update Progress</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Change Modal -->
+    <div class="modal fade" id="statusModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Change Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="statusForm">
+                        <input type="hidden" id="statusUserId">
+                        <input type="hidden" id="statusCourseId">
+                        <div class="mb-3">
+                            <label for="newStatus" class="form-label">New Status</label>
+                            <select class="form-select" id="newStatus">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Completed">Completed</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="statusReason" class="form-label">Reason (Optional)</label>
+                            <textarea class="form-control" id="statusReason" rows="3" 
+                                      placeholder="Reason for status change..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveStatus()">Update Status</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    @* Include Chatbot for authenticated users *@
+    @await Html.PartialAsync("~/Views/Shared/_Chatbot.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/components/toast-notifications.js"></script>
+    <script src="~/js/pages/User/user-management.js"></script>
+
+    <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+
+        // Auto-submit form on filter change
+        document.getElementById('courseFilter').addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+        
+        document.getElementById('statusFilter').addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+
+        // Clear filters function
+        function clearFilters() {
+            window.location.href = '@Url.Action("Index", "User")';
+        }
+
+        // Refresh user list
+        function refreshUserList() {
+            location.reload();
+        }
+
+        // Export user data
+        function exportUserData() {
+            const params = new URLSearchParams();
+            const courseId = document.getElementById('courseFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            const search = document.getElementById('searchBox').value;
+            
+            if (courseId) params.append('courseId', courseId);
+            if (status) params.append('status', status);
+            if (search) params.append('search', search);
+            
+            window.location.href = '@Url.Action("ExportUsers", "User")?' + params.toString();        }
+
+        // Progress modal functions
+        function updateProgress(userId, courseId) {
+            document.getElementById('progressUserId').value = userId;
+            document.getElementById('progressCourseId').value = courseId;
+            
+            // Get current progress from table
+            const row = document.querySelector(`tr[data-user-id="${userId}"][data-course-id="${courseId}"]`);
+            const currentProgress = row.querySelector('.progress-bar').getAttribute('aria-valuenow');
+            
+            document.getElementById('progressPercentage').value = currentProgress;
+            document.getElementById('progressValue').textContent = currentProgress + '%';
+            
+            new bootstrap.Modal(document.getElementById('progressModal')).show();
+        }
+
+        // Progress range update
+        document.getElementById('progressPercentage').addEventListener('input', function() {
+            document.getElementById('progressValue').textContent = this.value + '%';
+        });
+
+        // Status modal functions
+        function changeStatus(userId, courseId, currentStatus) {
+            document.getElementById('statusUserId').value = userId;
+            document.getElementById('statusCourseId').value = courseId;
+            document.getElementById('newStatus').value = currentStatus;
+            
+            new bootstrap.Modal(document.getElementById('statusModal')).show();
+        }
+
+        // Save progress function
+        async function saveProgress() {
+            const userId = document.getElementById('progressUserId').value;
+            const courseId = document.getElementById('progressCourseId').value;
+            const percentage = document.getElementById('progressPercentage').value;
+            const notes = document.getElementById('progressNotes').value;
+
+            try {
+                const response = await fetch('@Url.Action("UpdateProgress", "User")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        courseId: courseId,
+                        progressPercentage: parseInt(percentage),
+                        notes: notes
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Progress updated successfully', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('progressModal')).hide();
+                    location.reload(); // Refresh to show updated data
+                } else {
+                    showToast(result.message || 'Failed to update progress', 'error');
+                }
+            } catch (error) {
+                showToast('An error occurred while updating progress', 'error');
+            }
+        }
+
+        // Save status function
+        async function saveStatus() {
+            const userId = document.getElementById('statusUserId').value;
+            const courseId = document.getElementById('statusCourseId').value;
+            const status = document.getElementById('newStatus').value;
+            const reason = document.getElementById('statusReason').value;
+
+            try {
+                const response = await fetch('@Url.Action("UpdateStatus", "User")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        courseId: courseId,
+                        status: status,
+                        reason: reason
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Status updated successfully', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
+                    location.reload(); // Refresh to show updated data
+                } else {
+                    showToast(result.message || 'Failed to update status', 'error');
+                }
+            } catch (error) {
+                showToast('An error occurred while updating status', 'error');
+            }
+        }
+
+        // Unenroll user function
+        function unenrollUser(userId, courseId, userName, courseName) {
+            if (confirm(`Are you sure you want to unenroll ${userName} from ${courseName}? This action cannot be undone.`)) {
+                performUnenroll(userId, courseId);
+            }
+        }
+
+        // Perform unenroll
+        async function performUnenroll(userId, courseId) {
+            try {
+                const response = await fetch('@Url.Action("UnenrollUser", "User")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        courseId: courseId
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('User unenrolled successfully', 'success');
+                    location.reload(); // Refresh to show updated data
+                } else {
+                    showToast(result.message || 'Failed to unenroll user', 'error');
+                }
+            } catch (error) {
+                showToast('An error occurred while unenrolling user', 'error');
+            }        }
+
+        // Export user data
+        function exportUserData() {
+            const params = new URLSearchParams();
+            const courseId = document.getElementById('courseFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            const search = document.getElementById('searchBox').value;
+            
+            if (courseId) params.append('courseId', courseId);
+            if (status) params.append('status', status);
+            if (search) params.append('search', search);
+            
+            window.location.href = '@Url.Action("ExportUsers", "User")?' + params.toString();
+        }
+
+        // Toast notification function
+        function showToast(message, type) {
+            // This function should be implemented based on your toast notification system
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+    </script>
+
+    <!-- User Management JavaScript -->
+    <script src="~/js/pages/User/user-management.js"></script>
+
+    @Html.AntiForgeryToken()
+</body>
+</html>

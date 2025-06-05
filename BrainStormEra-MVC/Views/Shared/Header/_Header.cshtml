@@ -23,6 +23,13 @@
                     <li class="nav-item">
                         <a class="nav-link" href="@Url.Action("Index", "Course")">COURSE</a>
                     </li>
+                    @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Instructor") ||
+                                        User.IsInRole("instructor")))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("Index", "User")">USER</a>
+                        </li>
+                    }
                     @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Learner") ||
                                         User.IsInRole("learner")))
                     {
