@@ -11,6 +11,40 @@ class UserManagement {
   init() {
     this.bindEvents();
     this.initializeTooltips();
+    this.setupSearchKeyboardNavigation();
+    this.preloadUserAvatars();
+  } // Preload user avatars to ensure they're cached
+  preloadUserAvatars() {
+    // Create a cache for user avatars
+    this.avatarCache = new Map();
+
+    document.querySelectorAll(".user-details").forEach((userDetail) => {
+      const userId = userDetail
+        .closest("tr")
+        .querySelector(".btn-edit-user, .btn-change-status")?.dataset.userId;
+      const avatarImg = userDetail.querySelector(".user-avatar img");
+
+      if (userId && avatarImg && avatarImg.src) {
+        // Store the avatar URL in our cache, whether it's default or custom
+        this.avatarCache.set(userId, avatarImg.src);
+
+        // Preload the image to ensure it loads properly
+        const img = new Image();
+        img.onload = () => {
+          // Image loaded successfully, update cache with actual loaded URL
+          this.avatarCache.set(userId, img.src);
+        };
+        img.onerror = () => {
+          // If image fails to load, use default avatar
+          const defaultAvatar = "/img/defaults/default-avatar.svg";
+          this.avatarCache.set(userId, defaultAvatar);
+          if (avatarImg.src !== defaultAvatar) {
+            avatarImg.src = defaultAvatar;
+          }
+        };
+        img.src = avatarImg.src;
+      }
+    });
   }
 
   bindEvents() {
@@ -43,12 +77,26 @@ class UserManagement {
       btn.addEventListener("click", (e) => this.handleEditUser(e));
     });
 
-    document.querySelectorAll(".btn-update-progress").forEach((btn) => {
-      btn.addEventListener("click", (e) => this.handleUpdateProgress(e));
-    });
-
     document.querySelectorAll(".btn-change-status").forEach((btn) => {
       btn.addEventListener("click", (e) => this.handleChangeStatus(e));
+    });
+
+    document.querySelectorAll(".btn-view-progress").forEach((btn) => {
+      btn.addEventListener("click", (e) =>
+        this.openProgressModal(e.target.dataset.userId)
+      );
+    });
+
+    // Pagination
+    document.querySelectorAll(".pagination .page-link").forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        const page = e.target.closest(".page-link").dataset.page;
+        if (page) {
+          this.currentPage = parseInt(page);
+          this.refreshTable();
+        }
+      });
     });
   }
 
@@ -72,16 +120,44 @@ class UserManagement {
       });
     });
   }
-
   bindSearchEvents() {
     const searchInput = document.querySelector('input[name="search"]');
+    const searchIndicator = document.querySelector("#searchIndicator");
+
     if (searchInput) {
       let searchTimeout;
+
+      // Real-time search on input
       searchInput.addEventListener("input", (e) => {
         clearTimeout(searchTimeout);
+
+        // Show loading indicator
+        if (searchIndicator) {
+          searchIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+
+        // Debounce search - trigger after 300ms of inactivity
         searchTimeout = setTimeout(() => {
           this.handleSearch(e.target.value);
-        }, 500);
+        }, 300);
+      });
+
+      // Prevent form submission on Enter key
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          // Trigger immediate search if Enter is pressed
+          clearTimeout(searchTimeout);
+          this.handleSearch(e.target.value);
+        }
+      });
+
+      // Clear search with Escape key
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          e.target.value = "";
+          this.handleSearch("");
+        }
       });
     }
   }
@@ -153,11 +229,6 @@ class UserManagement {
     this.openEditModal(userId);
   }
 
-  handleUpdateProgress(e) {
-    const userId = e.target.dataset.userId;
-    this.openProgressModal(userId);
-  }
-
   handleChangeStatus(e) {
     const userId = e.target.dataset.userId;
     const currentStatus = e.target.dataset.currentStatus;
@@ -171,7 +242,6 @@ class UserManagement {
   }
 
   openProgressModal(userId) {
-    this.showModal("updateProgressModal");
     this.loadUserData(userId, "progress");
   }
 
@@ -223,9 +293,6 @@ class UserManagement {
       case "editUserModal":
         endpoint = "/User/UpdateUser";
         break;
-      case "updateProgressModal":
-        endpoint = "/User/UpdateProgress";
-        break;
       case "changeStatusModal":
         endpoint = "/User/ChangeStatus";
         break;
@@ -243,39 +310,313 @@ class UserManagement {
 
     const url = `/User/Export?${params.toString()}`;
     window.open(url, "_blank");
-  }
-
-  // Search functionality
+  } // Search functionality
   handleSearch(searchTerm) {
     const params = this.getCurrentParams();
-    if (searchTerm) {
-      params.set("search", searchTerm);
+    const searchIndicator = document.querySelector("#searchIndicator");
+
+    // Clear previous highlights
+    this.clearSearchHighlights();
+
+    if (searchTerm && searchTerm.trim() !== "") {
+      params.set("search", searchTerm.trim());
     } else {
       params.delete("search");
     }
     params.set("page", "1");
 
-    this.loadUsers(params);
+    // Show loading indicator
+    if (searchIndicator) {
+      searchIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      searchIndicator.classList.add("searching");
+    }
+    this.loadUsers(params)
+      .then(() => {
+        // Highlight search results
+        if (searchTerm && searchTerm.trim() !== "") {
+          setTimeout(() => {
+            this.highlightSearchResults(searchTerm.trim());
+            // Check for no results and show appropriate message
+            this.showNoSearchResults(searchTerm.trim());
+          }, 100);
+        }
+
+        // Reset search indicator
+        if (searchIndicator) {
+          searchIndicator.classList.remove("searching");
+          if (searchTerm && searchTerm.trim() !== "") {
+            searchIndicator.innerHTML =
+              '<i class="fas fa-check text-success"></i>';
+            searchIndicator.classList.add("success");
+            setTimeout(() => {
+              searchIndicator.innerHTML = '<i class="fas fa-search"></i>';
+              searchIndicator.classList.remove("success");
+            }, 1500);
+          } else {
+            searchIndicator.innerHTML = '<i class="fas fa-search"></i>';
+          }
+        }
+      })
+      .catch((error) => {
+        // Error handling
+        if (searchIndicator) {
+          searchIndicator.classList.remove("searching");
+          searchIndicator.classList.add("error");
+          searchIndicator.innerHTML =
+            '<i class="fas fa-exclamation-triangle text-danger"></i>';
+          setTimeout(() => {
+            searchIndicator.innerHTML = '<i class="fas fa-search"></i>';
+            searchIndicator.classList.remove("error");
+          }, 2000);
+        }
+        this.handleSearchError(error);
+      });
   }
 
-  // Data loading
+  // Add a no results message when search returns empty
+  showNoSearchResults(searchTerm) {
+    const tableContainer = document.querySelector(".users-section");
+    if (!tableContainer) return;
+
+    const noResultsHtml = `
+      <div class="card">
+        <div class="card-body no-search-results">
+          <i class="fas fa-search"></i>
+          <h4>No Users Found</h4>
+          <p>No users match your search for "<strong>${searchTerm}</strong>"</p>
+          <button class="btn btn-outline-primary" onclick="clearFilters()">
+            <i class="fas fa-times me-2"></i>Clear Search
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Check if there are no results
+    if (!document.querySelector("#usersTable tbody tr")) {
+      // If the table exists but has no rows, replace with no results message
+      const existingTable = document.querySelector(".users-section .card");
+      if (existingTable) {
+        existingTable.outerHTML = noResultsHtml;
+      }
+    }
+  }
+  // Keyboard navigation for search
+  setupSearchKeyboardNavigation() {
+    const searchInput = document.querySelector("#searchBox");
+    if (!searchInput) return;
+
+    // Current highlighted row index
+    let currentRowIndex = -1;
+
+    // Move through search results with arrow keys
+    searchInput.addEventListener("keydown", (e) => {
+      const rows = document.querySelectorAll("#usersTable tbody tr");
+      if (!rows.length) return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+
+        // Remove previous highlight
+        document
+          .querySelectorAll("#usersTable tbody tr.table-active")
+          .forEach((row) => {
+            row.classList.remove("table-active");
+          });
+
+        // Move to next row or first row if at the end
+        currentRowIndex =
+          currentRowIndex < rows.length - 1 ? currentRowIndex + 1 : 0;
+
+        // Highlight current row
+        const currentRow = rows[currentRowIndex];
+        if (currentRow) {
+          currentRow.classList.add("table-active");
+          currentRow.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+
+        // Remove previous highlight
+        document
+          .querySelectorAll("#usersTable tbody tr.table-active")
+          .forEach((row) => {
+            row.classList.remove("table-active");
+          });
+
+        // Move to previous row or last row if at the beginning
+        currentRowIndex =
+          currentRowIndex > 0 ? currentRowIndex - 1 : rows.length - 1;
+
+        // Highlight current row
+        const currentRow = rows[currentRowIndex];
+        if (currentRow) {
+          currentRow.classList.add("table-active");
+          currentRow.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      } else if (e.key === "Enter" && currentRowIndex >= 0) {
+        e.preventDefault();
+
+        // If Enter pressed on a highlighted row, click the first action button
+        const currentRow = rows[currentRowIndex];
+        if (currentRow) {
+          const actionBtn = currentRow.querySelector(".dropdown-toggle");
+          if (actionBtn) {
+            actionBtn.click();
+          }
+        }
+      }
+    });
+
+    // Reset navigation when search input loses focus
+    searchInput.addEventListener("blur", () => {
+      currentRowIndex = -1;
+
+      // Small delay to not interfere with click actions
+      setTimeout(() => {
+        document
+          .querySelectorAll("#usersTable tbody tr.table-active")
+          .forEach((row) => {
+            row.classList.remove("table-active");
+          });
+      }, 200);
+    });
+  } // Enhanced search functionality
+  highlightSearchResults(searchTerm) {
+    if (!searchTerm || searchTerm.trim() === "") return;
+
+    const searchRegex = new RegExp(`(${searchTerm.trim()})`, "gi");
+    const userCells = document.querySelectorAll(
+      ".user-details h6, .user-details small, .course-name"
+    );
+
+    let matchCount = 0;
+    const rowsWithMatches = new Set();
+
+    userCells.forEach((cell) => {
+      const originalText = cell.textContent;
+      if (originalText.toLowerCase().includes(searchTerm.toLowerCase())) {
+        cell.innerHTML = originalText.replace(
+          searchRegex,
+          '<span class="search-highlight">$1</span>'
+        );
+
+        // Count unique rows with matches
+        const row = cell.closest("tr");
+        if (row && !rowsWithMatches.has(row)) {
+          rowsWithMatches.add(row);
+          matchCount++;
+        }
+      }
+    });
+
+    // Show match count
+    const searchCountEl = document.getElementById("searchCount");
+    if (searchCountEl) {
+      if (matchCount > 0) {
+        searchCountEl.textContent = `${matchCount} found`;
+        searchCountEl.classList.add("visible");
+      } else {
+        searchCountEl.classList.remove("visible");
+      }
+    }
+  }
+  // Clear search highlights
+  clearSearchHighlights() {
+    document.querySelectorAll(".search-highlight").forEach((element) => {
+      const parent = element.parentNode;
+      parent.replaceChild(
+        document.createTextNode(element.textContent),
+        element
+      );
+      parent.normalize();
+    });
+
+    // Clear count badge
+    const searchCountEl = document.getElementById("searchCount");
+    if (searchCountEl) {
+      searchCountEl.classList.remove("visible");
+    }
+
+    // Remove active row highlighting
+    document
+      .querySelectorAll("#usersTable tbody tr.table-active")
+      .forEach((row) => {
+        row.classList.remove("table-active");
+      });
+  } // Data loading
   loadUsers(params) {
     this.showTableLoading();
 
-    fetch(`/User?${params.toString()}`, {
+    // Use the avatar cache if it exists, otherwise create a temporary one for this request
+    const avatarCache = this.avatarCache || new Map();
+
+    // Update cache with current avatars before refreshing
+    document.querySelectorAll(".user-details").forEach((userDetail) => {
+      const userId = userDetail
+        .closest("tr")
+        .querySelector(".btn-edit-user, .btn-change-status")?.dataset.userId;
+      const avatarImg = userDetail.querySelector(".user-avatar img");
+
+      if (userId && avatarImg && avatarImg.src) {
+        // Cache all avatar sources (including default) to maintain consistency
+        avatarCache.set(userId, avatarImg.src);
+      }
+    });
+
+    return fetch(`/User?${params.toString()}`, {
       headers: {
         "X-Requested-With": "XMLHttpRequest",
       },
     })
-      .then((response) => response.text())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text();
+      })
       .then((html) => {
-        const tableContainer = document.querySelector(".user-table-container");
-        tableContainer.innerHTML = html;
-        this.bindTableEvents();
+        const tableContainer = document.querySelector(".users-section");
+        if (tableContainer) {
+          tableContainer.innerHTML = html;
+          this.bindTableEvents(); // Restore avatars from our cache after DOM update
+          document.querySelectorAll(".user-details").forEach((userDetail) => {
+            const userId = userDetail
+              .closest("tr")
+              .querySelector(".btn-edit-user, .btn-change-status")
+              ?.dataset.userId;
+            const avatarImg = userDetail.querySelector(".user-avatar img");
+
+            if (userId && avatarImg && avatarCache.has(userId)) {
+              const cachedAvatar = avatarCache.get(userId);
+              // Always use cached avatar to maintain consistency during navigation
+              if (cachedAvatar && avatarImg.src !== cachedAvatar) {
+                avatarImg.src = cachedAvatar;
+
+                // Add error handling for the restored avatar
+                avatarImg.onerror = function () {
+                  this.onerror = null;
+                  this.src = "/img/defaults/default-avatar.svg";
+                  avatarCache.set(userId, "/img/defaults/default-avatar.svg");
+                };
+              }
+            } else if (userId && avatarImg) {
+              // If no cache exists, ensure proper error handling
+              avatarImg.onerror = function () {
+                this.onerror = null;
+                this.src = "/img/defaults/default-avatar.svg";
+                avatarCache.set(userId, "/img/defaults/default-avatar.svg");
+              };
+            }
+          });
+
+          // Update the class avatar cache
+          this.avatarCache = avatarCache;
+        }
       })
       .catch((error) => {
         console.error("Load users error:", error);
         this.showAlert("danger", "Failed to load users");
+        throw error; // Re-throw for search feedback
       })
       .finally(() => {
         this.hideTableLoading();
@@ -353,6 +694,15 @@ class UserManagement {
       });
   }
 
+  // Export for use in other scripts
+  export() {
+    return {
+      handleSearch: this.handleSearch.bind(this),
+      highlightSearchResults: this.highlightSearchResults.bind(this),
+      clearSearchHighlights: this.clearSearchHighlights.bind(this),
+    };
+  }
+
   // Utility functions
   makeRequest(url, method, data) {
     const options = {
@@ -369,15 +719,16 @@ class UserManagement {
 
     return fetch(url, options).then((response) => response.json());
   }
-
   getCurrentParams() {
     const form = document.querySelector(".filter-section form");
-    const formData = new FormData(form);
     const params = new URLSearchParams();
 
-    for (let [key, value] of formData.entries()) {
-      if (value) {
-        params.set(key, value);
+    if (form) {
+      const formData = new FormData(form);
+      for (let [key, value] of formData.entries()) {
+        if (value) {
+          params.set(key, value);
+        }
       }
     }
 
@@ -399,15 +750,18 @@ class UserManagement {
     element.disabled = false;
     element.innerHTML = element.dataset.originalText || "Save";
   }
-
   showTableLoading() {
-    const tableContainer = document.querySelector(".user-table-container");
-    tableContainer.classList.add("loading");
+    const tableContainer = document.querySelector(".users-section");
+    if (tableContainer) {
+      tableContainer.classList.add("loading");
+    }
   }
 
   hideTableLoading() {
-    const tableContainer = document.querySelector(".user-table-container");
-    tableContainer.classList.remove("loading");
+    const tableContainer = document.querySelector(".users-section");
+    if (tableContainer) {
+      tableContainer.classList.remove("loading");
+    }
   }
 
   showAlert(type, message) {
@@ -457,11 +811,58 @@ class UserManagement {
     modalBody.insertAdjacentHTML("afterbegin", alertHtml);
   }
 
+  // Enhanced initialize tooltips
   initializeTooltips() {
     // Initialize tooltips if using a tooltip library
     const tooltipElements = document.querySelectorAll("[data-tooltip]");
     tooltipElements.forEach((element) => {
       element.title = element.dataset.tooltip;
+    });
+
+    // Add search tips
+    const searchInput = document.querySelector("#searchBox");
+    if (searchInput) {
+      searchInput.setAttribute(
+        "title",
+        "Search by name, email, or username. Results update automatically as you type."
+      );
+    }
+  }
+
+  // Enhanced error handling
+  handleSearchError(error) {
+    console.error("Search error:", error);
+
+    const searchIndicator = document.querySelector("#searchIndicator");
+    if (searchIndicator) {
+      searchIndicator.innerHTML =
+        '<i class="fas fa-exclamation-triangle text-warning"></i>';
+      setTimeout(() => {
+        searchIndicator.innerHTML = '<i class="fas fa-search"></i>';
+      }, 2000);
+    }
+
+    this.showAlert(
+      "warning",
+      "Search temporarily unavailable. Please try again."
+    );
+  }
+
+  // Debug method to check avatar cache state
+  debugAvatarCache() {
+    console.log("Avatar Cache Contents:", this.avatarCache);
+    document.querySelectorAll(".user-details").forEach((userDetail) => {
+      const userId = userDetail
+        .closest("tr")
+        .querySelector(".btn-edit-user, .btn-change-status")?.dataset.userId;
+      const avatarImg = userDetail.querySelector(".user-avatar img");
+      if (userId && avatarImg) {
+        console.log(
+          `User ${userId}: Current src = ${avatarImg.src}, Cached = ${
+            this.avatarCache.get(userId) || "None"
+          }`
+        );
+      }
     });
   }
 }
@@ -603,5 +1004,14 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-// Export for use in other scripts
-window.UserManagement = UserManagement;
+// Make UserManagement accessible globally without redeclaring
+if (!window.UserManagement) {
+  window.UserManagement = UserManagement;
+}
+
+// Define global function for clearing filters (used in HTML)
+window.clearFilters = function () {
+  if (window.userManagement) {
+    window.userManagement.clearFilters();
+  }
+};

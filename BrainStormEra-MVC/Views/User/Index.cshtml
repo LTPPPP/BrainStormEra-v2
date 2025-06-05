@@ -203,18 +203,19 @@
                                     <option value="Inactive">Inactive</option>
                                 }
                             </select>
-                        </div>
-                        <div class="col-md-4">
+                        </div>                        <div class="col-md-4">
                             <label for="searchBox" class="form-label">
                                 <i class="fas fa-search me-1"></i>Search Users
-                            </label>
-                            <div class="input-group">
+                            </label>                            <div class="input-group">
                                 <input type="text" name="search" id="searchBox" class="form-control" 
-                                       placeholder="Search by name or email..." value="@Model.SearchTerm">
-                                <button class="btn btn-outline-secondary" type="submit">
+                                       placeholder="Search by name or email..." value="@Model.SearchTerm"
+                                       autocomplete="off">
+                                <span class="search-indicator" id="searchIndicator">
                                     <i class="fas fa-search"></i>
-                                </button>
+                                </span>
+                                <span class="search-count" id="searchCount"></span>
                             </div>
+                            <small class="text-muted">Real-time search - no need to press Enter</small>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">&nbsp;</label>
@@ -261,8 +262,7 @@
                                                         <img src="@Url.Action("GetAvatar", "Profile", new { userId = user.UserId })" 
                                                              alt="@user.FullName" class="rounded-circle"
                                                              onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
-                                                    </div>
-                                                    <div class="user-details">
+                                                    </div>                                                    <div class="user-details">
                                                         <h6 class="mb-0">
                                                             <a href="@Url.Action("Detail", "User", new { userId = user.UserId, courseId = user.CourseId })" 
                                                                class="text-decoration-none">
@@ -317,12 +317,6 @@
                                                             <a class="dropdown-item" 
                                                                href="@Url.Action("Detail", "User", new { userId = user.UserId, courseId = user.CourseId })">
                                                                 <i class="fas fa-eye me-2"></i>View Details
-                                                            </a>
-                                                        </li>
-                                                        <li>
-                                                            <a class="dropdown-item" href="#" 
-                                                               onclick="updateProgress('@user.UserId', '@user.CourseId')">
-                                                                <i class="fas fa-chart-line me-2"></i>Update Progress
                                                             </a>
                                                         </li>
                                                         <li>
@@ -518,9 +512,7 @@
             setTimeout(() => {
                 document.querySelector('.page-loader').style.display = 'none';
             }, 500);
-        });
-
-        // Auto-submit form on filter change
+        });        // Auto-submit form on filter change (but not for search)
         document.getElementById('courseFilter').addEventListener('change', function() {
             document.getElementById('filterForm').submit();
         });
@@ -529,8 +521,17 @@
             document.getElementById('filterForm').submit();
         });
 
-        // Clear filters function
+        // Prevent form submission when search field is focused and Enter is pressed
+        document.getElementById('filterForm').addEventListener('submit', function(e) {
+            const activeElement = document.activeElement;
+            if (activeElement && activeElement.id === 'searchBox') {
+                e.preventDefault();
+                return false;
+            }
+        });        // Clear filters function
         function clearFilters() {
+            document.getElementById('searchBox').value = '';
+            document.getElementById('filterForm').reset();
             window.location.href = '@Url.Action("Index", "User")';
         }
 
@@ -550,22 +551,9 @@
             if (status) params.append('status', status);
             if (search) params.append('search', search);
             
-            window.location.href = '@Url.Action("ExportUsers", "User")?' + params.toString();        }
-
-        // Progress modal functions
-        function updateProgress(userId, courseId) {
-            document.getElementById('progressUserId').value = userId;
-            document.getElementById('progressCourseId').value = courseId;
-            
-            // Get current progress from table
-            const row = document.querySelector(`tr[data-user-id="${userId}"][data-course-id="${courseId}"]`);
-            const currentProgress = row.querySelector('.progress-bar').getAttribute('aria-valuenow');
-            
-            document.getElementById('progressPercentage').value = currentProgress;
-            document.getElementById('progressValue').textContent = currentProgress + '%';
-            
-            new bootstrap.Modal(document.getElementById('progressModal')).show();
+            window.location.href = '@Url.Action("ExportUsers", "User")?' + params.toString();        
         }
+
 
         // Progress range update
         document.getElementById('progressPercentage').addEventListener('input', function() {
@@ -581,41 +569,6 @@
             new bootstrap.Modal(document.getElementById('statusModal')).show();
         }
 
-        // Save progress function
-        async function saveProgress() {
-            const userId = document.getElementById('progressUserId').value;
-            const courseId = document.getElementById('progressCourseId').value;
-            const percentage = document.getElementById('progressPercentage').value;
-            const notes = document.getElementById('progressNotes').value;
-
-            try {
-                const response = await fetch('@Url.Action("UpdateProgress", "User")', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                    },
-                    body: JSON.stringify({
-                        userId: userId,
-                        courseId: courseId,
-                        progressPercentage: parseInt(percentage),
-                        notes: notes
-                    })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    showToast('Progress updated successfully', 'success');
-                    bootstrap.Modal.getInstance(document.getElementById('progressModal')).hide();
-                    location.reload(); // Refresh to show updated data
-                } else {
-                    showToast(result.message || 'Failed to update progress', 'error');
-                }
-            } catch (error) {
-                showToast('An error occurred while updating progress', 'error');
-            }
-        }
 
         // Save status function
         async function saveStatus() {

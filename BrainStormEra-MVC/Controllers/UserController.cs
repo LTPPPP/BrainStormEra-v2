@@ -81,40 +81,6 @@ namespace BrainStormEra_MVC.Controllers
             }
         }
 
-        // POST: Update User Progress
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateProgress([FromBody] UpdateUserProgressRequest request)
-        {
-            try
-            {
-                var instructorId = GetCurrentUserId();
-                if (string.IsNullOrEmpty(instructorId))
-                {
-                    return Json(new { success = false, message = "Unauthorized" });
-                }
-
-                var result = await _userService.UpdateUserEnrollmentProgressAsync(
-                    instructorId,
-                    request.UserId,
-                    request.CourseId,
-                    request.ProgressPercentage,
-                    request.CurrentLessonId);
-
-                if (result)
-                {
-                    return Json(new { success = true, message = "Progress updated successfully" });
-                }
-
-                return Json(new { success = false, message = "Failed to update progress" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating user progress");
-                return Json(new { success = false, message = "An error occurred while updating progress" });
-            }
-        }
-
         // POST: Update User Status
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -266,15 +232,14 @@ namespace BrainStormEra_MVC.Controllers
                 return StatusCode(500, "An error occurred while exporting data");
             }
         }
-
         private string GenerateCsv(List<EnrolledUserViewModel> users)
         {
             var csv = new System.Text.StringBuilder();
-            csv.AppendLine("Username,Full Name,Email,Course Name,Enrollment Date,Progress %,Status,Last Access");
+            csv.AppendLine("Full Name,Email,Course Name,Enrollment Date,Progress %,Status,Last Access");
 
             foreach (var user in users)
             {
-                csv.AppendLine($"\"{user.Username}\",\"{user.FullName}\",\"{user.Email}\",\"{user.CourseName}\"," +
+                csv.AppendLine($"\"{user.FullName}\",\"{user.Email}\",\"{user.CourseName}\"," +
                               $"\"{user.EnrollmentDate:yyyy-MM-dd}\",\"{user.ProgressPercentage}%\",\"{user.StatusText}\"," +
                               $"\"{user.LastAccessDate:yyyy-MM-dd HH:mm}\"");
             }
