@@ -30,6 +30,16 @@
     <script src="~/js/components/loader.js"></script>
     <!-- Toast notifications CSS -->
     <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+    <!-- Chatbot CSS -->
+    <link rel="stylesheet" href="~/css/components/chatbot.css">
+    
+    @* User authentication meta tags for JavaScript access *@
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <meta name="user-id" content="@User.FindFirst("UserId")?.Value" />
+        <meta name="user-role" content="@User.FindFirst("UserRole")?.Value" />
+        <meta name="user-name" content="@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)" />
+    }
 </head>
 
 <body>
@@ -778,11 +788,21 @@
     <!-- Footer -->
     @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
 
+    @* Include Chatbot for authenticated users *@
+    @await Html.PartialAsync("~/Views/Shared/_Chatbot.cshtml")
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/global.js"></script>
     <script src="~/js/pages/Course/courses.js"></script>
     <script src="~/js/components/toast-notifications.js"></script>
+
+    @* Chatbot Script for authenticated users *@
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        @Html.AntiForgeryToken()
+        <script src="~/js/components/chatbot.js"></script>
+    }
 
     <!-- Chapter Management JavaScript -->
     <script>

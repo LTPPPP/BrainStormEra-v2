@@ -23,6 +23,14 @@
     <link rel="stylesheet" href="~/css/components/loader.css">
     <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/components/chatbot.css">
+    <!-- User meta tags for chatbot -->
+    @if (Context.Session.GetString("UserId") != null)
+    {
+        <meta name="user-id" content="@Context.Session.GetString("UserId")">
+        <meta name="user-role" content="@Context.Session.GetString("UserRole")">
+        <meta name="user-name" content="@Context.Session.GetString("UserName")">
+    }
     <!-- Toast notifications CSS -->
     <link rel="stylesheet" href="~/css/components/toast-notifications.css">
 </head>
@@ -321,6 +329,14 @@
             }
         });
     </script>
+
+    <!-- Chatbot for authenticated users -->
+    @if (Context.Session.GetString("UserId") != null)
+    {
+        @await Html.PartialAsync("~/Views/Shared/_Chatbot.cshtml")
+        @Html.AntiForgeryToken()
+        <script src="~/js/components/chatbot.js"></script>
+    }
 </body>
 
 </html>
