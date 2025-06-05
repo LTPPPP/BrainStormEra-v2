@@ -342,12 +342,6 @@
                             <button class="btn btn-outline-primary d-flex align-items-center justify-content-center py-2" onclick="sendMessage()">
                                 <i class="fas fa-envelope me-2"></i>Send Message
                             </button>
-                            <button class="btn btn-outline-success d-flex align-items-center justify-content-center py-2" onclick="generateReport()">
-                                <i class="fas fa-file-alt me-2"></i>Generate Report
-                            </button>
-                            <button class="btn btn-outline-info d-flex align-items-center justify-content-center py-2" onclick="viewProfile()">
-                                <i class="fas fa-user me-2"></i>View Full Profile
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -497,16 +491,6 @@
         function sendMessage() {
             // Implement message functionality
             showToast('Message functionality coming soon', 'info');
-        }
-
-        function generateReport() {
-            // Generate user progress report
-            window.open('@Url.Action("GenerateReport", "User", new { userId = Model.UserId, courseId = Model.CourseId })', '_blank');
-        }
-
-        function viewProfile() {
-            // Navigate to full user profile
-            window.open('@Url.Action("Index", "Profile", new { userId = Model.UserId })', '_blank');
         }
 
         // Toast notification function
