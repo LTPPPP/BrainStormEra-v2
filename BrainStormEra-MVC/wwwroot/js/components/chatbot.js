@@ -1,25 +1,26 @@
 class ChatbotManager {
   constructor() {
-    console.log("ChatbotManager constructor called");
     this.isOpen = false;
     this.messages = [];
     this.isTyping = false;
     this.conversationHistory = [];
+    this.typingSpeed = 100; // milliseconds per character (adjustable)
     this.init();
   }
-
   init() {
-    console.log("ChatbotManager init called");
     this.createChatbotHTML();
     this.bindEvents();
     this.loadConversationHistory();
+    // Add welcome message with typewriter effect
+    setTimeout(() => {
+      this.addMessage("Xin chào! Tôi có thể giúp gì cho bạn? 😊", "bot");
+    }, 500);
   }
   createChatbotHTML() {
     const chatbotHTML = `
-            <div class="chatbot-container">
-                <!-- Chatbot Bubble -->
+            <div class="chatbot-container">                <!-- Chatbot Bubble -->
                 <div class="chatbot-bubble" id="chatbot-bubble">
-                    <img src="/img/logo/logowithoutbackground.png" alt="BrainStorm Bot" />
+                    <img src="/img/logo/logowithoutbackground.png" alt="BrainStormEra" style="width: 32px; height: 32px; object-fit: contain;" />
                 </div>
 
                 <!-- Chatbot Window -->
@@ -29,28 +30,15 @@ class ChatbotManager {
                         <div class="bot-info">
                             <img src="/img/logo/logowithoutbackground.png" alt="Bot" class="bot-avatar" />
                             <div>
-                                <div class="bot-name">BrainStorm Bot</div>
+                                <div class="bot-name">BrainStormEra</div>
                                 <div class="bot-status">Trực tuyến</div>
                             </div>
                         </div>
                         <button class="chatbot-close" id="chatbot-close">
                             <i class="fas fa-times"></i>
                         </button>
-                    </div>
-
-                    <!-- Messages Area -->
+                    </div>                    <!-- Messages Area -->
                     <div class="chatbot-messages" id="chatbot-messages">
-                        <div class="message">
-                            <img src="/img/logo/logowithoutbackground.png" alt="Bot" class="message-avatar" />
-                            <div class="message-content">
-                                Xin chào! Tôi là BrainStorm Bot, trợ lý AI của bạn. Tôi có thể giúp bạn:
-                                <br>• Trả lời câu hỏi về bài học
-                                <br>• Giải thích các khái niệm khó hiểu
-                                <br>• Hướng dẫn sử dụng nền tảng
-                                <br>• Hỗ trợ học tập
-                                <br><br>Hãy hỏi tôi bất cứ điều gì bạn muốn biết! 😊
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Input Area -->
@@ -58,8 +46,9 @@ class ChatbotManager {
                         <textarea 
                             class="chatbot-input-field" 
                             id="chatbot-input" 
-                            placeholder="Nhập câu hỏi của bạn..."
+                            placeholder="Nhập tin nhắn..."
                             rows="1"
+                            style="height: 40px; overflow-y: hidden;"
                         ></textarea>
                         <button class="chatbot-send-btn" id="chatbot-send">
                             <i class="fas fa-paper-plane"></i>
@@ -69,13 +58,7 @@ class ChatbotManager {
             </div>
         `;
 
-    // Insert chatbot HTML into the designated container or body
-    const chatbotRoot = document.getElementById("chatbot-root");
-    if (chatbotRoot) {
-      chatbotRoot.innerHTML = chatbotHTML;
-    } else {
-      document.body.insertAdjacentHTML("beforeend", chatbotHTML);
-    }
+    document.body.insertAdjacentHTML("beforeend", chatbotHTML);
   }
 
   bindEvents() {
@@ -183,10 +166,10 @@ class ChatbotManager {
     } finally {
       this.hideTypingIndicator();
     }
-  }
-
-  // Enhanced message formatting with better parsing
+  } // Simple message formatting
   formatMessage(message) {
+    message = String(message || "").trim();
+
     // Convert line breaks to <br>
     message = message.replace(/\n/g, "<br>");
 
@@ -196,22 +179,8 @@ class ChatbotManager {
     // Convert *italic* to <em>
     message = message.replace(/\*(.*?)\*/g, "<em>$1</em>");
 
-    // Convert code blocks
-    message = message.replace(/```(.*?)```/gs, "<pre><code>$1</code></pre>");
-    message = message.replace(/`(.*?)`/g, "<code>$1</code>");
-
-    // Convert numbered lists
-    message = message.replace(/^\d+\.\s(.+)$/gm, "<li>$1</li>");
-    message = message.replace(/(<li>.*<\/li>)/s, "<ol>$1</ol>");
-
-    // Convert bullet points
-    message = message.replace(/^[•\-\*]\s(.+)$/gm, "<li>$1</li>");
-    message = message.replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>");
-
     return message;
-  }
-
-  // Add feedback buttons to bot messages
+  } // Simple message display with typewriter effect
   addMessage(content, sender, conversationId = null) {
     const messagesContainer = document.getElementById("chatbot-messages");
     const isUser = sender === "user";
@@ -224,212 +193,65 @@ class ChatbotManager {
       ? this.getUserAvatar() || "/img/default-avatar.svg"
       : "/img/logo/logowithoutbackground.png";
 
-    const feedbackButtons =
-      !isUser && conversationId
-        ? `
-            <div class="message-actions">
-                <button class="action-btn" onclick="window.chatbotManager.rateFeedback('${conversationId}', 5)" title="Hữu ích">
-                    <i class="fas fa-thumbs-up"></i>
-                </button>
-                <button class="action-btn" onclick="window.chatbotManager.rateFeedback('${conversationId}', 1)" title="Không hữu ích">
-                    <i class="fas fa-thumbs-down"></i>
-                </button>
-                <button class="action-btn" onclick="window.chatbotManager.copyMessage('${content}')" title="Sao chép">
-                    <i class="fas fa-copy"></i>
-                </button>
-            </div>
-        `
-        : "";
-
     const messageHTML = `
             <div class="message ${
               isUser ? "user" : ""
             }" data-conversation-id="${conversationId || ""}">
                 <img src="${avatarSrc}" alt="${
       isUser ? "User" : "Bot"
-    }" class="message-avatar" />
-                <div>
-                    <div class="message-content">${this.formatMessage(
-                      content
-                    )}</div>
+    }" class="message-avatar" onerror="this.src='/img/default-avatar.svg'" />
+                <div class="message-wrapper">
+                    <div class="message-content" id="message-${Date.now()}"></div>
                     <div class="message-time">${timestamp}</div>
-                    ${feedbackButtons}
                 </div>
             </div>
         `;
 
     messagesContainer.insertAdjacentHTML("beforeend", messageHTML);
+
+    const messageElement =
+      messagesContainer.lastElementChild.querySelector(".message-content");
+
+    if (isUser) {
+      // For user messages, show immediately
+      messageElement.innerHTML = this.formatMessage(content);
+    } else {
+      // For bot messages, use typewriter effect
+      this.typewriterEffect(messageElement, content);
+    }
+
     this.scrollToBottom();
-  }
+  } // Typewriter effect for bot messages
+  async typewriterEffect(element, text) {
+    const formattedText = this.formatMessage(text);
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = formattedText;
+    const plainText = tempDiv.textContent || tempDiv.innerText || "";
 
-  // Rate feedback for bot response
-  async rateFeedback(conversationId, rating) {
-    try {
-      const response = await fetch("/api/chatbot/feedback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          RequestVerificationToken: this.getAntiForgeryToken(),
-        },
-        body: JSON.stringify({
-          conversationId: conversationId,
-          rating: rating,
-        }),
-      });
+    element.innerHTML = "";
+    element.classList.add("typing");
 
-      if (response.ok) {
-        this.showToast(
-          rating >= 4 ? "Cảm ơn phản hồi tích cực!" : "Cảm ơn phản hồi của bạn!"
-        );
+    for (let i = 0; i < plainText.length; i++) {
+      element.textContent += plainText[i];
+      this.scrollToBottom();
 
-        // Disable feedback buttons for this message
-        const messageElement = document.querySelector(
-          `[data-conversation-id="${conversationId}"]`
-        );
-        if (messageElement) {
-          const actionButtons = messageElement.querySelectorAll(".action-btn");
-          actionButtons.forEach((btn) => {
-            if (btn.innerHTML.includes("thumbs")) {
-              btn.disabled = true;
-              btn.style.opacity = "0.5";
-            }
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error rating feedback:", error);
+      // Use configurable typing speed
+      await new Promise((resolve) => setTimeout(resolve, this.typingSpeed));
     }
-  }
 
-  // Copy message to clipboard
-  async copyMessage(content) {
-    try {
-      // Remove HTML tags for clean text copy
-      const textContent = content
-        .replace(/<[^>]*>/g, "")
-        .replace(/&nbsp;/g, " ");
-      await navigator.clipboard.writeText(textContent);
-      this.showToast("Đã sao chép tin nhắn!");
-    } catch (error) {
-      console.error("Error copying message:", error);
-      this.showToast("Không thể sao chép tin nhắn");
-    }
-  }
-
-  // Show toast notification
-  showToast(message) {
-    const toast = document.createElement("div");
-    toast.className = "chatbot-toast";
-    toast.textContent = message;
-    toast.style.cssText = `
-            position: fixed;
-            bottom: 100px;
-            right: 20px;
-            background: #333;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 5px;
-            z-index: 10000;
-            animation: slideInUp 0.3s ease-out;
-        `;
-
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-      toast.style.animation = "slideOutDown 0.3s ease-out";
-      setTimeout(() => toast.remove(), 300);
-    }, 2000);
-  }
-
-  // Enhanced error handling
+    // Remove typing cursor and apply formatting
+    element.classList.remove("typing");
+    element.innerHTML = formattedText;
+    this.scrollToBottom();
+  } // Simple error handling with typewriter effect
   handleError(error, userMessage) {
     console.error("Chatbot error:", error);
-
     let errorMessage = "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.";
-
-    if (error.message?.includes("fetch")) {
-      errorMessage =
-        "Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.";
-    } else if (error.message?.includes("timeout")) {
-      errorMessage = "Yêu cầu quá thời gian chờ. Vui lòng thử lại.";
-    }
-
     this.addMessage(errorMessage, "bot");
-
-    // Store failed message for retry
-    this.failedMessage = userMessage;
-    this.showRetryOption();
   }
-
-  // Show retry option for failed messages
-  showRetryOption() {
-    const messagesContainer = document.getElementById("chatbot-messages");
-    const retryHTML = `
-            <div class="message-retry">
-                <button class="retry-btn" onclick="window.chatbotManager.retryLastMessage()">
-                    <i class="fas fa-redo"></i> Thử lại
-                </button>
-            </div>
-        `;
-    messagesContainer.insertAdjacentHTML("beforeend", retryHTML);
-    this.scrollToBottom();
-  }
-
-  // Retry last failed message
-  async retryLastMessage() {
-    if (this.failedMessage) {
-      // Remove retry button
-      const retryElement = document.querySelector(".message-retry");
-      if (retryElement) retryElement.remove();
-
-      // Retry sending the message
-      await this.sendMessageInternal(this.failedMessage);
-      this.failedMessage = null;
-    }
-  } // Internal send message method for retry functionality
-  async sendMessageInternal(message) {
-    // Show typing indicator
-    this.showTypingIndicator();
-
-    try {
-      // Get current page context
-      const context = this.getCurrentPageContext();
-      const pageInfo = this.getPageInfo();
-
-      // Send to API
-      const response = await fetch("/api/chatbot/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          RequestVerificationToken: this.getAntiForgeryToken(),
-        },
-        body: JSON.stringify({
-          message: message,
-          context: context,
-          pagePath: pageInfo.path,
-          courseId: pageInfo.courseId,
-          chapterId: pageInfo.chapterId,
-          lessonId: pageInfo.lessonId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        this.addMessage(data.message, "bot", data.conversationId);
-      } else {
-        throw new Error(data.error || "API Error");
-      }
-    } catch (error) {
-      this.handleError(error, message);
-    } finally {
-      this.hideTypingIndicator();
-    }
-  }
-
   autoResizeTextarea(textarea) {
     textarea.style.height = "auto";
-    textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+    textarea.style.height = Math.min(textarea.scrollHeight, 100) + "px";
   }
 
   scrollToBottom() {
@@ -438,7 +260,6 @@ class ChatbotManager {
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
   }
-
   showTypingIndicator() {
     const messagesContainer = document.getElementById("chatbot-messages");
     this.isTyping = true;
@@ -446,11 +267,13 @@ class ChatbotManager {
     const typingHTML = `
             <div class="message typing-indicator" id="typing-indicator">
                 <img src="/img/logo/logowithoutbackground.png" alt="Bot" class="message-avatar" />
-                <div class="message-content">
-                    <div class="dots">
-                        <div class="dot"></div>
-                        <div class="dot"></div>
-                        <div class="dot"></div>
+                <div class="message-wrapper">
+                    <div class="message-content">
+                        <div class="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -467,43 +290,21 @@ class ChatbotManager {
     }
     this.isTyping = false;
   }
-
   getCurrentPageContext() {
-    const path = window.location.pathname;
     const title = document.title;
-
-    let context = `Trang hiện tại: ${title}`;
-
-    if (path.includes("/Course")) {
-      context += " - Đang xem khóa học";
-    } else if (path.includes("/Chapter")) {
-      context += " - Đang xem chương học";
-    } else if (path.includes("/Lesson")) {
-      context += " - Đang xem bài học";
-    } else if (path.includes("/Home")) {
-      context += " - Trang chủ";
-    }
-
-    return context;
+    return `Trang hiện tại: ${title}`;
   }
 
   getPageInfo() {
     const path = window.location.pathname;
     const urlParams = new URLSearchParams(window.location.search);
-
-    // Extract IDs from URL path or query parameters
     const pathSegments = path.split("/").filter((s) => s);
 
-    let courseId = null;
-    let chapterId = null;
-    let lessonId = null;
+    let courseId = urlParams.get("courseId") || urlParams.get("id");
+    let chapterId = urlParams.get("chapterId") || urlParams.get("id");
+    let lessonId = urlParams.get("lessonId") || urlParams.get("id");
 
-    // Try to get from URL parameters first
-    courseId = urlParams.get("courseId") || urlParams.get("id");
-    chapterId = urlParams.get("chapterId") || urlParams.get("id");
-    lessonId = urlParams.get("lessonId") || urlParams.get("id");
-
-    // Try to extract from path segments
+    // Extract from path segments
     if (path.includes("/Course/") && !courseId) {
       const courseIndex = pathSegments.indexOf("Course");
       if (courseIndex >= 0 && pathSegments[courseIndex + 1]) {
@@ -532,7 +333,6 @@ class ChatbotManager {
       lessonId: lessonId,
     };
   }
-
   getUserAvatar() {
     const metaTag = document.querySelector('meta[name="user-avatar"]');
     return metaTag ? metaTag.getAttribute("content") : null;
@@ -546,18 +346,11 @@ class ChatbotManager {
   }
 
   async loadConversationHistory() {
-    try {
-      const response = await fetch("/api/chatbot/history?limit=10");
-      if (response.ok) {
-        const history = await response.json();
-        this.conversationHistory = history;
-      }
-    } catch (error) {
-      console.error("Failed to load conversation history:", error);
-    }
+    // Simplified - no history loading for simple chat
+    return;
   }
 
-  // Public method to show notification
+  // Simple notification methods
   showNotification() {
     const bubble = document.getElementById("chatbot-bubble");
     if (!bubble.querySelector(".notification-badge")) {
@@ -568,7 +361,6 @@ class ChatbotManager {
     }
   }
 
-  // Public method to clear notification
   clearNotification() {
     const badge = document.querySelector(".chatbot-bubble .notification-badge");
     if (badge) {
@@ -579,17 +371,10 @@ class ChatbotManager {
 
 // Initialize chatbot when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Chatbot script loaded");
-  
   // Only initialize if user is authenticated
   const userId = document.querySelector('meta[name="user-id"]');
-  console.log("User ID meta tag:", userId);
-  
   if (userId) {
-    console.log("Initializing chatbot for authenticated user");
     window.chatbotManager = new ChatbotManager();
-  } else {
-    console.log("No user authentication found, chatbot not initialized");
   }
 });
 
