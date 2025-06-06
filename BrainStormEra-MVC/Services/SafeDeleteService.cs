@@ -555,6 +555,108 @@ namespace BrainStormEra_MVC.Services
             };
         }
 
+        public async Task<(IEnumerable<object> Items, int TotalCount)> GetDeletedEntitiesPaginatedAsync(
+            string userId, string search = "", string entityType = "All", int page = 1, int pageSize = 10)
+        {
+            try
+            {
+                var allDeletedItems = new List<object>();
+
+                // Get deleted courses
+                if (entityType == "All" || entityType == "Course")
+                {
+                    var deletedCourses = await _context.Courses
+                    .Where(c => c.CourseStatus == 4 && c.AuthorId == userId)
+                    .Where(c => string.IsNullOrEmpty(search) ||
+                               c.CourseName.ToLower().Contains(search.ToLower()) ||
+                               (c.CourseDescription != null && c.CourseDescription.ToLower().Contains(search.ToLower())))
+                        .Select(c => new
+                        {
+                            EntityId = c.CourseId,
+                            EntityType = "Course",
+                            EntityName = c.CourseName,
+                            DeletedDate = c.CourseUpdatedAt,
+                            DeletedByUserId = c.AuthorId,
+                            DeleteReason = "Archived by author"
+                        })
+                        .ToListAsync();
+
+                    allDeletedItems.AddRange(deletedCourses);
+                }
+
+                // Get deleted chapters
+                if (entityType == "All" || entityType == "Chapter")
+                {
+                    var deletedChapters = await _context.Chapters
+                        .Include(c => c.Course)
+                        .Where(c => c.ChapterStatus == 4 && c.Course.AuthorId == userId)
+                        .Where(c => string.IsNullOrEmpty(search) ||
+                                   (c.ChapterName != null && c.ChapterName.ToLower().Contains(search.ToLower())) ||
+                                   (c.ChapterDescription != null && c.ChapterDescription.ToLower().Contains(search.ToLower())))
+                        .Select(c => new
+                        {
+                            EntityId = c.ChapterId,
+                            EntityType = "Chapter",
+                            EntityName = c.ChapterName,
+                            DeletedDate = c.ChapterUpdatedAt,
+                            DeletedByUserId = c.Course.AuthorId,
+                            DeleteReason = "Archived with course"
+                        })
+                        .ToListAsync();
+
+                    allDeletedItems.AddRange(deletedChapters);
+                }
+
+                // Get deleted lessons
+                if (entityType == "All" || entityType == "Lesson")
+                {
+                    var deletedLessons = await _context.Lessons
+                        .Include(l => l.Chapter.Course)
+                        .Where(l => l.LessonStatus == 4 && l.Chapter.Course.AuthorId == userId)
+                        .Where(l => string.IsNullOrEmpty(search) ||
+                                   (l.LessonName != null && l.LessonName.ToLower().Contains(search.ToLower())) ||
+                                   (l.LessonDescription != null && l.LessonDescription.ToLower().Contains(search.ToLower())))
+                        .Select(l => new
+                        {
+                            EntityId = l.LessonId,
+                            EntityType = "Lesson",
+                            EntityName = l.LessonName,
+                            DeletedDate = l.LessonUpdatedAt,
+                            DeletedByUserId = l.Chapter.Course.AuthorId,
+                            DeleteReason = "Archived with chapter"
+                        })
+                        .ToListAsync();
+
+                    allDeletedItems.AddRange(deletedLessons);
+                }
+
+                // Sort by deleted date (most recent first)
+                var sortedItems = allDeletedItems
+                    .OrderByDescending(item => GetDeletedDate(item))
+                    .ToList();
+
+                var totalCount = sortedItems.Count;
+                var paginatedItems = sortedItems
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return (paginatedItems, totalCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting paginated deleted entities for user {UserId}", userId);
+                return (new List<object>(), 0);
+            }
+        }
+
+        private DateTime? GetDeletedDate(object item)
+        {
+            var type = item.GetType();
+            var deletedDateProperty = type.GetProperty("DeletedDate");
+            return deletedDateProperty?.GetValue(item) as DateTime?;
+        }
+
         public async Task<bool> CreateAuditTrailAsync(DeleteAuditTrail operation)
         {
             try

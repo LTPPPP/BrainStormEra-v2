@@ -1,4 +1,5 @@
 using BrainStormEra_MVC.Models;
+using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -133,6 +134,67 @@ namespace BrainStormEra_MVC.Services
             {
                 _logger.LogError(ex, "Error bulk assigning achievements");
             }
+        }
+
+        public async Task<AchievementListViewModel> GetUserAchievementsAsync(string userId, string? search, int page, int pageSize)
+        {
+            try
+            {
+                await AssignAchievementsAsync(userId);
+
+                var cacheKey = $"UserAchievementsList_{userId}_{search}_{page}_{pageSize}";
+                if (_cache.TryGetValue(cacheKey, out AchievementListViewModel? cached))
+                    return cached!;
+
+                var userAchievements = await _achievementRepository.GetUserAchievementsAsync(userId, search, page, pageSize);
+                var totalCount = await _achievementRepository.GetUserAchievementsCountAsync(userId, search);
+
+                var achievements = userAchievements.Select(ua => new AchievementSummaryViewModel
+                {
+                    AchievementId = ua.AchievementId,
+                    AchievementName = ua.Achievement.AchievementName,
+                    AchievementDescription = ua.Achievement.AchievementDescription ?? "",
+                    AchievementIcon = ua.Achievement.AchievementIcon ?? "/img/defaults/default-achievement.svg",
+                    AchievementType = ua.Achievement.AchievementType ?? "",
+                    PointsReward = ua.Achievement.PointsReward,
+                    ReceivedDate = ua.ReceivedDate.ToDateTime(TimeOnly.MinValue),
+                    RelatedCourseName = ua.RelatedCourseId != null ? GetCourseNameFromCache(ua.RelatedCourseId) : null
+                }).ToList();
+
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                var result = new AchievementListViewModel
+                {
+                    Achievements = achievements,
+                    SearchQuery = search,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalAchievements = totalCount,
+                    TotalPages = totalPages
+                };
+
+                _cache.Set(cacheKey, result, TimeSpan.FromMinutes(5));
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting paginated achievements for user {UserId}", userId);
+                return new AchievementListViewModel
+                {
+                    Achievements = new List<AchievementSummaryViewModel>(),
+                    SearchQuery = search,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalAchievements = 0,
+                    TotalPages = 0
+                };
+            }
+        }
+
+        private string? GetCourseNameFromCache(string courseId)
+        {
+            var cacheKey = $"CourseName_{courseId}";
+            return _cache.TryGetValue(cacheKey, out string? courseName) ? courseName : null;
         }
 
         private static bool ShouldAssignAchievement(Achievement achievement, int completedCourses)

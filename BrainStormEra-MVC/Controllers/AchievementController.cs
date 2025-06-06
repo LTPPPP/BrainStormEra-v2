@@ -1,4 +1,5 @@
 using BrainStormEra_MVC.Models;
+using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +15,7 @@ namespace BrainStormEra_MVC.Controllers
             _achievementService = achievementService;
         }
         [Authorize(Roles = "Learner,learner")]
-        public async Task<IActionResult> LearnerAchievements()
+        public async Task<IActionResult> LearnerAchievements(string? search, int page = 1, int pageSize = 9)
         {
             var userId = User?.FindFirst("UserId")?.Value;
             if (string.IsNullOrEmpty(userId))
@@ -22,21 +23,17 @@ namespace BrainStormEra_MVC.Controllers
                 return RedirectToAction("Index", "Login");
             }
 
-            var userAchievements = await _achievementService.GetUserAchievementsAsync(userId);
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 50) pageSize = 9;
 
-            var learnerAchievements = userAchievements.Select(ua => new
-            {
-                AchievementId = ua.AchievementId,
-                AchievementName = ua.Achievement.AchievementName,
-                AchievementDescription = ua.Achievement.AchievementDescription,
-                AchievementIcon = ua.Achievement.AchievementIcon,
-                ReceivedDate = ua.ReceivedDate
-            }).ToList();
+            var achievementList = await _achievementService.GetUserAchievementsAsync(userId, search, page, pageSize);
 
             ViewData["UserId"] = userId;
-            ViewData["Achievements"] = learnerAchievements;
+            ViewData["HasAchievements"] = achievementList.HasAchievements;
+            ViewData["TotalAchievements"] = achievementList.TotalAchievements;
+            ViewData["SearchQuery"] = search;
 
-            return View("~/Views/Achievements/LearnerAchievements.cshtml");
+            return View("~/Views/Achievements/LearnerAchievements.cshtml", achievementList);
         }
 
         [HttpGet]

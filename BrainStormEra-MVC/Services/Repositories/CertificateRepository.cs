@@ -40,6 +40,61 @@ namespace BrainStormEra_MVC.Services.Repositories
             return enrollments;
         }
 
+        public async Task<List<Enrollment>> GetUserCompletedEnrollmentsAsync(string userId, string? search, int page, int pageSize)
+        {
+            var cacheKey = $"UserCompletedEnrollmentsPaginated_{userId}_{search}_{page}_{pageSize}";
+
+            if (_cache.TryGetValue(cacheKey, out List<Enrollment>? cached))
+                return cached!;
+
+            var query = _context.Enrollments
+                .AsNoTracking()
+                .Where(e => e.UserId == userId &&
+                           e.EnrollmentStatus == 5 &&
+                           e.CertificateIssuedDate != null);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(e => e.Course.CourseName.Contains(search) ||
+                                       e.Course.Author.FullName!.Contains(search));
+            }
+
+            var enrollments = await query
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Author)
+                .OrderByDescending(e => e.CertificateIssuedDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            _cache.Set(cacheKey, enrollments, CacheExpiration);
+            return enrollments;
+        }
+
+        public async Task<int> GetUserCompletedEnrollmentsCountAsync(string userId, string? search)
+        {
+            var cacheKey = $"UserCompletedEnrollmentsCount_{userId}_{search}";
+
+            if (_cache.TryGetValue(cacheKey, out int cached))
+                return cached;
+
+            var query = _context.Enrollments
+                .AsNoTracking()
+                .Where(e => e.UserId == userId &&
+                           e.EnrollmentStatus == 5 &&
+                           e.CertificateIssuedDate != null);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(e => e.Course.CourseName.Contains(search) ||
+                                       e.Course.Author.FullName!.Contains(search));
+            }
+
+            var count = await query.CountAsync();
+            _cache.Set(cacheKey, count, CacheExpiration);
+            return count;
+        }
+
         public async Task<Enrollment?> GetCertificateDataAsync(string userId, string courseId)
         {
             var cacheKey = $"CertificateData_{userId}_{courseId}";

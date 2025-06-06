@@ -30,7 +30,7 @@ namespace BrainStormEra_MVC.Controllers
             _cache = cache;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? search, int page = 1, int pageSize = 6)
         {
             try
             {
@@ -39,9 +39,12 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToLogin("User not authenticated. Please log in again.");
                 }
 
-                var certificates = await GetCachedUserCertificates();
-                SetViewBagData(certificates);
-                return View("~/Views/Certificates/Index.cshtml", certificates);
+                if (page < 1) page = 1;
+                if (pageSize < 1 || pageSize > 50) pageSize = 6;
+
+                var certificateList = await _certificateService.GetUserCertificatesAsync(CurrentUserId!, search, page, pageSize);
+                SetViewBagData(certificateList);
+                return View("~/Views/Certificates/Index.cshtml", certificateList);
             }
             catch (Exception ex)
             {
@@ -161,6 +164,13 @@ namespace BrainStormEra_MVC.Controllers
             return isValid;
         }
 
+        private void SetViewBagData(CertificateListViewModel certificateList)
+        {
+            ViewBag.HasCertificates = certificateList.HasCertificates;
+            ViewBag.TotalCertificates = certificateList.TotalCertificates;
+            ViewBag.SearchQuery = certificateList.SearchQuery;
+        }
+
         private void SetViewBagData(List<CertificateSummaryViewModel> certificates)
         {
             ViewBag.HasCertificates = certificates.Any();
@@ -170,8 +180,17 @@ namespace BrainStormEra_MVC.Controllers
         private IActionResult HandleIndexError()
         {
             TempData["ErrorMessage"] = "An error occurred while loading your certificates. Please try again.";
-            SetViewBagData(new List<CertificateSummaryViewModel>());
-            return View("~/Views/Certificates/Index.cshtml", new List<CertificateSummaryViewModel>());
+            var emptyList = new CertificateListViewModel
+            {
+                Certificates = new List<CertificateSummaryViewModel>(),
+                SearchQuery = null,
+                CurrentPage = 1,
+                PageSize = 6,
+                TotalCertificates = 0,
+                TotalPages = 0
+            };
+            SetViewBagData(emptyList);
+            return View("~/Views/Certificates/Index.cshtml", emptyList);
         }
     }
 }

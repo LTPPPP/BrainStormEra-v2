@@ -1,7 +1,7 @@
+@model BrainStormEra_MVC.Models.ViewModels.AchievementListViewModel
 @{
     ViewData["Title"] = "Your Achievements";
     Layout = null;
-    var achievements = (IEnumerable<dynamic>?)ViewData["Achievements"];
 }
 
 <!DOCTYPE html>
@@ -66,11 +66,26 @@
                 Your Achievements
             </div>
 
+            <!-- Search Section -->
+            <div class="row mb-4">
+                <div class="col-md-6 mx-auto">
+                    <form method="get" class="search-form">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control" placeholder="Search achievements..." 
+                                   value="@Model.SearchQuery" aria-label="Search achievements">
+                            <button class="btn btn-outline-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Achievements Content -->
             <div class="achievement-flex-container">
-        @if (achievements != null && achievements.Any())
+        @if (Model.HasAchievements)
         {
-            foreach (var achievement in achievements)
+            foreach (var achievement in Model.Achievements)
             {
                 <div class="achievement-flex-item">
                     <div class="achievement-card-custom text-center shadow-sm" data-bs-toggle="modal"
@@ -88,9 +103,96 @@
             }        }
         else
         {
-            <p class="achievement-no-data">No achievements found for this user.</p>
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-trophy fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No achievements found</h4>
+                @if (!string.IsNullOrEmpty(Model.SearchQuery))
+                {
+                    <p class="text-muted">No achievements match your search "<strong>@Model.SearchQuery</strong>".</p>
+                    <a href="@Url.Action("LearnerAchievements")" class="btn btn-outline-primary">Clear Search</a>
+                }
+                else
+                {
+                    <p class="text-muted">Complete courses to earn achievements!</p>
+                }
+            </div>
         }
             </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Achievement pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        @if (Model.HasPreviousPage)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("LearnerAchievements", new { search = Model.SearchQuery, page = Model.CurrentPage - 1, pageSize = Model.PageSize })"
+                                   aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        }
+
+                        @{
+                            int startPage = Math.Max(1, Model.CurrentPage - 2);
+                            int endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                        }
+
+                        @if (startPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("LearnerAchievements", new { search = Model.SearchQuery, page = 1, pageSize = Model.PageSize })">1</a>
+                            </li>
+                            @if (startPage > 2)
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            }
+                        }
+
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("LearnerAchievements", new { search = Model.SearchQuery, page = i, pageSize = Model.PageSize })">@i</a>
+                            </li>
+                        }
+
+                        @if (endPage < Model.TotalPages)
+                        {
+                            @if (endPage < Model.TotalPages - 1)
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            }
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("LearnerAchievements", new { search = Model.SearchQuery, page = Model.TotalPages, pageSize = Model.PageSize })">@Model.TotalPages</a>
+                            </li>
+                        }
+
+                        @if (Model.HasNextPage)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("LearnerAchievements", new { search = Model.SearchQuery, page = Model.CurrentPage + 1, pageSize = Model.PageSize })"
+                                   aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+
+                <!-- Pagination Info -->
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Showing @((Model.CurrentPage - 1) * Model.PageSize + 1) to 
+                        @(Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalAchievements)) 
+                        of @Model.TotalAchievements achievements
+                    </small>
+                </div>
+            }
         </div>
     </main>
 
