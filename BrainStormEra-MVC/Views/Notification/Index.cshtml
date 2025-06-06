@@ -140,6 +140,10 @@
                                                         {
                                                             <span class="badge bg-secondary me-2">@notification.NotificationType</span>
                                                         }
+                                                        @if (notification.CreatedBy == Model.CurrentUserId)
+                                                        {
+                                                            <span class="badge bg-info me-2">Created by you</span>
+                                                        }
                                                         @if (notification.IsRead == false)
                                                         {
                                                             <span class="badge bg-primary me-2">New</span>
@@ -164,6 +168,14 @@
                                                             title="Mark as read">
                                                         <i class="fas fa-check"></i>
                                                     </button>
+                                                }
+                                                @if (notification.CreatedBy == Model.CurrentUserId && (User.IsInRole("admin") || User.IsInRole("instructor")))
+                                                {
+                                                    <a href="@Url.Action("Edit", "Notification", new { id = notification.NotificationId })" 
+                                                       class="btn btn-sm edit-btn" 
+                                                       title="Edit notification">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
                                                 }
                                                 <button class="btn btn-sm delete-btn" 
                                                         data-notification-id="@notification.NotificationId"
@@ -212,6 +224,10 @@
     <!-- Custom JS -->
     <script src="~/js/components/loader.js"></script>
     <script src="~/js/shared/toast-notifications.js"></script>
+    <script src="~/js/pages/Notifications/notification-index.js"></script>
+
+    <!-- Add anti-forgery token for CSRF protection -->
+    @Html.AntiForgeryToken()
 
     <script>
         // Hide preloader when page is loaded
@@ -229,16 +245,6 @@
                 behavior: 'smooth'
             });
         }
-
-        $(document).ready(function() {
-            // Initialize SignalR connection
-            const connection = new signalR.HubConnectionBuilder()
-                .withUrl("/notificationHub")
-                .configureLogging(signalR.LogLevel.Information)
-                .build();
-            
-            // Add your SignalR connection logic here
-        });
     </script>
 
     <!-- Chatbot for authenticated users -->

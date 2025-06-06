@@ -27,7 +27,8 @@ namespace BrainStormEra_MVC.Controllers
                 return RedirectToAction("Login", "Auth");
             }
 
-            var notifications = await _notificationService.GetNotificationsAsync(userId, page, pageSize);
+            // Get all notifications (received + created by user)
+            var notifications = await _notificationService.GetAllNotificationsForUserAsync(userId, page, pageSize);
             var unreadCount = await _notificationService.GetUnreadNotificationCountAsync(userId);
 
             var viewModel = new NotificationIndexViewModel
@@ -35,7 +36,8 @@ namespace BrainStormEra_MVC.Controllers
                 Notifications = notifications,
                 UnreadCount = unreadCount,
                 CurrentPage = page,
-                PageSize = pageSize
+                PageSize = pageSize,
+                CurrentUserId = userId // Add this to identify which notifications user can edit
             };
 
             return View(viewModel);
@@ -126,7 +128,8 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> SendToUser(string targetUserId, string title, string content, string? type = null, string? courseId = null)
         {
-            var success = await _notificationService.SendToUserAsync(targetUserId, title, content, type, courseId);
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var success = await _notificationService.SendToUserAsync(targetUserId, title, content, type, courseId, currentUserId);
             return Json(new { success = success });
         }
 
@@ -136,7 +139,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> SendToCourse(string courseId, string title, string content, string? type = null)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var success = await _notificationService.SendToCourseAsync(courseId, title, content, type, userId);
+            var success = await _notificationService.SendToCourseAsync(courseId, title, content, type, userId, userId);
             return Json(new { success = success });
         }
 
@@ -145,7 +148,8 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> SendToRole(string role, string title, string content, string? type = null)
         {
-            var success = await _notificationService.SendToRoleAsync(role, title, content, type);
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var success = await _notificationService.SendToRoleAsync(role, title, content, type, currentUserId);
             return Json(new { success = success });
         }
 
@@ -154,14 +158,15 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> SendToAll(string title, string content, string? type = null)
         {
-            var success = await _notificationService.SendToAllAsync(title, content, type);
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var success = await _notificationService.SendToAllAsync(title, content, type, currentUserId);
             return Json(new { success = success });
         }
 
         // GET: Create notification page (admin and instructor only)
         [HttpGet]
         [Authorize(Roles = "admin,instructor")]
-        public async Task<IActionResult> Create()
+        public IActionResult Create()
         {
             var viewModel = new NotificationCreateViewModel();
 
@@ -200,28 +205,28 @@ namespace BrainStormEra_MVC.Controllers
                     case NotificationTargetType.User:
                         if (!string.IsNullOrEmpty(model.TargetUserId))
                         {
-                            success = await _notificationService.SendToUserAsync(model.TargetUserId, model.Title, model.Content, model.Type, model.CourseId);
+                            success = await _notificationService.SendToUserAsync(model.TargetUserId, model.Title, model.Content, model.Type, model.CourseId, userId);
                         }
                         break;
 
                     case NotificationTargetType.Course:
                         if (!string.IsNullOrEmpty(model.CourseId))
                         {
-                            success = await _notificationService.SendToCourseAsync(model.CourseId, model.Title, model.Content, model.Type, userId);
+                            success = await _notificationService.SendToCourseAsync(model.CourseId, model.Title, model.Content, model.Type, userId, userId);
                         }
                         break;
 
                     case NotificationTargetType.Role:
                         if (User.IsInRole("admin") && !string.IsNullOrEmpty(model.TargetRole))
                         {
-                            success = await _notificationService.SendToRoleAsync(model.TargetRole, model.Title, model.Content, model.Type);
+                            success = await _notificationService.SendToRoleAsync(model.TargetRole, model.Title, model.Content, model.Type, userId);
                         }
                         break;
 
                     case NotificationTargetType.All:
                         if (User.IsInRole("admin"))
                         {
-                            success = await _notificationService.SendToAllAsync(model.Title, model.Content, model.Type);
+                            success = await _notificationService.SendToAllAsync(model.Title, model.Content, model.Type, userId);
                         }
                         break;
                 }
@@ -245,6 +250,84 @@ namespace BrainStormEra_MVC.Controllers
             return View(model);
         }
 
+        // GET: Edit notification (for creators only)
+        [HttpGet]
+        [Authorize(Roles = "admin,instructor")]
+        public async Task<IActionResult> Edit(string id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var notification = await _notificationService.GetNotificationForEditAsync(id, userId);
+            if (notification == null)
+            {
+                TempData["ErrorMessage"] = "Notification not found or you don't have permission to edit it.";
+                return RedirectToAction("Index");
+            }
+
+            var viewModel = new NotificationEditViewModel
+            {
+                NotificationId = notification.NotificationId,
+                Title = notification.NotificationTitle,
+                Content = notification.NotificationContent,
+                Type = notification.NotificationType,
+                CourseId = notification.CourseId,
+                RecipientUserName = notification.User?.Username ?? "Unknown User",
+                CourseName = notification.Course?.CourseName,
+                CreatedAt = notification.NotificationCreatedAt
+            };
+
+            return View(viewModel);
+        }
+
+        // POST: Edit notification
+        [HttpPost]
+        [Authorize(Roles = "admin,instructor")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(NotificationEditViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            try
+            {
+                var success = await _notificationService.UpdateNotificationAsync(
+                    model.NotificationId,
+                    userId,
+                    model.Title,
+                    model.Content,
+                    model.Type
+                );
+
+                if (success)
+                {
+                    TempData["SuccessMessage"] = "Notification updated successfully!";
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Failed to update notification. You may not have permission or the notification may not exist.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating notification");
+                TempData["ErrorMessage"] = "An error occurred while updating the notification.";
+            }
+
+            return View(model);
+        }
 
     }
 }
