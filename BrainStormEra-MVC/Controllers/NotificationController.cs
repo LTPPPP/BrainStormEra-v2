@@ -158,11 +158,6 @@ namespace BrainStormEra_MVC.Controllers
             return Json(new { success = success });
         }
 
-        // GET: Notification management page (Admin only)
-        [Authorize(Roles = "Admin")]
-        public IActionResult Manage()
-        {
-            return View();
-        }
+
     }
 }

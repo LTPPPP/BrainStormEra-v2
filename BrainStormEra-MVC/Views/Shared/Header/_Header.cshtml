@@ -63,59 +63,48 @@
                             aria-labelledby="notificationDropdown">
                             <li class="dropdown-header">
                                 <span>Notifications</span>
-                                @if (User.IsInRole("Admin") || User.IsInRole("admin"))
-                                    {
-                                        <a href="@Url.Action("Manage", "Notification")" class="btn btn-sm btn-outline-light">
-                                            <i class="fas fa-cog"></i>
-                                        </a>
-                                    }
+                            </li>
+                            <div class="notification-list-container">
+                                <li class="notification-empty">
+                                    <p class="mb-0">No new notifications</p>
                                 </li>
-                                <div class="notification-list-container">
-                                    <li class="notification-empty">
-                                        <p class="mb-0">No new notifications</p>
-                                    </li>
+                            </div>
+                            <li class="notification-footer">
+                                <a href="@Url.Action("Index", "Notification")" class="view-all-notifications">
+                                    <i class="fas fa-list me-1"></i>View All Notifications
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="dropdown">
+                        <a href="#" class="user-avatar" id="userDropdown" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <img src="@Url.Action("GetAvatar", "Profile", new { userId = User.FindFirst("UserId")?.Value })"
+                                alt="User Avatar"
+                                onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li class="dropdown-header">
+                                <div class="user-info">
+                                    <strong>@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)</strong>
+                                    <small>@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</small>
                                 </div>
-                                <li class="notification-footer">
-                                    <a href="@Url.Action("Index", "Notification")" class="view-all-notifications">
-                                        <i class="fas fa-list me-1"></i>View All Notifications
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="dropdown">
-                            <a href="#" class="user-avatar" id="userDropdown" data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                                <img src="@Url.Action("GetAvatar", "Profile", new { userId = User.FindFirst("UserId")?.Value })"
-                                    alt="User Avatar"
-                                    onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li class="dropdown-header">
-                                    <div class="user-info">
-                                        <strong>@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)</strong>
-                                        <small>@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</small>
-                                    </div>
-                                </li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li><a class="dropdown-item" href="@Url.Action("Index", "Profile")"><i
-                                            class="fas fa-user me-2"></i>My Profile</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-book me-2"></i>My Courses</a></li>
-                                @if (User.IsInRole("Admin") || User.IsInRole("admin"))
-                                {
-                                    <li><a class="dropdown-item" href="@Url.Action("Manage", "Notification")"><i
-                                                class="fas fa-bell me-2"></i>Manage Notifications</a></li>
-                                }
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li><a class="dropdown-item" href="@Url.Action("Logout", "Login")" data-action="logout"><i
-                                            class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                            </ul>
-                        </div>
-                    }
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="@Url.Action("Index", "Profile")"><i
+                                        class="fas fa-user me-2"></i>My Profile</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-book me-2"></i>My Courses</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="@Url.Action("Logout", "Login")" data-action="logout"><i
+                                        class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                                        }
                     else
                     {
                         <a href="@Url.Action("Index", "Register")" class="btn_register me-2">
