@@ -62,31 +62,42 @@
                         <ul class="dropdown-menu dropdown-menu-end notification-dropdown"
                             aria-labelledby="notificationDropdown">
                             <li class="dropdown-header">
-                                <span>Notifications</span>
-                            </li>
-                            <div class="notification-list-container">
-                                <li class="notification-empty">
-                                    <p class="mb-0">No new notifications</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Notifications</span>
+                                    @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("admin") ||
+                                                                        User.IsInRole("instructor")))
+                                        {
+                                            <a href="@Url.Action("Create", "Notification")" class="btn-create-notification"
+                                                title="Create New Notification">
+                                                <i class="fas fa-plus"></i>
+                                            </a>
+                                        }
+                                    </div>
                                 </li>
-                            </div>
-                            <li class="notification-footer">
-                                <a href="@Url.Action("Index", "Notification")" class="view-all-notifications">
-                                    <i class="fas fa-list me-1"></i>View All Notifications
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="dropdown">
-                        <a href="#" class="user-avatar" id="userDropdown" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <img src="@Url.Action("GetAvatar", "Profile", new { userId = User.FindFirst("UserId")?.Value })"
-                                alt="User Avatar"
-                                onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li class="dropdown-header">
-                                <div class="user-info">
-                                    <strong>@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)</strong>
+                                <div class="notification-list-container">
+                                    <li class="notification-empty">
+                                        <p class="mb-0">No new notifications</p>
+                                    </li>
+                                </div>
+                                <li class="notification-footer">
+                                    <a href="@Url.Action("Index", "Notification")" class="view-all-notifications">
+                                        <i class="fas fa-list me-1"></i>View All Notifications
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="dropdown">
+                            <a href="#" class="user-avatar" id="userDropdown" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <img src="@Url.Action("GetAvatar", "Profile", new { userId = User.FindFirst("UserId")?.Value })"
+                                    alt="User Avatar"
+                                    onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li class="dropdown-header">
+                                    <div class="user-info">
+                                        <strong>@(User.FindFirst("FullName")?.Value ?? User.Identity?.Name ??
+                                                                                    "User")</strong>
                                     <small>@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</small>
                                 </div>
                             </li>

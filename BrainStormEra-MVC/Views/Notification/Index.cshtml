@@ -83,9 +83,17 @@
                     <p class="page-subtitle">Stay connected with your learning journey and platform updates</p>
                 </div>
                 <div class="col-lg-4 text-end">
-                    <div class="stats-card">
-                        <div class="stat-number">@Model.UnreadCount</div>
-                        <div class="stat-label">Unread Messages</div>
+                    <div class="d-flex align-items-center justify-content-end gap-3">
+                        <div class="stats-card">
+                            <div class="stat-number">@Model.UnreadCount</div>
+                            <div class="stat-label">Unread Messages</div>
+                        </div>
+                        @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                        {
+                            <a href="@Url.Action("Create", "Notification")" class="btn btn-primary create-notification-btn" title="Create New Notification">
+                                <i class="fas fa-plus"></i>
+                            </a>
+                        }
                     </div>
                 </div>
             </div>

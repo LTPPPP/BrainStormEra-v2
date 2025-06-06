@@ -1,0 +1,369 @@
+@model BrainStormEra_MVC.Models.ViewModels.NotificationCreateViewModel
+@{
+    ViewData["Title"] = "Create Notification";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="Create and send notifications to users">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">    <link rel="stylesheet" href="~/css/components/chatbot.css">
+    <link rel="stylesheet" href="~/css/pages/Notifications/notification.css">
+    <!-- User meta tags for chatbot -->
+    @if (Context.Session.GetString("UserId") != null)
+    {
+        <meta name="user-id" content="@Context.Session.GetString("UserId")">
+        <meta name="user-role" content="@Context.Session.GetString("UserRole")">
+        <meta name="user-name" content="@Context.Session.GetString("UserName")">
+    }
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Page Header -->
+    <div class="page-header create-page">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1 class="mb-3">
+                        <i class="fas fa-bell me-3"></i>
+                        Create Notification
+                    </h1>
+                    <p class="lead mb-0">Send important updates and announcements to users</p>
+                    <div class="mt-4">
+                        <span class="badge bg-light text-dark fs-6 me-3">
+                            <i class="fas fa-users me-1"></i> Reach your audience
+                        </span>
+                        <span class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-paper-plane me-1"></i> Instant delivery
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="create-course-container">
+        <form asp-action="Create" method="post" id="createNotificationForm">
+            @Html.AntiForgeryToken()
+
+            <!-- Notification Content Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-edit me-2"></i>
+                    Notification Content
+                </h3>
+                <p class="text-muted mb-4">Compose your notification message</p>
+
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="mb-4">
+                            <label asp-for="Title" class="form-label">
+                                <i class="fas fa-heading me-2"></i>Notification Title *
+                            </label>
+                            <input asp-for="Title" class="form-control" placeholder="Enter notification title" maxlength="100" required>
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Content" class="form-label">
+                                <i class="fas fa-align-left me-2"></i>Message Content *
+                            </label>
+                            <textarea asp-for="Content" class="form-control" rows="5" placeholder="Enter your notification message" maxlength="500" required></textarea>
+                            <span asp-validation-for="Content" class="text-danger"></span>
+                            <div class="form-text">Maximum 500 characters</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Type" class="form-label">
+                                <i class="fas fa-tag me-2"></i>Notification Type
+                            </label>
+                            <select asp-for="Type" class="form-select">
+                                <option value="">Select type (optional)</option>
+                                <option value="info">Information</option>
+                                <option value="warning">Warning</option>
+                                <option value="success">Success</option>
+                                <option value="urgent">Urgent</option>
+                                <option value="course">Course Update</option>
+                                <option value="announcement">Announcement</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Audience Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-bullseye me-2"></i>
+                    Target Audience
+                </h3>
+                <p class="text-muted mb-4">Choose who will receive this notification</p>                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-users me-2"></i>Send To *
+                            </label>
+                            
+                            <!-- Professional Switch Design -->
+                            <div class="target-audience-selection">
+                                @if (User.IsInRole("instructor"))
+                                {
+                                    <div class="form-check form-switch custom-cursor-default-hover" style="padding-left: 2rem;">
+                                        <input asp-for="TargetType" class="form-check-input" type="radio" value="Course" id="targetCourse" />
+                                        <label class="form-check-label" for="targetCourse">
+                                            <i class="fas fa-graduation-cap me-2 text-primary"></i>
+                                            <strong>Course Students</strong>
+                                            <div class="small text-muted mt-1">Send notification to students enrolled in your courses</div>
+                                        </label>
+                                    </div>
+                                }
+                                
+                                @if (User.IsInRole("admin"))
+                                {
+                                    <div class="form-check form-switch custom-cursor-default-hover" style="padding-left: 2rem;">
+                                        <input asp-for="TargetType" class="form-check-input" type="radio" value="Role" id="targetRole" />
+                                        <label class="form-check-label" for="targetRole">
+                                            <i class="fas fa-user-tag me-2 text-success"></i>
+                                            <strong>By User Role</strong>
+                                            <div class="small text-muted mt-1">Send notification to users with specific roles</div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check form-switch custom-cursor-default-hover" style="padding-left: 2rem;">
+                                        <input asp-for="TargetType" class="form-check-input" type="radio" value="All" id="targetAll" />
+                                        <label class="form-check-label" for="targetAll">
+                                            <i class="fas fa-globe me-2 text-warning"></i>
+                                            <strong>All Users</strong>
+                                            <div class="small text-muted mt-1">Send notification to everyone on the platform</div>
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Course Selection (for Instructors and Course-specific notifications) -->
+                        <div class="mb-4" id="courseSelection" style="display: none;">
+                            <label asp-for="CourseId" class="form-label">
+                                <i class="fas fa-book me-2"></i>Select Course
+                            </label>
+                            <select asp-for="CourseId" class="form-select" id="courseSelect">
+                                <option value="">Select a course</option>
+                                <!-- Courses will be loaded via JavaScript -->
+                            </select>
+                        </div>                        <!-- Role Selection (for admin only) -->
+                        @if (User.IsInRole("admin"))
+                        {
+                            <div class="mb-4" id="roleSelection" style="display: none;">
+                                <label asp-for="TargetRole" class="form-label">
+                                    <i class="fas fa-users-cog me-2"></i>Select Role
+                                </label>
+                                <select asp-for="TargetRole" class="form-select">
+                                    <option value="">Select a role</option>
+                                    <option value="learner">Learners</option>
+                                    <option value="instructor">Instructors</option>
+                                    <option value="admin">Administrators</option>
+                                </select>
+                            </div>
+                        }
+                    </div>
+                </div>            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8 text-center">
+                        <h5 class="mb-4 text-muted">Ready to send your notification?</h5>
+                        <button type="submit" class="btn btn-create me-3" style="font-size: 0.8rem; padding: 0.5rem 1rem;">
+                            <i class="fas fa-paper-plane me-2"></i>
+                            Send Notification
+                        </button>
+
+                        <a href="@Url.Action("Index", "Notification")" class="btn btn-outline-secondary" style="font-size: 0.8rem; padding: 0.5rem 1rem;">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Cancel
+                        </a>
+
+                        <div class="mt-4">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Notifications will be delivered immediately to the selected recipients
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Include Footer partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/components/toast-notifications.js"></script>
+    <script src="~/js/components/loader.js"></script>
+
+    @* Chatbot Script for authenticated users *@
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        @Html.AntiForgeryToken()
+        <script src="~/js/components/chatbot.js"></script>
+    }
+
+    <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Target type selection handling
+            const targetTypeRadios = document.querySelectorAll('input[name="TargetType"]');
+            const courseSelection = document.getElementById('courseSelection');
+            const roleSelection = document.getElementById('roleSelection');
+
+            targetTypeRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    // Hide all conditional sections
+                    courseSelection.style.display = 'none';
+                    if (roleSelection) roleSelection.style.display = 'none';
+
+                    // Show relevant section based on selection
+                    if (this.value === 'Course') {
+                        courseSelection.style.display = 'block';
+                        loadUserCourses();
+                    } else if (this.value === 'Role' && roleSelection) {
+                        roleSelection.style.display = 'block';
+                    }
+                });
+            });            // Input validation enhancements
+            const titleInput = document.getElementById('Title');
+            const contentInput = document.getElementById('Content');
+            const typeSelect = document.getElementById('Type');            // Character counter and input validation for content
+            const maxLength = 500;
+            
+            // Initialize character counter
+            function updateCharacterCounter() {
+                const remaining = maxLength - contentInput.value.length;
+                const formText = contentInput.parentNode.querySelector('.form-text');
+                
+                if (remaining >= 0) {
+                    formText.textContent = `${remaining} characters remaining`;
+                    formText.classList.remove('text-danger');
+                    if (remaining < 50) {
+                        formText.classList.add('text-warning');
+                    } else {
+                        formText.classList.remove('text-warning');
+                    }
+                } else {
+                    formText.textContent = `${Math.abs(remaining)} characters over limit!`;
+                    formText.classList.add('text-danger');
+                    formText.classList.remove('text-warning');
+                }
+            }
+            
+            // Update counter on input and initialize on page load
+            contentInput.addEventListener('input', updateCharacterCounter);
+            updateCharacterCounter(); // Initialize counter on page load
+
+            // Load user courses for course selection
+            function loadUserCourses() {
+                fetch('@Url.Action("GetUserCourses", "Course")')
+                    .then(response => response.json())
+                    .then(data => {
+                        const courseSelect = document.getElementById('courseSelect');
+                        courseSelect.innerHTML = '<option value="">Select a course</option>';
+                        
+                        if (data.success && data.courses) {
+                            data.courses.forEach(course => {
+                                const option = document.createElement('option');
+                                option.value = course.courseId;
+                                option.textContent = course.courseName;
+                                courseSelect.appendChild(option);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading courses:', error);
+                    });
+            }
+
+            // Form validation
+            document.getElementById('createNotificationForm').addEventListener('submit', function(e) {
+                const targetType = document.querySelector('input[name="TargetType"]:checked');
+                if (!targetType) {
+                    e.preventDefault();
+                    showToast('Please select a target audience', 'error');
+                    return;
+                }
+
+                if (targetType.value === 'Course' && !document.getElementById('courseSelect').value) {
+                    e.preventDefault();
+                    showToast('Please select a course', 'error');
+                    return;
+                }
+
+                if (targetType.value === 'Role' && !document.querySelector('select[name="TargetRole"]').value) {
+                    e.preventDefault();
+                    showToast('Please select a role', 'error');
+                    return;
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

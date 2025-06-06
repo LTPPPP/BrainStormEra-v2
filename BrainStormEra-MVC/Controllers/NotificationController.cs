@@ -121,18 +121,18 @@ namespace BrainStormEra_MVC.Controllers
             return Json(new { success = true });
         }
 
-        // POST: Send notification to user (Admin only)
+        // POST: Send notification to user (admin only)
         [HttpPost]
-        [Authorize(Roles = "Admin,Instructor")]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> SendToUser(string targetUserId, string title, string content, string? type = null, string? courseId = null)
         {
             var success = await _notificationService.SendToUserAsync(targetUserId, title, content, type, courseId);
             return Json(new { success = success });
         }
 
-        // POST: Send notification to course (Instructor/Admin only)
+        // POST: Send notification to course (instructor/admin only)
         [HttpPost]
-        [Authorize(Roles = "Admin,Instructor")]
+        [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> SendToCourse(string courseId, string title, string content, string? type = null)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -140,22 +140,109 @@ namespace BrainStormEra_MVC.Controllers
             return Json(new { success = success });
         }
 
-        // POST: Send notification to role (Admin only)
+        // POST: Send notification to role (admin only)
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> SendToRole(string role, string title, string content, string? type = null)
         {
             var success = await _notificationService.SendToRoleAsync(role, title, content, type);
             return Json(new { success = success });
         }
 
-        // POST: Send notification to all users (Admin only)
+        // POST: Send notification to all users (admin only)
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> SendToAll(string title, string content, string? type = null)
         {
             var success = await _notificationService.SendToAllAsync(title, content, type);
             return Json(new { success = success });
+        }
+
+        // GET: Create notification page (admin and instructor only)
+        [HttpGet]
+        [Authorize(Roles = "admin,instructor")]
+        public async Task<IActionResult> Create()
+        {
+            var viewModel = new NotificationCreateViewModel();
+
+            // If user is instructor, get their courses for course-specific notifications
+            if (User.IsInRole("instructor"))
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userId != null)
+                {
+                    // Get instructor's courses - you may need to inject CourseService here
+                    ViewBag.UserCourses = new List<object>(); // Placeholder - implement course fetching
+                }
+            }
+
+            return View(viewModel);
+        }
+
+        // POST: Create notification
+        [HttpPost]
+        [Authorize(Roles = "admin,instructor")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(NotificationCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            try
+            {
+                bool success = false;
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                switch (model.TargetType)
+                {
+                    case NotificationTargetType.User:
+                        if (!string.IsNullOrEmpty(model.TargetUserId))
+                        {
+                            success = await _notificationService.SendToUserAsync(model.TargetUserId, model.Title, model.Content, model.Type, model.CourseId);
+                        }
+                        break;
+
+                    case NotificationTargetType.Course:
+                        if (!string.IsNullOrEmpty(model.CourseId))
+                        {
+                            success = await _notificationService.SendToCourseAsync(model.CourseId, model.Title, model.Content, model.Type, userId);
+                        }
+                        break;
+
+                    case NotificationTargetType.Role:
+                        if (User.IsInRole("admin") && !string.IsNullOrEmpty(model.TargetRole))
+                        {
+                            success = await _notificationService.SendToRoleAsync(model.TargetRole, model.Title, model.Content, model.Type);
+                        }
+                        break;
+
+                    case NotificationTargetType.All:
+                        if (User.IsInRole("admin"))
+                        {
+                            success = await _notificationService.SendToAllAsync(model.Title, model.Content, model.Type);
+                        }
+                        break;
+                }
+
+                if (success)
+                {
+                    TempData["SuccessMessage"] = "Notification sent successfully!";
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Failed to send notification. Please try again.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating notification");
+                TempData["ErrorMessage"] = "An error occurred while sending the notification.";
+            }
+
+            return View(model);
         }
 
 

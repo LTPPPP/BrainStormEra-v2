@@ -361,5 +361,36 @@ namespace BrainStormEra_MVC.Controllers
                 return Json(new { success = false, message = "An error occurred while deleting the course." });
             }
         }
+
+        // GET: Get user courses for notifications (Instructor only)
+        [HttpGet]
+        [Authorize(Roles = "Instructor,instructor")]
+        public async Task<IActionResult> GetUserCourses()
+        {
+            try
+            {
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new { success = false, message = "User not authenticated" });
+                }
+
+                var courses = await _courseService.GetInstructorCoursesAsync(userId, null, null, 1, int.MaxValue);
+
+                var courseList = courses.Courses.Select(c => new
+                {
+                    courseId = c.CourseId,
+                    courseName = c.CourseName,
+                    enrollmentCount = c.EnrollmentCount
+                }).ToList();
+
+                return Json(new { success = true, courses = courseList });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user courses for notifications");
+                return Json(new { success = false, message = "An error occurred while loading courses." });
+            }
+        }
     }
 }
