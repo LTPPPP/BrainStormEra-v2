@@ -144,6 +144,38 @@ namespace BrainStormEra_MVC.Services
                         LessonType = l.LessonType?.LessonTypeName ?? "Video",
                         EstimatedDuration = 0,
                         IsLocked = l.IsLocked ?? false
+                    }).ToList(),
+                    Quizzes = ch.Lessons.SelectMany(l => l.Quizzes).Select(q => new QuizViewModel
+                    {
+                        QuizId = q.QuizId,
+                        QuizName = q.QuizName,
+                        QuizDescription = q.QuizDescription ?? "",
+                        LessonId = q.LessonId,
+                        LessonName = q.Lesson?.LessonName ?? "",
+                        TimeLimit = q.TimeLimit,
+                        PassingScore = q.PassingScore,
+                        MaxAttempts = q.MaxAttempts,
+                        IsFinalQuiz = q.IsFinalQuiz ?? false,
+                        IsPrerequisiteQuiz = q.IsPrerequisiteQuiz ?? false,
+                        BlocksLessonCompletion = q.BlocksLessonCompletion ?? false,
+                        QuizCreatedAt = q.QuizCreatedAt,
+                        QuizUpdatedAt = q.QuizUpdatedAt,
+                        Questions = q.Questions.OrderBy(qu => qu.QuestionOrder).Select(qu => new QuestionViewModel
+                        {
+                            QuestionId = qu.QuestionId,
+                            QuestionText = qu.QuestionText,
+                            QuestionType = qu.QuestionType,
+                            Points = qu.Points ?? 0,
+                            QuestionOrder = qu.QuestionOrder ?? 0,
+                            Explanation = qu.Explanation ?? "",
+                            AnswerOptions = qu.AnswerOptions.OrderBy(ao => ao.OptionOrder).Select(ao => new AnswerOptionViewModel
+                            {
+                                OptionId = ao.OptionId,
+                                OptionText = ao.OptionText,
+                                IsCorrect = ao.IsCorrect ?? false,
+                                OptionOrder = ao.OptionOrder ?? 0
+                            }).ToList()
+                        }).ToList()
                     }).ToList()
                 }).ToList();
 
@@ -215,6 +247,38 @@ namespace BrainStormEra_MVC.Services
                         LessonType = l.LessonType?.LessonTypeName ?? "Video",
                         EstimatedDuration = 0,
                         IsLocked = l.IsLocked ?? false
+                    }).ToList(),
+                    Quizzes = ch.Lessons.SelectMany(l => l.Quizzes).Select(q => new QuizViewModel
+                    {
+                        QuizId = q.QuizId,
+                        QuizName = q.QuizName,
+                        QuizDescription = q.QuizDescription ?? "",
+                        LessonId = q.LessonId,
+                        LessonName = q.Lesson?.LessonName ?? "",
+                        TimeLimit = q.TimeLimit,
+                        PassingScore = q.PassingScore,
+                        MaxAttempts = q.MaxAttempts,
+                        IsFinalQuiz = q.IsFinalQuiz ?? false,
+                        IsPrerequisiteQuiz = q.IsPrerequisiteQuiz ?? false,
+                        BlocksLessonCompletion = q.BlocksLessonCompletion ?? false,
+                        QuizCreatedAt = q.QuizCreatedAt,
+                        QuizUpdatedAt = q.QuizUpdatedAt,
+                        Questions = q.Questions.OrderBy(qu => qu.QuestionOrder).Select(qu => new QuestionViewModel
+                        {
+                            QuestionId = qu.QuestionId,
+                            QuestionText = qu.QuestionText,
+                            QuestionType = qu.QuestionType,
+                            Points = qu.Points ?? 0,
+                            QuestionOrder = qu.QuestionOrder ?? 0,
+                            Explanation = qu.Explanation ?? "",
+                            AnswerOptions = qu.AnswerOptions.OrderBy(ao => ao.OptionOrder).Select(ao => new AnswerOptionViewModel
+                            {
+                                OptionId = ao.OptionId,
+                                OptionText = ao.OptionText,
+                                IsCorrect = ao.IsCorrect ?? false,
+                                OptionOrder = ao.OptionOrder ?? 0
+                            }).ToList()
+                        }).ToList()
                     }).ToList()
                 }).ToList();
 

@@ -3118,43 +3118,142 @@
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .instructor-notification {
-    padding: 1.25rem 1.5rem;
-    margin: 1rem 0;
-  }
+/* ========================================
+ * QUIZ DISPLAY STYLES
+ * ========================================
+ * Styles for quiz items in curriculum section
+ * ======================================== */
 
-  .instructor-notification-title {
-    font-size: 1.1rem;
-  }
-
-  .instructor-notification-actions {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .instructor-action-btn {
-    min-width: 200px;
-  }
+/* Quiz Section Header */
+.quiz-section-header {
+  margin-bottom: 0.5rem;
+  padding-left: 0.5rem;
 }
 
-@media (max-width: 576px) {
-  .instructor-notification {
-    padding: 1rem 1.25rem;
+.quiz-section-header small {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Quiz Item Styles */
+.quiz-item {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-left: 4px solid var(--success-color, #28a745);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0 8px 8px 0;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.quiz-item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(40, 167, 69, 0.1),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.quiz-item:hover::before {
+  left: 100%;
+}
+
+.quiz-item:hover {
+  background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
+}
+
+.quiz-item .fas.fa-question-circle {
+  color: var(--success-color, #28a745);
+  font-size: 1.1rem;
+  margin-right: 0.75rem;
+}
+
+.quiz-item .lesson-type-with-icon {
+  color: var(--success-color, #28a745);
+  font-weight: 500;
+}
+
+.quiz-item .lesson-type-with-icon small {
+  color: #6c757d;
+  font-weight: 400;
+}
+
+/* Quiz Badges */
+.quiz-item .badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.quiz-item .badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+.quiz-item .badge.bg-info {
+  background-color: #0dcaf0 !important;
+  color: #000 !important;
+}
+
+/* Quiz Actions */
+.quiz-item .lesson-actions {
+  gap: 0.25rem;
+}
+
+.quiz-item .lesson-actions .btn {
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.quiz-item .lesson-actions .btn:hover {
+  transform: scale(1.05);
+}
+
+/* Time Limit Display */
+.quiz-time-limit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #6c757d;
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+}
+
+.quiz-time-limit i {
+  font-size: 0.8rem;
+}
+
+/* Quiz Count in Headers */
+.quiz-count {
+  color: var(--success-color, #28a745);
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .quiz-item {
+    padding: 0.6rem 0.8rem;
   }
 
-  .instructor-notification-icon {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 0.75rem;
+  .quiz-item .lesson-actions {
+    flex-wrap: wrap;
   }
 
-  .instructor-notification-icon i {
-    font-size: 1.25rem;
-  }
-
-  .instructor-notification-title {
-    font-size: 1rem;
+  .quiz-item .lesson-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
   }
 }
