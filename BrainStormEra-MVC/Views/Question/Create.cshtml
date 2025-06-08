@@ -182,13 +182,13 @@
                                         @Html.HiddenFor(m => m.AnswerOptions[i].OptionOrder)
                                     </div>
                                     <span asp-validation-for="AnswerOptions[@i].OptionText" class="text-danger"></span>
-                                </div>
-                                <div class="col-lg-3">
+                                </div>                                <div class="col-lg-3">
                                     <div class="form-check">
-                                        <input asp-for="AnswerOptions[@i].IsCorrect" class="form-check-input correct-answer-radio" 
-                                               type="radio" name="CorrectAnswerIndex" value="@i" />
+                                        <input asp-for="AnswerOptions[@i].IsCorrect" class="form-check-input correct-answer-checkbox" 
+                                               type="checkbox" />
+                                        <input asp-for="AnswerOptions[@i].IsCorrect" type="hidden" value="false" />
                                         <label class="form-check-label">
-                                            Correct Answer
+                                            Is Correct
                                         </label>
                                     </div>
                                 </div>
@@ -337,13 +337,13 @@
                                            placeholder="Enter answer option..." />
                                     <input name="AnswerOptions[${newOptionIndex}].OptionOrder" type="hidden" value="${newOptionIndex + 1}" />
                                 </div>
-                            </div>
-                            <div class="col-lg-3">
+                            </div>                            <div class="col-lg-3">
                                 <div class="form-check">
-                                    <input name="AnswerOptions[${newOptionIndex}].IsCorrect" class="form-check-input correct-answer-radio" 
-                                           type="radio" name="CorrectAnswerIndex" value="${newOptionIndex}" />
+                                    <input name="AnswerOptions[${newOptionIndex}].IsCorrect" class="form-check-input correct-answer-checkbox" 
+                                           type="checkbox" />
+                                    <input name="AnswerOptions[${newOptionIndex}].IsCorrect" type="hidden" value="false" />
                                     <label class="form-check-label">
-                                        Correct Answer
+                                        Is Correct
                                     </label>
                                 </div>
                             </div>
@@ -372,9 +372,7 @@
                         alert('At least 2 options are required');
                     }
                 }
-            });
-
-            // Update option numbers and indices
+            });            // Update option numbers and indices
             function updateOptionNumbers() {
                 const options = answerOptionsContainer.querySelectorAll('.answer-option-item');
                 options.forEach((option, index) => {
@@ -385,30 +383,31 @@
                     numberSpan.textContent = (index + 1) + '.';
                     
                     // Update input names and IDs
-                    const textInput = option.querySelector('input[type="text"], input:not([type="hidden"]):not([type="radio"])');
-                    const hiddenInput = option.querySelector('input[type="hidden"]');
-                    const radioInput = option.querySelector('input[type="radio"]');
+                    const textInput = option.querySelector('input[type="text"], input:not([type="hidden"]):not([type="checkbox"])');
+                    const hiddenOrderInput = option.querySelector('input[name*=".OptionOrder"]');
+                    const checkboxInput = option.querySelector('input[type="checkbox"]');
+                    const hiddenCheckboxInput = option.querySelector('input[type="hidden"][name*=".IsCorrect"]');
                     
                     if (textInput) {
                         textInput.name = `AnswerOptions[${index}].OptionText`;
                     }
-                    if (hiddenInput) {
-                        hiddenInput.name = `AnswerOptions[${index}].OptionOrder`;
-                        hiddenInput.value = index + 1;
+                    if (hiddenOrderInput) {
+                        hiddenOrderInput.name = `AnswerOptions[${index}].OptionOrder`;
+                        hiddenOrderInput.value = index + 1;
                     }
-                    if (radioInput) {
-                        radioInput.name = 'CorrectAnswerIndex';
-                        radioInput.value = index;
+                    if (checkboxInput) {
+                        checkboxInput.name = `AnswerOptions[${index}].IsCorrect`;
+                    }
+                    if (hiddenCheckboxInput) {
+                        hiddenCheckboxInput.name = `AnswerOptions[${index}].IsCorrect`;
                     }
                 });
-            }
-
-            // Form validation
+            }// Form validation
             document.getElementById('questionForm').addEventListener('submit', function (e) {
                 const questionType = questionTypeSelect.value;
                 
                 if (questionType === 'multiple_choice') {
-                    const options = answerOptionsContainer.querySelectorAll('input[type="text"], input:not([type="hidden"]):not([type="radio"])');
+                    const options = answerOptionsContainer.querySelectorAll('input[type="text"], input:not([type="hidden"]):not([type="checkbox"])');
                     const filledOptions = Array.from(options).filter(input => input.value.trim() !== '');
                     
                     if (filledOptions.length < 2) {
@@ -417,10 +416,10 @@
                         return;
                     }
                     
-                    const correctAnswerSelected = document.querySelector('input[name="CorrectAnswerIndex"]:checked');
-                    if (!correctAnswerSelected) {
+                    const correctAnswersSelected = document.querySelectorAll('input[type="checkbox"].correct-answer-checkbox:checked');
+                    if (correctAnswersSelected.length === 0) {
                         e.preventDefault();
-                        alert('Please select the correct answer');
+                        alert('Please select at least one correct answer');
                         return;
                     }
                 } else if (questionType === 'true_false') {

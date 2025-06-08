@@ -93,15 +93,30 @@ namespace BrainStormEra_MVC.Controllers
             Console.WriteLine($"Model - Points: {model?.Points}");
             Console.WriteLine($"Model - QuestionOrder: {model?.QuestionOrder}");
             Console.WriteLine($"Model - Explanation: {model?.Explanation}");
-            Console.WriteLine($"Model - TrueFalseAnswer: {model?.TrueFalseAnswer}");
-
-            if (model?.AnswerOptions != null)
+            Console.WriteLine($"Model - TrueFalseAnswer: {model?.TrueFalseAnswer}"); if (model?.AnswerOptions != null)
             {
                 Console.WriteLine($"AnswerOptions Count: {model.AnswerOptions.Count}");
+
+                var correctOptionsFromModel = model.AnswerOptions.Where(o => o.IsCorrect).ToList();
+                Console.WriteLine($"Correct options from model: {correctOptionsFromModel.Count}");
+
                 for (int i = 0; i < model.AnswerOptions.Count; i++)
                 {
                     var option = model.AnswerOptions[i];
                     Console.WriteLine($"  Option {i + 1}: Text='{option?.OptionText}', IsCorrect={option?.IsCorrect}, Order={option?.OptionOrder}");
+                }
+
+                if (correctOptionsFromModel.Count > 0)
+                {
+                    Console.WriteLine("SUCCESS: Found correct answer(s) in submitted data");
+                    foreach (var correct in correctOptionsFromModel)
+                    {
+                        Console.WriteLine($"  Correct Answer: '{correct.OptionText}'");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("WARNING: No correct answers found in submitted data");
                 }
             }
 
@@ -111,9 +126,7 @@ namespace BrainStormEra_MVC.Controllers
                 return BadRequest("Invalid model data");
             }
             Console.WriteLine("=== CHECKING MODEL STATE ===");
-            Console.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
-
-            if (!ModelState.IsValid)
+            Console.WriteLine($"ModelState.IsValid: {ModelState.IsValid}"); if (!ModelState.IsValid)
             {
                 Console.WriteLine("MODEL STATE ERRORS:");
                 foreach (var error in ModelState)
@@ -122,7 +135,37 @@ namespace BrainStormEra_MVC.Controllers
                     {
                         Console.WriteLine($"  {error.Key}: {string.Join(", ", error.Value.Errors.Select(e => e.ErrorMessage))}");
                     }
-                }                // For true/false, essay, and fill_blank questions, clear AnswerOptions validation errors
+                }
+
+                // Additional logging for multiple choice validation
+                if (model.QuestionType == "multiple_choice")
+                {
+                    Console.WriteLine("=== MULTIPLE CHOICE VALIDATION DETAILS ===");
+                    if (model.AnswerOptions != null)
+                    {
+                        var correctOptions = model.AnswerOptions.Where(o => o.IsCorrect).ToList();
+                        var validOptions = model.AnswerOptions.Where(o => !string.IsNullOrWhiteSpace(o.OptionText)).ToList();
+
+                        Console.WriteLine($"Total AnswerOptions: {model.AnswerOptions.Count}");
+                        Console.WriteLine($"Valid options (with text): {validOptions.Count}");
+                        Console.WriteLine($"Correct options: {correctOptions.Count}");
+
+                        for (int i = 0; i < model.AnswerOptions.Count; i++)
+                        {
+                            var option = model.AnswerOptions[i];
+                            Console.WriteLine($"  Option {i + 1}: Text='{option?.OptionText}', IsCorrect={option?.IsCorrect}, IsValid={!string.IsNullOrWhiteSpace(option?.OptionText)}");
+                        }
+
+                        if (correctOptions.Count == 0)
+                        {
+                            Console.WriteLine("ERROR: No correct answers selected for multiple choice question");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("ERROR: AnswerOptions is null for multiple choice question");
+                    }
+                }// For true/false, essay, and fill_blank questions, clear AnswerOptions validation errors
                 if (model.QuestionType == "true_false" || model.QuestionType == "essay" || model.QuestionType == "fill_blank")
                 {
                     Console.WriteLine($"=== CLEARING ANSWER OPTIONS ERRORS FOR {model.QuestionType.ToUpper()} ===");
@@ -214,7 +257,16 @@ namespace BrainStormEra_MVC.Controllers
             {
                 Console.WriteLine("=== PROCESSING MULTIPLE CHOICE OPTIONS ===");
                 var validOptions = model.AnswerOptions.Where(o => !string.IsNullOrWhiteSpace(o.OptionText)).ToList();
+                var correctOptions = validOptions.Where(o => o.IsCorrect).ToList();
+
+                Console.WriteLine($"Total options: {model.AnswerOptions.Count}");
                 Console.WriteLine($"Valid options count: {validOptions.Count}");
+                Console.WriteLine($"Correct options count: {correctOptions.Count}");
+
+                if (correctOptions.Count == 0)
+                {
+                    Console.WriteLine("WARNING: No correct options found for multiple choice question");
+                }
 
                 foreach (var option in validOptions)
                 {

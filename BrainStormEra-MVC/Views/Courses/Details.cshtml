@@ -581,6 +581,10 @@
                                                                                     @if (ViewBag.IsAuthor == true)
                                                                                     {
                                                                                         <div class="quiz-item-actions">
+                                                                                            <a href="@Url.Action("Details", "Quiz", new { id = quiz.QuizId })" 
+                                                                                               class="btn btn-sm btn-info quiz-action-btn" title="View Quiz Details">
+                                                                                                <i class="fas fa-eye"></i>
+                                                                                            </a>
                                                                                             <a href="@Url.Action("Create", "Question", new { quizId = quiz.QuizId })" 
                                                                                                class="btn btn-sm btn-success quiz-action-btn" title="Create Question">
                                                                                                 <i class="fas fa-plus"></i>
