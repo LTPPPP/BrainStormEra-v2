@@ -622,20 +622,26 @@
                                                                     Scroll to see all @orderedLessons.Count lessons
                                                                 </small>
                                                             </div>
-                                                        }
-                                                        @if (ViewBag.IsAuthor == true)
-                                                        {
-                                                            <div class="lesson-actions mt-3 text-center d-flex gap-2 justify-content-center">
-                                                                <a href="@Url.Action("SelectLessonType", "Lesson", new { chapterId = chapter.ChapterId })" 
-                                                                   class="btn btn-sm btn-outline-primary">
-                                                                    <i class="fas fa-plus me-2"></i>Create Lesson
-                                                                </a>
-                                                                <a href="@Url.Action("Create", "Quiz", new { chapterId = chapter.ChapterId })" 
-                                                                   class="btn btn-sm btn-outline-success">
-                                                                    <i class="fas fa-question-circle me-2"></i>Create Quiz
-                                                                </a>
-                                                            </div>
-                                                        }
+                                                        }                                        @if (ViewBag.IsAuthor == true)
+                                        {
+                                            // Check if chapter has lessons with quizzes
+                                            var hasLessonsWithQuizzes = chapter.Lessons.Any() && 
+                                                chapter.Lessons.Any(l => chapter.Quizzes.Any(q => q.LessonId == l.LessonId));
+                                            
+                                            if (!hasLessonsWithQuizzes)
+                                            {
+                                                <div class="lesson-actions mt-3 text-center d-flex gap-2 justify-content-center">
+                                                    <a href="@Url.Action("SelectLessonType", "Lesson", new { chapterId = chapter.ChapterId })" 
+                                                       class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-plus me-2"></i>Create Lesson
+                                                    </a>
+                                                    <a href="@Url.Action("Create", "Quiz", new { chapterId = chapter.ChapterId })" 
+                                                       class="btn btn-sm btn-outline-success">
+                                                        <i class="fas fa-question-circle me-2"></i>Create Quiz
+                                                    </a>
+                                                </div>
+                                            }
+                                        }
                                                     </div>
                                                 </div>
                                             </div>
