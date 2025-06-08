@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
     <!-- Notification Index specific styles -->
     <link rel="stylesheet" href="~/css/pages/Notifications/notification-index.css">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
     <link rel="stylesheet" href="~/css/components/chatbot.css">
     <!-- User meta tags for chatbot -->
     @if (Context.Session.GetString("UserId") != null)
@@ -72,7 +73,7 @@
     <!-- Main Content -->
     <div class="container main-content">
         <!-- Enhanced Page Header -->
-        <div class="page-header">
+        <div class="page-header index-page">
             <div class="row align-items-center">
                 <div class="col-lg-8">
                     <h1 class="page-title">
@@ -82,9 +83,17 @@
                     <p class="page-subtitle">Stay connected with your learning journey and platform updates</p>
                 </div>
                 <div class="col-lg-4 text-end">
-                    <div class="stats-card">
-                        <div class="stat-number">@Model.UnreadCount</div>
-                        <div class="stat-label">Unread Messages</div>
+                    <div class="d-flex align-items-center justify-content-end gap-3">
+                        <div class="stats-card">
+                            <div class="stat-number">@Model.UnreadCount</div>
+                            <div class="stat-label">Unread Messages</div>
+                        </div>
+                        @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                        {
+                            <a href="@Url.Action("Create", "Notification")" class="btn btn-primary create-notification-btn" title="Create New Notification">
+                                <i class="fas fa-plus"></i>
+                            </a>
+                        }
                     </div>
                 </div>
             </div>
@@ -131,6 +140,10 @@
                                                         {
                                                             <span class="badge bg-secondary me-2">@notification.NotificationType</span>
                                                         }
+                                                        @if (notification.CreatedBy == Model.CurrentUserId)
+                                                        {
+                                                            <span class="badge bg-info me-2">Created by you</span>
+                                                        }
                                                         @if (notification.IsRead == false)
                                                         {
                                                             <span class="badge bg-primary me-2">New</span>
@@ -155,6 +168,14 @@
                                                             title="Mark as read">
                                                         <i class="fas fa-check"></i>
                                                     </button>
+                                                }
+                                                @if (notification.CreatedBy == Model.CurrentUserId && (User.IsInRole("admin") || User.IsInRole("instructor")))
+                                                {
+                                                    <a href="@Url.Action("Edit", "Notification", new { id = notification.NotificationId })" 
+                                                       class="btn btn-sm edit-btn" 
+                                                       title="Edit notification">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
                                                 }
                                                 <button class="btn btn-sm delete-btn" 
                                                         data-notification-id="@notification.NotificationId"
@@ -203,6 +224,10 @@
     <!-- Custom JS -->
     <script src="~/js/components/loader.js"></script>
     <script src="~/js/shared/toast-notifications.js"></script>
+    <script src="~/js/pages/Notifications/notification-index.js"></script>
+
+    <!-- Add anti-forgery token for CSRF protection -->
+    @Html.AntiForgeryToken()
 
     <script>
         // Hide preloader when page is loaded
@@ -220,16 +245,6 @@
                 behavior: 'smooth'
             });
         }
-
-        $(document).ready(function() {
-            // Initialize SignalR connection
-            const connection = new signalR.HubConnectionBuilder()
-                .withUrl("/notificationHub")
-                .configureLogging(signalR.LogLevel.Information)
-                .build();
-            
-            // Add your SignalR connection logic here
-        });
     </script>
 
     <!-- Chatbot for authenticated users -->

@@ -1,0 +1,454 @@
+@model BrainStormEra_MVC.Models.ViewModels.CreateQuestionViewModel
+@{
+    ViewData["Title"] = Model.QuestionId == null ? "Create Question" : "Edit Question";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="@ViewData["Title"] for @Model.QuizName - BrainStormEra">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <link rel="stylesheet" href="~/css/components/chatbot.css">
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+    
+    <!-- User meta tags for chatbot -->
+    @if (Context.Session.GetString("UserId") != null)
+    {
+        <meta name="user-id" content="@Context.Session.GetString("UserId")">
+        <meta name="user-role" content="@Context.Session.GetString("UserRole")">
+        <meta name="user-name" content="@Context.Session.GetString("UserName")">
+    }
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Page Header -->
+    <div class="page-header create-page">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1 class="mb-3">
+                        <i class="fas fa-question-circle me-3"></i>
+                        @(Model.QuestionId == null ? "Create Question" : "Edit Question")
+                    </h1>
+                    <div class="mt-4">
+                        <span class="badge bg-light text-dark fs-6 me-3">
+                            <i class="fas fa-lightbulb me-1"></i> Engage your students
+                        </span>
+                        <span class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-chart-line me-1"></i> Assess learning outcomes
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    <!-- Main Content -->
+    <div class="create-course-container">
+        <form asp-action="@(Model.QuestionId == null ? "Create" : "Edit")" method="post" id="questionForm">
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.QuizId)
+            @if (Model.QuestionId != null)
+            {
+                @Html.HiddenFor(m => m.QuestionId)
+            }
+
+            <!-- Question Details Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-edit me-2"></i>
+                    Question Details
+                </h3>
+                <p class="text-muted mb-4">Configure your question content and settings</p>
+
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="mb-4">
+                            <label asp-for="QuestionText" class="form-label">
+                                <i class="fas fa-question me-2"></i>Question Text *
+                            </label>
+                            <textarea asp-for="QuestionText" class="form-control" rows="4"
+                                placeholder="Enter your question here..."></textarea>
+                            <span asp-validation-for="QuestionText" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="QuestionType" class="form-label">
+                                <i class="fas fa-list me-2"></i>Question Type *
+                            </label>
+                            <select asp-for="QuestionType" class="form-select" id="questionType">
+                                <option value="multiple_choice">Multiple Choice</option>
+                                <option value="true_false">True/False</option>
+                                <option value="essay">Essay</option>
+                                <option value="fill_blank">Fill in the Blank</option>
+                            </select>
+                            <span asp-validation-for="QuestionType" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="mb-4">
+                            <label asp-for="Points" class="form-label">
+                                <i class="fas fa-star me-2"></i>Points *
+                            </label>
+                            <input asp-for="Points" type="number" class="form-control" min="1" max="100" />
+                            <span asp-validation-for="Points" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Points awarded for correct answer
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="QuestionOrder" class="form-label">
+                                <i class="fas fa-sort-numeric-up me-2"></i>Question Order *
+                            </label>
+                            <input asp-for="QuestionOrder" type="number" class="form-control" min="1" max="1000" />
+                            <span asp-validation-for="QuestionOrder" class="text-danger"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Order in which this question appears
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Explanation" class="form-label">
+                        <i class="fas fa-lightbulb me-2"></i>Explanation (Optional)
+                    </label>
+                    <textarea asp-for="Explanation" class="form-control" rows="3"
+                        placeholder="Provide an explanation for the correct answer..."></textarea>
+                    <span asp-validation-for="Explanation" class="text-danger"></span>
+                    <div class="form-text">
+                        <i class="fas fa-info-circle me-1"></i>
+                        This explanation will be shown to students after they answer
+                    </div>
+                </div>
+            </div>
+
+            <!-- Multiple Choice Options Section -->
+            <div class="form-section" id="multipleChoiceSection" style="display: none;">
+                <h3 class="section-title">
+                    <i class="fas fa-list-ul me-2"></i>
+                    Answer Options
+                </h3>
+                <p class="text-muted mb-4">Add multiple choice options for your question</p>
+
+                <div id="answerOptionsContainer">
+                    @for (int i = 0; i < Model.AnswerOptions.Count; i++)
+                    {
+                        <div class="answer-option-item mb-3" data-option-index="@i">
+                            <div class="row align-items-center">
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <span class="input-group-text">@(i + 1).</span>
+                                        <input asp-for="AnswerOptions[@i].OptionText" class="form-control" 
+                                               placeholder="Enter answer option..." />
+                                        @Html.HiddenFor(m => m.AnswerOptions[i].OptionOrder)
+                                    </div>
+                                    <span asp-validation-for="AnswerOptions[@i].OptionText" class="text-danger"></span>
+                                </div>                                <div class="col-lg-3">
+                                    <div class="form-check">
+                                        <input asp-for="AnswerOptions[@i].IsCorrect" class="form-check-input correct-answer-checkbox" 
+                                               type="checkbox" />
+                                        <input asp-for="AnswerOptions[@i].IsCorrect" type="hidden" value="false" />
+                                        <label class="form-check-label">
+                                            Is Correct
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-lg-1">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-option" 
+                                            title="Remove Option">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="text-center">
+                    <button type="button" class="btn btn-outline-primary" id="addOptionBtn">
+                        <i class="fas fa-plus me-2"></i>Add Option
+                    </button>
+                </div>
+            </div>
+
+            <!-- True/False Section -->
+            <div class="form-section" id="trueFalseSection" style="display: none;">
+                <h3 class="section-title">
+                    <i class="fas fa-check-circle me-2"></i>
+                    True/False Answer
+                </h3>
+                <p class="text-muted mb-4">Select the correct answer for this true/false question</p>
+
+                <div class="row justify-content-center">
+                    <div class="col-lg-6">
+                        <div class="true-false-options">
+                            <div class="form-check mb-3">
+                                <input asp-for="TrueFalseAnswer" class="form-check-input" type="radio" value="true" id="trueOption" />
+                                <label class="form-check-label" for="trueOption">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    True
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input asp-for="TrueFalseAnswer" class="form-check-input" type="radio" value="false" id="falseOption" />
+                                <label class="form-check-label" for="falseOption">
+                                    <i class="fas fa-times text-danger me-2"></i>
+                                    False
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Essay/Fill Blank Section -->
+            <div class="form-section" id="essayFillSection" style="display: none;">
+                <h3 class="section-title">
+                    <i class="fas fa-pen me-2"></i>
+                    Answer Guidelines
+                </h3>
+                <p class="text-muted mb-4">For essay and fill-in-the-blank questions, provide guidelines in the explanation section above</p>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Note:</strong> Essay and fill-in-the-blank questions require manual grading. 
+                    Make sure to provide clear guidelines in the explanation field to help with assessment.
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8 text-center">
+                        <h5 class="mb-4 text-muted">
+                            @(Model.QuestionId == null ? "Ready to create your question?" : "Ready to update your question?")
+                        </h5>
+                        
+                        <button type="submit" class="btn btn-create me-3">
+                            <i class="fas fa-@(Model.QuestionId == null ? "plus" : "save") me-2"></i>
+                            @(Model.QuestionId == null ? "Create Question" : "Update Question")
+                        </button>
+
+                        <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/components/toast-notifications.js"></script>
+    <script src="~/js/components/loader.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const questionTypeSelect = document.getElementById('questionType');
+            const multipleChoiceSection = document.getElementById('multipleChoiceSection');
+            const trueFalseSection = document.getElementById('trueFalseSection');
+            const essayFillSection = document.getElementById('essayFillSection');
+            const addOptionBtn = document.getElementById('addOptionBtn');
+            const answerOptionsContainer = document.getElementById('answerOptionsContainer');
+
+            // Show/hide sections based on question type
+            function toggleSections() {
+                const questionType = questionTypeSelect.value;
+                
+                multipleChoiceSection.style.display = 'none';
+                trueFalseSection.style.display = 'none';
+                essayFillSection.style.display = 'none';
+
+                if (questionType === 'multiple_choice') {
+                    multipleChoiceSection.style.display = 'block';
+                } else if (questionType === 'true_false') {
+                    trueFalseSection.style.display = 'block';
+                } else if (questionType === 'essay' || questionType === 'fill_blank') {
+                    essayFillSection.style.display = 'block';
+                }
+            }
+
+            // Initialize on page load
+            toggleSections();
+
+            // Handle question type change
+            questionTypeSelect.addEventListener('change', toggleSections);
+
+            // Add new answer option
+            addOptionBtn.addEventListener('click', function () {
+                const optionCount = answerOptionsContainer.children.length;
+                if (optionCount >= 10) {
+                    alert('Maximum 10 options allowed');
+                    return;
+                }
+
+                const newOptionIndex = optionCount;
+                const optionHtml = `
+                    <div class="answer-option-item mb-3" data-option-index="${newOptionIndex}">
+                        <div class="row align-items-center">
+                            <div class="col-lg-8">
+                                <div class="input-group">
+                                    <span class="input-group-text">${newOptionIndex + 1}.</span>
+                                    <input name="AnswerOptions[${newOptionIndex}].OptionText" class="form-control" 
+                                           placeholder="Enter answer option..." />
+                                    <input name="AnswerOptions[${newOptionIndex}].OptionOrder" type="hidden" value="${newOptionIndex + 1}" />
+                                </div>
+                            </div>                            <div class="col-lg-3">
+                                <div class="form-check">
+                                    <input name="AnswerOptions[${newOptionIndex}].IsCorrect" class="form-check-input correct-answer-checkbox" 
+                                           type="checkbox" />
+                                    <input name="AnswerOptions[${newOptionIndex}].IsCorrect" type="hidden" value="false" />
+                                    <label class="form-check-label">
+                                        Is Correct
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-lg-1">
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-option" 
+                                        title="Remove Option">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                answerOptionsContainer.insertAdjacentHTML('beforeend', optionHtml);
+                updateOptionNumbers();
+            });
+
+            // Remove answer option
+            answerOptionsContainer.addEventListener('click', function (e) {
+                if (e.target.closest('.remove-option')) {
+                    const optionItem = e.target.closest('.answer-option-item');
+                    if (answerOptionsContainer.children.length > 2) {
+                        optionItem.remove();
+                        updateOptionNumbers();
+                    } else {
+                        alert('At least 2 options are required');
+                    }
+                }
+            });            // Update option numbers and indices
+            function updateOptionNumbers() {
+                const options = answerOptionsContainer.querySelectorAll('.answer-option-item');
+                options.forEach((option, index) => {
+                    option.setAttribute('data-option-index', index);
+                    
+                    // Update number display
+                    const numberSpan = option.querySelector('.input-group-text');
+                    numberSpan.textContent = (index + 1) + '.';
+                    
+                    // Update input names and IDs
+                    const textInput = option.querySelector('input[type="text"], input:not([type="hidden"]):not([type="checkbox"])');
+                    const hiddenOrderInput = option.querySelector('input[name*=".OptionOrder"]');
+                    const checkboxInput = option.querySelector('input[type="checkbox"]');
+                    const hiddenCheckboxInput = option.querySelector('input[type="hidden"][name*=".IsCorrect"]');
+                    
+                    if (textInput) {
+                        textInput.name = `AnswerOptions[${index}].OptionText`;
+                    }
+                    if (hiddenOrderInput) {
+                        hiddenOrderInput.name = `AnswerOptions[${index}].OptionOrder`;
+                        hiddenOrderInput.value = index + 1;
+                    }
+                    if (checkboxInput) {
+                        checkboxInput.name = `AnswerOptions[${index}].IsCorrect`;
+                    }
+                    if (hiddenCheckboxInput) {
+                        hiddenCheckboxInput.name = `AnswerOptions[${index}].IsCorrect`;
+                    }
+                });
+            }// Form validation
+            document.getElementById('questionForm').addEventListener('submit', function (e) {
+                const questionType = questionTypeSelect.value;
+                
+                if (questionType === 'multiple_choice') {
+                    const options = answerOptionsContainer.querySelectorAll('input[type="text"], input:not([type="hidden"]):not([type="checkbox"])');
+                    const filledOptions = Array.from(options).filter(input => input.value.trim() !== '');
+                    
+                    if (filledOptions.length < 2) {
+                        e.preventDefault();
+                        alert('Please provide at least 2 answer options');
+                        return;
+                    }
+                    
+                    const correctAnswersSelected = document.querySelectorAll('input[type="checkbox"].correct-answer-checkbox:checked');
+                    if (correctAnswersSelected.length === 0) {
+                        e.preventDefault();
+                        alert('Please select at least one correct answer');
+                        return;
+                    }
+                } else if (questionType === 'true_false') {
+                    const trueFalseSelected = document.querySelector('input[name="TrueFalseAnswer"]:checked');
+                    if (!trueFalseSelected) {
+                        e.preventDefault();
+                        alert('Please select the correct answer (True or False)');
+                        return;
+                    }
+                }
+            });
+        });
+
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+    </script>
+
+    <!-- Chatbot for authenticated users -->
+    @if (Context.Session.GetString("UserId") != null)
+    {
+        @await Html.PartialAsync("~/Views/Shared/_Chatbot.cshtml")
+        @Html.AntiForgeryToken()
+        <script src="~/js/components/chatbot.js"></script>
+    }
+</body>
+
+</html>

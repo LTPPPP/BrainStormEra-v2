@@ -281,6 +281,42 @@
   border-color: rgba(255, 255, 255, 0.5) !important;
 }
 
+/* Create Notification Button in Dropdown */
+.btn-create-notification {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+  font-size: 14px !important;
+  font-weight: bold !important;
+  transition: all 0.3s ease !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.btn-create-notification:hover {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+  transform: scale(1.05) !important;
+  border-color: rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.btn-create-notification:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3) !important;
+}
+
+.btn-create-notification i {
+  color: #ffffff !important;
+}
+
 /* Notification List Container */
 .notification-list-container {
   max-height: 350px !important;
@@ -506,6 +542,18 @@
   .notification-dropdown .dropdown-header {
     padding: 0.75rem !important;
     font-size: 0.9rem !important;
+  }
+
+  /* Make create notification button smaller on mobile */
+  .btn-create-notification {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 12px !important;
+    border-width: 1px !important;
+  }
+
+  .btn-create-notification:hover {
+    transform: scale(1.02) !important;
   }
 }
 

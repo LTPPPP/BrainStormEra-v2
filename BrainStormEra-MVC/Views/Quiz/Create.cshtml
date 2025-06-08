@@ -1,0 +1,393 @@
+@model BrainStormEra_MVC.Models.ViewModels.CreateQuizViewModel
+@{
+    ViewData["Title"] = !string.IsNullOrEmpty(Model.QuizId) ? "Edit Quiz" : "Create Quiz";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="Create a new quiz for your course">
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <link rel="stylesheet" href="~/css/components/chatbot.css">
+    <!-- User meta tags for chatbot -->
+    @if (Context.Session.GetString("UserId") != null)
+    {
+        <meta name="user-id" content="@Context.Session.GetString("UserId")">
+        <meta name="user-role" content="@Context.Session.GetString("UserRole")">
+        <meta name="user-name" content="@Context.Session.GetString("UserName")">
+    }
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+    
+    <!-- Page Header -->
+    <div class="page-header create-page">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1 class="mb-3">
+                        <i class="fas fa-question-circle me-3"></i>
+                        @(!string.IsNullOrEmpty(Model.QuizId) ? "Edit Quiz" : "Create Quiz")
+                    </h1>
+                    <p class="lead mb-0">@(!string.IsNullOrEmpty(Model.QuizId) ? "Update your quiz content" : "Create an engaging quiz for your students")</p>
+                    <div class="mt-4">
+                        <span class="badge bg-light text-dark fs-6 me-3">
+                            <i class="fas fa-book me-1"></i> Course: @Model.CourseName
+                        </span>
+                        <span class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-bookmark me-1"></i> Chapter: @Model.ChapterName
+                        </span>
+                    </div>
+                    <div class="mt-3">                        <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })" 
+                           class="btn btn-outline-light">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Course
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="create-course-container">
+        <form asp-action="@(!string.IsNullOrEmpty(Model.QuizId) ? "Edit" : "Create")" 
+              asp-controller="Quiz" 
+              method="post" 
+              enctype="multipart/form-data"
+              id="createQuizForm">
+            @Html.AntiForgeryToken()
+            
+            @if (!string.IsNullOrEmpty(Model.QuizId))
+            {
+                <input type="hidden" asp-for="QuizId" />
+            }
+            <input type="hidden" asp-for="ChapterId" />
+            <input type="hidden" asp-for="CourseId" />
+            <input type="hidden" asp-for="CourseName" />
+            <input type="hidden" asp-for="ChapterName" />
+
+            <!-- Quiz Information Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-question-circle me-2"></i>
+                    Quiz Information
+                </h3>
+
+                <div class="form-content">
+                    <!-- Quiz Title -->
+                    <div class="form-group">
+                        <label asp-for="QuizTitle" class="form-label">
+                            <i class="fas fa-heading me-2"></i>Quiz Title
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="QuizTitle" 
+                               class="form-control" 
+                               placeholder="Enter an engaging quiz title..."
+                               required>
+                        <span asp-validation-for="QuizTitle" class="text-danger"></span>
+                        <div class="form-text">
+                            Choose a clear, descriptive title for your quiz
+                        </div>
+                    </div>
+
+                    <!-- Quiz Description -->
+                    <div class="form-group">
+                        <label asp-for="QuizDescription" class="form-label">
+                            <i class="fas fa-align-left me-2"></i>Quiz Description
+                        </label>
+                        <textarea asp-for="QuizDescription" 
+                                  class="form-control" 
+                                  rows="4" 
+                                  placeholder="Provide a brief description of what this quiz covers..."></textarea>                        <span asp-validation-for="QuizDescription" class="text-danger"></span>
+                        <div class="form-text">
+                            Optional: Help learners understand what this quiz will test
+                        </div>
+                    </div>                    <!-- Automatic Lesson Association Info -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-book me-2"></i>Lesson Association
+                        </label>
+                        @if (!string.IsNullOrEmpty(Model.LessonId) && !string.IsNullOrEmpty(Model.LessonName))
+                        {
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Automatic Association:</strong> This quiz will be automatically associated with the last lesson in the chapter: 
+                                <strong>"@Model.LessonName"</strong>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning mb-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>No Lessons Found:</strong> Please add at least one lesson to this chapter before creating a quiz. 
+                                Quizzes are automatically associated with the last lesson in the chapter.
+                            </div>
+                        }
+                        <div class="form-text">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Quizzes are automatically mapped to the last lesson in the chapter based on lesson order
+                        </div>
+                        
+                        <!-- Hidden fields to maintain the lesson association -->
+                        <input type="hidden" asp-for="LessonId" />
+                        <input type="hidden" asp-for="LessonName" />
+                    </div>
+
+                    <!-- Quiz Settings Row -->
+                    <div class="row">
+                        <!-- Time Limit -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="TimeLimit" class="form-label">
+                                    <i class="fas fa-clock me-2"></i>Time Limit
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="TimeLimit" 
+                                           type="number" 
+                                           class="form-control" 
+                                           min="1" 
+                                           max="300" 
+                                           placeholder="30">
+                                    <span class="input-group-text">minutes</span>
+                                </div>
+                                <span asp-validation-for="TimeLimit" class="text-danger"></span>
+                                <div class="form-text">
+                                    Optional: Set a time limit for the quiz (1-300 minutes)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Passing Score -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="PassingScore" class="form-label">
+                                    <i class="fas fa-percent me-2"></i>Passing Score
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="PassingScore" 
+                                           type="number" 
+                                           class="form-control" 
+                                           min="0" 
+                                           max="100" 
+                                           step="0.01"
+                                           placeholder="70">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <span asp-validation-for="PassingScore" class="text-danger"></span>
+                                <div class="form-text">
+                                    Optional: Minimum score required to pass (0-100%)
+                                </div>                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Quiz Configuration -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5 class="mb-3">
+                                <i class="fas fa-cog me-2"></i>Additional Settings
+                            </h5>
+                        </div>
+                        
+                        <!-- Max Attempts -->
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="MaxAttempts" class="form-label">
+                                    <i class="fas fa-redo me-2"></i>Max Attempts
+                                </label>
+                                <input asp-for="MaxAttempts" 
+                                       type="number" 
+                                       class="form-control" 
+                                       min="1" 
+                                       max="10" 
+                                       placeholder="3">
+                                <span asp-validation-for="MaxAttempts" class="text-danger"></span>
+                                <div class="form-text">
+                                    Maximum number of attempts allowed (1-10)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quiz Type Checkboxes -->
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label class="form-label">Quiz Type</label>
+                                <div class="form-check-group">
+                                    <div class="form-check">
+                                        <input asp-for="IsFinalQuiz" 
+                                               class="form-check-input" 
+                                               type="checkbox">
+                                        <label asp-for="IsFinalQuiz" class="form-check-label">
+                                            <i class="fas fa-trophy me-2"></i>Final Quiz
+                                        </label>
+                                        <div class="form-text">
+                                            Mark as the final assessment for the course
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input asp-for="IsPrerequisiteQuiz" 
+                                               class="form-check-input" 
+                                               type="checkbox">
+                                        <label asp-for="IsPrerequisiteQuiz" class="form-check-label">
+                                            <i class="fas fa-key me-2"></i>Prerequisite Quiz
+                                        </label>
+                                        <div class="form-text">
+                                            Must be completed before accessing later content
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input asp-for="BlocksLessonCompletion" 
+                                               class="form-check-input" 
+                                               type="checkbox">
+                                        <label asp-for="BlocksLessonCompletion" class="form-check-label">
+                                            <i class="fas fa-lock me-2"></i>Blocks Lesson Completion
+                                        </label>
+                                        <div class="form-text">
+                                            Prevents lesson completion until quiz is passed
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="@Url.Action("Details", "Courses", new { id = Model.CourseId })" 
+                       class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-lg px-5">
+                        <i class="fas fa-save me-2"></i>
+                        @(!string.IsNullOrEmpty(Model.QuizId) ? "Update Quiz" : "Create Quiz")
+                    </button>
+                </div>
+            </div>            <!-- Additional Information Card -->
+            <div class="info-card mt-4">
+                <div class="card border-info">
+                    <div class="card-body">
+                        <h5 class="card-title text-info">
+                            <i class="fas fa-lightbulb me-2"></i>Next Steps
+                        </h5>                        <p class="card-text">
+                            After creating your quiz, you'll be able to add questions and customize the quiz experience 
+                            for your learners. The quiz will be automatically associated with the last lesson in the chapter 
+                            based on lesson order, ensuring students complete all content before taking the assessment.
+                        </p>
+                        <p class="card-text">
+                            <strong>Next step:</strong> Once your quiz is created, you'll be redirected to the quiz management page 
+                            where you can add multiple questions, set answer options, and configure question types.
+                        </p>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <strong>Note:</strong> Quiz association is automatic and will always link to the final lesson in your chapter sequence.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" defer></script>
+    <!-- Include toast notifications script -->
+    <script src="~/js/shared/toast-notifications.js"></script>
+    <!-- Custom JS -->
+    <script src="~/js/components/loader.js"></script>
+    <script src="~/js/pages/Course/create-course.js"></script>
+    <script>
+        // Hide preloader when page is loaded
+        window.addEventListener('load', function () {
+            document.querySelector('.page-loader').classList.add('loaded');
+            setTimeout(() => {
+                document.querySelector('.page-loader').style.display = 'none';
+            }, 500);
+        });
+        // Change header style on scroll
+        window.addEventListener('scroll', function () {
+            const header = document.querySelector('header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+
+    <!-- Chatbot for authenticated users -->
+    @if (Context.Session.GetString("UserId") != null)
+    {
+        @await Html.PartialAsync("~/Views/Shared/_Chatbot.cshtml")
+        @Html.AntiForgeryToken()
+    }
+
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+
+        <!-- Chatbot JavaScript for authenticated users -->
+        @if (Context.Session.GetString("UserId") != null)
+        {
+            <script src="~/js/components/chatbot.js"></script>
+        }
+    }
+</body>
+
+</html>

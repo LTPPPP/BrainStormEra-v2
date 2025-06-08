@@ -44,15 +44,25 @@ namespace BrainStormEra_MVC.Services.Interfaces
         /// <param name="userId">User performing the operation</param>
         /// <param name="targetStatus">Target status after restore (default: Published)</param>
         /// <returns>Success result</returns>
-        Task<SafeDeleteResult> RestoreAsync<T>(string entityId, string userId, int targetStatus = 1) where T : class;
+        Task<SafeDeleteResult> RestoreAsync<T>(string entityId, string userId, int targetStatus = 1) where T : class;        /// <summary>
+                                                                                                                             /// Get all deleted entities of a specific type
+                                                                                                                             /// </summary>
+                                                                                                                             /// <typeparam name="T">Entity type</typeparam>
+                                                                                                                             /// <param name="userId">User ID (for authorization)</param>
+                                                                                                                             /// <returns>List of deleted entities</returns>
+        Task<IEnumerable<T>> GetDeletedEntitiesAsync<T>(string userId) where T : class;
 
         /// <summary>
-        /// Get all deleted entities of a specific type
+        /// Get paginated deleted entities across all types
         /// </summary>
-        /// <typeparam name="T">Entity type</typeparam>
         /// <param name="userId">User ID (for authorization)</param>
-        /// <returns>List of deleted entities</returns>
-        Task<IEnumerable<T>> GetDeletedEntitiesAsync<T>(string userId) where T : class;
+        /// <param name="search">Search query</param>
+        /// <param name="entityType">Filter by entity type (All, Course, Chapter, Lesson)</param>
+        /// <param name="page">Page number</param>
+        /// <param name="pageSize">Page size</param>
+        /// <returns>Paginated deleted entities</returns>
+        Task<(IEnumerable<object> Items, int TotalCount)> GetDeletedEntitiesPaginatedAsync(
+            string userId, string search = "", string entityType = "All", int page = 1, int pageSize = 10);
 
         /// <summary>
         /// Create audit trail for delete operations

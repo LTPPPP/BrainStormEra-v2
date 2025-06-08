@@ -330,6 +330,14 @@
   ) !important;
 }
 
+.badge.bg-info {
+  background: linear-gradient(
+    135deg,
+    var(--notification-info),
+    #0984e3
+  ) !important;
+}
+
 /* Enhanced Action Buttons in Notifications */
 .notification-actions .btn {
   width: 40px;
@@ -363,6 +371,19 @@
 .delete-btn:hover {
   transform: scale(1.1);
   box-shadow: 0 6px 20px rgba(225, 112, 85, 0.4);
+}
+
+.edit-btn {
+  background: linear-gradient(135deg, var(--notification-warning), #f39c12);
+  color: white;
+  box-shadow: 0 4px 15px rgba(253, 203, 110, 0.3);
+  text-decoration: none !important;
+}
+
+.edit-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(253, 203, 110, 0.4);
+  color: white !important;
 }
 
 /* Enhanced Empty State */

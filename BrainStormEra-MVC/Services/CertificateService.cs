@@ -133,5 +133,57 @@ namespace BrainStormEra_MVC.Services
 
             return await GetUserCertificatesAsync(userId);
         }
+
+        public async Task<CertificateListViewModel> GetUserCertificatesAsync(string userId, string? search, int page, int pageSize)
+        {
+            try
+            {
+                var cacheKey = $"UserCertificatesPaginated_{userId}_{search}_{page}_{pageSize}";
+                if (_cache.TryGetValue(cacheKey, out CertificateListViewModel? cached))
+                    return cached!;
+
+                var enrollments = await _certificateRepository.GetUserCompletedEnrollmentsAsync(userId, search, page, pageSize);
+                var totalCount = await _certificateRepository.GetUserCompletedEnrollmentsCountAsync(userId, search);
+
+                var certificates = enrollments.Select(e => new CertificateSummaryViewModel
+                {
+                    CourseId = e.CourseId,
+                    CourseName = e.Course.CourseName,
+                    CourseImage = e.Course.CourseImage ?? "/img/defaults/default-course.svg",
+                    AuthorName = e.Course.Author.FullName ?? e.Course.Author.Username,
+                    CompletedDate = e.CertificateIssuedDate!.Value.ToDateTime(TimeOnly.MinValue),
+                    EnrollmentDate = e.EnrollmentCreatedAt,
+                    FinalScore = e.ProgressPercentage ?? 0
+                }).ToList();
+
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                var result = new CertificateListViewModel
+                {
+                    Certificates = certificates,
+                    SearchQuery = search,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalCertificates = totalCount,
+                    TotalPages = totalPages
+                };
+
+                _cache.Set(cacheKey, result, CacheExpiration);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting paginated certificates for user {UserId}", userId);
+                return new CertificateListViewModel
+                {
+                    Certificates = new List<CertificateSummaryViewModel>(),
+                    SearchQuery = search,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalCertificates = 0,
+                    TotalPages = 0
+                };
+            }
+        }
     }
 }

@@ -23,6 +23,13 @@
                     <li class="nav-item">
                         <a class="nav-link" href="@Url.Action("Index", "Course")">COURSE</a>
                     </li>
+                    @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Instructor") ||
+                                        User.IsInRole("instructor")))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("Index", "User")">USER</a>
+                        </li>
+                    }
                     @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Learner") ||
                                         User.IsInRole("learner")))
                     {
@@ -55,13 +62,17 @@
                         <ul class="dropdown-menu dropdown-menu-end notification-dropdown"
                             aria-labelledby="notificationDropdown">
                             <li class="dropdown-header">
-                                <span>Notifications</span>
-                                @if (User.IsInRole("Admin") || User.IsInRole("admin"))
-                                    {
-                                        <a href="@Url.Action("Manage", "Notification")" class="btn btn-sm btn-outline-light">
-                                            <i class="fas fa-cog"></i>
-                                        </a>
-                                    }
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Notifications</span>
+                                    @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("admin") ||
+                                                                        User.IsInRole("instructor")))
+                                        {
+                                            <a href="@Url.Action("Create", "Notification")" class="btn-create-notification"
+                                                title="Create New Notification">
+                                                <i class="fas fa-plus"></i>
+                                            </a>
+                                        }
+                                    </div>
                                 </li>
                                 <div class="notification-list-container">
                                     <li class="notification-empty">
@@ -85,30 +96,26 @@
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li class="dropdown-header">
                                     <div class="user-info">
-                                        <strong>@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)</strong>
-                                        <small>@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</small>
-                                    </div>
-                                </li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li><a class="dropdown-item" href="@Url.Action("Index", "Profile")"><i
-                                            class="fas fa-user me-2"></i>My Profile</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-book me-2"></i>My Courses</a></li>
-                                @if (User.IsInRole("Admin") || User.IsInRole("admin"))
-                                {
-                                    <li><a class="dropdown-item" href="@Url.Action("Manage", "Notification")"><i
-                                                class="fas fa-bell me-2"></i>Manage Notifications</a></li>
-                                }
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li><a class="dropdown-item" href="@Url.Action("Logout", "Login")" data-action="logout"><i
-                                            class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                            </ul>
-                        </div>
-                    }
+                                        <strong>@(User.FindFirst("FullName")?.Value ?? User.Identity?.Name ??
+                                                                                    "User")</strong>
+                                    <small>@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</small>
+                                </div>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="@Url.Action("Index", "Profile")"><i
+                                        class="fas fa-user me-2"></i>My Profile</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-book me-2"></i>My Courses</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="@Url.Action("Logout", "Login")" data-action="logout"><i
+                                        class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                                        }
                     else
                     {
                         <a href="@Url.Action("Index", "Register")" class="btn_register me-2">

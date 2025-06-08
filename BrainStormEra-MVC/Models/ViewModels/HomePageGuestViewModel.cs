@@ -67,6 +67,7 @@ namespace BrainStormEra_MVC.Models.ViewModels
         public string ChapterDescription { get; set; } = string.Empty;
         public int ChapterOrder { get; set; }
         public List<LessonViewModel> Lessons { get; set; } = new List<LessonViewModel>();
+        public List<QuizViewModel> Quizzes { get; set; } = new List<QuizViewModel>();
     }
 
     public class LessonViewModel
@@ -78,6 +79,43 @@ namespace BrainStormEra_MVC.Models.ViewModels
         public string LessonType { get; set; } = string.Empty;
         public int EstimatedDuration { get; set; }
         public bool IsLocked { get; set; }
+    }
+
+    public class QuizViewModel
+    {
+        public string QuizId { get; set; } = string.Empty;
+        public string QuizName { get; set; } = string.Empty;
+        public string QuizDescription { get; set; } = string.Empty;
+        public string? LessonId { get; set; }
+        public string? LessonName { get; set; }
+        public int? TimeLimit { get; set; }
+        public decimal? PassingScore { get; set; }
+        public int? MaxAttempts { get; set; }
+        public bool IsFinalQuiz { get; set; }
+        public bool IsPrerequisiteQuiz { get; set; }
+        public bool BlocksLessonCompletion { get; set; }
+        public DateTime QuizCreatedAt { get; set; }
+        public DateTime QuizUpdatedAt { get; set; }
+        public List<QuestionViewModel> Questions { get; set; } = new List<QuestionViewModel>();
+    }
+
+    public class QuestionViewModel
+    {
+        public string QuestionId { get; set; } = string.Empty;
+        public string QuestionText { get; set; } = string.Empty;
+        public string? QuestionType { get; set; }
+        public decimal? Points { get; set; }
+        public int? QuestionOrder { get; set; }
+        public string? Explanation { get; set; }
+        public List<AnswerOptionViewModel> AnswerOptions { get; set; } = new List<AnswerOptionViewModel>();
+    }
+
+    public class AnswerOptionViewModel
+    {
+        public string OptionId { get; set; } = string.Empty;
+        public string OptionText { get; set; } = string.Empty;
+        public bool? IsCorrect { get; set; }
+        public int? OptionOrder { get; set; }
     }
 
     public class ReviewViewModel

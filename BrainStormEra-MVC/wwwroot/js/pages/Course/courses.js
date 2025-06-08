@@ -225,21 +225,30 @@ function initializeCurriculumAccordions() {
   const sectionHeaders = document.querySelectorAll(".section-header");
 
   sectionHeaders.forEach((header) => {
-    header.addEventListener("click", function () {
-      const chevron = this.querySelector(".fa-chevron-down, .fa-chevron-up");
-      const target = this.getAttribute("data-bs-target");
-      const section = document.querySelector(target);
+    const target = header.getAttribute("data-bs-target");
+    const section = document.querySelector(target);
+    const chevron = header.querySelector(".fa-chevron-down, .fa-chevron-up");
 
-      if (chevron) {
-        if (section && section.classList.contains("show")) {
-          chevron.classList.remove("fa-chevron-up");
-          chevron.classList.add("fa-chevron-down");
-        } else {
-          chevron.classList.remove("fa-chevron-down");
-          chevron.classList.add("fa-chevron-up");
-        }
+    if (section && chevron) {
+      // Set initial state based on whether section is shown
+      if (section.classList.contains("show")) {
+        chevron.classList.remove("fa-chevron-down");
+        chevron.classList.add("fa-chevron-up");
       }
-    });
+
+      // Listen for Bootstrap collapse events
+      section.addEventListener("shown.bs.collapse", function () {
+        // Section is now expanded - rotate chevron up
+        chevron.classList.remove("fa-chevron-down");
+        chevron.classList.add("fa-chevron-up");
+      });
+
+      section.addEventListener("hidden.bs.collapse", function () {
+        // Section is now collapsed - rotate chevron down
+        chevron.classList.remove("fa-chevron-up");
+        chevron.classList.add("fa-chevron-down");
+      });
+    }
   });
 }
 

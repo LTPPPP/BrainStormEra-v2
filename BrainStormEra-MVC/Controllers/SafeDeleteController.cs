@@ -1,4 +1,5 @@
 using BrainStormEra_MVC.Models;
+using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -237,14 +238,12 @@ namespace BrainStormEra_MVC.Controllers
                 _logger.LogError(ex, "Error getting deleted entities of type {EntityType}", entityType);
                 return Json(new { success = false, message = "Error retrieving deleted entities" });
             }
-        }
-
-        /// <summary>
-        /// Admin interface for managing deleted items
-        /// </summary>
+        }        /// <summary>
+                 /// Admin interface for managing deleted items
+                 /// </summary>
         [HttpGet]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> AdminDeletedItems()
+        public async Task<IActionResult> AdminDeletedItems(string search = "", string entityType = "All", int page = 1, int pageSize = 10)
         {
             try
             {
@@ -255,15 +254,24 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Home");
                 }
 
-                var deletedCourses = await _safeDeleteService.GetDeletedEntitiesAsync<Course>(userId);
-                var deletedChapters = await _safeDeleteService.GetDeletedEntitiesAsync<Chapter>(userId);
-                var deletedLessons = await _safeDeleteService.GetDeletedEntitiesAsync<Lesson>(userId);
+                // Validate parameters
+                if (page < 1) page = 1;
+                if (pageSize < 1 || pageSize > 50) pageSize = 10;
+
+                var (deletedItems, totalCount) = await _safeDeleteService.GetDeletedEntitiesPaginatedAsync(
+                    userId, search, entityType, page, pageSize);
+
+                var deletedItemViewModels = deletedItems.Select(item => CreateDeletedItemViewModel(item)).ToList();
 
                 var viewModel = new AdminDeletedItemsViewModel
                 {
-                    DeletedCourses = deletedCourses.Cast<Course>().ToList(),
-                    DeletedChapters = deletedChapters.Cast<Chapter>().ToList(),
-                    DeletedLessons = deletedLessons.Cast<Lesson>().ToList()
+                    DeletedItems = deletedItemViewModels,
+                    SearchQuery = search,
+                    EntityType = entityType,
+                    CurrentPage = page,
+                    TotalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+                    TotalItems = totalCount,
+                    PageSize = pageSize
                 };
 
                 return View(viewModel);
@@ -274,6 +282,31 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["ErrorMessage"] = "Error loading deleted items";
                 return RedirectToAction("Index", "Home");
             }
+        }
+
+        /// <summary>
+        /// Helper method to create DeletedItemViewModel from anonymous object
+        /// </summary>
+        private DeletedItemViewModel CreateDeletedItemViewModel(object item)
+        {
+            var type = item.GetType();
+            var entityId = type.GetProperty("EntityId")?.GetValue(item)?.ToString() ?? "";
+            var entityType = type.GetProperty("EntityType")?.GetValue(item)?.ToString() ?? "";
+            var entityName = type.GetProperty("EntityName")?.GetValue(item)?.ToString() ?? "";
+            var deletedDate = type.GetProperty("DeletedDate")?.GetValue(item) as DateTime?;
+            var deletedByUserId = type.GetProperty("DeletedByUserId")?.GetValue(item)?.ToString() ?? "";
+            var deleteReason = type.GetProperty("DeleteReason")?.GetValue(item)?.ToString() ?? "";
+
+            return new DeletedItemViewModel
+            {
+                EntityId = entityId,
+                EntityType = entityType,
+                EntityName = entityName,
+                DeletedDate = deletedDate,
+                DeletedByUserId = deletedByUserId,
+                DeleteReason = deleteReason,
+                CanRestore = true
+            };
         }
 
         // Helper methods
@@ -309,9 +342,7 @@ namespace BrainStormEra_MVC.Controllers
                 _ => null
             };
         }
-    }
-
-    // Request/Response models
+    }    // Request/Response models
     public class ValidateDeleteRequest
     {
         public string EntityType { get; set; } = string.Empty;
@@ -330,12 +361,5 @@ namespace BrainStormEra_MVC.Controllers
         public string EntityType { get; set; } = string.Empty;
         public string EntityId { get; set; } = string.Empty;
         public int TargetStatus { get; set; } = 1; // Published by default
-    }
-
-    public class AdminDeletedItemsViewModel
-    {
-        public List<Course> DeletedCourses { get; set; } = new List<Course>();
-        public List<Chapter> DeletedChapters { get; set; } = new List<Chapter>();
-        public List<Lesson> DeletedLessons { get; set; } = new List<Lesson>();
     }
 }

@@ -12,5 +12,9 @@ namespace BrainStormEra_MVC.Services.Interfaces
         Task AddUserAchievementAsync(UserAchievement userAchievement);
         Task<Dictionary<string, int>> GetUserCompletedCoursesCountAsync();
         Task<string?> GetCourseNameAsync(string courseId);
+
+        // Paginated methods
+        Task<List<UserAchievement>> GetUserAchievementsAsync(string userId, string? search, int page, int pageSize);
+        Task<int> GetUserAchievementsCountAsync(string userId, string? search);
     }
 }

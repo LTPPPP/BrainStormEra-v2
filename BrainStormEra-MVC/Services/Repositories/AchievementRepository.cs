@@ -127,5 +127,61 @@ namespace BrainStormEra_MVC.Services.Repositories
 
             return courseName;
         }
+
+        public async Task<List<UserAchievement>> GetUserAchievementsAsync(string userId, string? search, int page, int pageSize)
+        {
+            var cacheKey = $"UserAchievementsPaginated_{userId}_{search}_{page}_{pageSize}"; if (_cache.TryGetValue(cacheKey, out List<UserAchievement>? cached))
+                return cached!;
+
+            IQueryable<UserAchievement> query = _context.UserAchievements
+                .AsNoTracking()
+                .Where(ua => ua.UserId == userId)
+                .Include(ua => ua.Achievement);
+
+            // Apply search filter
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(ua =>
+                    ua.Achievement.AchievementName.Contains(search) ||
+                    ua.Achievement.AchievementDescription!.Contains(search) ||
+                    ua.Achievement.AchievementType!.Contains(search));
+            }
+
+            var userAchievements = await query
+                .OrderByDescending(ua => ua.ReceivedDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            _cache.Set(cacheKey, userAchievements, TimeSpan.FromMinutes(5));
+            return userAchievements;
+        }
+
+        public async Task<int> GetUserAchievementsCountAsync(string userId, string? search)
+        {
+            var cacheKey = $"UserAchievementsCount_{userId}_{search}";
+
+            if (_cache.TryGetValue(cacheKey, out int cached))
+                return cached;
+
+            IQueryable<UserAchievement> query = _context.UserAchievements
+                .AsNoTracking()
+                .Where(ua => ua.UserId == userId)
+                .Include(ua => ua.Achievement);
+
+            // Apply search filter
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(ua =>
+                    ua.Achievement.AchievementName.Contains(search) ||
+                    ua.Achievement.AchievementDescription!.Contains(search) ||
+                    ua.Achievement.AchievementType!.Contains(search));
+            }
+
+            var count = await query.CountAsync();
+
+            _cache.Set(cacheKey, count, TimeSpan.FromMinutes(5));
+            return count;
+        }
     }
 }

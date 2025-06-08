@@ -8,6 +8,7 @@ namespace BrainStormEra_MVC.Models.ViewModels
         public int UnreadCount { get; set; }
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }
+        public string CurrentUserId { get; set; } = string.Empty;
         public bool HasNextPage => Notifications.Count == PageSize;
     }
 
@@ -20,6 +21,18 @@ namespace BrainStormEra_MVC.Models.ViewModels
         public string? TargetUserId { get; set; }
         public string? TargetRole { get; set; }
         public NotificationTargetType TargetType { get; set; }
+    }
+
+    public class NotificationEditViewModel
+    {
+        public string NotificationId { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string? Type { get; set; }
+        public string? CourseId { get; set; }
+        public string RecipientUserName { get; set; } = string.Empty;
+        public string? CourseName { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 
     public enum NotificationTargetType

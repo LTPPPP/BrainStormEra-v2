@@ -14,3 +14,7 @@ appsettings.Development.json
 *.jpg
 *.webp
 *.jpeg
+
+# Temporary files
+*.tmp
+*.txt

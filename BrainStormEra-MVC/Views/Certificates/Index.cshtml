@@ -1,4 +1,4 @@
-@model List<BrainStormEra_MVC.Models.ViewModels.CertificateSummaryViewModel>
+@model BrainStormEra_MVC.Models.ViewModels.CertificateListViewModel
 @{
     ViewData["Title"] = "My Certificates";
     Layout = null;
@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="~/css/pages/Certificates/certificates.css">
     <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
     <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
 </head>
 
 <body>
@@ -58,9 +59,8 @@
 
     <!-- Main Content -->
     <div class="certificates-page">
-        <div class="container">
-            <!-- Page Header -->
-            <div class="page-header">
+        <div class="container"> <!-- Page Header -->
+            <div class="page-header index-page">
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <h1 class="page-title">
@@ -78,12 +78,46 @@
                 </div>
             </div>
 
+            <!-- Search and Filter Bar -->
+            <div class="search-filter-bar mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <form method="GET" action="@Url.Action("Index")" class="search-form">
+                            <div class="input-group">
+                                <input type="text" name="search" class="form-control" 
+                                       placeholder="Search certificates by course name or instructor..." 
+                                       value="@Model.SearchQuery">
+                                <input type="hidden" name="page" value="1">
+                                <input type="hidden" name="pageSize" value="@Model.PageSize">
+                                <button class="btn btn-outline-secondary" type="submit">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                @if (!string.IsNullOrEmpty(Model.SearchQuery))
+                                {
+                                    <a href="@Url.Action("Index")" class="btn btn-outline-danger">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                }
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        @if (!string.IsNullOrEmpty(Model.SearchQuery))
+                        {
+                            <small class="text-muted">
+                                Found @Model.TotalCertificates certificates for "@Model.SearchQuery"
+                            </small>
+                        }
+                    </div>
+                </div>
+            </div>
+
             <!-- Certificates Content -->
             <div class="certificates-content">
                 @if (ViewBag.HasCertificates == true)
                 {
                     <div class="row">
-                        @foreach (var certificate in Model)
+                        @foreach (var certificate in Model.Certificates)
                         {
                             <div class="col-lg-6 col-xl-4 mb-4">
                                 <div class="certificate-card">
@@ -134,6 +168,94 @@
                             </div>
                         }
                     </div>
+
+                    <!-- Pagination -->
+                    @if (Model.TotalPages > 1)
+                    {
+                        <div class="pagination-container mt-4">
+                            <nav aria-label="Certificate pagination">
+                                <ul class="pagination justify-content-center">
+                                    <!-- Previous Page -->
+                                    @if (Model.HasPreviousPage)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("Index", new { search = Model.SearchQuery, page = Model.CurrentPage - 1, pageSize = Model.PageSize })">
+                                                <i class="fas fa-chevron-left"></i> Previous
+                                            </a>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li class="page-item disabled">
+                                            <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+                                        </li>
+                                    }
+
+                                    <!-- Page Numbers -->
+                                    @{
+                                        var startPage = Math.Max(1, Model.CurrentPage - 2);
+                                        var endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                                    }
+
+                                    @if (startPage > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("Index", new { search = Model.SearchQuery, page = 1, pageSize = Model.PageSize })">1</a>
+                                        </li>
+                                        @if (startPage > 2)
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        }
+                                    }
+
+                                    @for (int i = startPage; i <= endPage; i++)
+                                    {
+                                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                            <a class="page-link" href="@Url.Action("Index", new { search = Model.SearchQuery, page = i, pageSize = Model.PageSize })">@i</a>
+                                        </li>
+                                    }
+
+                                    @if (endPage < Model.TotalPages)
+                                    {
+                                        @if (endPage < Model.TotalPages - 1)
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        }
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("Index", new { search = Model.SearchQuery, page = Model.TotalPages, pageSize = Model.PageSize })">@Model.TotalPages</a>
+                                        </li>
+                                    }
+
+                                    <!-- Next Page -->
+                                    @if (Model.HasNextPage)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("Index", new { search = Model.SearchQuery, page = Model.CurrentPage + 1, pageSize = Model.PageSize })">
+                                                Next <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li class="page-item disabled">
+                                            <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+                                        </li>
+                                    }
+                                </ul>
+                            </nav>
+
+                            <!-- Pagination Info -->
+                            <div class="pagination-info text-center mt-3">
+                                <small class="text-muted">
+                                    Showing @((Model.CurrentPage - 1) * Model.PageSize + 1) to @Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalCertificates) of @Model.TotalCertificates certificates
+                                </small>
+                            </div>
+                        </div>
+                    }
                 }
                 else
                 {

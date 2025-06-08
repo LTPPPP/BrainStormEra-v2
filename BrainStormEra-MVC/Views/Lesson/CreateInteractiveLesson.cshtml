@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
     <link rel="stylesheet" href="~/css/components/chatbot.css">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
     <!-- User meta tags for chatbot -->
     @if (Context.Session.GetString("UserId") != null)
     {
@@ -41,21 +42,21 @@
             transition: all 0.3s ease;
             background: #f8f9fa;
         }
-        
+
         .file-upload-area:hover {
             border-color: #007bff;
             background: #f0f8ff;
         }
-        
+
         .file-upload-area.dragover {
             border-color: #007bff;
             background: #e3f2fd;
         }
-        
+
         .uploaded-files {
             margin-top: 1rem;
         }
-        
+
         .file-item {
             display: flex;
             align-items: center;
@@ -66,33 +67,33 @@
             margin-bottom: 0.5rem;
             background: white;
         }
-        
+
         .file-info {
             display: flex;
             align-items: center;
         }
-        
+
         .file-icon {
             font-size: 1.5rem;
             margin-right: 0.75rem;
             width: 2rem;
             text-align: center;
         }
-        
+
         .file-details {
             flex: 1;
         }
-        
+
         .file-name {
             font-weight: 500;
             margin-bottom: 0.25rem;
         }
-        
+
         .file-size {
             font-size: 0.875rem;
             color: #6c757d;
         }
-        
+
         .remove-file {
             background: none;
             border: none;
@@ -100,7 +101,7 @@
             cursor: pointer;
             padding: 0.25rem;
         }
-        
+
         .remove-file:hover {
             color: #a71e2a;
         }
@@ -135,7 +136,7 @@
     @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
 
     <!-- Page Header -->
-    <div class="page-header">
+    <div class="page-header create-page">
         <div class="container">
             <div class="row">
                 <div class="col-12 text-center">
@@ -159,7 +160,8 @@
 
     <!-- Main Content -->
     <div class="create-course-container">
-        <form asp-action="CreateInteractiveLesson" method="post" enctype="multipart/form-data" id="createInteractiveLessonForm">
+        <form asp-action="CreateInteractiveLesson" method="post" enctype="multipart/form-data"
+            id="createInteractiveLessonForm">
             @Html.AntiForgeryToken()
             <input asp-for="ChapterId" type="hidden" />
             <input asp-for="CourseId" type="hidden" />
@@ -202,7 +204,8 @@
                         <i class="fas fa-align-left me-2"></i>Lesson Description
                     </label>
                     <textarea asp-for="Description" class="form-control" rows="3"
-                        placeholder="Brief description of what students will learn (optional)" maxlength="1000"></textarea>
+                        placeholder="Brief description of what students will learn (optional)"
+                        maxlength="1000"></textarea>
                     <span asp-validation-for="Description" class="text-danger"></span>
                 </div>
             </div>
@@ -219,7 +222,7 @@
                     <label asp-for="DocumentFiles" class="form-label">
                         <i class="fas fa-file me-2"></i>Upload Documents *
                     </label>
-                    
+
                     <div class="file-upload-area" id="fileUploadArea">
                         <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
                         <h5>Drop files here or click to browse</h5>
@@ -231,16 +234,17 @@
                         </p>
                         <input asp-for="DocumentFiles" type="file" class="form-control d-none" multiple
                             accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.xls,.xlsx" id="documentFileInput" />
-                        <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('documentFileInput').click()">
+                        <button type="button" class="btn btn-outline-primary"
+                            onclick="document.getElementById('documentFileInput').click()">
                             <i class="fas fa-plus me-2"></i>Select Files
                         </button>
                     </div>
-                    
+
                     <div class="uploaded-files" id="uploadedFilesList" style="display: none;">
                         <h6 class="mt-3 mb-2">Uploaded Files:</h6>
                         <div id="fileItems"></div>
                     </div>
-                    
+
                     <div class="form-text mt-2">
                         <i class="fas fa-info-circle me-1"></i>
                         Upload multiple files that students will use for hands-on learning
@@ -265,8 +269,7 @@
                     <label asp-for="Content" class="form-label">
                         <i class="fas fa-file-alt me-2"></i>Lesson Instructions *
                     </label>
-                    <textarea asp-for="Content" class="form-control" rows="8"
-                        placeholder="Provide detailed instructions for students on how to work with the uploaded materials:
+                    <textarea asp-for="Content" class="form-control" rows="8" placeholder="Provide detailed instructions for students on how to work with the uploaded materials:
 
 • What should students do with each file?
 • Are there specific exercises or tasks to complete?
@@ -274,8 +277,7 @@
 • Any prerequisites or preparation needed?
 • Expected learning outcomes
 
-Be specific and clear to guide students through the interactive experience."
-                        maxlength="5000"></textarea>
+Be specific and clear to guide students through the interactive experience." maxlength="5000"></textarea>
                     <span asp-validation-for="Content" class="text-danger"></span>
                     <div class="form-text">
                         <i class="fas fa-tasks me-1"></i>
@@ -343,7 +345,8 @@ Be specific and clear to guide students through the interactive experience."
                             <label asp-for="MinQuizScore" class="form-label">
                                 <i class="fas fa-percentage me-2"></i>Minimum Quiz Score (%)
                             </label>
-                            <input asp-for="MinQuizScore" type="number" class="form-control" min="0" max="100" placeholder="70" />
+                            <input asp-for="MinQuizScore" type="number" class="form-control" min="0" max="100"
+                                placeholder="70" />
                             <span asp-validation-for="MinQuizScore" class="text-danger"></span>
                         </div>
                     </div>
@@ -355,7 +358,8 @@ Be specific and clear to guide students through the interactive experience."
                             <label asp-for="MinCompletionPercentage" class="form-label">
                                 <i class="fas fa-chart-line me-2"></i>Minimum Completion (%)
                             </label>
-                            <input asp-for="MinCompletionPercentage" type="number" class="form-control" min="0" max="100" placeholder="100" />
+                            <input asp-for="MinCompletionPercentage" type="number" class="form-control" min="0"
+                                max="100" placeholder="100" />
                             <span asp-validation-for="MinCompletionPercentage" class="text-danger"></span>
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
@@ -381,8 +385,8 @@ Be specific and clear to guide students through the interactive experience."
 
             <!-- Action Buttons -->
             <div class="form-section text-center">
-                <a href="@Url.Action("SelectLessonType", new { chapterId = Model.ChapterId })" 
-                   class="btn btn-outline-secondary me-3">
+                <a href="@Url.Action("SelectLessonType", new { chapterId = Model.ChapterId })"
+                    class="btn btn-outline-secondary me-3">
                     <i class="fas fa-arrow-left me-2"></i>Back to Lesson Types
                 </a>
                 <button type="submit" class="btn btn-danger">
@@ -399,9 +403,9 @@ Be specific and clear to guide students through the interactive experience."
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/components/toast-notifications.js"></script>
     <script src="~/js/components/loader.js"></script>
-    
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // File upload functionality
             const fileUploadArea = document.getElementById('fileUploadArea');
             const fileInput = document.getElementById('documentFileInput');
@@ -442,7 +446,7 @@ Be specific and clear to guide students through the interactive experience."
                 if (selectedFiles.length > 0) {
                     uploadedFilesList.style.display = 'block';
                     fileItems.innerHTML = '';
-                    
+
                     selectedFiles.forEach((file, index) => {
                         const fileItem = document.createElement('div');
                         fileItem.className = 'file-item';
@@ -466,7 +470,7 @@ Be specific and clear to guide students through the interactive experience."
             }
 
             // Remove file function
-            window.removeFile = function(index) {
+            window.removeFile = function (index) {
                 selectedFiles.splice(index, 1);
                 updateFileDisplay();
                 updateFileInput();
@@ -480,72 +484,72 @@ Be specific and clear to guide students through the interactive experience."
             }
 
             // File input change event
-            fileInput.addEventListener('change', function() {
+            fileInput.addEventListener('change', function () {
                 const newFiles = Array.from(this.files);
-                
+
                 // Validate file sizes
                 const oversizedFiles = newFiles.filter(file => file.size > 10 * 1024 * 1024);
                 if (oversizedFiles.length > 0) {
                     alert(`The following files exceed the 10MB limit: ${oversizedFiles.map(f => f.name).join(', ')}`);
                     return;
                 }
-                
+
                 // Add new files to selected files (avoiding duplicates)
                 newFiles.forEach(file => {
                     if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
                         selectedFiles.push(file);
                     }
                 });
-                
+
                 updateFileDisplay();
                 updateFileInput();
             });
 
             // Drag and drop functionality
-            fileUploadArea.addEventListener('dragover', function(e) {
+            fileUploadArea.addEventListener('dragover', function (e) {
                 e.preventDefault();
                 this.classList.add('dragover');
             });
 
-            fileUploadArea.addEventListener('dragleave', function(e) {
+            fileUploadArea.addEventListener('dragleave', function (e) {
                 e.preventDefault();
                 this.classList.remove('dragover');
             });
 
-            fileUploadArea.addEventListener('drop', function(e) {
+            fileUploadArea.addEventListener('drop', function (e) {
                 e.preventDefault();
                 this.classList.remove('dragover');
-                
+
                 const files = Array.from(e.dataTransfer.files);
                 const validFiles = files.filter(file => {
                     const extension = file.name.split('.').pop().toLowerCase();
                     return ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt', 'xls', 'xlsx'].includes(extension);
                 });
-                
+
                 if (validFiles.length !== files.length) {
                     alert('Some files were not added because they are not in supported formats.');
                 }
-                
+
                 // Validate file sizes
                 const oversizedFiles = validFiles.filter(file => file.size > 10 * 1024 * 1024);
                 if (oversizedFiles.length > 0) {
                     alert(`The following files exceed the 10MB limit: ${oversizedFiles.map(f => f.name).join(', ')}`);
                     return;
                 }
-                
+
                 // Add valid files
                 validFiles.forEach(file => {
                     if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
                         selectedFiles.push(file);
                     }
                 });
-                
+
                 updateFileDisplay();
                 updateFileInput();
             });
 
             // Click to upload
-            fileUploadArea.addEventListener('click', function(e) {
+            fileUploadArea.addEventListener('click', function (e) {
                 if (e.target.tagName !== 'BUTTON') {
                     fileInput.click();
                 }
@@ -554,9 +558,9 @@ Be specific and clear to guide students through the interactive experience."
             // Toggle sections based on checkboxes
             const isLockedCheckbox = document.querySelector('input[name="IsLocked"]');
             const unlockAfterSection = document.getElementById('unlockAfterSection');
-            
+
             if (isLockedCheckbox && unlockAfterSection) {
-                isLockedCheckbox.addEventListener('change', function() {
+                isLockedCheckbox.addEventListener('change', function () {
                     if (this.checked) {
                         unlockAfterSection.style.display = 'block';
                     } else {
@@ -564,12 +568,12 @@ Be specific and clear to guide students through the interactive experience."
                     }
                 });
             }
-            
+
             const requiresQuizPassCheckbox = document.querySelector('input[name="RequiresQuizPass"]');
             const quizScoreSection = document.getElementById('quizScoreSection');
-            
+
             if (requiresQuizPassCheckbox && quizScoreSection) {
-                requiresQuizPassCheckbox.addEventListener('change', function() {
+                requiresQuizPassCheckbox.addEventListener('change', function () {
                     if (this.checked) {
                         quizScoreSection.style.display = 'block';
                     } else {
@@ -588,4 +592,6 @@ Be specific and clear to guide students through the interactive experience."
         <script src="~/js/components/chatbot.js"></script>
     }
 </body>
+
 </html>
+
