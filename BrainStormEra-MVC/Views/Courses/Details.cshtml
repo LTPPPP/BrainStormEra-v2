@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="~/css/components/header.css">
     <link rel="stylesheet" href="~/css/components/loader.css">
     <link rel="stylesheet" href="~/css/pages/Course/courses.css">
+    <link rel="stylesheet" href="~/css/pages/Course/course-quiz-styles.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
     <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
@@ -542,92 +543,108 @@
                                                                         var lessonQuizzes = quizzesByLesson[lesson.LessonId];
                                                                         foreach (var quiz in lessonQuizzes)
                                                                         {
-                                                                            <div class="lecture-item quiz-item ms-3">
-                                                                                <i class="fas fa-question-circle text-success"></i>
-                                                                                <span class="lesson-name-truncated">@quiz.QuizName</span>
-                                                                                <span class="lesson-type-with-icon">
-                                                                                    <i class="fas fa-question-circle text-success"></i>
-                                                                                    Quiz
-                                                                                    @if (quiz.TimeLimit.HasValue)
-                                                                                    {
-                                                                                        <small class="text-muted">(@quiz.TimeLimit min)</small>
-                                                                                    }
-                                                                                    @if (quiz.Questions?.Any() == true)
-                                                                                    {
-                                                                                        <small class="text-muted">• @quiz.Questions.Count questions</small>
-                                                                                    }
-                                                                                </span>
-                                                                                @if (ViewBag.IsAuthor == true)
-                                                                                {
-                                                                                    <div class="lesson-actions">
-                                                                                        <a href="@Url.Action("Create", "Question", new { quizId = quiz.QuizId })" 
-                                                                                           class="btn btn-sm btn-outline-success me-1"
-                                                                                           title="Create Question">
-                                                                                            <i class="fas fa-plus"></i>
-                                                                                        </a>
-                                                                                        <a href="@Url.Action("Edit", "Quiz", new { id = quiz.QuizId })" 
-                                                                                           class="btn btn-sm btn-outline-primary me-1"
-                                                                                           title="Edit Quiz">
-                                                                                            <i class="fas fa-edit"></i>
-                                                                                        </a>
-                                                                                        <button type="button" class="btn btn-sm btn-outline-danger delete-quiz-btn" 
-                                                                                                data-quiz-id="@quiz.QuizId" 
-                                                                                                data-quiz-name="@quiz.QuizName"
-                                                                                                title="Delete Quiz">
-                                                                                            <i class="fas fa-trash-alt"></i>
-                                                                                        </button>
+                                                                            <div class="quiz-item-container ms-4 mt-2">
+                                                                                <div class="quiz-item-header">
+                                                                                    <div class="quiz-item-icon">
+                                                                                        <i class="fas fa-question-circle"></i>
                                                                                     </div>
-                                                                                }
-                                                                                @if (quiz.IsFinalQuiz)
-                                                                                {
-                                                                                    <span class="badge bg-warning text-dark ms-2">Final</span>
-                                                                                }
-                                                                                @if (quiz.IsPrerequisiteQuiz)
-                                                                                {
-                                                                                    <span class="badge bg-info text-white ms-2">Prerequisite</span>
-                                                                                }
+                                                                                    <div class="quiz-item-content">
+                                                                                        <div class="quiz-item-title">@quiz.QuizName</div>
+                                                                                        <div class="quiz-item-meta">
+                                                                                            <span class="quiz-item-type">
+                                                                                                <i class="fas fa-question-circle"></i> Quiz
+                                                                                            </span>
+                                                                                            @if (quiz.TimeLimit.HasValue)
+                                                                                            {
+                                                                                                <span class="quiz-item-duration">
+                                                                                                    <i class="fas fa-clock"></i> @quiz.TimeLimit min
+                                                                                                </span>
+                                                                                            }
+                                                                                            @if (quiz.Questions?.Any() == true)
+                                                                                            {
+                                                                                                <span class="quiz-item-questions">
+                                                                                                    <i class="fas fa-list"></i> @quiz.Questions.Count questions
+                                                                                                </span>
+                                                                                            }
+                                                                                        </div>
+                                                                                        <div class="quiz-item-badges">
+                                                                                            @if (quiz.IsFinalQuiz)
+                                                                                            {
+                                                                                                <span class="quiz-badge final">Final</span>
+                                                                                            }
+                                                                                            @if (quiz.IsPrerequisiteQuiz)
+                                                                                            {
+                                                                                                <span class="quiz-badge prerequisite">Prerequisite</span>
+                                                                                            }
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    @if (ViewBag.IsAuthor == true)
+                                                                                    {
+                                                                                        <div class="quiz-item-actions">
+                                                                                            <a href="@Url.Action("Create", "Question", new { quizId = quiz.QuizId })" 
+                                                                                               class="btn btn-sm btn-success quiz-action-btn" title="Create Question">
+                                                                                                <i class="fas fa-plus"></i>
+                                                                                            </a>
+                                                                                            <a href="@Url.Action("Edit", "Quiz", new { id = quiz.QuizId })" 
+                                                                                               class="btn btn-sm btn-primary quiz-action-btn" title="Edit Quiz">
+                                                                                                <i class="fas fa-edit"></i>
+                                                                                            </a>
+                                                                                            <button type="button" class="btn btn-sm btn-danger quiz-action-btn delete-quiz-btn" 
+                                                                                                    data-quiz-id="@quiz.QuizId" 
+                                                                                                    data-quiz-name="@quiz.QuizName"
+                                                                                                    title="Delete Quiz">
+                                                                                                <i class="fas fa-trash-alt"></i>
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    }
+                                                                                </div>
                                                                                 
                                                                                 <!-- Display Quiz Questions if Available -->
                                                                                 @if (ViewBag.IsAuthor == true && quiz.Questions?.Any() == true)
                                                                                 {
-                                                                                    <div class="quiz-questions mt-2 ms-4">
-                                                                                        <small class="text-muted d-block mb-1">
-                                                                                            <i class="fas fa-list me-1"></i>Questions:
-                                                                                        </small>
-                                                                                        @foreach (var question in quiz.Questions?.Take(3) ?? Enumerable.Empty<BrainStormEra_MVC.Models.ViewModels.QuestionViewModel>())
-                                                                                        {
-                                                                                            <div class="question-preview small text-muted ms-2 d-flex justify-content-between align-items-center">
-                                                                                                <div>
-                                                                                                    <i class="fas fa-dot-circle me-1"></i>
-                                                                                                    @(question.QuestionText.Length > 60 ? question.QuestionText.Substring(0, 60) + "..." : question.QuestionText)
-                                                                                                    @if (question.AnswerOptions?.Any() == true)
-                                                                                                    {
-                                                                                                        <span class="text-info">(@question.AnswerOptions.Count options)</span>
-                                                                                                    }
+                                                                                    <div class="quiz-questions-list">
+                                                                                        <div class="quiz-questions-header">
+                                                                                            <i class="fas fa-list-ul"></i>
+                                                                                            <span>Questions (@quiz.Questions.Count)</span>
+                                                                                        </div>
+                                                                                        <div class="quiz-questions-items">
+                                                                                            @foreach (var question in quiz.Questions?.Take(3) ?? Enumerable.Empty<BrainStormEra_MVC.Models.ViewModels.QuestionViewModel>())
+                                                                                            {
+                                                                                                <div class="question-preview-item">
+                                                                                                    <div class="question-preview-number">@(quiz.Questions.ToList().IndexOf(question) + 1)</div>
+                                                                                                    <div class="question-preview-content">
+                                                                                                        <div class="question-preview-text">
+                                                                                                            @(question.QuestionText.Length > 50 ? question.QuestionText.Substring(0, 50) + "..." : question.QuestionText)
+                                                                                                        </div>
+                                                                                                        @if (question.AnswerOptions?.Any() == true)
+                                                                                                        {
+                                                                                                            <div class="question-preview-options">
+                                                                                                                <i class="fas fa-list-ol"></i>
+                                                                                                                @question.AnswerOptions.Count options
+                                                                                                            </div>
+                                                                                                        }
+                                                                                                    </div>
+                                                                                                    <div class="question-preview-actions">
+                                                                                                        <a href="@Url.Action("Edit", "Question", new { id = question.QuestionId })" 
+                                                                                                           class="btn btn-xs btn-outline-primary question-action-btn" title="Edit Question">
+                                                                                                            <i class="fas fa-edit"></i>
+                                                                                                        </a>
+                                                                                                        <button type="button" class="btn btn-xs btn-outline-danger question-action-btn delete-question-btn" 
+                                                                                                                data-question-id="@question.QuestionId" 
+                                                                                                                data-question-text="@question.QuestionText" title="Delete Question">
+                                                                                                            <i class="fas fa-trash-alt"></i>
+                                                                                                        </button>
+                                                                                                    </div>
                                                                                                 </div>
-                                                                                                <div class="question-actions">
-                                                                                                    <a href="@Url.Action("Edit", "Question", new { id = question.QuestionId })" 
-                                                                                                       class="btn btn-xs btn-outline-primary me-1"
-                                                                                                       title="Edit Question"
-                                                                                                       style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">
-                                                                                                        <i class="fas fa-edit"></i>
-                                                                                                    </a>
-                                                                                                    <button type="button" class="btn btn-xs btn-outline-danger delete-question-btn" 
-                                                                                                            data-question-id="@question.QuestionId" 
-                                                                                                            data-question-text="@question.QuestionText"
-                                                                                                            title="Delete Question"
-                                                                                                            style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">
-                                                                                                        <i class="fas fa-trash-alt"></i>
-                                                                                                    </button>
+                                                                                            }
+                                                                                            @if (quiz.Questions?.Count > 3)
+                                                                                            {
+                                                                                                <div class="question-preview-more">
+                                                                                                    <i class="fas fa-ellipsis-h"></i>
+                                                                                                    and @(quiz.Questions.Count - 3) more questions...
                                                                                                 </div>
-                                                                                            </div>
-                                                                                        }
-                                                                                        @if (quiz.Questions?.Count > 3)
-                                                                                        {
-                                                                                            <div class="small text-muted ms-2">
-                                                                                                <i class="fas fa-ellipsis-h me-1"></i>and @(quiz.Questions.Count - 3) more questions...
-                                                                                            </div>
-                                                                                        }
+                                                                                            }
+                                                                                        </div>
                                                                                     </div>
                                                                                 }
                                                                             </div>

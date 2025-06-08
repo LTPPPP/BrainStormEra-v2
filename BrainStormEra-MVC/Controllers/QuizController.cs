@@ -141,13 +141,11 @@ namespace BrainStormEra_MVC.Controllers
                 QuizStatus = 1, // Active
                 QuizCreatedAt = DateTime.Now,
                 QuizUpdatedAt = DateTime.Now
-            };
-
-            _context.Quizzes.Add(quiz);
+            }; _context.Quizzes.Add(quiz);
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = $"Quiz '{model.QuizTitle}' created successfully and automatically associated with the last lesson '{finalLesson.LessonName}'!";
-            return Redirect($"/Course/Details/{chapter.CourseId}#curriculum");
+            return RedirectToAction("Details", new { id = quiz.QuizId });
         }        // GET: Quiz/Edit/5
         public async Task<IActionResult> Edit(string id)
         {
@@ -279,13 +277,11 @@ namespace BrainStormEra_MVC.Controllers
             quiz.LessonId = finalLesson.LessonId; // Always associate with the last lesson
             quiz.TimeLimit = model.TimeLimit;
             quiz.PassingScore = model.PassingScore;
-            quiz.QuizUpdatedAt = DateTime.Now;
-
-            _context.Update(quiz);
+            quiz.QuizUpdatedAt = DateTime.Now; _context.Update(quiz);
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = $"Quiz '{model.QuizTitle}' updated successfully and associated with the last lesson '{finalLesson.LessonName}'!";
-            return Redirect($"/Course/Details/{quiz.CourseId}#curriculum");
+            return RedirectToAction("Details", new { id = quiz.QuizId });
         }
 
         // POST: Quiz/Delete/5
@@ -312,6 +308,116 @@ namespace BrainStormEra_MVC.Controllers
             _context.Quizzes.Remove(quiz);
             await _context.SaveChangesAsync(); TempData["SuccessMessage"] = "Quiz deleted successfully!";
             return Redirect($"/Course/Details/{quiz.CourseId}#curriculum");
+        }
+
+        // GET: Quiz/Details/5
+        public async Task<IActionResult> Details(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return NotFound();
+            }
+
+            var quiz = await _context.Quizzes
+                .Include(q => q.Course)
+                .Include(q => q.Lesson)
+                .Include(q => q.Questions)
+                    .ThenInclude(q => q.AnswerOptions)
+                .FirstOrDefaultAsync(q => q.QuizId == id);
+
+            if (quiz == null)
+            {
+                return NotFound();
+            }
+
+            // Check if user is the author of the course
+            var userId = User.FindFirst("UserId")?.Value;
+            if (quiz.Course?.AuthorId != userId)
+            {
+                return Forbid();
+            }
+
+            var viewModel = new QuizDetailsViewModel
+            {
+                QuizId = quiz.QuizId,
+                QuizName = quiz.QuizName,
+                QuizDescription = quiz.QuizDescription,
+                CourseId = quiz.CourseId ?? "",
+                CourseName = quiz.Course?.CourseName ?? "",
+                LessonId = quiz.LessonId,
+                LessonName = quiz.Lesson?.LessonName ?? "",
+                TimeLimit = quiz.TimeLimit,
+                PassingScore = quiz.PassingScore,
+                QuizCreatedAt = quiz.QuizCreatedAt,
+                QuizUpdatedAt = quiz.QuizUpdatedAt,
+                Questions = quiz.Questions.OrderBy(q => q.QuestionOrder).Select(q => new QuestionSummaryViewModel
+                {
+                    QuestionId = q.QuestionId,
+                    QuestionText = q.QuestionText.Length > 100 ? q.QuestionText.Substring(0, 100) + "..." : q.QuestionText,
+                    QuestionType = q.QuestionType ?? "multiple_choice",
+                    Points = (int)(q.Points ?? 1),
+                    QuestionOrder = q.QuestionOrder ?? 1,
+                    AnswerOptionsCount = q.AnswerOptions.Count,
+                    QuestionCreatedAt = q.QuestionCreatedAt
+                }).ToList()
+            };
+
+            return View(viewModel);
+        }        // GET: Quiz/Preview/5
+        public async Task<IActionResult> Preview(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return NotFound();
+            }
+
+            var quiz = await _context.Quizzes
+                .Include(q => q.Course)
+                .Include(q => q.Lesson)
+                .Include(q => q.Questions)
+                    .ThenInclude(q => q.AnswerOptions.OrderBy(ao => ao.OptionOrder))
+                .FirstOrDefaultAsync(q => q.QuizId == id);
+
+            if (quiz == null)
+            {
+                return NotFound();
+            }
+
+            // Check if user is the author of the course
+            var userId = User.FindFirst("UserId")?.Value;
+            if (quiz.Course?.AuthorId != userId)
+            {
+                return Forbid();
+            }
+
+            var viewModel = new QuizPreviewViewModel
+            {
+                QuizId = quiz.QuizId,
+                QuizName = quiz.QuizName,
+                QuizDescription = quiz.QuizDescription,
+                CourseId = quiz.CourseId ?? "",
+                CourseName = quiz.Course?.CourseName ?? "",
+                TimeLimit = quiz.TimeLimit,
+                PassingScore = quiz.PassingScore,
+                Questions = quiz.Questions.OrderBy(q => q.QuestionOrder).Select(q => new QuestionPreviewViewModel
+                {
+                    QuestionId = q.QuestionId,
+                    QuestionText = q.QuestionText,
+                    QuestionType = q.QuestionType ?? "multiple_choice",
+                    Points = (int)(q.Points ?? 1),
+                    QuestionOrder = q.QuestionOrder ?? 1,
+                    Explanation = q.Explanation,
+                    AnswerOptions = q.AnswerOptions.Select(ao => new AnswerOptionPreviewViewModel
+                    {
+                        OptionId = ao.OptionId,
+                        OptionText = ao.OptionText,
+                        OptionOrder = ao.OptionOrder ?? 1
+                        // Don't include IsCorrect for preview
+                    }).ToList()
+                }).ToList()
+            };
+
+            return View(viewModel);
         }
     }
 }

@@ -138,11 +138,10 @@ namespace BrainStormEra_MVC.Controllers
                     }
                 });
             }
-
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Question created successfully!";
-            return RedirectToAction("Details", "Course", new { id = quiz.CourseId, activeTab = "curriculum" });
+            return RedirectToAction("Details", "Quiz", new { id = model.QuizId });
         }
 
         // GET: Question/Edit/5
@@ -277,7 +276,7 @@ namespace BrainStormEra_MVC.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Question updated successfully!";
-            return RedirectToAction("Details", "Course", new { id = question.Quiz?.CourseId, activeTab = "curriculum" });
+            return RedirectToAction("Details", "Quiz", new { id = model.QuizId });
         }
 
         // POST: Question/Delete/5
@@ -299,14 +298,113 @@ namespace BrainStormEra_MVC.Controllers
             {
                 return Forbid();
             }
-
-            var courseId = question.Quiz?.CourseId;
+            var quizId = question.Quiz?.QuizId;
 
             _context.Questions.Remove(question);
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Question deleted successfully!";
-            return RedirectToAction("Details", "Course", new { id = courseId, activeTab = "curriculum" });
+            return RedirectToAction("Details", "Quiz", new { id = quizId });
+        }
+
+        // POST: Question/Reorder
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReorderQuestions(string quizId, List<string> questionIds)
+        {
+            if (string.IsNullOrEmpty(quizId) || questionIds == null || !questionIds.Any())
+            {
+                return BadRequest("Invalid data");
+            }
+
+            var quiz = await _context.Quizzes
+                .Include(q => q.Course)
+                .Include(q => q.Questions)
+                .FirstOrDefaultAsync(q => q.QuizId == quizId);
+
+            if (quiz == null)
+            {
+                return NotFound();
+            }
+
+            // Check if user is the author of the course
+            var userId = User.FindFirst("UserId")?.Value;
+            if (quiz.Course?.AuthorId != userId)
+            {
+                return Forbid();
+            }
+
+            // Update question orders
+            for (int i = 0; i < questionIds.Count; i++)
+            {
+                var question = quiz.Questions.FirstOrDefault(q => q.QuestionId == questionIds[i]);
+                if (question != null)
+                {
+                    question.QuestionOrder = i + 1;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Question order updated successfully!" });
+        }
+
+        // POST: Question/Duplicate
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Duplicate(string id)
+        {
+            var question = await _context.Questions
+                .Include(q => q.Quiz)
+                    .ThenInclude(quiz => quiz.Course)
+                .Include(q => q.AnswerOptions)
+                .FirstOrDefaultAsync(q => q.QuestionId == id);
+
+            if (question == null)
+            {
+                return NotFound();
+            }
+
+            // Check if user is the author of the course
+            var userId = User.FindFirst("UserId")?.Value;
+            if (question.Quiz?.Course?.AuthorId != userId)
+            {
+                return Forbid();
+            }
+
+            var newQuestionId = Guid.NewGuid().ToString();
+            var newQuestion = new Question
+            {
+                QuestionId = newQuestionId,
+                QuizId = question.QuizId,
+                QuestionText = question.QuestionText + " (Copy)",
+                QuestionType = question.QuestionType,
+                Points = question.Points,
+                QuestionOrder = await GetNextQuestionOrderAsync(question.QuizId),
+                Explanation = question.Explanation,
+                QuestionCreatedAt = DateTime.UtcNow
+            };
+
+            _context.Questions.Add(newQuestion);
+
+            // Duplicate answer options
+            foreach (var option in question.AnswerOptions)
+            {
+                var newOption = new AnswerOption
+                {
+                    OptionId = Guid.NewGuid().ToString(),
+                    QuestionId = newQuestionId,
+                    OptionText = option.OptionText,
+                    IsCorrect = option.IsCorrect,
+                    OptionOrder = option.OptionOrder
+                };
+                _context.AnswerOptions.Add(newOption);
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Question duplicated successfully!";
+            return RedirectToAction("Details", "Quiz", new { id = question.QuizId });
         }
 
         private async Task<int> GetNextQuestionOrderAsync(string quizId)

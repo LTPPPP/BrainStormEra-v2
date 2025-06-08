@@ -86,8 +86,7 @@
                             <i class="fas fa-bookmark me-1"></i> Chapter: @Model.ChapterName
                         </span>
                     </div>
-                    <div class="mt-3">
-                        <a href="@Url.Action("Details", "Courses", new { id = Model.CourseId })" 
+                    <div class="mt-3">                        <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })" 
                            class="btn btn-outline-light">
                             <i class="fas fa-arrow-left me-2"></i>Back to Course
                         </a>
@@ -321,11 +320,14 @@
                     <div class="card-body">
                         <h5 class="card-title text-info">
                             <i class="fas fa-lightbulb me-2"></i>Next Steps
-                        </h5>
-                        <p class="card-text">
+                        </h5>                        <p class="card-text">
                             After creating your quiz, you'll be able to add questions and customize the quiz experience 
                             for your learners. The quiz will be automatically associated with the last lesson in the chapter 
                             based on lesson order, ensuring students complete all content before taking the assessment.
+                        </p>
+                        <p class="card-text">
+                            <strong>Next step:</strong> Once your quiz is created, you'll be redirected to the quiz management page 
+                            where you can add multiple questions, set answer options, and configure question types.
                         </p>
                         <div class="mt-3">
                             <small class="text-muted">
