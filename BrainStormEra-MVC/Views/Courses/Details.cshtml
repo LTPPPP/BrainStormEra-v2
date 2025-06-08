@@ -560,6 +560,11 @@
                                                                                 @if (ViewBag.IsAuthor == true)
                                                                                 {
                                                                                     <div class="lesson-actions">
+                                                                                        <a href="@Url.Action("Create", "Question", new { quizId = quiz.QuizId })" 
+                                                                                           class="btn btn-sm btn-outline-success me-1"
+                                                                                           title="Create Question">
+                                                                                            <i class="fas fa-plus"></i>
+                                                                                        </a>
                                                                                         <a href="@Url.Action("Edit", "Quiz", new { id = quiz.QuizId })" 
                                                                                            class="btn btn-sm btn-outline-primary me-1"
                                                                                            title="Edit Quiz">
@@ -591,13 +596,30 @@
                                                                                         </small>
                                                                                         @foreach (var question in quiz.Questions?.Take(3) ?? Enumerable.Empty<BrainStormEra_MVC.Models.ViewModels.QuestionViewModel>())
                                                                                         {
-                                                                                            <div class="question-preview small text-muted ms-2">
-                                                                                                <i class="fas fa-dot-circle me-1"></i>
-                                                                                                @(question.QuestionText.Length > 60 ? question.QuestionText.Substring(0, 60) + "..." : question.QuestionText)
-                                                                                                @if (question.AnswerOptions?.Any() == true)
-                                                                                                {
-                                                                                                    <span class="text-info">(@question.AnswerOptions.Count options)</span>
-                                                                                                }
+                                                                                            <div class="question-preview small text-muted ms-2 d-flex justify-content-between align-items-center">
+                                                                                                <div>
+                                                                                                    <i class="fas fa-dot-circle me-1"></i>
+                                                                                                    @(question.QuestionText.Length > 60 ? question.QuestionText.Substring(0, 60) + "..." : question.QuestionText)
+                                                                                                    @if (question.AnswerOptions?.Any() == true)
+                                                                                                    {
+                                                                                                        <span class="text-info">(@question.AnswerOptions.Count options)</span>
+                                                                                                    }
+                                                                                                </div>
+                                                                                                <div class="question-actions">
+                                                                                                    <a href="@Url.Action("Edit", "Question", new { id = question.QuestionId })" 
+                                                                                                       class="btn btn-xs btn-outline-primary me-1"
+                                                                                                       title="Edit Question"
+                                                                                                       style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">
+                                                                                                        <i class="fas fa-edit"></i>
+                                                                                                    </a>
+                                                                                                    <button type="button" class="btn btn-xs btn-outline-danger delete-question-btn" 
+                                                                                                            data-question-id="@question.QuestionId" 
+                                                                                                            data-question-text="@question.QuestionText"
+                                                                                                            title="Delete Question"
+                                                                                                            style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">
+                                                                                                        <i class="fas fa-trash-alt"></i>
+                                                                                                    </button>
+                                                                                                </div>
                                                                                             </div>
                                                                                         }
                                                                                         @if (quiz.Questions?.Count > 3)
@@ -1145,6 +1167,66 @@
                 confirmBtn.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Delete Quiz';
                 confirmBtn.disabled = false;
             });
+
+            // Delete Question functionality
+            const deleteQuestionButtons = document.querySelectorAll('.delete-question-btn');
+            const deleteQuestionModal = new bootstrap.Modal(document.getElementById('deleteQuestionModal'));
+            let currentQuestionId = null;
+
+            deleteQuestionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    currentQuestionId = this.getAttribute('data-question-id');
+                    const questionText = this.getAttribute('data-question-text');
+
+                    // Update modal content
+                    document.getElementById('deleteQuestionText').textContent = questionText.length > 60 ? questionText.substring(0, 60) + '...' : questionText;
+
+                    // Show modal
+                    deleteQuestionModal.show();
+                });
+            });
+
+            // Confirm delete question action
+            document.getElementById('confirmDeleteQuestion').addEventListener('click', function() {
+                if (!currentQuestionId) return;
+
+                // Show loading state
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
+                this.disabled = true;
+
+                // Create form and submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("Delete", "Question")';
+
+                // Add anti-forgery token
+                const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (token) {
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token.value;
+                    form.appendChild(tokenInput);
+                }
+
+                // Add question ID
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'id';
+                idInput.value = currentQuestionId;
+                form.appendChild(idInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            });
+
+            // Reset question modal when closed
+            document.getElementById('deleteQuestionModal').addEventListener('hidden.bs.modal', function() {
+                currentQuestionId = null;
+                const confirmBtn = document.getElementById('confirmDeleteQuestion');
+                confirmBtn.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Delete Question';
+                confirmBtn.disabled = false;
+            });
         });
     </script>
 
@@ -1283,6 +1365,46 @@
                     </button>
                     <button type="button" class="btn btn-danger" id="confirmDeleteQuiz">
                         <i class="fas fa-trash-alt me-2"></i>Delete Quiz
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Question Confirmation Modal -->
+    <div class="modal fade" id="deleteQuestionModal" tabindex="-1" aria-labelledby="deleteQuestionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteQuestionModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Delete Question
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning me-2"></i>
+                        <strong>Warning:</strong> This action cannot be undone!
+                    </div>
+                    <p>Are you sure you want to delete the following question?</p>
+                    <div class="bg-light p-3 rounded">
+                        <h6 class="mb-1"><strong id="deleteQuestionText">Question Text</strong></h6>
+                        <small class="text-muted">Question</small>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-danger mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            This question and all its answer options will be permanently deleted.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteQuestion">
+                        <i class="fas fa-trash-alt me-2"></i>Delete Question
                     </button>
                 </div>
             </div>
