@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BrainStormEra_MVC.Models.ViewModels
 {
-    public class CreateQuestionViewModel
+    public class CreateQuestionViewModel : IValidatableObject
     {
         public string? QuestionId { get; set; }
 
@@ -44,13 +44,67 @@ namespace BrainStormEra_MVC.Models.ViewModels
         public bool IsTrueFalse => QuestionType == "true_false";
         public bool IsEssay => QuestionType == "essay";
         public bool IsFillBlank => QuestionType == "fill_blank";
+
+        // Custom validation method
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            Console.WriteLine("=== CUSTOM VALIDATION CALLED ===");
+            Console.WriteLine($"QuestionType: {QuestionType}");
+            Console.WriteLine($"AnswerOptions Count: {AnswerOptions?.Count}");
+
+            // Only validate answer options for multiple choice questions
+            if (QuestionType == "multiple_choice")
+            {
+                Console.WriteLine("=== VALIDATING MULTIPLE CHOICE OPTIONS ===");
+
+                if (AnswerOptions == null || !AnswerOptions.Any())
+                {
+                    yield return new ValidationResult(
+                        "At least 2 answer options are required for multiple choice questions",
+                        new[] { nameof(AnswerOptions) });
+                }
+                else
+                {
+                    var validOptions = AnswerOptions.Where(o => !string.IsNullOrWhiteSpace(o.OptionText)).ToList();
+                    Console.WriteLine($"Valid options count: {validOptions.Count}");
+
+                    if (validOptions.Count < 2)
+                    {
+                        yield return new ValidationResult(
+                            "At least 2 answer options are required for multiple choice questions",
+                            new[] { nameof(AnswerOptions) });
+                    }
+
+                    if (validOptions.Any() && !validOptions.Any(o => o.IsCorrect))
+                    {
+                        yield return new ValidationResult(
+                            "At least one answer option must be marked as correct",
+                            new[] { nameof(AnswerOptions) });
+                    }
+                }
+            }
+            else if (QuestionType == "true_false")
+            {
+                Console.WriteLine("=== VALIDATING TRUE/FALSE QUESTION ===");
+                Console.WriteLine($"TrueFalseAnswer: {TrueFalseAnswer}");
+
+                if (TrueFalseAnswer == null)
+                {
+                    yield return new ValidationResult(
+                        "Please select the correct answer (True or False)",
+                        new[] { nameof(TrueFalseAnswer) });
+                }
+            }
+
+            Console.WriteLine("=== CUSTOM VALIDATION COMPLETED ===");
+        }
     }
 
     public class CreateAnswerOptionViewModel
     {
         public string? OptionId { get; set; }
 
-        [Required(ErrorMessage = "Option text is required")]
+        // Remove [Required] attribute since we'll validate conditionally
         [StringLength(500, ErrorMessage = "Option text cannot exceed 500 characters")]
         [Display(Name = "Option Text")]
         public string OptionText { get; set; } = string.Empty;

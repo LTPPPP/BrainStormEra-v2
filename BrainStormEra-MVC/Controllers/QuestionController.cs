@@ -14,39 +14,55 @@ namespace BrainStormEra_MVC.Controllers
         public QuestionController(BrainStormEraContext context)
         {
             _context = context;
-        }
-
-        // GET: Question/Create/5 (quizId)
+        }        // GET: Question/Create/5 (quizId)
         public async Task<IActionResult> Create(string quizId)
         {
+            Console.WriteLine("=== CREATE QUESTION GET METHOD CALLED ===");
+            Console.WriteLine($"QuizId: {quizId}");
+
             if (string.IsNullOrEmpty(quizId))
             {
+                Console.WriteLine("ERROR: QuizId is null or empty");
                 return NotFound();
             }
 
+            Console.WriteLine("=== FETCHING QUIZ DATA ===");
             var quiz = await _context.Quizzes
                 .Include(q => q.Course)
                 .FirstOrDefaultAsync(q => q.QuizId == quizId);
 
             if (quiz == null)
             {
+                Console.WriteLine("ERROR: Quiz not found");
                 return NotFound();
             }
 
+            Console.WriteLine($"Quiz found: {quiz.QuizName}");
+            Console.WriteLine($"Course: {quiz.Course?.CourseName}");
+
             // Check if user is the author of the course
             var userId = User.FindFirst("UserId")?.Value;
+            Console.WriteLine($"Current UserId: {userId}");
+            Console.WriteLine($"Course AuthorId: {quiz.Course?.AuthorId}");
+
             if (quiz.Course?.AuthorId != userId)
             {
+                Console.WriteLine("ERROR: User is not authorized to create questions for this quiz");
                 return Forbid();
             }
 
+            Console.WriteLine("=== GETTING NEXT QUESTION ORDER ===");
+            var nextOrder = await GetNextQuestionOrderAsync(quizId);
+            Console.WriteLine($"Next question order: {nextOrder}");
+
+            Console.WriteLine("=== CREATING VIEW MODEL ===");
             var viewModel = new CreateQuestionViewModel
             {
                 QuizId = quizId,
                 QuizName = quiz.QuizName,
                 QuestionType = "multiple_choice", // Default type
                 Points = 1,
-                QuestionOrder = await GetNextQuestionOrderAsync(quizId),
+                QuestionOrder = nextOrder,
                 AnswerOptions = new List<CreateAnswerOptionViewModel>
                 {
                     new CreateAnswerOptionViewModel { OptionOrder = 1, IsCorrect = false },
@@ -56,36 +72,123 @@ namespace BrainStormEra_MVC.Controllers
                 }
             };
 
-            return View(viewModel);
-        }
+            Console.WriteLine("=== VIEW MODEL CREATED SUCCESSFULLY ===");
+            Console.WriteLine($"ViewModel - QuizId: {viewModel.QuizId}");
+            Console.WriteLine($"ViewModel - QuizName: {viewModel.QuizName}");
+            Console.WriteLine($"ViewModel - QuestionType: {viewModel.QuestionType}");
+            Console.WriteLine($"ViewModel - Points: {viewModel.Points}");
+            Console.WriteLine($"ViewModel - QuestionOrder: {viewModel.QuestionOrder}");
+            Console.WriteLine($"ViewModel - AnswerOptions Count: {viewModel.AnswerOptions?.Count}");
 
-        // POST: Question/Create
+            return View(viewModel);
+        }        // POST: Question/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateQuestionViewModel model)
         {
-            if (!ModelState.IsValid)
+            Console.WriteLine("=== CREATE QUESTION POST METHOD CALLED ===");
+            Console.WriteLine($"Model - QuizId: {model?.QuizId}");
+            Console.WriteLine($"Model - QuestionText: {model?.QuestionText}");
+            Console.WriteLine($"Model - QuestionType: {model?.QuestionType}");
+            Console.WriteLine($"Model - Points: {model?.Points}");
+            Console.WriteLine($"Model - QuestionOrder: {model?.QuestionOrder}");
+            Console.WriteLine($"Model - Explanation: {model?.Explanation}");
+            Console.WriteLine($"Model - TrueFalseAnswer: {model?.TrueFalseAnswer}");
+
+            if (model?.AnswerOptions != null)
             {
-                return View(model);
+                Console.WriteLine($"AnswerOptions Count: {model.AnswerOptions.Count}");
+                for (int i = 0; i < model.AnswerOptions.Count; i++)
+                {
+                    var option = model.AnswerOptions[i];
+                    Console.WriteLine($"  Option {i + 1}: Text='{option?.OptionText}', IsCorrect={option?.IsCorrect}, Order={option?.OptionOrder}");
+                }
             }
 
+            if (model == null)
+            {
+                Console.WriteLine("ERROR: Model is null");
+                return BadRequest("Invalid model data");
+            }
+            Console.WriteLine("=== CHECKING MODEL STATE ===");
+            Console.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
+
+            if (!ModelState.IsValid)
+            {
+                Console.WriteLine("MODEL STATE ERRORS:");
+                foreach (var error in ModelState)
+                {
+                    if (error.Value.Errors.Count > 0)
+                    {
+                        Console.WriteLine($"  {error.Key}: {string.Join(", ", error.Value.Errors.Select(e => e.ErrorMessage))}");
+                    }
+                }                // For true/false, essay, and fill_blank questions, clear AnswerOptions validation errors
+                if (model.QuestionType == "true_false" || model.QuestionType == "essay" || model.QuestionType == "fill_blank")
+                {
+                    Console.WriteLine($"=== CLEARING ANSWER OPTIONS ERRORS FOR {model.QuestionType.ToUpper()} ===");
+                    var keysToRemove = ModelState.Keys.Where(k => k.StartsWith("AnswerOptions")).ToList();
+                    foreach (var key in keysToRemove)
+                    {
+                        ModelState.Remove(key);
+                        Console.WriteLine($"Removed validation error for: {key}");
+                    }// Re-check model state after clearing irrelevant errors
+                    Console.WriteLine($"ModelState.IsValid after cleanup: {ModelState.IsValid}");
+
+                    // If only AnswerOptions errors were present, proceed with creation
+                    if (ModelState.IsValid)
+                    {
+                        Console.WriteLine($"=== MODEL STATE IS NOW VALID AFTER CLEANUP FOR {model.QuestionType.ToUpper()} ===");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"=== STILL HAVE VALIDATION ERRORS AFTER CLEANUP FOR {model.QuestionType.ToUpper()} ===");
+                        Console.WriteLine("REMAINING ERRORS:");
+                        foreach (var error in ModelState)
+                        {
+                            if (error.Value.Errors.Count > 0)
+                            {
+                                Console.WriteLine($"  {error.Key}: {string.Join(", ", error.Value.Errors.Select(e => e.ErrorMessage))}");
+                            }
+                        }
+                        return View(model);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("=== RETURNING VIEW WITH VALIDATION ERRORS ===");
+                    return View(model);
+                }
+            }
+
+            Console.WriteLine("=== FETCHING QUIZ DATA FOR VALIDATION ===");
             var quiz = await _context.Quizzes
                 .Include(q => q.Course)
                 .FirstOrDefaultAsync(q => q.QuizId == model.QuizId);
 
             if (quiz == null)
             {
+                Console.WriteLine("ERROR: Quiz not found during POST");
                 return NotFound();
             }
 
+            Console.WriteLine($"Quiz found: {quiz.QuizName}");
+            Console.WriteLine($"Course: {quiz.Course?.CourseName}");
+
             // Check if user is the author of the course
             var userId = User.FindFirst("UserId")?.Value;
+            Console.WriteLine($"Current UserId: {userId}");
+            Console.WriteLine($"Course AuthorId: {quiz.Course?.AuthorId}");
+
             if (quiz.Course?.AuthorId != userId)
             {
+                Console.WriteLine("ERROR: User is not authorized to create questions for this quiz");
                 return Forbid();
             }
 
-            var questionId = Guid.NewGuid().ToString(); var question = new Question
+            var questionId = Guid.NewGuid().ToString();
+            Console.WriteLine($"=== CREATING QUESTION WITH ID: {questionId} ===");
+
+            var question = new Question
             {
                 QuestionId = questionId,
                 QuizId = model.QuizId,
@@ -97,12 +200,23 @@ namespace BrainStormEra_MVC.Controllers
                 QuestionCreatedAt = DateTime.UtcNow
             };
 
-            _context.Questions.Add(question);
+            Console.WriteLine("=== QUESTION OBJECT CREATED ===");
+            Console.WriteLine($"QuestionId: {question.QuestionId}");
+            Console.WriteLine($"QuizId: {question.QuizId}");
+            Console.WriteLine($"QuestionText: {question.QuestionText}");
+            Console.WriteLine($"QuestionType: {question.QuestionType}");
+            Console.WriteLine($"Points: {question.Points}");
+            Console.WriteLine($"QuestionOrder: {question.QuestionOrder}");
 
-            // Add answer options based on question type
+            _context.Questions.Add(question);
+            Console.WriteLine("=== QUESTION ADDED TO CONTEXT ===");            // Add answer options based on question type
             if (model.QuestionType == "multiple_choice" && model.AnswerOptions?.Any() == true)
             {
-                var validOptions = model.AnswerOptions.Where(o => !string.IsNullOrWhiteSpace(o.OptionText)).ToList(); foreach (var option in validOptions)
+                Console.WriteLine("=== PROCESSING MULTIPLE CHOICE OPTIONS ===");
+                var validOptions = model.AnswerOptions.Where(o => !string.IsNullOrWhiteSpace(o.OptionText)).ToList();
+                Console.WriteLine($"Valid options count: {validOptions.Count}");
+
+                foreach (var option in validOptions)
                 {
                     var answerOption = new AnswerOption
                     {
@@ -112,36 +226,83 @@ namespace BrainStormEra_MVC.Controllers
                         IsCorrect = option.IsCorrect,
                         OptionOrder = option.OptionOrder
                     };
+
+                    Console.WriteLine($"Creating answer option: ID={answerOption.OptionId}, Text='{answerOption.OptionText}', IsCorrect={answerOption.IsCorrect}, Order={answerOption.OptionOrder}");
                     _context.AnswerOptions.Add(answerOption);
                 }
+                Console.WriteLine("=== MULTIPLE CHOICE OPTIONS ADDED TO CONTEXT ===");
             }
             else if (model.QuestionType == "true_false")
             {
-                // Add True/False options
-                _context.AnswerOptions.AddRange(new[]
-                {
-                    new AnswerOption
-                    {
-                        OptionId = Guid.NewGuid().ToString(),
-                        QuestionId = questionId,
-                        OptionText = "True",
-                        IsCorrect = model.TrueFalseAnswer == true,
-                        OptionOrder = 1
-                    },
-                    new AnswerOption
-                    {
-                        OptionId = Guid.NewGuid().ToString(),
-                        QuestionId = questionId,
-                        OptionText = "False",
-                        IsCorrect = model.TrueFalseAnswer == false,
-                        OptionOrder = 2
-                    }
-                });
-            }
-            await _context.SaveChangesAsync();
+                Console.WriteLine("=== PROCESSING TRUE/FALSE OPTIONS ===");
+                Console.WriteLine($"TrueFalseAnswer: {model.TrueFalseAnswer}");
 
-            TempData["SuccessMessage"] = "Question created successfully!";
-            return RedirectToAction("Details", "Quiz", new { id = model.QuizId });
+                // Add True/False options
+                var trueOption = new AnswerOption
+                {
+                    OptionId = Guid.NewGuid().ToString(),
+                    QuestionId = questionId,
+                    OptionText = "True",
+                    IsCorrect = model.TrueFalseAnswer == true,
+                    OptionOrder = 1
+                };
+
+                var falseOption = new AnswerOption
+                {
+                    OptionId = Guid.NewGuid().ToString(),
+                    QuestionId = questionId,
+                    OptionText = "False",
+                    IsCorrect = model.TrueFalseAnswer == false,
+                    OptionOrder = 2
+                };
+
+                Console.WriteLine($"True option: ID={trueOption.OptionId}, IsCorrect={trueOption.IsCorrect}");
+                Console.WriteLine($"False option: ID={falseOption.OptionId}, IsCorrect={falseOption.IsCorrect}");
+
+                _context.AnswerOptions.AddRange(new[] { trueOption, falseOption });
+                Console.WriteLine("=== TRUE/FALSE OPTIONS ADDED TO CONTEXT ===");
+            }
+            else if (model.QuestionType == "essay")
+            {
+                Console.WriteLine("=== PROCESSING ESSAY QUESTION ===");
+                Console.WriteLine("Essay questions do not require answer options");
+                // Essay questions don't need answer options
+            }
+            else if (model.QuestionType == "fill_blank")
+            {
+                Console.WriteLine("=== PROCESSING FILL IN THE BLANK QUESTION ===");
+                Console.WriteLine("Fill in the blank questions do not require answer options");
+                // Fill in the blank questions don't need predefined answer options
+                // The correct answers will be stored in the question text or explanation
+            }
+
+            Console.WriteLine("=== SAVING CHANGES TO DATABASE ===");
+            try
+            {
+                await _context.SaveChangesAsync();
+                Console.WriteLine("=== CHANGES SAVED SUCCESSFULLY ===");
+
+                TempData["SuccessMessage"] = "Question created successfully!";
+                Console.WriteLine("=== SUCCESS MESSAGE SET ===");
+
+                Console.WriteLine($"=== REDIRECTING TO QUIZ DETAILS: {model.QuizId} ===");
+                return RedirectToAction("Details", "Quiz", new { id = model.QuizId });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("=== ERROR SAVING TO DATABASE ===");
+                Console.WriteLine($"Exception Type: {ex.GetType().Name}");
+                Console.WriteLine($"Exception Message: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+
+                TempData["ErrorMessage"] = "An error occurred while creating the question. Please try again.";
+                return View(model);
+            }
         }
 
         // GET: Question/Edit/5
@@ -270,9 +431,11 @@ namespace BrainStormEra_MVC.Controllers
                         OptionText = "False",
                         IsCorrect = model.TrueFalseAnswer == false,
                         OptionOrder = 2
-                    }
-                });
+                    }                });
             }
+            // Essay and fill_blank questions don't need answer options
+            // The handling is already done by removing existing options above
+
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Question updated successfully!";
