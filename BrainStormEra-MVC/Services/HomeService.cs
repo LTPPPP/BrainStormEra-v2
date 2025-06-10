@@ -31,6 +31,8 @@ namespace BrainStormEra_MVC.Services
                     .AsNoTracking()
                     .Where(c => c.IsFeatured == true && c.CourseStatus == 1)
                     .Include(c => c.Author)
+                    .Include(c => c.Enrollments)
+                    .Include(c => c.CourseCategories)
                     .Select(c => new CourseViewModel
                     {
                         CourseId = c.CourseId,
@@ -39,13 +41,33 @@ namespace BrainStormEra_MVC.Services
                         Price = c.Price,
                         CreatedBy = c.Author.FullName ?? c.Author.Username,
                         Description = c.CourseDescription,
-                        EnrollmentCount = c.Enrollments.Count()
+                        EnrollmentCount = c.Enrollments.Count(),
+                        CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList()
                     })
-                    .Take(8)
-                    .ToListAsync(); return new HomePageGuestViewModel
+                    .OrderByDescending(c => c.EnrollmentCount)
+                    .Take(6)
+                    .ToListAsync();
+
+                // Get categories ordered by course count (most courses first)
+                var categories = await _context.CourseCategories
+                    .AsNoTracking()
+                    .Where(cc => cc.IsActive == true) // Only active categories
+                    .Select(cc => new CourseCategoryViewModel
                     {
-                        RecommendedCourses = featuredCourses
-                    };
+                        CategoryId = cc.CourseCategoryId,
+                        CategoryName = cc.CourseCategoryName,
+                        CourseCount = cc.Courses.Where(c => c.CourseStatus == 1).Count()
+                    })
+                    .Where(c => c.CourseCount > 0) // Only categories with courses
+                    .OrderByDescending(c => c.CourseCount)
+                    .Take(8) // Limit to top 8 categories
+                    .ToListAsync();
+
+                return new HomePageGuestViewModel
+                {
+                    RecommendedCourses = featuredCourses,
+                    Categories = categories
+                };
             }
             catch (Exception ex)
             {
@@ -94,6 +116,7 @@ namespace BrainStormEra_MVC.Services
                                c.CourseStatus == 1 &&
                                !enrolledCourseIds.Contains(c.CourseId))
                     .Include(c => c.Author)
+                    .Include(c => c.CourseCategories)
                     .Select(c => new CourseViewModel
                     {
                         CourseId = c.CourseId,
@@ -101,7 +124,8 @@ namespace BrainStormEra_MVC.Services
                         CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
                         Price = c.Price,
                         CreatedBy = c.Author.FullName ?? c.Author.Username,
-                        Description = c.CourseDescription
+                        Description = c.CourseDescription,
+                        CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList()
                     })
                     .Take(6)
                     .ToListAsync();
@@ -157,6 +181,7 @@ namespace BrainStormEra_MVC.Services
                     .AsNoTracking()
                     .Where(c => c.AuthorId == userId)
                     .Include(c => c.Enrollments)
+                    .Include(c => c.CourseCategories)
                     .Select(c => new CourseViewModel
                     {
                         CourseId = c.CourseId,
@@ -165,7 +190,8 @@ namespace BrainStormEra_MVC.Services
                         Price = c.Price,
                         CreatedBy = user.FullName ?? user.Username,
                         Description = c.CourseDescription,
-                        EnrollmentCount = c.Enrollments.Count()
+                        EnrollmentCount = c.Enrollments.Count(),
+                        CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList()
                     })
                     .ToListAsync();
 
@@ -219,6 +245,7 @@ namespace BrainStormEra_MVC.Services
                     .Where(c => c.IsFeatured == true && c.CourseStatus == 1)
                     .Include(c => c.Author)
                     .Include(c => c.Enrollments)
+                    .Include(c => c.CourseCategories)
                     .Select(c => new
                     {
                         CourseId = c.CourseId,
@@ -228,6 +255,7 @@ namespace BrainStormEra_MVC.Services
                         CourseDescription = c.CourseDescription,
                         AuthorName = c.Author.FullName ?? c.Author.Username,
                         EnrollmentCount = c.Enrollments.Count(),
+                        CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
                         AverageRating = 4.5 // Calculate if needed
                     })
                     .Take(4)

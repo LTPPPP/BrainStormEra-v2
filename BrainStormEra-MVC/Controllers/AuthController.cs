@@ -342,9 +342,7 @@ namespace BrainStormEra_MVC.Controllers
 
         #endregion
 
-        #region Logout Operations
-
-        /// <summary>
+        #region Logout Operations        /// <summary>
         /// Process user logout
         /// </summary>
         [HttpPost]
@@ -361,9 +359,10 @@ namespace BrainStormEra_MVC.Controllers
             }
             else
             {
-                ViewBag.Success = result.Message;
+                TempData["InfoMessage"] = "You have been logged out successfully.";
             }
 
+            // Redirect to guest homepage to ensure user sees the guest view
             return RedirectToAction("Index", "Home");
         }
 
@@ -383,9 +382,10 @@ namespace BrainStormEra_MVC.Controllers
             }
             else
             {
-                ViewBag.Success = result.Message;
+                TempData["InfoMessage"] = "You have been logged out successfully.";
             }
 
+            // Redirect to guest homepage to ensure user sees the guest view
             return RedirectToAction("Index", "Home");
         }
 

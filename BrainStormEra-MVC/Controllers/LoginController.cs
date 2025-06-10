@@ -399,7 +399,7 @@ namespace BrainStormEra_MVC.Controllers
             TempData.Remove("SuccessMessage");
             TempData["InfoMessage"] = "You have been logged out successfully.";
 
-            // For direct GET requests, redirect to homepage
+            // Redirect to guest homepage to ensure user sees the guest view
             return RedirectToAction("Index", "Home");
         }
 
