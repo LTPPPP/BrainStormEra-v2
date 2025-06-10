@@ -75,7 +75,7 @@
             <div class="profile-header">
                 <div class="profile-banner">
                     <div class="profile-avatar-container">
-                        <img src="@Url.Action("GetAvatar", "Profile")" alt="Avatar" class="profile-avatar"
+                        <img src="@Url.Action("GetAvatar", "Auth")" alt="Avatar" class="profile-avatar"
                             onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';" />
                     </div>
                     <div class="profile-info">
@@ -84,10 +84,10 @@
                         <span class="profile-role badge badge-@(Model.Role?.ToLower())">@Model.Role</span>
                     </div>
                     <div class="profile-actions">
-                        <a href="@Url.Action("Edit", "Profile")" class="btn btn-primary">
+                        <a href="@Url.Action("EditProfile", "Auth")" class="btn btn-primary">
                             <i class="fas fa-edit"></i> Edit Profile
                         </a>
-                        <a href="@Url.Action("ChangePassword", "Profile")" class="btn btn-secondary">
+                        <a href="@Url.Action("ChangePassword", "Auth")" class="btn btn-secondary">
                             <i class="fas fa-lock"></i> Change Password
                         </a>
                     </div>

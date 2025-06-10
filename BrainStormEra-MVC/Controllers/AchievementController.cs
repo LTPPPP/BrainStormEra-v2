@@ -1,6 +1,4 @@
-using BrainStormEra_MVC.Models;
-using BrainStormEra_MVC.Models.ViewModels;
-using BrainStormEra_MVC.Services.Interfaces;
+using BrainStormEra_MVC.Services.Implementations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 
@@ -8,50 +6,51 @@ namespace BrainStormEra_MVC.Controllers
 {
     public class AchievementController : Controller
     {
-        private readonly IAchievementService _achievementService;
+        private readonly AchievementServiceImpl _achievementServiceImpl;
+        private readonly ILogger<AchievementController> _logger;
 
-        public AchievementController(IAchievementService achievementService)
+        public AchievementController(
+            AchievementServiceImpl achievementServiceImpl,
+            ILogger<AchievementController> logger)
         {
-            _achievementService = achievementService;
+            _achievementServiceImpl = achievementServiceImpl;
+            _logger = logger;
         }
         [Authorize(Roles = "Learner,learner")]
         public async Task<IActionResult> LearnerAchievements(string? search, int page = 1, int pageSize = 9)
         {
-            var userId = User?.FindFirst("UserId")?.Value;
-            if (string.IsNullOrEmpty(userId))
+            var result = await _achievementServiceImpl.GetLearnerAchievementsAsync(User, search, page, pageSize);
+
+            if (!result.IsSuccess)
             {
-                return RedirectToAction("Index", "Login");
+                if (result.RedirectToLogin)
+                {
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Handle other errors
+                TempData["ErrorMessage"] = result.ErrorMessage;
+                return View("~/Views/Achievements/LearnerAchievements.cshtml");
             }
 
-            if (page < 1) page = 1;
-            if (pageSize < 1 || pageSize > 50) pageSize = 9;
+            ViewData["UserId"] = result.UserId;
+            ViewData["HasAchievements"] = result.HasAchievements;
+            ViewData["TotalAchievements"] = result.TotalAchievements;
+            ViewData["SearchQuery"] = result.SearchQuery;
 
-            var achievementList = await _achievementService.GetUserAchievementsAsync(userId, search, page, pageSize);
-
-            ViewData["UserId"] = userId;
-            ViewData["HasAchievements"] = achievementList.HasAchievements;
-            ViewData["TotalAchievements"] = achievementList.TotalAchievements;
-            ViewData["SearchQuery"] = search;
-
-            return View("~/Views/Achievements/LearnerAchievements.cshtml", achievementList);
+            return View("~/Views/Achievements/LearnerAchievements.cshtml", result.AchievementList);
         }
-
         [HttpGet]
         public async Task<IActionResult> GetAchievementDetails(string achievementId, string userId)
         {
-            if (string.IsNullOrEmpty(achievementId) || string.IsNullOrEmpty(userId))
+            var result = await _achievementServiceImpl.GetAchievementDetailsAsync(achievementId, userId);
+
+            if (!result.IsSuccess)
             {
-                return PartialView("_AchievementDetailError", "Invalid achievement or user ID");
+                return PartialView("_AchievementDetailError", result.ErrorMessage);
             }
 
-            var achievement = await _achievementService.GetAchievementDetailAsync(achievementId, userId);
-
-            if (achievement == null)
-            {
-                return PartialView("_AchievementDetailError", "Achievement not found");
-            }
-
-            return PartialView("_AchievementDetail", achievement);
+            return PartialView("_AchievementDetail", result.Achievement);
         }
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using BrainStormEra_MVC.Services.Interfaces;
+using BrainStormEra_MVC.Services.Implementations;
 using System.Security.Claims;
 using BrainStormEra_MVC.Models.ViewModels;
 
@@ -9,41 +10,45 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class NotificationController : Controller
     {
-        private readonly INotificationService _notificationService;
+        private readonly NotificationServiceImpl _notificationServiceImpl;
+        private readonly INotificationService _notificationService; // Keep for simple operations
         private readonly ILogger<NotificationController> _logger;
 
-        public NotificationController(INotificationService notificationService, ILogger<NotificationController> logger)
+        public NotificationController(
+            NotificationServiceImpl notificationServiceImpl,
+            INotificationService notificationService,
+            ILogger<NotificationController> logger)
         {
+            _notificationServiceImpl = notificationServiceImpl;
             _notificationService = notificationService;
             _logger = logger;
-        }
-
-        // GET: Notification
+        }// GET: Notification
         public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
+            try
             {
-                return RedirectToAction("Login", "Auth");
+                var result = await _notificationServiceImpl.GetNotificationsAsync(User, page, pageSize);
+
+                if (!result.Success)
+                {
+                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
+                    {
+                        return RedirectToAction(result.RedirectAction, result.RedirectController);
+                    }
+
+                    TempData["ErrorMessage"] = result.ErrorMessage ?? "Failed to load notifications.";
+                    return View(new NotificationIndexViewModel());
+                }
+
+                return View(result.ViewModel);
             }
-
-            // Get all notifications (received + created by user)
-            var notifications = await _notificationService.GetAllNotificationsForUserAsync(userId, page, pageSize);
-            var unreadCount = await _notificationService.GetUnreadNotificationCountAsync(userId);
-
-            var viewModel = new NotificationIndexViewModel
+            catch (Exception ex)
             {
-                Notifications = notifications,
-                UnreadCount = unreadCount,
-                CurrentPage = page,
-                PageSize = pageSize,
-                CurrentUserId = userId // Add this to identify which notifications user can edit
-            };
-
-            return View(viewModel);
-        }
-
-        // GET: Get notifications as JSON for AJAX requests
+                _logger.LogError(ex, "Error loading notifications");
+                TempData["ErrorMessage"] = "An error occurred while loading notifications.";
+                return View(new NotificationIndexViewModel());
+            }
+        }        // GET: Get notifications as JSON for AJAX requests
         [HttpGet]
         public async Task<IActionResult> GetNotifications(int page = 1, int pageSize = 10)
         {
@@ -65,9 +70,7 @@ namespace BrainStormEra_MVC.Controllers
                 createdAt = n.NotificationCreatedAt,
                 readAt = n.ReadAt
             }));
-        }
-
-        // GET: Get unread notification count
+        }        // GET: Get unread notification count
         [HttpGet]
         public async Task<IActionResult> GetUnreadCount()
         {
@@ -85,42 +88,46 @@ namespace BrainStormEra_MVC.Controllers
         [HttpPost]
         public async Task<IActionResult> MarkAsRead(string notificationId)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
+            try
             {
-                return Unauthorized();
+                var result = await _notificationServiceImpl.MarkAsReadAsync(User, notificationId);
+                return Json(new { success = result.Success, message = result.Message });
             }
-
-            await _notificationService.MarkAsReadAsync(notificationId, userId);
-            return Json(new { success = true });
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error marking notification as read");
+                return Json(new { success = false, message = "An error occurred" });
+            }
         }
 
         // POST: Mark all notifications as read
         [HttpPost]
         public async Task<IActionResult> MarkAllAsRead()
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
+            try
             {
-                return Unauthorized();
+                var result = await _notificationServiceImpl.MarkAllAsReadAsync(User);
+                return Json(new { success = result.Success, message = result.Message });
             }
-
-            await _notificationService.MarkAllAsReadAsync(userId);
-            return Json(new { success = true });
-        }
-
-        // POST: Delete notification
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error marking all notifications as read");
+                return Json(new { success = false, message = "An error occurred" });
+            }
+        }        // POST: Delete notification
         [HttpPost]
         public async Task<IActionResult> Delete(string notificationId)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
+            try
             {
-                return Unauthorized();
+                var result = await _notificationServiceImpl.DeleteNotificationAsync(User, notificationId);
+                return Json(new { success = result.Success, message = result.Message });
             }
-
-            await _notificationService.DeleteNotificationAsync(notificationId, userId);
-            return Json(new { success = true });
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting notification");
+                return Json(new { success = false, message = "An error occurred" });
+            }
         }
 
         // POST: Send notification to user (admin only)
@@ -161,172 +168,184 @@ namespace BrainStormEra_MVC.Controllers
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var success = await _notificationService.SendToAllAsync(title, content, type, currentUserId);
             return Json(new { success = success });
-        }
-
-        // GET: Create notification page (admin and instructor only)
+        }        // GET: Create notification page (admin and instructor only)
         [HttpGet]
         [Authorize(Roles = "admin,instructor")]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            var viewModel = new NotificationCreateViewModel();
-
-            // If user is instructor, get their courses for course-specific notifications
-            if (User.IsInRole("instructor"))
+            try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (userId != null)
+                var result = await _notificationServiceImpl.GetCreateNotificationViewModelAsync(User);
+
+                if (!result.Success)
                 {
-                    // Get instructor's courses - you may need to inject CourseService here
-                    ViewBag.UserCourses = new List<object>(); // Placeholder - implement course fetching
+                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
+                    {
+                        return RedirectToAction(result.RedirectAction, result.RedirectController);
+                    }
+                    TempData["ErrorMessage"] = result.ErrorMessage;
+                    return RedirectToAction("Index");
                 }
+
+                return View(result.ViewModel);
             }
-
-            return View(viewModel);
-        }
-
-        // POST: Create notification
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading create notification page");
+                TempData["ErrorMessage"] = "An error occurred while loading the create notification page.";
+                return RedirectToAction("Index");
+            }
+        }        // POST: Create notification
         [HttpPost]
         [Authorize(Roles = "admin,instructor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(NotificationCreateViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
             try
             {
-                bool success = false;
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var result = await _notificationServiceImpl.CreateNotificationAsync(User, model);
 
-                switch (model.TargetType)
+                if (result.Success)
                 {
-                    case NotificationTargetType.User:
-                        if (!string.IsNullOrEmpty(model.TargetUserId))
-                        {
-                            success = await _notificationService.SendToUserAsync(model.TargetUserId, model.Title, model.Content, model.Type, model.CourseId, userId);
-                        }
-                        break;
+                    if (!string.IsNullOrEmpty(result.SuccessMessage))
+                    {
+                        TempData["SuccessMessage"] = result.SuccessMessage;
+                    }
 
-                    case NotificationTargetType.Course:
-                        if (!string.IsNullOrEmpty(model.CourseId))
-                        {
-                            success = await _notificationService.SendToCourseAsync(model.CourseId, model.Title, model.Content, model.Type, userId, userId);
-                        }
-                        break;
+                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
+                    {
+                        return RedirectToAction(result.RedirectAction, result.RedirectController);
+                    }
 
-                    case NotificationTargetType.Role:
-                        if (User.IsInRole("admin") && !string.IsNullOrEmpty(model.TargetRole))
-                        {
-                            success = await _notificationService.SendToRoleAsync(model.TargetRole, model.Title, model.Content, model.Type, userId);
-                        }
-                        break;
-
-                    case NotificationTargetType.All:
-                        if (User.IsInRole("admin"))
-                        {
-                            success = await _notificationService.SendToAllAsync(model.Title, model.Content, model.Type, userId);
-                        }
-                        break;
-                }
-
-                if (success)
-                {
-                    TempData["SuccessMessage"] = "Notification sent successfully!";
                     return RedirectToAction("Index");
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "Failed to send notification. Please try again.";
+                    if (!string.IsNullOrEmpty(result.ErrorMessage))
+                    {
+                        TempData["ErrorMessage"] = result.ErrorMessage;
+                    }
+
+                    if (result.ValidationErrors != null)
+                    {
+                        foreach (var error in result.ValidationErrors)
+                        {
+                            foreach (var message in error.Value)
+                            {
+                                ModelState.AddModelError(error.Key, message);
+                            }
+                        }
+                    }
+
+                    if (result.ReturnView && result.ViewModel != null)
+                    {
+                        return View(result.ViewModel);
+                    }
+
+                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
+                    {
+                        return RedirectToAction(result.RedirectAction, result.RedirectController);
+                    }
                 }
+
+                return View(model);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating notification");
-                TempData["ErrorMessage"] = "An error occurred while sending the notification.";
+                TempData["ErrorMessage"] = "An error occurred while creating the notification.";
+                return View(model);
             }
-
-            return View(model);
-        }
-
-        // GET: Edit notification (for creators only)
+        }        // GET: Edit notification (for creators only)
         [HttpGet]
         [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> Edit(string id)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
+            try
             {
-                return RedirectToAction("Login", "Auth");
-            }
+                var result = await _notificationServiceImpl.GetNotificationForEditAsync(User, id);
 
-            var notification = await _notificationService.GetNotificationForEditAsync(id, userId);
-            if (notification == null)
+                if (!result.Success)
+                {
+                    TempData["ErrorMessage"] = result.ErrorMessage ?? "Notification not found or you don't have permission to edit it.";
+
+                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
+                    {
+                        return RedirectToAction(result.RedirectAction, result.RedirectController);
+                    }
+
+                    return RedirectToAction("Index");
+                }
+
+                return View(result.ViewModel);
+            }
+            catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Notification not found or you don't have permission to edit it.";
+                _logger.LogError(ex, "Error loading edit notification page");
+                TempData["ErrorMessage"] = "An error occurred while loading the edit notification page.";
                 return RedirectToAction("Index");
             }
-
-            var viewModel = new NotificationEditViewModel
-            {
-                NotificationId = notification.NotificationId,
-                Title = notification.NotificationTitle,
-                Content = notification.NotificationContent,
-                Type = notification.NotificationType,
-                CourseId = notification.CourseId,
-                RecipientUserName = notification.User?.Username ?? "Unknown User",
-                CourseName = notification.Course?.CourseName,
-                CreatedAt = notification.NotificationCreatedAt
-            };
-
-            return View(viewModel);
-        }
-
-        // POST: Edit notification
+        }        // POST: Edit notification
         [HttpPost]
         [Authorize(Roles = "admin,instructor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(NotificationEditViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
-            {
-                return RedirectToAction("Login", "Auth");
-            }
-
             try
             {
-                var success = await _notificationService.UpdateNotificationAsync(
-                    model.NotificationId,
-                    userId,
-                    model.Title,
-                    model.Content,
-                    model.Type
-                );
+                var result = await _notificationServiceImpl.UpdateNotificationAsync(User, model.NotificationId, model);
 
-                if (success)
+                if (result.Success)
                 {
-                    TempData["SuccessMessage"] = "Notification updated successfully!";
+                    if (!string.IsNullOrEmpty(result.SuccessMessage))
+                    {
+                        TempData["SuccessMessage"] = result.SuccessMessage;
+                    }
+
+                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
+                    {
+                        return RedirectToAction(result.RedirectAction, result.RedirectController);
+                    }
+
                     return RedirectToAction("Index");
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "Failed to update notification. You may not have permission or the notification may not exist.";
+                    if (!string.IsNullOrEmpty(result.ErrorMessage))
+                    {
+                        TempData["ErrorMessage"] = result.ErrorMessage;
+                    }
+
+                    if (result.ValidationErrors != null)
+                    {
+                        foreach (var error in result.ValidationErrors)
+                        {
+                            foreach (var message in error.Value)
+                            {
+                                ModelState.AddModelError(error.Key, message);
+                            }
+                        }
+                    }
+
+                    if (result.ReturnView && result.ViewModel != null)
+                    {
+                        return View(result.ViewModel);
+                    }
+
+                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
+                    {
+                        return RedirectToAction(result.RedirectAction, result.RedirectController);
+                    }
                 }
+
+                return View(model);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating notification");
                 TempData["ErrorMessage"] = "An error occurred while updating the notification.";
+                return View(model);
             }
-
-            return View(model);
         }
 
     }

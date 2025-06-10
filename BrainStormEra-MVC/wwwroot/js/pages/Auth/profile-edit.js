@@ -406,7 +406,7 @@ function showNotification(message, type = "info") {
 }
 
 function deleteAvatar() {
-  fetch("/Profile/DeleteAvatar", {
+  fetch("/Auth/DeleteAvatar", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -448,7 +448,6 @@ function deleteAvatar() {
       }
     })
     .catch((error) => {
-
       showNotification("An error occurred while deleting avatar", "error");
     });
 }

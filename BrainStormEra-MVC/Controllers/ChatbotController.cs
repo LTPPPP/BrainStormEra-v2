@@ -1,4 +1,5 @@
 using BrainStormEra_MVC.Services.Interfaces;
+using BrainStormEra_MVC.Services.Implementations;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -9,16 +10,16 @@ namespace BrainStormEra_MVC.Controllers
     public class ChatbotController : ControllerBase
     {
         private readonly IChatbotService _chatbotService;
-        private readonly IPageContextService _pageContextService;
+        private readonly ChatbotServiceImpl _chatbotServiceImpl;
         private readonly ILogger<ChatbotController> _logger;
 
         public ChatbotController(
             IChatbotService chatbotService,
-            IPageContextService pageContextService,
+            ChatbotServiceImpl chatbotServiceImpl,
             ILogger<ChatbotController> logger)
         {
             _chatbotService = chatbotService;
-            _pageContextService = pageContextService;
+            _chatbotServiceImpl = chatbotServiceImpl;
             _logger = logger;
         }
 
@@ -27,42 +28,42 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(request.Message))
-                {
-                    return BadRequest(new { error = "Message is required" });
-                }
-                var userId = User.FindFirst("UserId")?.Value;
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized(new { error = "User not authenticated" });
-                }
-
-                // Enhanced context with page information
-                var enhancedContext = request.Context;
-                if (!string.IsNullOrEmpty(request.PagePath))
-                {
-                    var pageContext = await _pageContextService.GetPageContextAsync(
-                        request.PagePath,
-                        request.CourseId,
-                        request.ChapterId,
-                        request.LessonId
-                    );
-
-                    enhancedContext = string.IsNullOrEmpty(enhancedContext)
-                        ? pageContext
-                        : $"{request.Context}. {pageContext}";
-                }
-
-                var response = await _chatbotService.GetResponseAsync(
+                var result = await _chatbotServiceImpl.ProcessChatAsync(
                     request.Message,
-                    userId,
-                    enhancedContext
+                    request.Context,
+                    request.PagePath,
+                    request.CourseId,
+                    request.ChapterId,
+                    request.LessonId
                 );
+
+                if (!result.IsSuccess)
+                {
+                    if (result.ValidationErrors.Any())
+                    {
+                        return BadRequest(new
+                        {
+                            error = "Validation failed",
+                            errors = result.ValidationErrors
+                        });
+                    }
+
+                    if (!string.IsNullOrEmpty(result.ErrorMessage))
+                    {
+                        if (result.ErrorMessage.Contains("not authenticated"))
+                        {
+                            return Unauthorized(new { error = result.ErrorMessage });
+                        }
+                        return StatusCode(500, new { error = result.ErrorMessage });
+                    }
+
+                    return BadRequest(new { error = "Failed to process chat request" });
+                }
 
                 return Ok(new ChatResponse
                 {
-                    Message = response,
-                    Timestamp = DateTime.Now
+                    Message = result.BotResponse ?? "",
+                    Timestamp = result.Timestamp ?? DateTime.Now
                 });
             }
             catch (Exception ex)
@@ -77,15 +78,32 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var userId = User.FindFirst("UserId")?.Value;
-                if (string.IsNullOrEmpty(userId))
+                var result = await _chatbotServiceImpl.GetConversationHistoryAsync(limit);
+
+                if (!result.IsSuccess)
                 {
-                    return Unauthorized(new { error = "User not authenticated" });
+                    if (result.ValidationErrors.Any())
+                    {
+                        return BadRequest(new
+                        {
+                            error = "Validation failed",
+                            errors = result.ValidationErrors
+                        });
+                    }
+
+                    if (!string.IsNullOrEmpty(result.ErrorMessage))
+                    {
+                        if (result.ErrorMessage.Contains("not authenticated"))
+                        {
+                            return Unauthorized(new { error = result.ErrorMessage });
+                        }
+                        return StatusCode(500, new { error = result.ErrorMessage });
+                    }
+
+                    return BadRequest(new { error = "Failed to retrieve conversation history" });
                 }
 
-                var history = await _chatbotService.GetConversationHistoryAsync(userId, limit);
-
-                var formattedHistory = history.Select(h => new
+                var formattedHistory = result.Conversations.Select(h => new
                 {
                     Id = h.ConversationId,
                     UserMessage = h.UserMessage,
@@ -108,21 +126,36 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                if (string.IsNullOrEmpty(request.ConversationId) || request.Rating < 1 || request.Rating > 5)
+                var result = await _chatbotServiceImpl.SubmitFeedbackAsync(request.ConversationId, request.Rating);
+
+                if (!result.IsSuccess)
                 {
-                    return BadRequest(new { error = "Invalid request data" });
+                    if (result.ValidationErrors.Any())
+                    {
+                        return BadRequest(new
+                        {
+                            error = "Invalid request data",
+                            errors = result.ValidationErrors
+                        });
+                    }
+
+                    if (!string.IsNullOrEmpty(result.ErrorMessage))
+                    {
+                        if (result.ErrorMessage.Contains("not authenticated"))
+                        {
+                            return Unauthorized(new { error = result.ErrorMessage });
+                        }
+                        if (result.ErrorMessage.Contains("not found"))
+                        {
+                            return NotFound(new { error = result.ErrorMessage });
+                        }
+                        return StatusCode(500, new { error = result.ErrorMessage });
+                    }
+
+                    return BadRequest(new { error = "Failed to submit feedback" });
                 }
 
-                var success = await _chatbotService.RateFeedbackAsync(request.ConversationId, (byte)request.Rating);
-
-                if (success)
-                {
-                    return Ok(new { message = "Feedback submitted successfully" });
-                }
-                else
-                {
-                    return NotFound(new { error = "Conversation not found" });
-                }
+                return Ok(new { message = result.Message });
             }
             catch (Exception ex)
             {

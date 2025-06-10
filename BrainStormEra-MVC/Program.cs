@@ -15,6 +15,9 @@ namespace BrainStormEra_MVC
             // Add services to the container.
             builder.Services.AddControllersWithViews();
 
+            // Add HttpContextAccessor for services that need access to HTTP context
+            builder.Services.AddHttpContextAccessor();
+
             // Add Response Compression for better performance
             builder.Services.AddResponseCompression(options =>
             {
@@ -39,8 +42,42 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IUserService, BrainStormEra_MVC.Services.UserService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseService, BrainStormEra_MVC.Services.CourseService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseRepository, BrainStormEra_MVC.Services.Repositories.CourseRepository>();
+
+            // Register Course Service Implementation for business logic layer
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.CourseServiceImpl>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IChapterService, BrainStormEra_MVC.Services.ChapterService>();
+
+            // Register Chapter Service Implementation for business logic layer
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.ChapterServiceImpl>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ILessonService, BrainStormEra_MVC.Services.LessonService>();
+
+            // Register Lesson Service Implementation for business logic layer
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.LessonServiceImpl>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IQuestionService, BrainStormEra_MVC.Services.QuestionService>();
+
+            // Register Question Service Implementation for business logic layer  
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.QuestionServiceImpl>();
+
+            // Register Achievement Service Implementation for business logic layer
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.AchievementServiceImpl>();
+
+            // Register Certificate Service Implementation for business logic layer
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.CertificateServiceImpl>();
+
+            // Register Notification Service Implementation for business logic layer
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.NotificationServiceImpl>();
+
+            // Register Auth Service Implementation for business logic layer
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.AuthServiceImpl>();
+
+            // Register Home Services for data access and business logic
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.HomeService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.HomeServiceImpl>();
+
+            // Register Admin Services for data access and business logic
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.AdminService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.AdminServiceImpl>();
+
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IEnrollmentService, BrainStormEra_MVC.Services.EnrollmentService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAchievementService, BrainStormEra_MVC.Services.AchievementService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAchievementRepository, BrainStormEra_MVC.Services.Repositories.AchievementRepository>();
@@ -61,6 +98,9 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IPageContextService, BrainStormEra_MVC.Services.PageContextService>();
             builder.Services.AddHttpClient<BrainStormEra_MVC.Services.ChatbotService>();
 
+            // Register Chatbot Service Implementation for business logic layer
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.ChatbotServiceImpl>();
+
             // Seed services
             builder.Services.AddScoped<BrainStormEra_MVC.Services.CategorySeedService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.StatusSeedService>();
@@ -70,9 +110,9 @@ namespace BrainStormEra_MVC
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
                 {
-                    options.LoginPath = "/Login/Index";
-                    options.LogoutPath = "/Login/Logout";
-                    options.AccessDeniedPath = "/Login/Index";
+                    options.LoginPath = "/Auth/Login";
+                    options.LogoutPath = "/Auth/Logout";
+                    options.AccessDeniedPath = "/Auth/AccessDenied";
                     options.ExpireTimeSpan = TimeSpan.FromDays(1);
                     options.SlidingExpiration = true;
                     options.Cookie.Name = "BrainStormEraAuth";

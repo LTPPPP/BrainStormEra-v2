@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using BrainStormEra_MVC.Models;
 using BrainStormEra_MVC.Models.ViewModels;
+using BrainStormEra_MVC.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 
 namespace BrainStormEra_MVC.Controllers
@@ -11,102 +12,47 @@ namespace BrainStormEra_MVC.Controllers
     {
         private readonly BrainStormEraContext _context;
         private readonly ILogger<AdminController> _logger;
+        private readonly AdminServiceImpl _adminService;
 
-        public AdminController(BrainStormEraContext context, ILogger<AdminController> logger)
+        public AdminController(BrainStormEraContext context, ILogger<AdminController> logger, AdminServiceImpl adminService)
         {
             _context = context;
             _logger = logger;
+            _adminService = adminService;
         }
 
         [HttpGet]
-        public IActionResult AdminDashboard()
+        public async Task<IActionResult> AdminDashboard()
         {
-            // Check if user is authenticated and is an admin
-            if (User.Identity?.IsAuthenticated != true)
-            {
-                TempData["ErrorMessage"] = "You must be logged in to access the admin dashboard.";
-                return RedirectToAction("Index", "Login");
-            }
-            var userRole = User?.FindFirst("UserRole")?.Value ?? ""; if (!string.Equals(userRole, "Admin", StringComparison.OrdinalIgnoreCase))
-            {
-                TempData["ErrorMessage"] = "Access denied. You don't have permission to access the admin dashboard.";
-                return RedirectToUserDashboard();
-            }
-
-            var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                TempData["ErrorMessage"] = "Invalid user session. Please log in again.";
-                return RedirectToAction("Index", "Login");
-            }
-
             try
             {
-                // Get admin details
-                var admin = _context.Accounts
-                    .AsNoTracking()
-                    .FirstOrDefault(a => a.UserId == userId);
+                var result = await _adminService.GetAdminDashboardAsync(User);
 
-                if (admin == null)
+                if (!result.IsSuccess)
                 {
-                    TempData["ErrorMessage"] = "Admin account not found. Please log in again.";
-                    return RedirectToAction("Index", "Login");
+                    TempData["ErrorMessage"] = result.Message;
+
+                    // Check if it's an authentication issue
+                    if (result.Message.Contains("not authenticated") || result.Message.Contains("not found"))
+                    {
+                        return RedirectToAction("Index", "Login");
+                    }
+
+                    // Check if it's an authorization issue
+                    if (result.Message.Contains("Access denied"))
+                    {
+                        return RedirectToUserDashboard();
+                    }
+
+                    return RedirectToAction("Index", "Home");
                 }
 
-                // Get statistics for admin dashboard
-                var totalUsers = _context.Accounts.Count();
-                var totalCourses = _context.Courses.Count();
-                var totalEnrollments = _context.Enrollments.Count(); var totalRevenue = _context.PaymentTransactions
-                    .Where(pt => pt.TransactionStatus == "Success")
-                    .Sum(pt => pt.Amount);
-
-                var recentUsers = _context.Accounts
-                    .OrderByDescending(a => a.AccountCreatedAt)
-                    .Take(5)
-                    .ToList();
-
-                var recentCourses = _context.Courses
-                    .Include(c => c.Author)
-                    .OrderByDescending(c => c.CourseCreatedAt)
-                    .Take(5)
-                    .ToList();
-
-                // Create the admin dashboard view model
-                var viewModel = new AdminDashboardViewModel
-                {
-                    AdminName = admin.FullName ?? admin.Username,
-                    AdminImage = admin.UserImage ?? "/img/defaults/default-avatar.svg",
-                    TotalUsers = totalUsers,
-                    TotalCourses = totalCourses,
-                    TotalEnrollments = totalEnrollments,
-                    TotalRevenue = totalRevenue,
-                    RecentUsers = recentUsers.Select(u => new UserViewModel
-                    {
-                        UserId = u.UserId,
-                        Username = u.Username,
-                        FullName = u.FullName ?? u.Username,
-                        UserEmail = u.UserEmail,
-                        UserRole = u.UserRole,
-                        AccountCreatedAt = u.AccountCreatedAt,
-                        IsBanned = u.IsBanned ?? false
-                    }).ToList(),
-                    RecentCourses = recentCourses.Select(c => new CourseViewModel
-                    {
-                        CourseId = c.CourseId,
-                        CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
-                        Price = c.Price,
-                        CreatedBy = c.Author.FullName ?? c.Author.Username,
-                        Description = c.CourseDescription
-                    }).ToList()
-                };
-
-                return View(viewModel);
+                return View(result.Data);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading admin dashboard for user ID: {UserId}", userId);
-                TempData["ErrorMessage"] = "An error occurred while loading the dashboard. Please try again.";
+                _logger.LogError(ex, "Unexpected error in AdminDashboard action");
+                TempData["ErrorMessage"] = "An unexpected error occurred while loading the dashboard.";
                 return RedirectToAction("Index", "Home");
             }
         }        // Helper method to redirect user to appropriate dashboard based on role

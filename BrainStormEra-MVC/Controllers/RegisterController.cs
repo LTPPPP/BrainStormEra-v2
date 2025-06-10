@@ -61,7 +61,7 @@ namespace BrainStormEra_MVC.Controllers
                 var account = new Account
                 {
                     UserId = Guid.NewGuid().ToString(),
-                    UserRole = "Learner", // Default role for new registrations
+                    UserRole = "learner", // Default role for new registrations
                     Username = model.Username,
                     PasswordHash = PasswordHasher.HashPassword(model.Password),
                     UserEmail = model.Email,
