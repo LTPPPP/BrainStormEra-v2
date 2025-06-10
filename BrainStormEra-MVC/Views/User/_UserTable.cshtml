@@ -41,7 +41,7 @@
                             <tr>
                                 <td>                                    <div class="d-flex align-items-center user-details">
                                         <div class="user-avatar me-3">
-                                            <img src="@Url.Action("GetAvatar", "Profile", new { userId = user.UserId })" 
+                                            <img src="@Url.Action("GetAvatar", "Auth", new { userId = user.UserId })" 
                                                  alt="@user.FullName" class="rounded-circle" width="40" height="40"
                                                  onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
                                         </div>                                        <div>

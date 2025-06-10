@@ -1,31 +1,22 @@
-using System.Security.Claims;
-using BrainStormEra_MVC.Models;
 using BrainStormEra_MVC.Models.ViewModels;
-using BrainStormEra_MVC.Services.Interfaces;
+using BrainStormEra_MVC.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace BrainStormEra_MVC.Controllers
 {
     [Authorize]
     public class ProfileController : BaseController
     {
-        private readonly BrainStormEraContext _context;
+        private readonly AuthServiceImpl _authServiceImpl;
         private readonly ILogger<ProfileController> _logger;
-        private readonly IUserService _userService;
-        private readonly IAvatarService _avatarService;
 
         public ProfileController(
-            BrainStormEraContext context,
-            ILogger<ProfileController> logger,
-            IUserService userService,
-            IAvatarService avatarService)
+            AuthServiceImpl authServiceImpl,
+            ILogger<ProfileController> logger)
         {
-            _context = context;
+            _authServiceImpl = authServiceImpl;
             _logger = logger;
-            _userService = userService;
-            _avatarService = avatarService;
         }
 
         [HttpGet]
@@ -40,84 +31,15 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                // Get user data from database
-                var user = await _context.Accounts
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(a => a.UserId == userId);
+                var result = await _authServiceImpl.GetProfileViewModelAsync(userId, CurrentUserRole ?? "");
 
-                if (user == null)
+                if (!result.Success)
                 {
-                    TempData["ErrorMessage"] = "User profile not found.";
-                    return RedirectToAction("Index", "Login");
+                    TempData["ErrorMessage"] = result.ErrorMessage;
+                    return RedirectToAction("Index", "Home");
                 }
 
-                // Get user statistics based on role
-                var enrolledCoursesCount = 0;
-                var completedCoursesCount = 0;
-                var createdCoursesCount = 0;
-                var totalStudentsCount = 0;
-
-                if (IsLearner)
-                {
-                    enrolledCoursesCount = await _context.Enrollments
-                        .CountAsync(e => e.UserId == userId);
-
-                    completedCoursesCount = await _context.Enrollments
-                        .CountAsync(e => e.UserId == userId && e.ProgressPercentage >= 100);
-                }
-                else if (IsInstructor)
-                {
-                    createdCoursesCount = await _context.Courses
-                        .CountAsync(c => c.AuthorId == userId);
-
-                    totalStudentsCount = await _context.Enrollments
-                        .Where(e => e.Course.AuthorId == userId)
-                        .CountAsync();
-                }                // Get additional statistics
-                var certificatesCount = await _context.Certificates
-                    .CountAsync(c => c.UserId == userId);
-
-                var achievementsCount = await _context.UserAchievements
-                    .CountAsync(ua => ua.UserId == userId);
-
-                var inProgressCoursesCount = await _context.Enrollments
-                    .CountAsync(e => e.UserId == userId && e.ProgressPercentage > 0 && e.ProgressPercentage < 100);
-
-                // Convert gender short to string
-                string genderString = user.Gender switch
-                {
-                    1 => "Male",
-                    2 => "Female",
-                    3 => "Other",
-                    _ => null
-                }; var viewModel = new UserProfileViewModel
-                {
-                    UserId = user.UserId,
-                    Username = user.Username ?? "",
-                    FullName = user.FullName ?? "",
-                    Email = user.UserEmail ?? "",
-                    PhoneNumber = user.PhoneNumber ?? "",
-                    UserAddress = user.UserAddress ?? "",
-                    DateOfBirth = user.DateOfBirth?.ToDateTime(TimeOnly.MinValue),
-                    Gender = genderString ?? "",
-                    UserImage = user.UserImage ?? "",
-                    Role = CurrentUserRole ?? "",
-                    CreatedAt = user.AccountCreatedAt,
-
-                    // Bank Information
-                    BankAccountNumber = user.BankAccountNumber ?? "",
-                    BankName = user.BankName ?? "",
-                    AccountHolderName = user.AccountHolderName ?? "",
-
-                    // Statistics
-                    TotalCourses = IsLearner ? enrolledCoursesCount : createdCoursesCount,
-                    CompletedCourses = completedCoursesCount,
-                    InProgressCourses = inProgressCoursesCount,
-                    CertificatesEarned = certificatesCount,
-                    TotalAchievements = achievementsCount
-                };
-
-                return View("~/Views/Profile/Index.cshtml", viewModel);
+                return View("~/Views/Profile/Index.cshtml", result.ViewModel);
             }
             catch (Exception ex)
             {
@@ -139,36 +61,15 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                var user = await _context.Accounts
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(a => a.UserId == userId);
+                var result = await _authServiceImpl.GetEditProfileViewModelAsync(userId);
 
-                if (user == null)
+                if (!result.Success)
                 {
-                    TempData["ErrorMessage"] = "User profile not found.";
-                    return RedirectToAction("Index", "Login");
-                }                // Convert gender short to string
-                string genderString = user.Gender switch
-                {
-                    1 => "Nam",
-                    2 => "Nữ",
-                    3 => "Khác",
-                    _ => null
-                }; var viewModel = new EditProfileViewModel
-                {
-                    FullName = user.FullName ?? "",
-                    Email = user.UserEmail ?? "",
-                    PhoneNumber = user.PhoneNumber ?? "",
-                    UserAddress = user.UserAddress ?? "",
-                    DateOfBirth = user.DateOfBirth?.ToDateTime(TimeOnly.MinValue),
-                    Gender = genderString ?? "",
-                    BankAccountNumber = user.BankAccountNumber ?? "",
-                    BankName = user.BankName ?? "",
-                    AccountHolderName = user.AccountHolderName ?? "",
-                    CurrentImagePath = user.UserImage ?? ""
-                };
+                    TempData["ErrorMessage"] = result.ErrorMessage;
+                    return RedirectToAction("Index");
+                }
 
-                return View("~/Views/Profile/Edit.cshtml", viewModel);
+                return View("~/Views/Profile/Edit.cshtml", result.ViewModel);
             }
             catch (Exception ex)
             {
@@ -196,58 +97,20 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                var user = await _context.Accounts
-                    .FirstOrDefaultAsync(a => a.UserId == userId);
+                var result = await _authServiceImpl.UpdateProfileAsync(userId, model);
 
-                if (user == null)
+                if (!result.Success)
                 {
-                    TempData["ErrorMessage"] = "User profile not found.";
-                    return RedirectToAction("Index", "Login");
-                }                // Update user information
-                user.FullName = model.FullName;
-                user.PhoneNumber = model.PhoneNumber;
-                user.UserAddress = model.UserAddress;
-                user.DateOfBirth = model.DateOfBirth.HasValue ? DateOnly.FromDateTime(model.DateOfBirth.Value) : null;
-
-                // Update bank information
-                user.BankAccountNumber = model.BankAccountNumber;
-                user.BankName = model.BankName;
-                user.AccountHolderName = model.AccountHolderName;
-
-                // Convert gender string to short
-                user.Gender = model.Gender switch
-                {
-                    "Nam" => 1,
-                    "Nữ" => 2,
-                    "Khác" => 3,
-                    _ => null
-                };
-
-                user.AccountUpdatedAt = DateTime.UtcNow;
-
-                // Handle profile image upload if provided
-                if (model.ProfileImage != null && model.ProfileImage.Length > 0)
-                {
-                    // Delete old avatar before uploading new one
-                    if (!string.IsNullOrEmpty(user.UserImage))
-                    {
-                        await _avatarService.DeleteAvatarAsync(user.UserImage);
-                    }
-
-                    var uploadResult = await _avatarService.UploadAvatarAsync(model.ProfileImage, userId);
-                    if (uploadResult.Success)
-                    {
-                        user.UserImage = uploadResult.ImagePath;
-                    }
-                    else
-                    {
-                        TempData["WarningMessage"] = uploadResult.ErrorMessage ?? "Failed to upload profile image.";
-                    }
+                    TempData["ErrorMessage"] = result.ErrorMessage;
+                    return View("~/Views/Profile/Edit.cshtml", result.ViewModel);
                 }
 
-                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = result.SuccessMessage;
+                if (!string.IsNullOrEmpty(result.WarningMessage))
+                {
+                    TempData["WarningMessage"] = result.WarningMessage;
+                }
 
-                TempData["SuccessMessage"] = "Your profile has been updated successfully.";
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
@@ -282,29 +145,22 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                var user = await _context.Accounts
-                    .FirstOrDefaultAsync(a => a.UserId == userId);
+                var result = await _authServiceImpl.ChangePasswordAsync(userId, model);
 
-                if (user == null)
+                if (!result.Success)
                 {
-                    TempData["ErrorMessage"] = "User account not found.";
-                    return RedirectToAction("Index", "Login");
+                    if (!string.IsNullOrEmpty(result.ValidationError) && !string.IsNullOrEmpty(result.ErrorMessage))
+                    {
+                        ModelState.AddModelError(result.ValidationError, result.ErrorMessage);
+                    }
+                    else
+                    {
+                        TempData["ErrorMessage"] = result.ErrorMessage;
+                    }
+                    return View("~/Views/Profile/ChangePassword.cshtml", result.ViewModel);
                 }
 
-                // Verify current password
-                if (!await _userService.VerifyPasswordAsync(model.CurrentPassword, user.PasswordHash))
-                {
-                    ModelState.AddModelError("CurrentPassword", "Current password is incorrect.");
-                    return View("~/Views/Profile/ChangePassword.cshtml", model);
-                }
-
-                // Update password
-                user.PasswordHash = Utilities.PasswordHasher.HashPassword(model.NewPassword);
-                user.AccountUpdatedAt = DateTime.UtcNow;
-
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = "Your password has been changed successfully.";
+                TempData["SuccessMessage"] = result.SuccessMessage;
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
@@ -321,30 +177,15 @@ namespace BrainStormEra_MVC.Controllers
             try
             {
                 var targetUserId = userId ?? CurrentUserId;
-                if (string.IsNullOrEmpty(targetUserId))
-                {
-                    return File(_avatarService.GetDefaultAvatarBytes(), "image/svg+xml");
-                }
+                var result = await _authServiceImpl.GetUserAvatarAsync(targetUserId);
 
-                var user = await _context.Accounts
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(a => a.UserId == targetUserId);
-
-                if (user?.UserImage == null || !_avatarService.AvatarExists(user.UserImage))
-                {
-                    return File(_avatarService.GetDefaultAvatarBytes(), "image/svg+xml");
-                }
-
-                var imagePath = Path.Combine("wwwroot", "img", "profiles", user.UserImage);
-                var contentType = _avatarService.GetImageContentType(user.UserImage);
-                var imageBytes = await System.IO.File.ReadAllBytesAsync(imagePath);
-
-                return File(imageBytes, contentType);
+                return File(result.ImageBytes, result.ContentType);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving avatar for user: {UserId}", userId);
-                return File(_avatarService.GetDefaultAvatarBytes(), "image/svg+xml");
+                var defaultResult = await _authServiceImpl.GetUserAvatarAsync(null);
+                return File(defaultResult.ImageBytes, defaultResult.ContentType);
             }
         }
 
@@ -360,21 +201,9 @@ namespace BrainStormEra_MVC.Controllers
                     return Json(new { success = false, message = "User not authenticated" });
                 }
 
-                var user = await _context.Accounts.FindAsync(userId);
-                if (user == null)
-                {
-                    return Json(new { success = false, message = "User not found" });
-                }
+                var result = await _authServiceImpl.DeleteUserAvatarAsync(userId);
 
-                if (!string.IsNullOrEmpty(user.UserImage))
-                {
-                    await _avatarService.DeleteAvatarAsync(user.UserImage);
-                    user.UserImage = null;
-                    user.AccountUpdatedAt = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
-                }
-
-                return Json(new { success = true, message = "Avatar deleted successfully" });
+                return Json(new { success = result.Success, message = result.Message });
             }
             catch (Exception ex)
             {

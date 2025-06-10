@@ -74,7 +74,7 @@
                     <div class="row align-items-center">
                         <div class="col-auto">
                             <div class="user-avatar">
-                                <img src="@Url.Action("GetAvatar", "Profile", new { userId = Model.UserId })"
+                                <img src="@Url.Action("GetAvatar", "Auth", new { userId = Model.UserId })"
                                     alt="@Model.FullName" class="rounded-circle"
                                     style="width: 80px; height: 80px; object-fit: cover;"
                                     onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
