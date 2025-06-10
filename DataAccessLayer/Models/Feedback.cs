@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace BrainStormEra_MVC.Models;
+namespace DataAccessLayer.Models;
 
 public partial class Feedback
 {

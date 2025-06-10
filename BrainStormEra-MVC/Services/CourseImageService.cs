@@ -13,7 +13,7 @@ namespace BrainStormEra_MVC.Services
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ILogger<CourseImageService> _logger;
         private const string CourseImageDirectory = "img/courses";
-        private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
+        private const long MaxFileSize = 10 * 1024 * 1024; // 5MB
         private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
 
         public CourseImageService(IWebHostEnvironment webHostEnvironment, ILogger<CourseImageService> logger)

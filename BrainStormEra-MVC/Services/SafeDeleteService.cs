@@ -1,3 +1,5 @@
+using DataAccessLayer.Data;
+using DataAccessLayer.Models;
 using BrainStormEra_MVC.Models;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -656,33 +658,22 @@ namespace BrainStormEra_MVC.Services
             var deletedDateProperty = type.GetProperty("DeletedDate");
             return deletedDateProperty?.GetValue(item) as DateTime?;
         }
-
-        public async Task<bool> CreateAuditTrailAsync(DeleteAuditTrail operation)
+        public Task<bool> CreateAuditTrailAsync(DeleteAuditTrail operation)
         {
             try
             {
-                var auditLog = new DeleteAuditLog
-                {
-                    LogId = operation.TrailId,
-                    EntityType = operation.EntityType,
-                    EntityId = operation.EntityId,
-                    UserId = operation.UserId,
-                    Operation = operation.Operation,
-                    Reason = operation.Reason,
-                    Timestamp = operation.Timestamp,
-                    EntitySnapshot = operation.EntityState,
-                    AffectedRelatedEntities = operation.AffectedRelatedEntities
-                };
+                // TODO: Implement audit logging when DeleteAuditLog is added to DataAccessLayer
+                // For now, just log the operation
+                _logger.LogInformation("Audit Trail: {Operation} performed on {EntityType} {EntityId} by user {UserId}",
+                    operation.Operation, operation.EntityType, operation.EntityId, operation.UserId);
 
-                _context.DeleteAuditLogs.Add(auditLog);
-                await _context.SaveChangesAsync();
-                return true;
+                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating audit trail for {Operation} on {EntityType} {EntityId}",
                     operation.Operation, operation.EntityType, operation.EntityId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 

@@ -3,7 +3,6 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding: 2rem 0;
-  padding-top: 80px; /* Add top padding to prevent header from covering content */
 }
 
 .page-header {
