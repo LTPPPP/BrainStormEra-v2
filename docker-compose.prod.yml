@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  mvc:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+    restart: always
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  razor:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5001
+    restart: always
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  database:
+    restart: always
+    environment:
+      MSSQL_PID: "Standard"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    # In production, you might want to use external volumes or cloud storage
+    volumes:
+      - sql_data_prod:/var/opt/mssql
+
+volumes:
+  sql_data_prod:
+    driver: local 
