@@ -76,7 +76,7 @@ namespace BrainStormEra_MVC.Services.Implementations
                 }
 
                 var userRole = user.FindFirst("UserRole")?.Value;
-                if (!string.Equals(userRole, "Learner", StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(userRole, "learner", StringComparison.OrdinalIgnoreCase))
                 {
                     return new LearnerDashboardResult
                     {
@@ -140,9 +140,8 @@ namespace BrainStormEra_MVC.Services.Implementations
                         RedirectController = "Login"
                     };
                 }
-
                 var userRole = user.FindFirst("UserRole")?.Value;
-                if (!string.Equals(userRole, "Instructor", StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(userRole, "instructor", StringComparison.OrdinalIgnoreCase))
                 {
                     return new InstructorDashboardResult
                     {
@@ -200,9 +199,8 @@ namespace BrainStormEra_MVC.Services.Implementations
                         ErrorMessage = "User not authenticated"
                     };
                 }
-
                 var userRole = user.FindFirst("UserRole")?.Value;
-                if (!string.Equals(userRole, "Instructor", StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(userRole, "instructor", StringComparison.OrdinalIgnoreCase))
                 {
                     return new IncomeDataResult
                     {
@@ -312,6 +310,292 @@ namespace BrainStormEra_MVC.Services.Implementations
         }
 
         #endregion
+
+        #region Controller Business Logic Methods
+
+        /// <summary>
+        /// Handle Index action with authentication check and redirection logic
+        /// </summary>
+        public async Task<IndexControllerResult> HandleIndexAsync(ClaimsPrincipal user)
+        {
+            var result = new IndexControllerResult();
+
+            try
+            {
+                // Check authentication and determine redirect
+                var authResult = CheckAuthenticationAndGetRedirect(user);
+                if (authResult.ShouldRedirect)
+                {
+                    result.ShouldRedirect = true;
+                    result.RedirectAction = authResult.RedirectAction;
+                    result.RedirectController = authResult.RedirectController;
+                    result.TempDataMessage = authResult.TempDataMessage;
+                    return result;
+                }
+
+                // Get guest home page
+                var guestResult = await GetGuestHomePageAsync();
+                if (!guestResult.Success)
+                {
+                    result.ViewBagError = guestResult.ErrorMessage;
+                    result.ViewModel = new HomePageGuestViewModel();
+                }
+                else
+                {
+                    result.ViewModel = guestResult.ViewModel;
+                }
+
+                result.ViewBagIsAuthenticated = false;
+                result.IsSuccess = true;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in HandleIndexAsync");
+                result.ViewBagError = "An unexpected error occurred. Please try again later.";
+                result.ViewModel = new HomePageGuestViewModel();
+                result.IsSuccess = true; // Still show view with error message
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Handle LearnerDashboard action with error handling and redirection
+        /// </summary>
+        public async Task<DashboardControllerResult> HandleLearnerDashboardAsync(ClaimsPrincipal user)
+        {
+            var result = new DashboardControllerResult();
+
+            try
+            {
+                var dashboardResult = await GetLearnerDashboardAsync(user);
+
+                if (!dashboardResult.Success)
+                {
+                    result.TempDataErrorMessage = dashboardResult.ErrorMessage;
+
+                    if (!string.IsNullOrEmpty(dashboardResult.RedirectAction) && !string.IsNullOrEmpty(dashboardResult.RedirectController))
+                    {
+                        result.ShouldRedirect = true;
+                        result.RedirectAction = dashboardResult.RedirectAction;
+                        result.RedirectController = dashboardResult.RedirectController;
+                    }
+                    else if (dashboardResult.RedirectToUserDashboard)
+                    {
+                        result.ShouldRedirectToUserDashboard = true;
+                    }
+                    else
+                    {
+                        result.ShouldRedirect = true;
+                        result.RedirectAction = "Index";
+                        result.RedirectController = "Home";
+                    }
+                    return result;
+                }
+
+                result.IsSuccess = true;
+                result.ViewModel = dashboardResult.ViewModel;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in HandleLearnerDashboardAsync");
+                result.TempDataErrorMessage = "An unexpected error occurred while loading the dashboard.";
+                result.ShouldRedirect = true;
+                result.RedirectAction = "Index";
+                result.RedirectController = "Home";
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Handle InstructorDashboard action with error handling and redirection
+        /// </summary>
+        public async Task<DashboardControllerResult> HandleInstructorDashboardAsync(ClaimsPrincipal user)
+        {
+            var result = new DashboardControllerResult();
+
+            try
+            {
+                var dashboardResult = await GetInstructorDashboardAsync(user);
+
+                if (!dashboardResult.Success)
+                {
+                    result.TempDataErrorMessage = dashboardResult.ErrorMessage;
+
+                    if (!string.IsNullOrEmpty(dashboardResult.RedirectAction) && !string.IsNullOrEmpty(dashboardResult.RedirectController))
+                    {
+                        result.ShouldRedirect = true;
+                        result.RedirectAction = dashboardResult.RedirectAction;
+                        result.RedirectController = dashboardResult.RedirectController;
+                    }
+                    else if (dashboardResult.RedirectToUserDashboard)
+                    {
+                        result.ShouldRedirectToUserDashboard = true;
+                    }
+                    else
+                    {
+                        result.ShouldRedirect = true;
+                        result.RedirectAction = "Index";
+                        result.RedirectController = "Home";
+                    }
+                    return result;
+                }
+
+                result.IsSuccess = true;
+                result.ViewModel = dashboardResult.ViewModel;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in HandleInstructorDashboardAsync");
+                result.TempDataErrorMessage = "An unexpected error occurred while loading the dashboard.";
+                result.ShouldRedirect = true;
+                result.RedirectAction = "Index";
+                result.RedirectController = "Home";
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Handle GetIncomeData action with JSON response formatting
+        /// </summary>
+        public async Task<IncomeDataControllerResult> HandleGetIncomeDataAsync(ClaimsPrincipal user, int days = 30)
+        {
+            var result = new IncomeDataControllerResult();
+
+            try
+            {
+                var incomeResult = await GetIncomeDataAsync(user, days);
+
+                if (!incomeResult.Success)
+                {
+                    result.JsonResponse = new { success = false, message = incomeResult.ErrorMessage };
+                    return result;
+                }
+
+                result.JsonResponse = new { success = true, data = incomeResult.Data };
+                result.IsSuccess = true;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in HandleGetIncomeDataAsync");
+                result.JsonResponse = new { success = false, message = "An unexpected error occurred." };
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Get user role-based dashboard redirect information
+        /// </summary>
+        public UserDashboardRedirectResult GetUserDashboardRedirect(ClaimsPrincipal user)
+        {
+            var result = new UserDashboardRedirectResult();
+
+            try
+            {
+                var userId = user.FindFirst("UserId")?.Value;
+                var userRole = user.FindFirst("UserRole")?.Value;
+                var username = user.Identity?.Name; _logger.LogInformation("GetUserDashboardRedirect - CurrentUserRole: '{Role}', UserId: {UserId}",
+                    userRole, userId);
+
+                if (string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation("Redirecting admin user to Admin Dashboard");
+                    result.RedirectAction = "AdminDashboard";
+                    result.RedirectController = "Admin";
+                }
+                else if (string.Equals(userRole, "instructor", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation("Redirecting instructor user to Instructor Dashboard");
+                    result.RedirectAction = "InstructorDashboard";
+                    result.RedirectController = "Home";
+                }
+                else if (string.Equals(userRole, "learner", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation("Redirecting learner user to Learner Dashboard");
+                    result.RedirectAction = "LearnerDashboard";
+                    result.RedirectController = "Home";
+                }
+                else
+                {
+                    _logger.LogWarning("Invalid user role detected: '{Role}' for user: {UserId}", userRole, userId);
+                    result.HasError = true;
+                    result.ErrorMessage = "Invalid user role. Please contact support.";
+                    result.RedirectAction = "Index";
+                    result.RedirectController = "Login";
+                }
+
+                result.IsSuccess = true;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetUserDashboardRedirect");
+                result.HasError = true;
+                result.ErrorMessage = "An error occurred while determining dashboard redirect.";
+                result.RedirectAction = "Index";
+                result.RedirectController = "Login";
+                return result;
+            }
+        }
+
+        #endregion
+
+        #region Private Helper Methods
+
+        /// <summary>
+        /// Check authentication and determine redirect logic
+        /// </summary>
+        private AuthenticationCheckResult CheckAuthenticationAndGetRedirect(ClaimsPrincipal user)
+        {
+            var result = new AuthenticationCheckResult();
+
+            if (user?.Identity?.IsAuthenticated != true)
+            {
+                return result; // Not authenticated, continue with guest view
+            }
+
+            var username = user.Identity?.Name;
+            var userRole = user.FindFirst("UserRole")?.Value;
+
+            _logger.LogInformation("Authenticated user accessing page: {Username} (Role: {Role}), redirecting to dashboard",
+                username, userRole);
+
+            try
+            {
+                // Get redirect information based on user role
+                var redirectResult = GetUserDashboardRedirect(user);
+                if (redirectResult.IsSuccess && !redirectResult.HasError)
+                {
+                    result.ShouldRedirect = true;
+                    result.RedirectAction = redirectResult.RedirectAction;
+                    result.RedirectController = redirectResult.RedirectController;
+                }
+                else
+                {
+                    result.ShouldRedirect = true;
+                    result.RedirectAction = "Index";
+                    result.RedirectController = "Login";
+                    result.TempDataMessage = redirectResult.ErrorMessage ?? "Your session has expired or is invalid. Please log in again.";
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error redirecting authenticated user: {Username}, {Role}", username, userRole);
+                result.ShouldRedirect = true;
+                result.RedirectAction = "Index";
+                result.RedirectController = "Login";
+                result.TempDataMessage = "Your session has expired or is invalid. Please log in again.";
+                return result;
+            }
+        }
+
+        #endregion
+
     }
 
     #region Result Classes
@@ -380,6 +664,67 @@ namespace BrainStormEra_MVC.Services.Implementations
         public bool Success { get; set; }
         public bool IsConnected { get; set; }
         public string? Message { get; set; }
+    }
+
+    /// <summary>
+    /// Result class for Index controller action
+    /// </summary>
+    public class IndexControllerResult
+    {
+        public bool IsSuccess { get; set; }
+        public bool ShouldRedirect { get; set; }
+        public string? RedirectAction { get; set; }
+        public string? RedirectController { get; set; }
+        public string? TempDataMessage { get; set; }
+        public HomePageGuestViewModel? ViewModel { get; set; }
+        public string? ViewBagError { get; set; }
+        public bool ViewBagIsAuthenticated { get; set; }
+    }
+
+    /// <summary>
+    /// Result class for Dashboard controller actions
+    /// </summary>
+    public class DashboardControllerResult
+    {
+        public bool IsSuccess { get; set; }
+        public bool ShouldRedirect { get; set; }
+        public bool ShouldRedirectToUserDashboard { get; set; }
+        public string? RedirectAction { get; set; }
+        public string? RedirectController { get; set; }
+        public string? TempDataErrorMessage { get; set; }
+        public object? ViewModel { get; set; }
+    }
+
+    /// <summary>
+    /// Result class for GetIncomeData controller action
+    /// </summary>
+    public class IncomeDataControllerResult
+    {
+        public bool IsSuccess { get; set; }
+        public object? JsonResponse { get; set; }
+    }
+
+    /// <summary>
+    /// Result class for user dashboard redirect operations
+    /// </summary>
+    public class UserDashboardRedirectResult
+    {
+        public bool IsSuccess { get; set; }
+        public bool HasError { get; set; }
+        public string? ErrorMessage { get; set; }
+        public string? RedirectAction { get; set; }
+        public string? RedirectController { get; set; }
+    }
+
+    /// <summary>
+    /// Result class for authentication check operations
+    /// </summary>
+    public class AuthenticationCheckResult
+    {
+        public bool ShouldRedirect { get; set; }
+        public string? RedirectAction { get; set; }
+        public string? RedirectController { get; set; }
+        public string? TempDataMessage { get; set; }
     }
 
     #endregion

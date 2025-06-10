@@ -227,6 +227,315 @@ namespace BrainStormEra_MVC.Services.Implementations
 
         #endregion
 
+        #region Controller Business Logic Methods
+
+        public async Task<ChatControllerResult> ProcessChatForControllerAsync(ChatRequest request)
+        {
+            var result = new ChatControllerResult();
+
+            try
+            {
+                // Check authentication
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    result.StatusCode = 401;
+                    result.ErrorResponse = new { error = "User not authenticated" };
+                    _logger.LogWarning("Unauthorized chat attempt");
+                    return result;
+                }
+
+                // Validate request
+                var validationResult = ValidateChatRequest(request);
+                if (!validationResult.IsValid)
+                {
+                    result.StatusCode = 400;
+                    result.ErrorResponse = new
+                    {
+                        error = "Validation failed",
+                        errors = validationResult.ValidationErrors
+                    };
+                    _logger.LogWarning($"Chat request validation failed for user {userId}: {string.Join(", ", validationResult.ValidationErrors)}");
+                    return result;
+                }
+
+                // Process chat
+                var chatResult = await ProcessChatAsync(
+                    request.Message,
+                    request.Context,
+                    request.PagePath,
+                    request.CourseId,
+                    request.ChapterId,
+                    request.LessonId
+                );
+
+                if (!chatResult.IsSuccess)
+                {
+                    if (chatResult.ValidationErrors.Any())
+                    {
+                        result.StatusCode = 400;
+                        result.ErrorResponse = new
+                        {
+                            error = "Validation failed",
+                            errors = chatResult.ValidationErrors
+                        };
+                    }
+                    else if (!string.IsNullOrEmpty(chatResult.ErrorMessage))
+                    {
+                        result.StatusCode = 500;
+                        result.ErrorResponse = new { error = chatResult.ErrorMessage };
+                    }
+                    else
+                    {
+                        result.StatusCode = 400;
+                        result.ErrorResponse = new { error = "Failed to process chat request" };
+                    }
+                    return result;
+                }
+
+                result.IsSuccess = true;
+                result.StatusCode = 200;
+                result.SuccessResponse = new
+                {
+                    message = chatResult.BotResponse ?? "",
+                    timestamp = chatResult.Timestamp ?? DateTime.Now
+                };
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.StatusCode = 500;
+                result.ErrorResponse = new { error = "Internal server error" };
+                _logger.LogError(ex, $"Error in ProcessChatForControllerAsync for user {GetCurrentUserId()}");
+                return result;
+            }
+        }
+
+        public async Task<ChatControllerResult> GetHistoryForControllerAsync(int limit = 20)
+        {
+            var result = new ChatControllerResult();
+
+            try
+            {
+                // Check authentication
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    result.StatusCode = 401;
+                    result.ErrorResponse = new { error = "User not authenticated" };
+                    _logger.LogWarning("Unauthorized chat history request");
+                    return result;
+                }
+
+                // Get conversation history
+                var historyResult = await GetConversationHistoryAsync(limit);
+
+                if (!historyResult.IsSuccess)
+                {
+                    if (historyResult.ValidationErrors.Any())
+                    {
+                        result.StatusCode = 400;
+                        result.ErrorResponse = new
+                        {
+                            error = "Validation failed",
+                            errors = historyResult.ValidationErrors
+                        };
+                    }
+                    else if (!string.IsNullOrEmpty(historyResult.ErrorMessage))
+                    {
+                        result.StatusCode = 500;
+                        result.ErrorResponse = new { error = historyResult.ErrorMessage };
+                    }
+                    else
+                    {
+                        result.StatusCode = 400;
+                        result.ErrorResponse = new { error = "Failed to retrieve conversation history" };
+                    }
+                    return result;
+                }
+
+                // Format response
+                var formattedHistory = historyResult.Conversations.Select(h => new
+                {
+                    id = h.ConversationId,
+                    userMessage = h.UserMessage,
+                    botResponse = h.BotResponse,
+                    timestamp = h.ConversationTime,
+                    rating = h.FeedbackRating
+                }).ToList();
+
+                result.IsSuccess = true;
+                result.StatusCode = 200;
+                result.SuccessResponse = formattedHistory;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.StatusCode = 500;
+                result.ErrorResponse = new { error = "Internal server error" };
+                _logger.LogError(ex, $"Error in GetHistoryForControllerAsync for user {GetCurrentUserId()}");
+                return result;
+            }
+        }
+
+        public async Task<ChatControllerResult> SubmitFeedbackForControllerAsync(FeedbackRequest request)
+        {
+            var result = new ChatControllerResult();
+
+            try
+            {
+                // Check authentication
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    result.StatusCode = 401;
+                    result.ErrorResponse = new { error = "User not authenticated" };
+                    _logger.LogWarning("Unauthorized feedback submission");
+                    return result;
+                }
+
+                // Validate request
+                var validationResult = ValidateFeedbackRequest(request);
+                if (!validationResult.IsValid)
+                {
+                    result.StatusCode = 400;
+                    result.ErrorResponse = new
+                    {
+                        error = "Invalid request data",
+                        errors = validationResult.ValidationErrors
+                    };
+                    _logger.LogWarning($"Feedback request validation failed for user {userId}: {string.Join(", ", validationResult.ValidationErrors)}");
+                    return result;
+                }
+
+                // Submit feedback
+                var feedbackResult = await SubmitFeedbackAsync(request.ConversationId, request.Rating);
+
+                if (!feedbackResult.IsSuccess)
+                {
+                    if (feedbackResult.ValidationErrors.Any())
+                    {
+                        result.StatusCode = 400;
+                        result.ErrorResponse = new
+                        {
+                            error = "Invalid request data",
+                            errors = feedbackResult.ValidationErrors
+                        };
+                    }
+                    else if (!string.IsNullOrEmpty(feedbackResult.ErrorMessage))
+                    {
+                        if (feedbackResult.ErrorMessage.Contains("not found"))
+                        {
+                            result.StatusCode = 404;
+                            result.ErrorResponse = new { error = feedbackResult.ErrorMessage };
+                        }
+                        else
+                        {
+                            result.StatusCode = 500;
+                            result.ErrorResponse = new { error = feedbackResult.ErrorMessage };
+                        }
+                    }
+                    else
+                    {
+                        result.StatusCode = 400;
+                        result.ErrorResponse = new { error = "Failed to submit feedback" };
+                    }
+                    return result;
+                }
+
+                result.IsSuccess = true;
+                result.StatusCode = 200;
+                result.SuccessResponse = new { message = feedbackResult.Message };
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.StatusCode = 500;
+                result.ErrorResponse = new { error = "Internal server error" };
+                _logger.LogError(ex, $"Error in SubmitFeedbackForControllerAsync for user {GetCurrentUserId()}");
+                return result;
+            }
+        }
+
+        #endregion
+
+        #region Controller Result Classes
+
+        public class ChatControllerResult
+        {
+            public bool IsSuccess { get; set; }
+            public int StatusCode { get; set; }
+            public object? SuccessResponse { get; set; }
+            public object? ErrorResponse { get; set; }
+        }
+
+        public class ChatRequest
+        {
+            public string Message { get; set; } = string.Empty;
+            public string? Context { get; set; }
+            public string? PagePath { get; set; }
+            public string? CourseId { get; set; }
+            public string? ChapterId { get; set; }
+            public string? LessonId { get; set; }
+        }
+
+        public class FeedbackRequest
+        {
+            public string ConversationId { get; set; } = string.Empty;
+            public int Rating { get; set; }
+        }
+
+        #endregion
+
+        #region Additional Validation Methods
+
+        private ChatValidationResult ValidateChatRequest(ChatRequest request)
+        {
+            var result = new ChatValidationResult { IsValid = true };
+
+            if (request == null)
+            {
+                AddValidationError(result, "Request cannot be null");
+                return result;
+            }
+
+            // Reuse existing message validation
+            var messageValidation = ValidateChatMessage(request.Message);
+            if (!messageValidation.IsValid)
+            {
+                result.IsValid = false;
+                result.ValidationErrors.AddRange(messageValidation.ValidationErrors);
+            }
+
+            return result;
+        }
+
+        private ChatValidationResult ValidateFeedbackRequest(FeedbackRequest request)
+        {
+            var result = new ChatValidationResult { IsValid = true };
+
+            if (request == null)
+            {
+                AddValidationError(result, "Request cannot be null");
+                return result;
+            }
+
+            // Reuse existing feedback validation
+            var feedbackValidation = ValidateFeedback(request.ConversationId, request.Rating);
+            if (!feedbackValidation.IsValid)
+            {
+                result.IsValid = false;
+                result.ValidationErrors.AddRange(feedbackValidation.ValidationErrors);
+            }
+
+            return result;
+        }
+
+        #endregion
+
         #region Validation Methods
 
         private ChatValidationResult ValidateChatMessage(string message)

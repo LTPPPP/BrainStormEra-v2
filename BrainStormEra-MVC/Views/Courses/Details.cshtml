@@ -609,13 +609,13 @@
                                                                                     <div class="quiz-questions-list">
                                                                                         <div class="quiz-questions-header">
                                                                                             <i class="fas fa-list-ul"></i>
-                                                                                            <span>Questions (@quiz.Questions.Count)</span>
+                                                                                            <span>Questions (@(quiz.Questions?.Count ?? 0))</span>
                                                                                         </div>
                                                                                         <div class="quiz-questions-items">
                                                                                             @foreach (var question in quiz.Questions?.Take(3) ?? Enumerable.Empty<BrainStormEra_MVC.Models.ViewModels.QuestionViewModel>())
                                                                                             {
                                                                                                 <div class="question-preview-item">
-                                                                                                    <div class="question-preview-number">@(quiz.Questions.ToList().IndexOf(question) + 1)</div>
+                                                                                                    <div class="question-preview-number">@((quiz.Questions?.ToList().IndexOf(question) ?? -1) + 1)</div>
                                                                                                     <div class="question-preview-content">
                                                                                                         <div class="question-preview-text">
                                                                                                             @(question.QuestionText.Length > 50 ? question.QuestionText.Substring(0, 50) + "..." : question.QuestionText)

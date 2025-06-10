@@ -16,7 +16,7 @@ namespace BrainStormEra_MVC.Controllers
             _achievementServiceImpl = achievementServiceImpl;
             _logger = logger;
         }
-        [Authorize(Roles = "Learner,learner")]
+        [Authorize(Roles = "learner")]
         public async Task<IActionResult> LearnerAchievements(string? search, int page = 1, int pageSize = 9)
         {
             var result = await _achievementServiceImpl.GetLearnerAchievementsAsync(User, search, page, pageSize);

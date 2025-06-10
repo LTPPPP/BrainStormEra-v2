@@ -80,7 +80,7 @@ namespace BrainStormEra_MVC.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Instructor,instructor")]
+        [Authorize(Roles = "instructor")]
         public async Task<IActionResult> CreateCourse()
         {
             var result = await _courseServiceImpl.GetCreateCourseViewModelAsync();
@@ -95,7 +95,7 @@ namespace BrainStormEra_MVC.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Instructor,instructor")]
+        [Authorize(Roles = "instructor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateCourse(CreateCourseViewModel model)
         {
@@ -140,7 +140,7 @@ namespace BrainStormEra_MVC.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Instructor,instructor")]
+        [Authorize(Roles = "instructor")]
         public async Task<IActionResult> EditCourse(string id)
         {
             var result = await _courseServiceImpl.GetCourseForEditAsync(User, id);
@@ -156,7 +156,7 @@ namespace BrainStormEra_MVC.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Instructor,instructor")]
+        [Authorize(Roles = "instructor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditCourse(string id, CreateCourseViewModel model)
         {
@@ -196,7 +196,7 @@ namespace BrainStormEra_MVC.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Instructor,instructor")]
+        [Authorize(Roles = "instructor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteCourse(string id)
         {
@@ -206,7 +206,7 @@ namespace BrainStormEra_MVC.Controllers
 
         // GET: Get user courses for notifications (Instructor only)
         [HttpGet]
-        [Authorize(Roles = "Instructor,instructor")]
+        [Authorize(Roles = "instructor")]
         public async Task<IActionResult> GetUserCourses()
         {
             var result = await _courseServiceImpl.GetUserCoursesAsync(User);

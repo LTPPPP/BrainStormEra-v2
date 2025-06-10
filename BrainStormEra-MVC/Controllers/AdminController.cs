@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BrainStormEra_MVC.Controllers
 {
-    [Authorize(Roles = "Admin,admin")]
+    [Authorize(Roles = "admin")]
     public class AdminController : Controller
     {
         private readonly BrainStormEraContext _context;
@@ -60,15 +60,15 @@ namespace BrainStormEra_MVC.Controllers
         {
             var userRole = User?.FindFirst("UserRole")?.Value ?? "";
 
-            if (string.Equals(userRole, "Admin", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
             {
                 return RedirectToAction("AdminDashboard", "Admin");
             }
-            else if (string.Equals(userRole, "Instructor", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(userRole, "instructor", StringComparison.OrdinalIgnoreCase))
             {
                 return RedirectToAction("InstructorDashboard", "Home");
             }
-            else if (string.Equals(userRole, "Learner", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(userRole, "learner", StringComparison.OrdinalIgnoreCase))
             {
                 return RedirectToAction("LearnerDashboard", "Home");
             }

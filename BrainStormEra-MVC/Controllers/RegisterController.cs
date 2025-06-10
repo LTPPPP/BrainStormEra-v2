@@ -1,13 +1,9 @@
 using BrainStormEra_MVC.Models;
 using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
-using BrainStormEra_MVC.Utilities;
+using BrainStormEra_MVC.Services.Implementations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace BrainStormEra_MVC.Controllers
 {
@@ -16,17 +12,27 @@ namespace BrainStormEra_MVC.Controllers
         private readonly BrainStormEraContext _context;
         private readonly ILogger<RegisterController> _logger;
         private readonly IUserService _userService;
+        private readonly AuthServiceImpl _authServiceImpl;
 
-        public RegisterController(BrainStormEraContext context, ILogger<RegisterController> logger, IUserService userService)
+        public RegisterController(BrainStormEraContext context, ILogger<RegisterController> logger, IUserService userService, AuthServiceImpl authServiceImpl)
         {
             _context = context;
             _logger = logger;
             _userService = userService;
+            _authServiceImpl = authServiceImpl;
         }
         [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View("~/Views/Auth/Register.cshtml");
+            var result = await _authServiceImpl.GetRegisterViewModelAsync();
+
+            if (!result.Success)
+            {
+                TempData["ErrorMessage"] = result.ErrorMessage;
+                return View("~/Views/Auth/Register.cshtml");
+            }
+
+            return View("~/Views/Auth/Register.cshtml", result.ViewModel);
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -37,55 +43,33 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["ErrorMessage"] = "Please correct the errors below and try again.";
                 return View("~/Views/Auth/Register.cshtml", model);
             }
+
             try
             {
-                // Check if username already exists
-                bool usernameExists = await _userService.UsernameExistsAsync(model.Username);
-                if (usernameExists)
-                {
-                    TempData["ErrorMessage"] = "Username is already taken. Please choose a different username.";
-                    ModelState.AddModelError("Username", "Username is already taken");
-                    return View("~/Views/Auth/Register.cshtml", model);
-                }
+                var result = await _authServiceImpl.RegisterUserAsync(model);
 
-                // Check if email already exists
-                bool emailExists = await _userService.EmailExistsAsync(model.Email);
-                if (emailExists)
+                if (!result.Success)
                 {
-                    TempData["ErrorMessage"] = "Email is already registered. Please use a different email or try logging in.";
-                    ModelState.AddModelError("Email", "Email is already registered");
-                    return View("~/Views/Auth/Register.cshtml", model);
-                }
+                    TempData["ErrorMessage"] = result.ErrorMessage;
 
-                // Create new account
-                var account = new Account
-                {
-                    UserId = Guid.NewGuid().ToString(),
-                    UserRole = "learner", // Default role for new registrations
-                    Username = model.Username,
-                    PasswordHash = PasswordHasher.HashPassword(model.Password),
-                    UserEmail = model.Email,
-                    FullName = model.FullName,
-                    DateOfBirth = model.DateOfBirth.HasValue ? DateOnly.FromDateTime(model.DateOfBirth.Value) : null,
-                    Gender = model.Gender,
-                    PhoneNumber = model.PhoneNumber,
-                    UserAddress = model.Address,
-                    IsBanned = false,
-                    AccountCreatedAt = DateTime.UtcNow,
-                    AccountUpdatedAt = DateTime.UtcNow
-                };
+                    // Add specific validation errors to ModelState
+                    if (!string.IsNullOrEmpty(result.ValidationError))
+                    {
+                        if (result.ValidationError == "Username")
+                        {
+                            ModelState.AddModelError("Username", "Username is already taken");
+                        }
+                        else if (result.ValidationError == "Email")
+                        {
+                            ModelState.AddModelError("Email", "Email is already registered");
+                        }
+                    }
 
-                // Use service to create user
-                bool success = await _userService.CreateUserAsync(account);
-
-                if (!success)
-                {
-                    TempData["ErrorMessage"] = "Failed to create account. Please try again later.";
-                    return View("~/Views/Auth/Register.cshtml", model);
+                    return View("~/Views/Auth/Register.cshtml", result.ViewModel ?? model);
                 }
 
                 // Redirect to success page or login
-                TempData["SuccessMessage"] = "Your account has been created successfully. You can now log in.";
+                TempData["SuccessMessage"] = result.SuccessMessage;
                 return RedirectToAction("Index", "Login");
             }
             catch (DbUpdateException ex)
@@ -107,25 +91,15 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet]
         public async Task<IActionResult> CheckUsername(string username)
         {
-            if (string.IsNullOrEmpty(username) || !Regex.IsMatch(username, @"^[a-zA-Z0-9_-]+$"))
-            {
-                return Json(new { valid = false, message = "Invalid username format" });
-            }
-
-            bool exists = await _userService.UsernameExistsAsync(username);
-            return Json(new { valid = !exists, message = exists ? "Username is already taken" : "" });
+            var result = await _authServiceImpl.CheckUsernameAvailabilityAsync(username);
+            return Json(new { valid = result.IsValid, message = result.Message });
         }
 
         [HttpGet]
         public async Task<IActionResult> CheckEmail(string email)
         {
-            if (string.IsNullOrEmpty(email) || !Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
-            {
-                return Json(new { valid = false, message = "Invalid email format" });
-            }
-
-            bool exists = await _context.Accounts.AnyAsync(a => a.UserEmail == email);
-            return Json(new { valid = !exists, message = exists ? "Email is already registered" : "" });
+            var result = await _authServiceImpl.CheckEmailAvailabilityAsync(email);
+            return Json(new { valid = result.IsValid, message = result.Message });
         }
     }
 }

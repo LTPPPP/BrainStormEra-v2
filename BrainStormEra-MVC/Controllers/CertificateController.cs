@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BrainStormEra_MVC.Controllers
 {
-    [Authorize(Roles = "Learner,learner")]
+    [Authorize(Roles = "learner")]
     public class CertificateController : BaseController
     {
         private readonly CertificateServiceImpl _certificateServiceImpl;

@@ -58,6 +58,10 @@ namespace BrainStormEra_MVC
             // Register Question Service Implementation for business logic layer  
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.QuestionServiceImpl>();
 
+            // Register Quiz Service and Implementation for business logic layer
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IQuizService, BrainStormEra_MVC.Services.Implementations.QuizServiceImpl>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.QuizServiceImpl>();
+
             // Register Achievement Service Implementation for business logic layer
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.AchievementServiceImpl>();
 
@@ -101,6 +105,9 @@ namespace BrainStormEra_MVC
             // Register Chatbot Service Implementation for business logic layer
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.ChatbotServiceImpl>();
 
+            // Register SafeDelete Service Implementation for business logic layer
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.SafeDeleteServiceImpl>();
+
             // Seed services
             builder.Services.AddScoped<BrainStormEra_MVC.Services.CategorySeedService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.StatusSeedService>();
@@ -123,9 +130,9 @@ namespace BrainStormEra_MVC
             // Add Authorization
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin", "admin"));
-                options.AddPolicy("InstructorOnly", policy => policy.RequireRole("Instructor", "instructor"));
-                options.AddPolicy("LearnerOnly", policy => policy.RequireRole("Learner", "learner"));
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
+                options.AddPolicy("InstructorOnly", policy => policy.RequireRole("instructor"));
+                options.AddPolicy("LearnerOnly", policy => policy.RequireRole("learner"));
             });
 
             // Add session support

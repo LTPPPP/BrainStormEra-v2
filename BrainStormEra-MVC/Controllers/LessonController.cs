@@ -301,7 +301,7 @@ namespace BrainStormEra_MVC.Controllers
             return View(result.ViewModel);
         }
         [HttpPost]
-        [Authorize(Roles = "Instructor,instructor")]
+        [Authorize(Roles = "instructor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteLesson(string id, string courseId)
         {

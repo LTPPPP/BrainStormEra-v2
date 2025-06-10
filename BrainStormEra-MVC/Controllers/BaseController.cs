@@ -81,22 +81,20 @@ namespace BrainStormEra_MVC.Controllers
         /// <summary>
         /// Check if the current user is authenticated
         /// </summary>
-        protected bool IsAuthenticated => User?.Identity?.IsAuthenticated ?? false;
-
-        /// <summary>
-        /// Check if the current user is an admin
-        /// </summary>
-        protected bool IsAdmin => IsInRole("admin") || IsInRole("Admin");
+        protected bool IsAuthenticated => User?.Identity?.IsAuthenticated ?? false;        /// <summary>
+                                                                                           /// Check if the current user is an admin
+                                                                                           /// </summary>
+        protected bool IsAdmin => IsInRole("admin");
 
         /// <summary>
         /// Check if the current user is an instructor
         /// </summary>
-        protected bool IsInstructor => IsInRole("instructor") || IsInRole("Instructor");
+        protected bool IsInstructor => IsInRole("instructor");
 
         /// <summary>
         /// Check if the current user is a learner
         /// </summary>
-        protected bool IsLearner => IsInRole("learner") || IsInRole("Learner");
+        protected bool IsLearner => IsInRole("learner");
 
         /// <summary>
         /// Get user information as a dictionary for easy access

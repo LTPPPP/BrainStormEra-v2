@@ -121,10 +121,8 @@ namespace BrainStormEra_MVC.Services.Implementations
                     };
                 }
 
-                _logger.LogInformation("Password verified successfully for user: {Username}", user.Username);
-
-                // Validate user role (ensure it's one of the allowed roles)
-                var validRoles = new[] { "Admin", "Instructor", "Learner", "admin", "instructor", "learner" };
+                _logger.LogInformation("Password verified successfully for user: {Username}", user.Username);                // Validate user role (ensure it's one of the allowed roles)
+                var validRoles = new[] { "admin", "instructor", "learner" };
                 if (!validRoles.Contains(user.UserRole, StringComparer.OrdinalIgnoreCase))
                 {
                     _logger.LogWarning("Invalid role for user: {Username}, Role: {Role}", user.Username, user.UserRole);
@@ -285,13 +283,11 @@ namespace BrainStormEra_MVC.Services.Implementations
                         ViewModel = model,
                         ValidationError = "Email"
                     };
-                }
-
-                // Create new account
+                }                // Create new account
                 var account = new Account
                 {
                     UserId = Guid.NewGuid().ToString(),
-                    UserRole = "Learner", // Default role for new registrations
+                    UserRole = "learner", // Default role for new registrations
                     Username = model.Username,
                     PasswordHash = PasswordHasher.HashPassword(model.Password),
                     UserEmail = model.Email,
@@ -751,15 +747,13 @@ namespace BrainStormEra_MVC.Services.Implementations
                         Success = false,
                         ErrorMessage = "User profile not found."
                     };
-                }
-
-                // Get user statistics based on role
+                }                // Get user statistics based on role
                 var enrolledCoursesCount = 0;
                 var completedCoursesCount = 0;
                 var createdCoursesCount = 0;
                 var totalStudentsCount = 0;
 
-                if (userRole?.Equals("Learner", StringComparison.OrdinalIgnoreCase) == true)
+                if (userRole?.Equals("learner", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     enrolledCoursesCount = await _context.Enrollments
                         .CountAsync(e => e.UserId == userId);
@@ -767,7 +761,7 @@ namespace BrainStormEra_MVC.Services.Implementations
                     completedCoursesCount = await _context.Enrollments
                         .CountAsync(e => e.UserId == userId && e.ProgressPercentage >= 100);
                 }
-                else if (userRole?.Equals("Instructor", StringComparison.OrdinalIgnoreCase) == true)
+                else if (userRole?.Equals("instructor", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     createdCoursesCount = await _context.Courses
                         .CountAsync(c => c.AuthorId == userId);
@@ -814,7 +808,7 @@ namespace BrainStormEra_MVC.Services.Implementations
                     AccountHolderName = user.AccountHolderName ?? "",
 
                     // Statistics
-                    TotalCourses = userRole?.Equals("Learner", StringComparison.OrdinalIgnoreCase) == true ? enrolledCoursesCount : createdCoursesCount,
+                    TotalCourses = userRole?.Equals("learner", StringComparison.OrdinalIgnoreCase) == true ? enrolledCoursesCount : createdCoursesCount,
                     CompletedCourses = completedCoursesCount,
                     InProgressCourses = inProgressCoursesCount,
                     CertificatesEarned = certificatesCount,

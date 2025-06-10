@@ -17,9 +17,8 @@ namespace BrainStormEra_MVC.Controllers
             _chapterServiceImpl = chapterServiceImpl;
             _logger = logger;
         }
-
         [HttpGet]
-        [Authorize(Roles = "Instructor,instructor")]
+        [Authorize(Roles = "instructor")]
         public async Task<IActionResult> CreateChapter(string courseId)
         {
             var result = await _chapterServiceImpl.GetCreateChapterViewModelAsync(User, courseId);
@@ -32,9 +31,8 @@ namespace BrainStormEra_MVC.Controllers
 
             return View("~/Views/Chapters/CreateChapter.cshtml", result.ViewModel);
         }
-
         [HttpPost]
-        [Authorize(Roles = "Instructor,instructor")]
+        [Authorize(Roles = "instructor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateChapter(CreateChapterViewModel model)
         {
@@ -64,13 +62,12 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["ErrorMessage"] = result.ErrorMessage;
                 return View("~/Views/Chapters/CreateChapter.cshtml", result.ViewModel);
             }
-
             TempData["ErrorMessage"] = result.ErrorMessage;
             return RedirectToAction(result.RedirectAction, result.RedirectController, result.RouteValues);
         }
 
         [HttpPost]
-        [Authorize(Roles = "Instructor,instructor")]
+        [Authorize(Roles = "instructor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteChapter(string id, string courseId)
         {
@@ -88,9 +85,8 @@ namespace BrainStormEra_MVC.Controllers
 
             return RedirectToAction("Details", "Course", new { id = courseId });
         }
-
         [HttpGet]
-        [Authorize(Roles = "Instructor,instructor")]
+        [Authorize(Roles = "instructor")]
         public async Task<IActionResult> EditChapter(string id)
         {
             var result = await _chapterServiceImpl.GetChapterForEditAsync(User, id);
@@ -103,9 +99,8 @@ namespace BrainStormEra_MVC.Controllers
 
             return View("~/Views/Chapters/EditChapter.cshtml", result.ViewModel);
         }
-
         [HttpPost]
-        [Authorize(Roles = "Instructor,instructor")]
+        [Authorize(Roles = "instructor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditChapter(string id, CreateChapterViewModel model)
         {
