@@ -75,7 +75,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.AuthServiceImpl>();
 
             // Register Home Services for data access and business logic
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.HomeService>();
+            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IHomeService, BrainStormEra_MVC.Services.HomeService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.HomeServiceImpl>();
 
             // Register Admin Services for data access and business logic
