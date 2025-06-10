@@ -51,13 +51,13 @@ class SecureLogout {
     })
       .then((response) => response.json())
       .then((data) => {
-        // After successful server-side logout, redirect to homepage
+        // After successful server-side logout, redirect to guest homepage
         setTimeout(() => {
           window.location.href = "/Home/Index";
         }, 1500); // Show popup for 1.5 seconds before redirecting
       })
       .catch((error) => {
-        // Redirect anyway in case of error
+        // Redirect to guest homepage anyway in case of error
         window.location.href = "/Home/Index";
       });
   }

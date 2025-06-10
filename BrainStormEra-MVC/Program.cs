@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Diagnostics;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
-using BrainStormEra_MVC.Models;
+using DataAccessLayer.Data;
+using DataAccessLayer.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
-
+using BusinessLogicLayer;
 namespace BrainStormEra_MVC
 {
     public class Program

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DataAccessLayer.Models;
 
 namespace BrainStormEra_MVC.Models
 {

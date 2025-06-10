@@ -1,4 +1,5 @@
-using BrainStormEra_MVC.Models;
+using DataAccessLayer.Data;
+using DataAccessLayer.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BrainStormEra_MVC.Services

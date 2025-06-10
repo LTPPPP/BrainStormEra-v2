@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using DataAccessLayer.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace BrainStormEra_MVC.Models;
+namespace DataAccessLayer.Data;
 
 public partial class BrainStormEraContext : DbContext
 {
@@ -34,9 +35,6 @@ public partial class BrainStormEraContext : DbContext
     public virtual DbSet<Course> Courses { get; set; }
 
     public virtual DbSet<CourseCategory> CourseCategories { get; set; }
-
-    // Add audit log for delete operations
-    public virtual DbSet<DeleteAuditLog> DeleteAuditLogs { get; set; }
 
     public virtual DbSet<Enrollment> Enrollments { get; set; }
 
@@ -1446,73 +1444,11 @@ public partial class BrainStormEraContext : DbContext
 
             entity.HasOne(d => d.Lesson).WithMany(p => p.UserProgresses)
                 .HasForeignKey(d => d.LessonId)
-                .HasConstraintName("FK__user_prog__lesso__42E1EEFE"); entity.HasOne(d => d.User).WithMany(p => p.UserProgresses)
+                .HasConstraintName("FK__user_prog__lesso__42E1EEFE");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserProgresses)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK__user_prog__user___41EDCAC5");
-        });
-
-        // Configure DeleteAuditLog entity
-        modelBuilder.Entity<DeleteAuditLog>(entity =>
-        {
-            entity.HasKey(e => e.LogId).HasName("PK__delete_audit_log");
-
-            entity.ToTable("delete_audit_log");
-
-            entity.HasIndex(e => new { e.EntityType, e.EntityId }, "IX_delete_audit_entity");
-            entity.HasIndex(e => new { e.UserId, e.Timestamp }, "IX_delete_audit_user_time");
-            entity.HasIndex(e => e.Operation, "IX_delete_audit_operation");
-
-            entity.Property(e => e.LogId)
-                .HasMaxLength(36)
-                .IsUnicode(false)
-                .HasColumnName("log_id");
-
-            entity.Property(e => e.EntityType)
-                .HasMaxLength(100)
-                .HasColumnName("entity_type");
-
-            entity.Property(e => e.EntityId)
-                .HasMaxLength(36)
-                .IsUnicode(false)
-                .HasColumnName("entity_id");
-
-            entity.Property(e => e.UserId)
-                .HasMaxLength(36)
-                .IsUnicode(false)
-                .HasColumnName("user_id");
-
-            entity.Property(e => e.Operation)
-                .HasMaxLength(50)
-                .HasColumnName("operation");
-
-            entity.Property(e => e.Reason)
-                .HasMaxLength(500)
-                .HasColumnName("reason");
-
-            entity.Property(e => e.Timestamp)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime")
-                .HasColumnName("timestamp");
-
-            entity.Property(e => e.EntitySnapshot)
-                .HasColumnName("entity_snapshot");
-
-            entity.Property(e => e.AffectedRelatedEntities)
-                .HasColumnName("affected_related_entities");
-
-            entity.Property(e => e.IpAddress)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("ip_address");
-
-            entity.Property(e => e.UserAgent)
-                .HasMaxLength(500)
-                .HasColumnName("user_agent");
-
-            entity.HasOne(d => d.User).WithMany()
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__delete_audit_log__user");
         });
 
         OnModelCreatingPartial(modelBuilder);
