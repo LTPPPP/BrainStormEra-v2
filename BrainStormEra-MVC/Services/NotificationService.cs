@@ -1,55 +1,47 @@
-using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using BrainStormEra_MVC.Hubs;
 
 namespace BrainStormEra_MVC.Services
 {
     public class NotificationService : INotificationService
     {
-        private readonly BrainStormEraContext _context;
+        private readonly INotificationRepo _notificationRepo;
+        private readonly ICourseRepo _courseRepo;
+        private readonly IUserRepo _userRepo;
         private readonly IHubContext<NotificationHub> _hubContext;
         private readonly ILogger<NotificationService> _logger;
 
-        public NotificationService(BrainStormEraContext context, IHubContext<NotificationHub> hubContext, ILogger<NotificationService> logger)
+        public NotificationService(
+            INotificationRepo notificationRepo,
+            ICourseRepo courseRepo,
+            IUserRepo userRepo,
+            IHubContext<NotificationHub> hubContext,
+            ILogger<NotificationService> logger)
         {
-            _context = context;
+            _notificationRepo = notificationRepo;
+            _courseRepo = courseRepo;
+            _userRepo = userRepo;
             _hubContext = hubContext;
             _logger = logger;
         }
 
         public async Task<List<Notification>> GetNotificationsAsync(string userId, int page = 1, int pageSize = 10)
         {
-            return await _context.Notifications
-                .Where(n => n.UserId == userId)
-                .OrderByDescending(n => n.NotificationCreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Include(n => n.Course)
-                .Include(n => n.CreatedByNavigation)
-                .ToListAsync();
+            return await _notificationRepo.GetUserNotificationsAsync(userId, page, pageSize);
         }
 
         public async Task<List<Notification>> GetAllNotificationsForUserAsync(string userId, int page = 1, int pageSize = 10)
         {
             // Get notifications that the user received OR created
-            return await _context.Notifications
-                .Where(n => n.UserId == userId || n.CreatedBy == userId)
-                .OrderByDescending(n => n.NotificationCreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Include(n => n.Course)
-                .Include(n => n.CreatedByNavigation)
-                .Include(n => n.User) // Include the recipient user info
-                .ToListAsync();
+            return await _notificationRepo.GetAllNotificationsForUserAsync(userId, page, pageSize);
         }
 
         public async Task<int> GetUnreadNotificationCountAsync(string userId)
         {
-            return await _context.Notifications
-                .CountAsync(n => n.UserId == userId && n.IsRead == false);
+            return await _notificationRepo.GetUnreadNotificationCountAsync(userId);
         }
 
         public async Task<Notification> CreateNotificationAsync(string userId, string title, string content, string? type = null, string? courseId = null, string? createdBy = null)
@@ -67,50 +59,23 @@ namespace BrainStormEra_MVC.Services
                 CreatedBy = createdBy
             };
 
-            _context.Notifications.Add(notification);
-            await _context.SaveChangesAsync();
-
+            await _notificationRepo.CreateNotificationAsync(notification);
             return notification;
         }
 
         public async Task MarkAsReadAsync(string notificationId, string userId)
         {
-            var notification = await _context.Notifications
-                .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId);
-
-            if (notification != null && notification.IsRead == false)
-            {
-                notification.IsRead = true;
-                notification.ReadAt = DateTime.Now;
-                await _context.SaveChangesAsync();
-            }
+            await _notificationRepo.MarkAsReadAsync(notificationId, userId);
         }
 
         public async Task MarkAllAsReadAsync(string userId)
         {
-            var unreadNotifications = await _context.Notifications
-                .Where(n => n.UserId == userId && n.IsRead == false)
-                .ToListAsync();
-
-            foreach (var notification in unreadNotifications)
-            {
-                notification.IsRead = true;
-                notification.ReadAt = DateTime.Now;
-            }
-
-            await _context.SaveChangesAsync();
+            await _notificationRepo.MarkAllAsReadAsync(userId);
         }
 
         public async Task DeleteNotificationAsync(string notificationId, string userId)
         {
-            var notification = await _context.Notifications
-                .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId);
-
-            if (notification != null)
-            {
-                _context.Notifications.Remove(notification);
-                await _context.SaveChangesAsync();
-            }
+            await _notificationRepo.DeleteNotificationAsync(notificationId, userId);
         }
 
         public async Task<bool> SendToUserAsync(string userId, string title, string content, string? type = null, string? courseId = null, string? createdBy = null)
@@ -148,11 +113,9 @@ namespace BrainStormEra_MVC.Services
         public async Task<bool> SendToCourseAsync(string courseId, string title, string content, string? type = null, string? excludeUserId = null, string? createdBy = null)
         {
             try
-            {                // Get all enrolled users in the course
-                var enrolledUsers = await _context.Enrollments
-                    .Where(e => e.CourseId == courseId && e.EnrollmentStatus == 1) // 1 for Active
-                    .Select(e => e.UserId)
-                    .ToListAsync();
+            {
+                // Get all enrolled users in the course
+                var enrolledUsers = await _courseRepo.GetEnrolledUserIdsAsync(courseId);
 
                 if (excludeUserId != null)
                 {
@@ -199,11 +162,9 @@ namespace BrainStormEra_MVC.Services
         public async Task<bool> SendToRoleAsync(string role, string title, string content, string? type = null, string? createdBy = null)
         {
             try
-            {                // Get all users with the specified role
-                var users = await _context.Accounts
-                    .Where(a => a.UserRole == role)
-                    .Select(a => a.UserId)
-                    .ToListAsync();
+            {
+                // Get all users with the specified role
+                var users = await _userRepo.GetUserIdsByRoleAsync(role);
 
                 // Create notifications for all users with the role
                 var tasks = users.Select(async userId =>
@@ -241,11 +202,9 @@ namespace BrainStormEra_MVC.Services
         public async Task<bool> SendToAllAsync(string title, string content, string? type = null, string? createdBy = null)
         {
             try
-            {                // Get all active users (not banned)
-                var users = await _context.Accounts
-                    .Where(a => a.IsBanned != true)
-                    .Select(a => a.UserId)
-                    .ToListAsync();
+            {
+                // Get all active users (not banned)
+                var users = await _userRepo.GetAllActiveUserIdsAsync();
 
                 // Create notifications for all users
                 var tasks = users.Select(async userId =>
@@ -283,35 +242,30 @@ namespace BrainStormEra_MVC.Services
         public async Task<Notification?> GetNotificationForEditAsync(string notificationId, string userId)
         {
             // Only allow editing notifications created by the current user
-            return await _context.Notifications
-                .Include(n => n.Course)
-                .Include(n => n.User)
-                .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.CreatedBy == userId);
+            return await _notificationRepo.GetNotificationForEditAsync(notificationId, userId);
         }
 
         public async Task<bool> UpdateNotificationAsync(string notificationId, string userId, string title, string content, string? type)
         {
             try
             {
-                var notification = await _context.Notifications
-                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.CreatedBy == userId);
+                var result = await _notificationRepo.UpdateNotificationContentAsync(notificationId, userId, title, content, type);
 
-                if (notification == null) return false;
+                if (!result) return false;
 
-                notification.NotificationTitle = title;
-                notification.NotificationContent = content;
-                notification.NotificationType = type ?? "General";
-
-                await _context.SaveChangesAsync();
-
-                // Send updated notification via SignalR to the recipient
-                await _hubContext.Clients.Group($"User_{notification.UserId}").SendAsync("NotificationUpdated", new
+                // Get the notification to send update via SignalR
+                var notification = await _notificationRepo.GetNotificationForEditAsync(notificationId, userId);
+                if (notification != null)
                 {
-                    id = notification.NotificationId,
-                    title = notification.NotificationTitle,
-                    content = notification.NotificationContent,
-                    type = notification.NotificationType
-                });
+                    // Send updated notification via SignalR to the recipient
+                    await _hubContext.Clients.Group($"User_{notification.UserId}").SendAsync("NotificationUpdated", new
+                    {
+                        id = notification.NotificationId,
+                        title = notification.NotificationTitle,
+                        content = notification.NotificationContent,
+                        type = notification.NotificationType
+                    });
+                }
 
                 return true;
             }

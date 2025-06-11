@@ -1,5 +1,6 @@
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,11 +8,18 @@ namespace BrainStormEra_MVC.Services
 {
     public class PageContextService : IPageContextService
     {
-        private readonly BrainStormEraContext _context;
+        private readonly ICourseRepo _courseRepo;
+        private readonly IChapterRepo _chapterRepo;
+        private readonly ILessonRepo _lessonRepo;
 
-        public PageContextService(BrainStormEraContext context)
+        public PageContextService(
+            ICourseRepo courseRepo,
+            IChapterRepo chapterRepo,
+            ILessonRepo lessonRepo)
         {
-            _context = context;
+            _courseRepo = courseRepo;
+            _chapterRepo = chapterRepo;
+            _lessonRepo = lessonRepo;
         }
 
         public async Task<string> GetPageContextAsync(string path, string? courseId = null, string? chapterId = null, string? lessonId = null)
@@ -53,10 +61,8 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var course = await _context.Courses
-                    .Include(c => c.CourseCategories)
-                    .Include(c => c.Author)
-                    .FirstOrDefaultAsync(c => c.CourseId == courseId); if (course == null) return "";
+                var course = await _courseRepo.GetCourseDetailAsync(courseId);
+                if (course == null) return "";
 
                 var categories = course.CourseCategories?.Select(cc => cc.CourseCategoryName).ToList() ?? new List<string>();
                 var categoryText = categories.Any() ? string.Join(", ", categories) : "Uncategorized";
@@ -74,11 +80,13 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var chapter = await _context.Chapters
-                    .Include(c => c.Course)
-                    .FirstOrDefaultAsync(c => c.ChapterId == chapterId); if (chapter == null) return "";
+                var chapter = await _chapterRepo.GetByIdAsync(chapterId);
+                if (chapter == null) return "";
 
-                return $"Current chapter: '{chapter.ChapterName}' in course '{chapter.Course?.CourseName}'. " +
+                // Get course information if needed
+                var course = await _courseRepo.GetByIdAsync(chapter.CourseId);
+
+                return $"Current chapter: '{chapter.ChapterName}' in course '{course?.CourseName}'. " +
                        $"Chapter order: {chapter.ChapterOrder}";
             }
             catch
@@ -90,11 +98,8 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var lesson = await _context.Lessons
-                    .Include(l => l.Chapter)
-                        .ThenInclude(c => c.Course)
-                    .Include(l => l.LessonType)
-                    .FirstOrDefaultAsync(l => l.LessonId == lessonId); if (lesson == null) return "";
+                var lesson = await _lessonRepo.GetLessonWithDetailsAsync(lessonId);
+                if (lesson == null) return "";
 
                 return $"Current lesson: '{lesson.LessonName}' in chapter '{lesson.Chapter?.ChapterName}' " +
                        $"of course '{lesson.Chapter?.Course?.CourseName}'. " +

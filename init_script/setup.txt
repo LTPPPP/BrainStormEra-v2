@@ -2,4 +2,5 @@ dotnet tool install --global dotnet-ef
 dotnet add package Microsoft.EntityFrameworkCore.Design
 dotnet add package Microsoft.EntityFrameworkCore.SqlServer
 dotnet add package Newtonsoft.Json
+dotnet add package BCrypt.Net-Next
 dotnet add package VNPAY.NET --version 8.5.0

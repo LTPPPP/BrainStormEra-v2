@@ -1,5 +1,6 @@
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -10,20 +11,23 @@ namespace BrainStormEra_MVC.Services
 {
     public class ChatbotService : IChatbotService
     {
-        private readonly BrainStormEraContext _context;
+        private readonly IChatbotRepo _chatbotRepo;
+        private readonly IUserRepo _userRepo;
         private readonly IConfiguration _configuration;
         private readonly HttpClient _httpClient;
         private readonly ILogger<ChatbotService> _logger;
         private readonly IMemoryCache _cache;
 
         public ChatbotService(
-            BrainStormEraContext context,
+            IChatbotRepo chatbotRepo,
+            IUserRepo userRepo,
             IConfiguration configuration,
             HttpClient httpClient,
             ILogger<ChatbotService> logger,
             IMemoryCache cache)
         {
-            _context = context;
+            _chatbotRepo = chatbotRepo;
+            _userRepo = userRepo;
             _configuration = configuration;
             _httpClient = httpClient;
             _logger = logger;
@@ -41,7 +45,7 @@ namespace BrainStormEra_MVC.Services
                     _logger.LogInformation($"Using cached response for message: {userMessage}");
 
                     // Still save the conversation for tracking
-                    await SaveConversationAsync(new ChatbotConversation
+                    await _chatbotRepo.SaveConversationAsync(new ChatbotConversation
                     {
                         ConversationId = Guid.NewGuid().ToString(),
                         UserId = userId,
@@ -122,7 +126,7 @@ namespace BrainStormEra_MVC.Services
                     }
 
                     // Save conversation to database
-                    await SaveConversationAsync(new ChatbotConversation
+                    await _chatbotRepo.SaveConversationAsync(new ChatbotConversation
                     {
                         ConversationId = Guid.NewGuid().ToString(),
                         UserId = userId,
@@ -149,49 +153,34 @@ namespace BrainStormEra_MVC.Services
 
         public async Task<List<ChatbotConversation>> GetConversationHistoryAsync(string userId, int limit = 20)
         {
-            return await _context.ChatbotConversations
-                .Where(c => c.UserId == userId)
-                .OrderByDescending(c => c.ConversationTime)
-                .Take(limit)
-                .ToListAsync();
+            var conversations = await _chatbotRepo.GetConversationHistoryAsync(userId, limit);
+            return conversations.ToList();
         }
 
         public async Task SaveConversationAsync(ChatbotConversation conversation)
         {
-            _context.ChatbotConversations.Add(conversation);
-            await _context.SaveChangesAsync();
+            await _chatbotRepo.SaveConversationAsync(conversation);
         }
 
         public async Task<bool> RateFeedbackAsync(string conversationId, byte rating)
         {
-            var conversation = await _context.ChatbotConversations
-                .FirstOrDefaultAsync(c => c.ConversationId == conversationId);
-
-            if (conversation != null)
-            {
-                conversation.FeedbackRating = rating;
-                await _context.SaveChangesAsync();
-                return true;
-            }
-
-            return false;
+            return await _chatbotRepo.UpdateFeedbackRatingAsync(conversationId, rating);
         }
         private async Task<string> GetUserContextAsync(string userId)
         {
-            var user = await _context.Accounts
-                .Include(a => a.Enrollments)
-                    .ThenInclude(e => e.Course)
-                .Include(a => a.UserProgresses)
-                    .ThenInclude(up => up.Lesson)
-                .FirstOrDefaultAsync(a => a.UserId == userId);
+            var user = await _userRepo.GetUserWithEnrollmentsAndProgressAsync(userId);
 
-            if (user == null) return ""; var enrolledCourses = user.Enrollments?.Select(e => e.Course?.CourseName)
+            if (user == null) return "";
+
+            var enrolledCourses = user.Enrollments?.Select(e => e.Course?.CourseName)
                 .Where(name => !string.IsNullOrEmpty(name))
                 .Cast<string>()
                 .ToList() ?? new List<string>();
 
             var completedLessons = user.UserProgresses?.Count(up => up.IsCompleted == true) ?? 0;
-            var totalLessons = user.UserProgresses?.Count() ?? 0; var contextBuilder = new StringBuilder();
+            var totalLessons = user.UserProgresses?.Count() ?? 0;
+
+            var contextBuilder = new StringBuilder();
             contextBuilder.AppendLine($"User {user.FullName} ({user.UserEmail})");
 
             if (enrolledCourses.Any())
@@ -243,11 +232,8 @@ namespace BrainStormEra_MVC.Services
 
         private async Task<List<ChatbotConversation>> GetRecentConversationHistoryAsync(string userId, int limit = 3)
         {
-            return await _context.ChatbotConversations
-                .Where(c => c.UserId == userId)
-                .OrderByDescending(c => c.ConversationTime)
-                .Take(limit)
-                .ToListAsync();
+            var conversations = await _chatbotRepo.GetConversationHistoryAsync(userId, limit);
+            return conversations.ToList();
         }
         private string BuildHistoryContext(List<ChatbotConversation> history)
         {

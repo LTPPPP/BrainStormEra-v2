@@ -1,5 +1,6 @@
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Models;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -13,12 +14,17 @@ namespace BrainStormEra_MVC.Services
     /// </summary>
     public class SafeDeleteService : ISafeDeleteService
     {
+        private readonly ISafeDeleteRepo _safeDeleteRepo;
         private readonly BrainStormEraContext _context;
         private readonly ILogger<SafeDeleteService> _logger;
         private readonly Dictionary<string, EntityDeletionPolicy> _deletionPolicies;
 
-        public SafeDeleteService(BrainStormEraContext context, ILogger<SafeDeleteService> logger)
+        public SafeDeleteService(
+            ISafeDeleteRepo safeDeleteRepo,
+            BrainStormEraContext context,
+            ILogger<SafeDeleteService> logger)
         {
+            _safeDeleteRepo = safeDeleteRepo;
             _context = context;
             _logger = logger;
             _deletionPolicies = InitializeDeletionPolicies();

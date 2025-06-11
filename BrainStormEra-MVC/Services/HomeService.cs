@@ -1,5 +1,6 @@
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -12,11 +13,22 @@ namespace BrainStormEra_MVC.Services
      /// </summary>
     public class HomeService : IHomeService
     {
+        private readonly ICourseRepo _courseRepo;
+        private readonly IUserRepo _userRepo;
+        private readonly INotificationRepo _notificationRepo;
         private readonly BrainStormEraContext _context;
         private readonly ILogger<HomeService> _logger;
 
-        public HomeService(BrainStormEraContext context, ILogger<HomeService> logger)
+        public HomeService(
+            ICourseRepo courseRepo,
+            IUserRepo userRepo,
+            INotificationRepo notificationRepo,
+            BrainStormEraContext context,
+            ILogger<HomeService> logger)
         {
+            _courseRepo = courseRepo;
+            _userRepo = userRepo;
+            _notificationRepo = notificationRepo;
             _context = context;
             _logger = logger;
         }
@@ -28,46 +40,33 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var featuredCourses = await _context.Courses
-                    .AsNoTracking()
-                    .Where(c => c.IsFeatured == true && c.CourseStatus == 1)
-                    .Include(c => c.Author)
-                    .Include(c => c.Enrollments)
-                    .Include(c => c.CourseCategories)
-                    .Select(c => new CourseViewModel
-                    {
-                        CourseId = c.CourseId,
-                        CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
-                        Price = c.Price,
-                        CreatedBy = c.Author.FullName ?? c.Author.Username,
-                        Description = c.CourseDescription,
-                        EnrollmentCount = c.Enrollments.Count(),
-                        CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList()
-                    })
-                    .OrderByDescending(c => c.EnrollmentCount)
-                    .Take(6)
-                    .ToListAsync();
+                // Use repository for featured courses
+                var featuredCourses = await _courseRepo.GetFeaturedCoursesAsync(6);
+                var courseViewModels = featuredCourses.Select(c => new CourseViewModel
+                {
+                    CourseId = c.CourseId,
+                    CourseName = c.CourseName,
+                    CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                    Price = c.Price,
+                    CreatedBy = c.Author?.FullName ?? c.Author?.Username ?? "Unknown",
+                    Description = c.CourseDescription,
+                    EnrollmentCount = c.Enrollments?.Count ?? 0,
+                    CourseCategories = c.CourseCategories?.Select(cc => cc.CourseCategoryName).ToList() ?? new List<string>()
+                }).ToList();
 
-                // Get categories ordered by course count (most courses first)
-                var categories = await _context.CourseCategories
-                    .AsNoTracking()
-                    .Where(cc => cc.IsActive == true) // Only active categories
-                    .Select(cc => new CourseCategoryViewModel
-                    {
-                        CategoryId = cc.CourseCategoryId,
-                        CategoryName = cc.CourseCategoryName,
-                        CourseCount = cc.Courses.Where(c => c.CourseStatus == 1).Count()
-                    })
-                    .Where(c => c.CourseCount > 0) // Only categories with courses
-                    .OrderByDescending(c => c.CourseCount)
-                    .Take(8) // Limit to top 8 categories
-                    .ToListAsync();
+                // Use repository for categories
+                var categories = await _courseRepo.GetCategoriesWithCourseCountAsync(8);
+                var categoryViewModels = categories.Select(cc => new CourseCategoryViewModel
+                {
+                    CategoryId = cc.CourseCategoryId,
+                    CategoryName = cc.CourseCategoryName,
+                    CourseCount = cc.Courses?.Count(c => c.CourseStatus == 1) ?? 0
+                }).ToList();
 
                 return new HomePageGuestViewModel
                 {
-                    RecommendedCourses = featuredCourses,
-                    Categories = categories
+                    RecommendedCourses = courseViewModels,
+                    Categories = categoryViewModels
                 };
             }
             catch (Exception ex)
@@ -84,52 +83,36 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var user = await _context.Accounts
-                    .AsNoTracking()
-                    .Where(a => a.UserId == userId)
-                    .Select(a => new { a.Username, a.FullName, a.UserImage })
-                    .FirstOrDefaultAsync();
+                // Use repository for user basic info
+                var user = await _userRepo.GetUserBasicInfoAsync(userId);
 
                 if (user == null)
                     throw new ArgumentException("User not found", nameof(userId));
 
-                // Get enrolled courses
-                var enrolledCourses = await _context.Enrollments
-                    .AsNoTracking()
-                    .Where(e => e.UserId == userId && e.EnrollmentStatus == 1)
-                    .Include(e => e.Course)
-                    .ThenInclude(c => c.Author)
-                    .Select(e => new EnrolledCourseViewModel
-                    {
-                        CourseId = e.Course.CourseId,
-                        CourseName = e.Course.CourseName,
-                        CourseImage = e.Course.CourseImage ?? "/img/defaults/default-course.svg",
-                        AuthorName = e.Course.Author.FullName ?? e.Course.Author.Username,
-                        CompletionPercentage = (int)(e.ProgressPercentage ?? 0)
-                    })
-                    .ToListAsync();
+                // Get enrolled courses using repository
+                var enrolledCourses = await _courseRepo.GetUserEnrollmentsAsync(userId);
+                var enrolledCourseViewModels = enrolledCourses.Select(e => new EnrolledCourseViewModel
+                {
+                    CourseId = e.Course?.CourseId ?? "",
+                    CourseName = e.Course?.CourseName ?? "",
+                    CourseImage = e.Course?.CourseImage ?? "/img/defaults/default-course.svg",
+                    AuthorName = e.Course?.Author?.FullName ?? e.Course?.Author?.Username ?? "Unknown",
+                    CompletionPercentage = (int)(e.ProgressPercentage ?? 0)
+                }).ToList();
 
-                // Get recommended courses
-                var enrolledCourseIds = enrolledCourses.Select(ec => ec.CourseId).ToList();
-                var recommendedCourses = await _context.Courses
-                    .AsNoTracking()
-                    .Where(c => c.IsFeatured == true &&
-                               c.CourseStatus == 1 &&
-                               !enrolledCourseIds.Contains(c.CourseId))
-                    .Include(c => c.Author)
-                    .Include(c => c.CourseCategories)
-                    .Select(c => new CourseViewModel
-                    {
-                        CourseId = c.CourseId,
-                        CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
-                        Price = c.Price,
-                        CreatedBy = c.Author.FullName ?? c.Author.Username,
-                        Description = c.CourseDescription,
-                        CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList()
-                    })
-                    .Take(6)
-                    .ToListAsync();
+                // Get recommended courses using repository
+                var enrolledCourseIds = enrolledCourseViewModels.Select(ec => ec.CourseId).ToList();
+                var recommendedCourses = await _courseRepo.GetRecommendedCoursesForUserAsync(userId, enrolledCourseIds, 6);
+                var recommendedCourseViewModels = recommendedCourses.Select(c => new CourseViewModel
+                {
+                    CourseId = c.CourseId,
+                    CourseName = c.CourseName,
+                    CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                    Price = c.Price,
+                    CreatedBy = c.Author?.FullName ?? c.Author?.Username ?? "Unknown",
+                    Description = c.CourseDescription,
+                    CourseCategories = c.CourseCategories?.Select(cc => cc.CourseCategoryName).ToList() ?? new List<string>()
+                }).ToList();
 
                 // Get notifications (placeholder - implement actual notification system if needed)
                 var notifications = new List<NotificationViewModel>
@@ -149,8 +132,8 @@ namespace BrainStormEra_MVC.Services
                     UserName = user.Username,
                     FullName = user.FullName ?? user.Username,
                     UserImage = user.UserImage ?? "/img/default-avatar.svg",
-                    EnrolledCourses = enrolledCourses,
-                    RecommendedCourses = recommendedCourses,
+                    EnrolledCourses = enrolledCourseViewModels,
+                    RecommendedCourses = recommendedCourseViewModels,
                     Notifications = notifications
                 };
             }
@@ -168,37 +151,29 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var user = await _context.Accounts
-                    .AsNoTracking()
-                    .Where(a => a.UserId == userId)
-                    .Select(a => new { a.Username, a.FullName, a.UserImage, a.PaymentPoint })
-                    .FirstOrDefaultAsync();
+                // Use repository for user data with payment point
+                var user = await _userRepo.GetUserWithPaymentPointAsync(userId);
 
                 if (user == null)
                     throw new ArgumentException("User not found", nameof(userId));
 
-                // Get instructor's courses
-                var instructorCourses = await _context.Courses
-                    .AsNoTracking()
-                    .Where(c => c.AuthorId == userId)
-                    .Include(c => c.Enrollments)
-                    .Include(c => c.CourseCategories)
-                    .Select(c => new CourseViewModel
-                    {
-                        CourseId = c.CourseId,
-                        CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
-                        Price = c.Price,
-                        CreatedBy = user.FullName ?? user.Username,
-                        Description = c.CourseDescription,
-                        EnrollmentCount = c.Enrollments.Count(),
-                        CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList()
-                    })
-                    .ToListAsync();
+                // Use repository for instructor courses
+                var instructorCourses = await _courseRepo.GetInstructorCoursesAsync(userId, null, null, 1, 50);
+                var courseViewModels = instructorCourses.Select(c => new CourseViewModel
+                {
+                    CourseId = c.CourseId,
+                    CourseName = c.CourseName,
+                    CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                    Price = c.Price,
+                    CreatedBy = user.FullName ?? user.Username,
+                    Description = c.CourseDescription,
+                    EnrollmentCount = c.Enrollments?.Count ?? 0,
+                    CourseCategories = c.CourseCategories?.Select(cc => cc.CourseCategoryName).ToList() ?? new List<string>()
+                }).ToList();
 
                 // Calculate statistics
-                var totalCourses = instructorCourses.Count;
-                var totalStudents = instructorCourses.Sum(c => c.EnrollmentCount);
+                var totalCourses = courseViewModels.Count;
+                var totalStudents = courseViewModels.Sum(c => c.EnrollmentCount);
                 var totalRevenue = user.PaymentPoint ?? 0;
 
                 // Get notifications (placeholder)
@@ -223,7 +198,7 @@ namespace BrainStormEra_MVC.Services
                     TotalRevenue = totalRevenue,
                     TotalReviews = 0, // Calculate if needed
                     AverageRating = 4.5, // Calculate if needed
-                    RecentCourses = instructorCourses.Take(5).ToList(),
+                    RecentCourses = courseViewModels.Take(5).ToList(),
                     Notifications = notifications
                 };
             }

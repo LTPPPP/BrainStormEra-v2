@@ -1,21 +1,26 @@
-using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace BrainStormEra_MVC.Services
 {
     public class EnrollmentService : IEnrollmentService
     {
-        private readonly BrainStormEraContext _context;
+        private readonly ICourseRepo _courseRepo;
+        private readonly IUserRepo _userRepo;
         private readonly IMemoryCache _cache;
         private readonly ILogger<EnrollmentService> _logger;
         private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(5);
 
-        public EnrollmentService(BrainStormEraContext context, IMemoryCache cache, ILogger<EnrollmentService> logger)
+        public EnrollmentService(
+            ICourseRepo courseRepo,
+            IUserRepo userRepo,
+            IMemoryCache cache,
+            ILogger<EnrollmentService> logger)
         {
-            _context = context;
+            _courseRepo = courseRepo;
+            _userRepo = userRepo;
             _cache = cache;
             _logger = logger;
         }
@@ -24,33 +29,16 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var existingEnrollment = await _context.Enrollments
-                    .FirstOrDefaultAsync(e => e.UserId == userId && e.CourseId == courseId);
+                var result = await _courseRepo.EnrollUserAsync(userId, courseId);
 
-                if (existingEnrollment != null)
+                if (result)
                 {
-                    return false;
+                    _cache.Remove($"UserEnrollments_{userId}");
+                    _cache.Remove($"CourseEnrollmentCount_{courseId}");
+                    _cache.Remove($"IsEnrolled_{userId}_{courseId}");
                 }
 
-                var enrollment = new Enrollment
-                {
-                    EnrollmentId = Guid.NewGuid().ToString(),
-                    UserId = userId,
-                    CourseId = courseId,
-                    EnrollmentCreatedAt = DateTime.UtcNow,
-                    EnrollmentUpdatedAt = DateTime.UtcNow,
-                    EnrollmentStatus = 1,
-                    ProgressPercentage = 0
-                };
-
-                _context.Enrollments.Add(enrollment);
-                await _context.SaveChangesAsync();
-
-                _cache.Remove($"UserEnrollments_{userId}");
-                _cache.Remove($"CourseEnrollmentCount_{courseId}");
-                _cache.Remove($"IsEnrolled_{userId}_{courseId}");
-
-                return true;
+                return result;
             }
             catch (Exception ex)
             {
@@ -68,9 +56,7 @@ namespace BrainStormEra_MVC.Services
                 return isEnrolled;
             }
 
-            isEnrolled = await _context.Enrollments
-                .AsNoTracking()
-                .AnyAsync(e => e.UserId == userId && e.CourseId == courseId);
+            isEnrolled = await _courseRepo.IsUserEnrolledAsync(userId, courseId);
 
             _cache.Set(cacheKey, isEnrolled, CacheExpiration);
             return isEnrolled;
@@ -85,12 +71,7 @@ namespace BrainStormEra_MVC.Services
                 return cachedEnrollments!;
             }
 
-            var enrollments = await _context.Enrollments
-                .AsNoTracking()
-                .Where(e => e.UserId == userId)
-                .Include(e => e.Course)
-                    .ThenInclude(c => c.Author)
-                .ToListAsync();
+            var enrollments = await _courseRepo.GetUserEnrollmentsAsync(userId);
 
             _cache.Set(cacheKey, enrollments, TimeSpan.FromMinutes(10));
             return enrollments;
@@ -105,9 +86,7 @@ namespace BrainStormEra_MVC.Services
                 return count;
             }
 
-            count = await _context.Enrollments
-                .AsNoTracking()
-                .CountAsync(e => e.CourseId == courseId);
+            count = await _courseRepo.GetCourseEnrollmentCountAsync(courseId);
 
             _cache.Set(cacheKey, count, CacheExpiration);
             return count;

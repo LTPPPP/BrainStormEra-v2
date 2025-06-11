@@ -1,3 +1,4 @@
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
@@ -6,17 +7,20 @@ namespace BrainStormEra_MVC.Services
 {
     public class CertificateService : ICertificateService
     {
-        private readonly ICertificateRepository _certificateRepository;
+        private readonly ICertificateRepo _certificateRepo;
+        private readonly ICourseRepo _courseRepo;
         private readonly IMemoryCache _cache;
         private readonly ILogger<CertificateService> _logger;
         private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(15);
 
         public CertificateService(
-            ICertificateRepository certificateRepository,
+            ICertificateRepo certificateRepo,
+            ICourseRepo courseRepo,
             IMemoryCache cache,
             ILogger<CertificateService> logger)
         {
-            _certificateRepository = certificateRepository;
+            _certificateRepo = certificateRepo;
+            _courseRepo = courseRepo;
             _cache = cache;
             _logger = logger;
         }
@@ -29,7 +33,7 @@ namespace BrainStormEra_MVC.Services
                 if (_cache.TryGetValue(cacheKey, out List<CertificateSummaryViewModel>? cached))
                     return cached!;
 
-                var enrollments = await _certificateRepository.GetUserCompletedEnrollmentsAsync(userId);
+                var enrollments = await _certificateRepo.GetUserCompletedEnrollmentsAsync(userId, null, 1, int.MaxValue);
                 var result = enrollments.Select(e => new CertificateSummaryViewModel
                 {
                     CourseId = e.CourseId,
@@ -59,7 +63,7 @@ namespace BrainStormEra_MVC.Services
                 if (_cache.TryGetValue(cacheKey, out CertificateDetailsViewModel? cached))
                     return cached;
 
-                var certificateData = await _certificateRepository.GetCertificateDataAsync(userId, courseId);
+                var certificateData = await _certificateRepo.GetCertificateDataAsync(userId, courseId);
                 if (certificateData == null) return null;
 
                 var completionDuration = (certificateData.CertificateIssuedDate!.Value.ToDateTime(TimeOnly.MinValue)
@@ -97,7 +101,7 @@ namespace BrainStormEra_MVC.Services
             if (_cache.TryGetValue(cacheKey, out bool cached))
                 return cached;
 
-            var result = await _certificateRepository.HasValidCertificateAsync(userId, courseId);
+            var result = await _certificateRepo.HasValidCertificateAsync(userId, courseId);
             _cache.Set(cacheKey, result, CacheExpiration);
             return result;
         }
@@ -142,8 +146,8 @@ namespace BrainStormEra_MVC.Services
                 if (_cache.TryGetValue(cacheKey, out CertificateListViewModel? cached))
                     return cached!;
 
-                var enrollments = await _certificateRepository.GetUserCompletedEnrollmentsAsync(userId, search, page, pageSize);
-                var totalCount = await _certificateRepository.GetUserCompletedEnrollmentsCountAsync(userId, search);
+                var enrollments = await _certificateRepo.GetUserCompletedEnrollmentsAsync(userId, search, page, pageSize);
+                var totalCount = await _certificateRepo.GetUserCompletedEnrollmentsCountAsync(userId, search);
 
                 var certificates = enrollments.Select(e => new CertificateSummaryViewModel
                 {

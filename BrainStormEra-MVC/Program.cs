@@ -39,10 +39,26 @@ namespace BrainStormEra_MVC
                 options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
             });
 
+            // Register ALL Repositories from DataAccessLayer (14 repositories)
+            builder.Services.AddScoped(typeof(DataAccessLayer.Repositories.Interfaces.IBaseRepo<>), typeof(DataAccessLayer.Repositories.BaseRepo<>));
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAuthRepo, DataAccessLayer.Repositories.AuthRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IUserRepo, DataAccessLayer.Repositories.UserRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICourseRepo, DataAccessLayer.Repositories.CourseRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChapterRepo, DataAccessLayer.Repositories.ChapterRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ILessonRepo, DataAccessLayer.Repositories.LessonRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IQuizRepo, DataAccessLayer.Repositories.QuizRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IQuestionRepo, DataAccessLayer.Repositories.QuestionRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.INotificationRepo, DataAccessLayer.Repositories.NotificationRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAchievementRepo, DataAccessLayer.Repositories.AchievementRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICertificateRepo, DataAccessLayer.Repositories.CertificateRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAdminRepo, DataAccessLayer.Repositories.AdminRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatbotRepo, DataAccessLayer.Repositories.ChatbotRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();
+
             // Register Services with SOLID principles
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IUserService, BrainStormEra_MVC.Services.UserService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseService, BrainStormEra_MVC.Services.CourseService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseRepository, BrainStormEra_MVC.Services.Repositories.CourseRepository>();
+
 
             // Register Course Service Implementation for business logic layer
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.CourseServiceImpl>();
@@ -85,9 +101,9 @@ namespace BrainStormEra_MVC
 
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IEnrollmentService, BrainStormEra_MVC.Services.EnrollmentService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAchievementService, BrainStormEra_MVC.Services.AchievementService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAchievementRepository, BrainStormEra_MVC.Services.Repositories.AchievementRepository>();
+
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICertificateService, BrainStormEra_MVC.Services.CertificateService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICertificateRepository, BrainStormEra_MVC.Services.Repositories.CertificateRepository>();
+
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IUserContextService, BrainStormEra_MVC.Services.UserContextService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IResponseService, BrainStormEra_MVC.Services.ResponseService>();
             builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.INotificationService, BrainStormEra_MVC.Services.NotificationService>();

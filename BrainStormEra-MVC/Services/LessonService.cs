@@ -1,5 +1,6 @@
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -8,24 +9,23 @@ namespace BrainStormEra_MVC.Services
 {
     public class LessonService : ILessonService
     {
+        private readonly ILessonRepo _lessonRepo;
+        private readonly IChapterRepo _chapterRepo;
         private readonly BrainStormEraContext _context;
 
-        public LessonService(BrainStormEraContext context)
+        public LessonService(
+            ILessonRepo lessonRepo,
+            IChapterRepo chapterRepo,
+            BrainStormEraContext context)
         {
+            _lessonRepo = lessonRepo;
+            _chapterRepo = chapterRepo;
             _context = context;
         }
         public async Task<bool> CreateLessonAsync(Lesson lesson)
         {
-            Console.WriteLine("=== LESSON SERVICE: CreateLessonAsync CALLED ===");
-            Console.WriteLine($"Lesson ID: {lesson?.LessonId}");
-            Console.WriteLine($"Lesson Name: {lesson?.LessonName}");
-            Console.WriteLine($"Chapter ID: {lesson?.ChapterId}");
-            Console.WriteLine($"Lesson Type ID: {lesson?.LessonTypeId}");
-            Console.WriteLine($"Lesson Order: {lesson?.LessonOrder}");
-
             if (lesson == null)
             {
-                Console.WriteLine("=== LESSON IS NULL ===");
                 return false;
             }
 
@@ -36,18 +36,14 @@ namespace BrainStormEra_MVC.Services
                 using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
-                    Console.WriteLine("=== CHECKING LESSON ORDER ===");
                     // Check if lesson order is taken and adjust if necessary
                     var orderTaken = await IsLessonOrderTakenAsync(lesson.ChapterId, lesson.LessonOrder);
-                    Console.WriteLine($"Is lesson order {lesson.LessonOrder} taken: {orderTaken}");
 
                     if (orderTaken)
                     {
-                        Console.WriteLine("=== UPDATING LESSON ORDERS ===");
                         await UpdateLessonOrdersAsync(lesson.ChapterId, lesson.LessonOrder);
                     }
 
-                    Console.WriteLine("=== SETTING DEFAULT VALUES ===");
                     // Set default values
                     lesson.LessonStatus = lesson.LessonStatus ?? 1; // Active status
                     lesson.IsLocked = lesson.IsLocked ?? false;
@@ -59,26 +55,14 @@ namespace BrainStormEra_MVC.Services
                     lesson.LessonCreatedAt = DateTime.Now;
                     lesson.LessonUpdatedAt = DateTime.Now;
 
-                    Console.WriteLine("=== ADDING LESSON TO CONTEXT ===");
-                    _context.Lessons.Add(lesson);
+                    var lessonId = await _lessonRepo.CreateLessonAsync(lesson);
 
-                    Console.WriteLine("=== SAVING CHANGES ===");
-                    await _context.SaveChangesAsync();
-
-                    Console.WriteLine("=== COMMITTING TRANSACTION ===");
                     await transaction.CommitAsync();
 
-                    Console.WriteLine("=== LESSON CREATED SUCCESSFULLY ===");
                     return true;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"=== LESSON SERVICE EXCEPTION ===");
-                    Console.WriteLine($"Exception Type: {ex.GetType().Name}");
-                    Console.WriteLine($"Exception Message: {ex.Message}");
-                    Console.WriteLine($"Inner Exception: {ex.InnerException?.Message}");
-                    Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-
                     await transaction.RollbackAsync();
                     // Log exception here if you have logging
                     return false;
@@ -163,22 +147,14 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                Console.WriteLine($"=== GetLessonForEditAsync Called ===");
-                Console.WriteLine($"LessonId: {lessonId}");
-                Console.WriteLine($"AuthorId: {authorId}");
-
                 var lesson = await _context.Lessons
                     .Include(l => l.Chapter)
                     .ThenInclude(c => c.Course)
                     .Where(l => l.LessonId == lessonId && l.Chapter.Course.AuthorId == authorId)
                     .FirstOrDefaultAsync();
 
-                Console.WriteLine($"Lesson found: {lesson != null}");
                 if (lesson != null)
                 {
-                    Console.WriteLine($"Lesson Name: {lesson.LessonName}");
-                    Console.WriteLine($"Course AuthorId: {lesson.Chapter.Course.AuthorId}");
-                    Console.WriteLine($"Requested AuthorId: {authorId}");
                 }
 
                 if (lesson == null)
@@ -225,7 +201,6 @@ namespace BrainStormEra_MVC.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in GetLessonForEditAsync: {ex.Message}");
                 return null;
             }
         }

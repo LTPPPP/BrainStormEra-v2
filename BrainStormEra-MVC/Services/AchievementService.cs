@@ -1,5 +1,6 @@
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
@@ -8,16 +9,19 @@ namespace BrainStormEra_MVC.Services
 {
     public class AchievementService : IAchievementService
     {
-        private readonly IAchievementRepository _achievementRepository;
+        private readonly IAchievementRepo _achievementRepo;
+        private readonly ICourseRepo _courseRepo;
         private readonly IMemoryCache _cache;
         private readonly ILogger<AchievementService> _logger;
 
         public AchievementService(
-            IAchievementRepository achievementRepository,
+            IAchievementRepo achievementRepo,
+            ICourseRepo courseRepo,
             IMemoryCache cache,
             ILogger<AchievementService> logger)
         {
-            _achievementRepository = achievementRepository;
+            _achievementRepo = achievementRepo;
+            _courseRepo = courseRepo;
             _cache = cache;
             _logger = logger;
         }
@@ -27,7 +31,7 @@ namespace BrainStormEra_MVC.Services
             try
             {
                 await AssignAchievementsAsync(userId);
-                return await _achievementRepository.GetUserAchievementsAsync(userId);
+                return await _achievementRepo.GetUserAchievementsAsync(userId);
             }
             catch (Exception ex)
             {
@@ -40,14 +44,14 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var userAchievement = await _achievementRepository.GetUserAchievementAsync(userId, achievementId);
+                var userAchievement = await _achievementRepo.GetUserAchievementAsync(userId, achievementId);
                 if (userAchievement == null)
                     return null;
 
                 string? relatedCourseName = null;
                 if (!string.IsNullOrEmpty(userAchievement.RelatedCourseId))
                 {
-                    relatedCourseName = await _achievementRepository.GetCourseNameAsync(userAchievement.RelatedCourseId);
+                    relatedCourseName = await _achievementRepo.GetCourseNameAsync(userAchievement.RelatedCourseId);
                 }
 
                 return new
@@ -71,8 +75,8 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var achievements = await _achievementRepository.GetAllAchievementsAsync();
-                var userCompletedCourses = await _achievementRepository.GetUserCompletedCoursesCountAsync();
+                var achievements = await _achievementRepo.GetAllAchievementsAsync();
+                var userCompletedCourses = await _achievementRepo.GetUserCompletedCoursesCountAsync();
 
                 if (!userCompletedCourses.TryGetValue(userId, out int completedCount))
                     return;
@@ -81,7 +85,7 @@ namespace BrainStormEra_MVC.Services
                     .Where(a => ShouldAssignAchievement(a, completedCount))
                     .Select(async a =>
                     {
-                        if (!await _achievementRepository.HasUserAchievementAsync(userId, a.AchievementId))
+                        if (!await _achievementRepo.HasUserAchievementAsync(userId, a.AchievementId))
                         {
                             var userAchievement = new UserAchievement
                             {
@@ -91,7 +95,7 @@ namespace BrainStormEra_MVC.Services
                                 PointsEarned = a.PointsReward
                             };
 
-                            await _achievementRepository.AddUserAchievementAsync(userAchievement);
+                            await _achievementRepo.AddUserAchievementAsync(userAchievement);
                         }
                     });
 
@@ -107,14 +111,14 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var achievements = await _achievementRepository.GetAllAchievementsAsync();
-                var userCompletedCourses = await _achievementRepository.GetUserCompletedCoursesCountAsync();
+                var achievements = await _achievementRepo.GetAllAchievementsAsync();
+                var userCompletedCourses = await _achievementRepo.GetUserCompletedCoursesCountAsync();
 
                 var tasks = userCompletedCourses.Select(async user =>
                 {
                     foreach (var achievement in achievements.Where(a => ShouldAssignAchievement(a, user.Value)))
                     {
-                        if (!await _achievementRepository.HasUserAchievementAsync(user.Key, achievement.AchievementId))
+                        if (!await _achievementRepo.HasUserAchievementAsync(user.Key, achievement.AchievementId))
                         {
                             var userAchievement = new UserAchievement
                             {
@@ -124,7 +128,7 @@ namespace BrainStormEra_MVC.Services
                                 PointsEarned = achievement.PointsReward
                             };
 
-                            await _achievementRepository.AddUserAchievementAsync(userAchievement);
+                            await _achievementRepo.AddUserAchievementAsync(userAchievement);
                         }
                     }
                 });
@@ -147,8 +151,8 @@ namespace BrainStormEra_MVC.Services
                 if (_cache.TryGetValue(cacheKey, out AchievementListViewModel? cached))
                     return cached!;
 
-                var userAchievements = await _achievementRepository.GetUserAchievementsAsync(userId, search, page, pageSize);
-                var totalCount = await _achievementRepository.GetUserAchievementsCountAsync(userId, search);
+                var userAchievements = await _achievementRepo.GetUserAchievementsAsync(userId, search, page, pageSize);
+                var totalCount = await _achievementRepo.GetUserAchievementsCountAsync(userId, search);
 
                 var achievements = userAchievements.Select(ua => new AchievementSummaryViewModel
                 {

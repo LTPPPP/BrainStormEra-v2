@@ -1,19 +1,23 @@
-using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace BrainStormEra_MVC.Services
 {
     public class ChapterService : IChapterService
     {
-        private readonly BrainStormEraContext _context;
+        private readonly IChapterRepo _chapterRepo;
+        private readonly ICourseRepo _courseRepo;
         private readonly ILogger<ChapterService> _logger;
 
-        public ChapterService(BrainStormEraContext context, ILogger<ChapterService> logger)
+        public ChapterService(
+            IChapterRepo chapterRepo,
+            ICourseRepo courseRepo,
+            ILogger<ChapterService> logger)
         {
-            _context = context;
+            _chapterRepo = chapterRepo;
+            _courseRepo = courseRepo;
             _logger = logger;
         }
         public async Task<string> CreateChapterAsync(CreateChapterViewModel model, string authorId)
@@ -21,9 +25,7 @@ namespace BrainStormEra_MVC.Services
             try
             {
                 // Verify that the user is the author of the course
-                var course = await _context.Courses
-                    .Include(c => c.Chapters)
-                    .FirstOrDefaultAsync(c => c.CourseId == model.CourseId && c.AuthorId == authorId);
+                var course = await _courseRepo.GetCourseWithChaptersAsync(model.CourseId, authorId);
 
                 if (course == null)
                 {
@@ -73,11 +75,10 @@ namespace BrainStormEra_MVC.Services
                     ChapterUpdatedAt = DateTime.UtcNow
                 };
 
-                _context.Chapters.Add(chapter);
-                await _context.SaveChangesAsync();
+                var result = await _chapterRepo.CreateChapterAsync(chapter);
 
                 _logger.LogInformation("Chapter created successfully: {ChapterId} for course {CourseId} by author {AuthorId}", chapterId, model.CourseId, authorId);
-                return chapterId;
+                return result;
             }
             catch (ArgumentException)
             {
@@ -99,11 +100,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var course = await _context.Courses
-                    .Include(c => c.Chapters)
-                    .ThenInclude(ch => ch.Lessons)
-                    .ThenInclude(l => l.LessonType)
-                    .FirstOrDefaultAsync(c => c.CourseId == courseId && c.AuthorId == authorId);
+                var course = await _courseRepo.GetCourseWithChaptersAsync(courseId, authorId);
 
                 if (course == null)
                 {
@@ -153,9 +150,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var chapter = await _context.Chapters
-                    .Include(c => c.Course)
-                    .FirstOrDefaultAsync(c => c.ChapterId == chapterId && c.Course.AuthorId == authorId);
+                var chapter = await _chapterRepo.GetChapterWithCourseAsync(chapterId, authorId);
 
                 if (chapter == null)
                 {
@@ -170,10 +165,10 @@ namespace BrainStormEra_MVC.Services
                 chapter.UnlockAfterChapterId = model.UnlockAfterChapterId;
                 chapter.ChapterUpdatedAt = DateTime.UtcNow;
 
-                await _context.SaveChangesAsync();
+                var result = await _chapterRepo.UpdateChapterAsync(chapter);
 
                 _logger.LogInformation("Chapter updated successfully: {ChapterId}", chapterId);
-                return true;
+                return result;
             }
             catch (Exception ex)
             {
@@ -190,55 +185,18 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var chapter = await _context.Chapters
-                    .Include(c => c.Course)
-                    .Include(c => c.Lessons)
-                        .ThenInclude(l => l.UserProgresses)
-                    .FirstOrDefaultAsync(c => c.ChapterId == chapterId && c.Course.AuthorId == authorId);
+                var result = await _chapterRepo.DeleteChapterAsync(chapterId, authorId);
 
-                if (chapter == null)
+                if (result)
                 {
-                    _logger.LogWarning("Chapter not found or user not authorized to delete chapter {ChapterId}", chapterId);
-                    return false;
-                }
-
-                // Check if any lessons in this chapter have user progress
-                var hasUserProgress = chapter.Lessons.Any(l => l.UserProgresses.Any());
-                if (hasUserProgress)
-                {
-                    _logger.LogInformation("Chapter {ChapterId} has user progress, performing soft delete", chapterId);
-
-                    // Soft delete - set status to Archived
-                    chapter.ChapterStatus = 4; // Archived
-                    chapter.ChapterUpdatedAt = DateTime.UtcNow;
-
-                    // Also archive all lessons in this chapter
-                    foreach (var lesson in chapter.Lessons)
-                    {
-                        lesson.LessonStatus = 4; // Archived
-                        lesson.LessonUpdatedAt = DateTime.UtcNow;
-                    }
-
-                    await _context.SaveChangesAsync();
-                    _logger.LogInformation("Chapter soft deleted (archived) successfully: {ChapterId}", chapterId);
+                    _logger.LogInformation("Chapter deleted successfully: {ChapterId}", chapterId);
                 }
                 else
                 {
-                    // Hard delete if no user progress
-                    _logger.LogInformation("Chapter {ChapterId} has no user progress, performing hard delete", chapterId);
-
-                    // Remove associated lessons first
-                    if (chapter.Lessons.Any())
-                    {
-                        _context.Lessons.RemoveRange(chapter.Lessons);
-                    }
-
-                    _context.Chapters.Remove(chapter);
-                    await _context.SaveChangesAsync();
-                    _logger.LogInformation("Chapter hard deleted successfully: {ChapterId}", chapterId);
+                    _logger.LogWarning("Chapter not found or user not authorized to delete chapter {ChapterId}", chapterId);
                 }
 
-                return true;
+                return result;
             }
             catch (Exception ex)
             {
@@ -251,19 +209,15 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var chapters = await _context.Chapters
-                    .Where(c => c.CourseId == courseId)
-                    .OrderBy(c => c.ChapterOrder)
-                    .Select(c => new ChapterViewModel
-                    {
-                        ChapterId = c.ChapterId,
-                        ChapterName = c.ChapterName,
-                        ChapterDescription = c.ChapterDescription ?? "",
-                        ChapterOrder = c.ChapterOrder ?? 0
-                    })
-                    .ToListAsync();
+                var chapters = await _chapterRepo.GetChaptersByCourseAsync(courseId);
 
-                return chapters;
+                return chapters.Select(c => new ChapterViewModel
+                {
+                    ChapterId = c.ChapterId,
+                    ChapterName = c.ChapterName,
+                    ChapterDescription = c.ChapterDescription ?? "",
+                    ChapterOrder = c.ChapterOrder ?? 0
+                }).ToList();
             }
             catch (Exception ex)
             {
@@ -276,12 +230,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var chapter = await _context.Chapters
-                    .Include(c => c.Course)
-                    .ThenInclude(course => course.Chapters)
-                    .ThenInclude(ch => ch.Lessons)
-                    .ThenInclude(l => l.LessonType)
-                    .FirstOrDefaultAsync(c => c.ChapterId == chapterId && c.Course.AuthorId == authorId);
+                var chapter = await _chapterRepo.GetChapterWithCourseAsync(chapterId, authorId);
 
                 if (chapter == null)
                 {
@@ -289,7 +238,10 @@ namespace BrainStormEra_MVC.Services
                     return null;
                 }
 
-                var existingChapters = chapter.Course.Chapters
+                // Get all chapters for the course
+                var allChapters = await _chapterRepo.GetChaptersByCourseAsync(chapter.CourseId);
+
+                var existingChapters = allChapters
                     .Where(c => c.ChapterId != chapterId) // Exclude current chapter
                     .OrderBy(c => c.ChapterOrder)
                     .Select(c => new ChapterViewModel

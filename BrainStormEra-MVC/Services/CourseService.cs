@@ -1,5 +1,6 @@
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -9,21 +10,24 @@ namespace BrainStormEra_MVC.Services
 {
     public class CourseService : ICourseService
     {
-        private readonly ICourseRepository _courseRepository;
+        private readonly ICourseRepo _courseRepo;
+        private readonly IUserRepo _userRepo;
         private readonly IEnrollmentService _enrollmentService;
-        private readonly BrainStormEraContext _context;
+        private readonly BrainStormEraContext _context; // Keep for complex queries temporarily
         private readonly IMemoryCache _cache;
         private readonly ILogger<CourseService> _logger;
         private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(10);
 
         public CourseService(
-            ICourseRepository courseRepository,
+            ICourseRepo courseRepo,
+            IUserRepo userRepo,
             IEnrollmentService enrollmentService,
             BrainStormEraContext context,
             IMemoryCache cache,
             ILogger<CourseService> logger)
         {
-            _courseRepository = courseRepository;
+            _courseRepo = courseRepo;
+            _userRepo = userRepo;
             _enrollmentService = enrollmentService;
             _context = context;
             _cache = cache;
@@ -33,57 +37,38 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var query = _courseRepository.GetActiveCourses();
+                var courses = await _courseRepo.SearchCoursesAsync(search, category, page, pageSize, "date");
 
-                query = query.Include(c => c.Author)
-                           .Include(c => c.Enrollments)
-                           .Include(c => c.CourseCategories);
-
-                if (!string.IsNullOrWhiteSpace(search))
+                var courseViewModels = courses.Select(c => new CourseViewModel
                 {
-                    query = query.Where(c => c.CourseName.Contains(search) ||
-                                           c.CourseDescription!.Contains(search));
-                }
+                    CourseId = c.CourseId,
+                    CourseName = c.CourseName,
+                    CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                    Description = c.CourseDescription,
+                    Price = c.Price,
+                    CreatedBy = c.Author.FullName ?? c.Author.Username,
+                    CourseCategories = c.CourseCategories
+                        .Select(cc => cc.CourseCategoryName)
+                        .ToList(),
+                    EnrollmentCount = c.Enrollments.Count(),
+                    StarRating = 4 // Default rating
+                }).ToList();
 
-                if (!string.IsNullOrWhiteSpace(category))
-                {
-                    query = query.Where(c => c.CourseCategories
-                        .Any(cc => cc.CourseCategoryName == category));
-                }
-
-                var totalCourses = await query.CountAsync();
+                var totalCourses = _courseRepo.GetActiveCourses().Count();
                 var totalPages = (int)Math.Ceiling((double)totalCourses / pageSize);
 
-                var courses = await query
-                    .OrderByDescending(c => c.CourseCreatedAt)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .Select(c => new CourseViewModel
-                    {
-                        CourseId = c.CourseId,
-                        CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
-                        Description = c.CourseDescription,
-                        Price = c.Price,
-                        CreatedBy = c.Author.FullName ?? c.Author.Username,
-                        CourseCategories = c.CourseCategories
-                            .Select(cc => cc.CourseCategoryName)
-                            .ToList(),
-                        EnrollmentCount = c.Enrollments.Count()
-                    })
-                    .ToListAsync();
-
-                foreach (var course in courses)
+                var categories = await _courseRepo.GetCategoriesAsync();
+                var categoryViewModels = categories.Select(c => new CourseCategoryViewModel
                 {
-                    course.StarRating = 4;
-                }
-
-                var categories = await GetCategoriesAsync();
+                    CategoryId = c.CourseCategoryId,
+                    CategoryName = c.CourseCategoryName,
+                    CourseCount = 0 // Would need separate query for count
+                }).ToList();
 
                 return new CourseListViewModel
                 {
-                    Courses = courses,
-                    Categories = categories,
+                    Courses = courseViewModels,
+                    Categories = categoryViewModels,
                     SearchQuery = search,
                     SelectedCategory = category,
                     CurrentPage = page,
@@ -103,7 +88,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var course = await _courseRepository.GetCourseDetailAsync(courseId);
+                var course = await _courseRepo.GetCourseDetailAsync(courseId);
                 if (course == null) return null;
 
                 var viewModel = new CourseDetailViewModel
@@ -206,7 +191,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var course = await _courseRepository.GetCourseDetailAsync(courseId, currentUserId);
+                var course = await _courseRepo.GetCourseDetailAsync(courseId, currentUserId);
                 if (course == null) return null;
 
                 var viewModel = new CourseDetailViewModel
@@ -309,7 +294,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var query = _courseRepository.GetActiveCourses();
+                var query = _courseRepo.GetActiveCourses();
 
                 query = query.Include(c => c.Author)
                            .Include(c => c.Enrollments)
@@ -372,7 +357,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var course = await _courseRepository.GetCourseByIdAsync(courseId);
+                var course = await _courseRepo.GetCourseByIdAsync(courseId);
                 if (course == null || course.Price > 0) return false;
 
                 return await _enrollmentService.EnrollAsync(userId, courseId);
@@ -386,7 +371,7 @@ namespace BrainStormEra_MVC.Services
 
         public async Task<bool> IsUserEnrolledAsync(string userId, string courseId)
         {
-            return await _enrollmentService.IsEnrolledAsync(userId, courseId);
+            return await _courseRepo.IsUserEnrolledAsync(userId, courseId);
         }
 
         public async Task<List<CourseCategoryViewModel>> GetCategoriesAsync()

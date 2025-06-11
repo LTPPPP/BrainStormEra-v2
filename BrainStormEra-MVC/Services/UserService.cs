@@ -1,5 +1,6 @@
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
 using BrainStormEra_MVC.Utilities;
@@ -10,16 +11,25 @@ namespace BrainStormEra_MVC.Services
 {
     public class UserService : IUserService
     {
-        private readonly BrainStormEraContext _context;
+        private readonly IUserRepo _userRepo;
+        private readonly ICourseRepo _courseRepo;
+        private readonly IAuthRepo _authRepo; // Added for authentication operations
+        private readonly BrainStormEraContext _context; // Keep for complex queries that involve multiple entities
         private readonly IMemoryCache _cache;
         private readonly ILogger<UserService> _logger;
         private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(10);
 
         public UserService(
+            IUserRepo userRepo,
+            ICourseRepo courseRepo,
+            IAuthRepo authRepo,
             BrainStormEraContext context,
             IMemoryCache cache,
             ILogger<UserService> logger)
         {
+            _userRepo = userRepo;
+            _courseRepo = courseRepo;
+            _authRepo = authRepo;
             _context = context;
             _cache = cache;
             _logger = logger;
@@ -29,8 +39,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                return await _context.Accounts
-                    .FirstOrDefaultAsync(u => u.Username == username);
+                return await _authRepo.GetUserByUsernameAsync(username);
             }
             catch (Exception ex)
             {
@@ -43,8 +52,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                return await _context.Accounts
-                    .FirstOrDefaultAsync(u => u.UserEmail == email);
+                return await _authRepo.GetUserByEmailAsync(email);
             }
             catch (Exception ex)
             {
@@ -57,7 +65,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                return await _context.Accounts.AnyAsync(u => u.Username == username);
+                return await _authRepo.UsernameExistsAsync(username);
             }
             catch (Exception ex)
             {
@@ -70,7 +78,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                return await _context.Accounts.AnyAsync(u => u.UserEmail == email);
+                return await _authRepo.EmailExistsAsync(email);
             }
             catch (Exception ex)
             {
@@ -83,9 +91,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                _context.Accounts.Add(user);
-                await _context.SaveChangesAsync();
-                return true;
+                return await _authRepo.CreateUserAsync(user);
             }
             catch (Exception ex)
             {
@@ -98,9 +104,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                _context.Accounts.Update(user);
-                await _context.SaveChangesAsync();
-                return true;
+                return await _authRepo.UpdateUserAsync(user);
             }
             catch (Exception ex)
             {
@@ -111,19 +115,14 @@ namespace BrainStormEra_MVC.Services
 
         public async Task<bool> VerifyPasswordAsync(string password, string storedHash)
         {
-            return await Task.FromResult(PasswordHasher.VerifyPassword(password, storedHash));
+            return await _authRepo.VerifyPasswordAsync(password, storedHash);
         }
 
         public async Task UpdateLastLoginAsync(string userId)
         {
             try
             {
-                var user = await _context.Accounts.FindAsync(userId);
-                if (user != null)
-                {
-                    user.LastLogin = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
-                }
+                await _authRepo.UpdateLastLoginAsync(userId);
             }
             catch (Exception ex)
             {
@@ -136,13 +135,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var user = await _context.Accounts.FindAsync(userId);
-                if (user == null)
-                    return false;
-
-                user.IsBanned = isBanned;
-                await _context.SaveChangesAsync();
-                return true;
+                return await _authRepo.BanUserAsync(userId, isBanned);
             }
             catch (Exception ex)
             {
@@ -155,6 +148,8 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
+                // For complex queries involving multiple entities and projections, 
+                // we can still use the context directly or create specialized repository methods
                 var query = _context.Enrollments
                     .Include(e => e.User)
                     .Include(e => e.Course)

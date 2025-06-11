@@ -1,8 +1,7 @@
-using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using BrainStormEra_MVC.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BrainStormEra_MVC.Services
@@ -12,12 +11,20 @@ namespace BrainStormEra_MVC.Services
      /// </summary>
     public class AdminService : IAdminService
     {
-        private readonly BrainStormEraContext _context;
+        private readonly IAdminRepo _adminRepo;
+        private readonly IUserRepo _userRepo;
+        private readonly ICourseRepo _courseRepo;
         private readonly ILogger<AdminService> _logger;
 
-        public AdminService(BrainStormEraContext context, ILogger<AdminService> logger)
+        public AdminService(
+            IAdminRepo adminRepo,
+            IUserRepo userRepo,
+            ICourseRepo courseRepo,
+            ILogger<AdminService> logger)
         {
-            _context = context;
+            _adminRepo = adminRepo;
+            _userRepo = userRepo;
+            _courseRepo = courseRepo;
             _logger = logger;
         }
 
@@ -28,27 +35,25 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var admin = await _context.Accounts
-                    .AsNoTracking()
-                    .Where(a => a.UserId == userId)
-                    .FirstOrDefaultAsync();
+                // Get admin user info using repository
+                var adminUser = await _userRepo.GetUserBasicInfoAsync(userId);
 
-                if (admin == null)
-                    throw new ArgumentException("Admin not found", nameof(userId));
+                if (adminUser == null)
+                    throw new InvalidOperationException("Admin user not found");
 
                 // Get statistics
-                var statistics = await GetAdminStatisticsAsync();
+                var statistics = await _adminRepo.GetSystemStatisticsAsync();
+                var totalRevenue = await GetTotalRevenueAsync();
                 var recentUsers = await GetRecentUsersAsync(5);
                 var recentCourses = await GetRecentCoursesAsync(5);
-                var totalRevenue = await GetTotalRevenueAsync();
 
                 return new AdminDashboardViewModel
                 {
-                    AdminName = admin.FullName ?? admin.Username,
-                    AdminImage = admin.UserImage ?? "/img/defaults/default-avatar.svg",
-                    TotalUsers = (int)statistics["TotalUsers"],
-                    TotalCourses = (int)statistics["TotalCourses"],
-                    TotalEnrollments = (int)statistics["TotalEnrollments"],
+                    AdminName = adminUser.FullName ?? adminUser.Username,
+                    AdminImage = adminUser.UserImage ?? "/img/defaults/default-avatar.svg",
+                    TotalUsers = (int)statistics.GetValueOrDefault("TotalUsers", 0),
+                    TotalCourses = (int)statistics.GetValueOrDefault("TotalCourses", 0),
+                    TotalEnrollments = (int)statistics.GetValueOrDefault("TotalEnrollments", 0),
                     TotalRevenue = totalRevenue,
                     RecentUsers = recentUsers,
                     RecentCourses = recentCourses
@@ -68,16 +73,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                var totalUsers = await _context.Accounts.CountAsync();
-                var totalCourses = await _context.Courses.CountAsync();
-                var totalEnrollments = await _context.Enrollments.CountAsync();
-
-                return new Dictionary<string, object>
-                {
-                    { "TotalUsers", totalUsers },
-                    { "TotalCourses", totalCourses },
-                    { "TotalEnrollments", totalEnrollments }
-                };
+                return await _adminRepo.GetSystemStatisticsAsync();
             }
             catch (Exception ex)
             {
@@ -93,21 +89,17 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                return await _context.Accounts
-                    .AsNoTracking()
-                    .OrderByDescending(a => a.AccountCreatedAt)
-                    .Take(count)
-                    .Select(u => new UserViewModel
-                    {
-                        UserId = u.UserId,
-                        Username = u.Username,
-                        FullName = u.FullName ?? u.Username,
-                        UserEmail = u.UserEmail,
-                        UserRole = u.UserRole,
-                        AccountCreatedAt = u.AccountCreatedAt,
-                        IsBanned = u.IsBanned ?? false
-                    })
-                    .ToListAsync();
+                var users = await _userRepo.GetRecentUsersAsync(count);
+                return users.Select(u => new UserViewModel
+                {
+                    UserId = u.UserId,
+                    Username = u.Username,
+                    FullName = u.FullName ?? u.Username,
+                    UserEmail = u.UserEmail,
+                    UserRole = u.UserRole,
+                    AccountCreatedAt = u.AccountCreatedAt,
+                    IsBanned = u.IsBanned ?? false
+                }).ToList();
             }
             catch (Exception ex)
             {
@@ -123,21 +115,16 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                return await _context.Courses
-                    .AsNoTracking()
-                    .Include(c => c.Author)
-                    .OrderByDescending(c => c.CourseCreatedAt)
-                    .Take(count)
-                    .Select(c => new CourseViewModel
-                    {
-                        CourseId = c.CourseId,
-                        CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
-                        Price = c.Price,
-                        CreatedBy = c.Author.FullName ?? c.Author.Username,
-                        Description = c.CourseDescription
-                    })
-                    .ToListAsync();
+                var courses = await _courseRepo.GetRecentCoursesAsync(count);
+                return courses.Select(c => new CourseViewModel
+                {
+                    CourseId = c.CourseId,
+                    CourseName = c.CourseName,
+                    CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                    Price = c.Price,
+                    CreatedBy = c.Author?.FullName ?? c.Author?.Username ?? "Unknown",
+                    Description = c.CourseDescription
+                }).ToList();
             }
             catch (Exception ex)
             {
@@ -153,10 +140,7 @@ namespace BrainStormEra_MVC.Services
         {
             try
             {
-                return await _context.PaymentTransactions
-                    .AsNoTracking()
-                    .Where(pt => pt.TransactionStatus == "Success")
-                    .SumAsync(pt => pt.Amount);
+                return await _adminRepo.GetTotalRevenueAsync();
             }
             catch (Exception ex)
             {
