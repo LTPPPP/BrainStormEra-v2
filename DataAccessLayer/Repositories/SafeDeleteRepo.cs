@@ -11,8 +11,7 @@ using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 
 namespace DataAccessLayer.Repositories
-{
-    // Minimal SafeDeleteRepo implementation - most models don't have soft delete properties
+{    // Minimal SafeDeleteRepo implementation - most models don't have soft delete properties
     public class SafeDeleteRepo : BaseRepo<object>, ISafeDeleteRepo
     {
         private readonly ILogger<SafeDeleteRepo>? _logger;
@@ -21,6 +20,12 @@ namespace DataAccessLayer.Repositories
             : base(context)
         {
             _logger = logger;
+        }
+
+        // Hide the ambiguous DeleteAsync method by using new keyword
+        public new async Task<bool> DeleteAsync(object entity)
+        {
+            return await base.DeleteAsync(entity);
         }
 
         #region ISafeDeleteRepo<object> Implementation - Minimal Stubs

@@ -751,32 +751,30 @@ namespace DataAccessLayer.Repositories
                 _logger?.LogError(ex, "Error getting system statistics");
                 throw;
             }
-        }
-
-        // Basic implementations for remaining interface methods (to be expanded based on specific needs)
-        public async Task<Dictionary<string, int>> GetUserRegistrationsByMonthAsync(int year) => new();
-        public async Task<Dictionary<string, int>> GetCourseCreationsByMonthAsync(int year) => new();
-        public async Task<Dictionary<string, int>> GetEnrollmentsByMonthAsync(int year) => new();
-        public async Task<List<object>> GetTopCoursesAsync(int count = 10) => new();
-        public async Task<List<object>> GetTopInstructorsAsync(int count = 10) => new();
-        public async Task<Dictionary<string, object>> GetUserDemographicsAsync() => new();
-        public async Task<Dictionary<string, object>> GetCourseAnalyticsAsync() => new();
-        public async Task<List<Notification>> GetSystemNotificationsAsync(int page = 1, int pageSize = 20) => new();
-        public async Task<bool> SendBulkNotificationAsync(List<string> userIds, string title, string content, string notificationType = "System") => true;
-        public async Task<bool> CreateSystemAnnouncementAsync(string title, string content, string? targetRole = null) => true;
-        public async Task<List<object>> GetSystemLogsAsync(int page = 1, int pageSize = 20) => new();
-        public async Task<Dictionary<string, object>> GetSystemHealthAsync() => new();
-        public async Task<List<Feedback>> GetReportedFeedbackAsync(int page = 1, int pageSize = 20) => new();
-        public async Task<bool> ModerateFeedbackAsync(string feedbackId, bool isApproved, string? moderatorNote = null) => true;
-        public async Task<List<object>> GetContentModerationQueueAsync(int page = 1, int pageSize = 20) => new();
-        public async Task<bool> BackupDatabaseAsync() => true;
-        public async Task<bool> CleanupExpiredDataAsync() => true;
-        public async Task<bool> UpdateSystemSettingsAsync(Dictionary<string, object> settings) => true;
-        public async Task<Dictionary<string, object>> GetSystemSettingsAsync() => new();
-        public async Task<bool> GenerateReportAsync(string reportType, DateTime startDate, DateTime endDate) => true;
-        public async Task<List<object>> GetSecurityLogsAsync(int page = 1, int pageSize = 20) => new();
-        public async Task<List<object>> GetSuspiciousActivitiesAsync(int page = 1, int pageSize = 20) => new();
-        public async Task<bool> LogAdminActionAsync(string adminId, string action, string details, string? targetId = null) => true;
-        public async Task<List<object>> GetAdminActionLogsAsync(string? adminId = null, int page = 1, int pageSize = 20) => new();
+        }        // Basic implementations for remaining interface methods (to be expanded based on specific needs)
+        public Task<Dictionary<string, int>> GetUserRegistrationsByMonthAsync(int year) => Task.FromResult(new Dictionary<string, int>());
+        public Task<Dictionary<string, int>> GetCourseCreationsByMonthAsync(int year) => Task.FromResult(new Dictionary<string, int>());
+        public Task<Dictionary<string, int>> GetEnrollmentsByMonthAsync(int year) => Task.FromResult(new Dictionary<string, int>());
+        public Task<List<object>> GetTopCoursesAsync(int count = 10) => Task.FromResult(new List<object>());
+        public Task<List<object>> GetTopInstructorsAsync(int count = 10) => Task.FromResult(new List<object>());
+        public Task<Dictionary<string, object>> GetUserDemographicsAsync() => Task.FromResult(new Dictionary<string, object>());
+        public Task<Dictionary<string, object>> GetCourseAnalyticsAsync() => Task.FromResult(new Dictionary<string, object>());
+        public Task<List<Notification>> GetSystemNotificationsAsync(int page = 1, int pageSize = 20) => Task.FromResult(new List<Notification>());
+        public Task<bool> SendBulkNotificationAsync(List<string> userIds, string title, string content, string notificationType = "System") => Task.FromResult(true);
+        public Task<bool> CreateSystemAnnouncementAsync(string title, string content, string? targetRole = null) => Task.FromResult(true);
+        public Task<List<object>> GetSystemLogsAsync(int page = 1, int pageSize = 20) => Task.FromResult(new List<object>());
+        public Task<Dictionary<string, object>> GetSystemHealthAsync() => Task.FromResult(new Dictionary<string, object>());
+        public Task<List<Feedback>> GetReportedFeedbackAsync(int page = 1, int pageSize = 20) => Task.FromResult(new List<Feedback>());
+        public Task<bool> ModerateFeedbackAsync(string feedbackId, bool isApproved, string? moderatorNote = null) => Task.FromResult(true);
+        public Task<List<object>> GetContentModerationQueueAsync(int page = 1, int pageSize = 20) => Task.FromResult(new List<object>());
+        public Task<bool> BackupDatabaseAsync() => Task.FromResult(true);
+        public Task<bool> CleanupExpiredDataAsync() => Task.FromResult(true);
+        public Task<bool> UpdateSystemSettingsAsync(Dictionary<string, object> settings) => Task.FromResult(true);
+        public Task<Dictionary<string, object>> GetSystemSettingsAsync() => Task.FromResult(new Dictionary<string, object>());
+        public Task<bool> GenerateReportAsync(string reportType, DateTime startDate, DateTime endDate) => Task.FromResult(true);
+        public Task<List<object>> GetSecurityLogsAsync(int page = 1, int pageSize = 20) => Task.FromResult(new List<object>());
+        public Task<List<object>> GetSuspiciousActivitiesAsync(int page = 1, int pageSize = 20) => Task.FromResult(new List<object>());
+        public Task<bool> LogAdminActionAsync(string adminId, string action, string details, string? targetId = null) => Task.FromResult(true);
+        public Task<List<object>> GetAdminActionLogsAsync(string? adminId = null, int page = 1, int pageSize = 20) => Task.FromResult(new List<object>());
     }
 }

@@ -60,12 +60,12 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _dbSet
-                    .Include(q => q.Quiz)
-                        .ThenInclude(quiz => quiz.Lesson)
-                            .ThenInclude(l => l.Chapter)
-                    .Where(q => q.Quiz.Lesson.Chapter.CourseId == courseId)
-                    .OrderBy(q => q.Quiz.Lesson.Chapter.ChapterOrder)
-                    .ThenBy(q => q.Quiz.Lesson.LessonOrder)
+                    .Include(q => q.Quiz!)
+                        .ThenInclude(quiz => quiz.Lesson!)
+                            .ThenInclude(l => l.Chapter!)
+                    .Where(q => q.Quiz != null && q.Quiz.Lesson != null && q.Quiz.Lesson.Chapter != null && q.Quiz.Lesson.Chapter.CourseId == courseId)
+                    .OrderBy(q => q.Quiz!.Lesson!.Chapter!.ChapterOrder)
+                    .ThenBy(q => q.Quiz!.Lesson!.LessonOrder)
                     .ThenBy(q => q.QuestionOrder)
                     .ToListAsync();
             }
@@ -129,10 +129,11 @@ namespace DataAccessLayer.Repositories
             {
                 var question = await _dbSet
                     .Include(q => q.Quiz)
-                        .ThenInclude(quiz => quiz.Lesson)
-                            .ThenInclude(l => l.Chapter)
-                                .ThenInclude(c => c.Course)
+                        .ThenInclude(quiz => quiz!.Lesson)
+                            .ThenInclude(l => l!.Chapter)
+                                .ThenInclude(c => c!.Course)
                     .FirstOrDefaultAsync(q => q.QuestionId == questionId &&
+                                             q.Quiz != null && q.Quiz.Lesson != null && q.Quiz.Lesson.Chapter != null && q.Quiz.Lesson.Chapter.Course != null &&
                                              q.Quiz.Lesson.Chapter.Course.AuthorId == authorId);
 
                 if (question == null)
@@ -365,10 +366,11 @@ namespace DataAccessLayer.Repositories
             {
                 var questions = await _dbSet
                     .Include(q => q.Quiz)
-                        .ThenInclude(quiz => quiz.Lesson)
-                            .ThenInclude(l => l.Chapter)
-                                .ThenInclude(c => c.Course)
+                        .ThenInclude(quiz => quiz!.Lesson)
+                            .ThenInclude(l => l!.Chapter)
+                                .ThenInclude(c => c!.Course)
                     .Where(q => questionIds.Contains(q.QuestionId) &&
+                               q.Quiz != null && q.Quiz.Lesson != null && q.Quiz.Lesson.Chapter != null && q.Quiz.Lesson.Chapter.Course != null &&
                                q.Quiz.Lesson.Chapter.Course.AuthorId == authorId)
                     .ToListAsync();
 

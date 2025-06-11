@@ -61,7 +61,7 @@ namespace BrainStormEra_MVC.Services
 
                     return true;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await transaction.RollbackAsync();
                     // Log exception here if you have logging
@@ -199,7 +199,7 @@ namespace BrainStormEra_MVC.Services
 
                 return viewModel;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }

@@ -29,8 +29,8 @@ namespace DataAccessLayer.Repositories
                 return await _dbSet
                     .Include(q => q.Questions.OrderBy(qu => qu.QuestionOrder))
                         .ThenInclude(qu => qu.AnswerOptions.OrderBy(ao => ao.OptionOrder))
-                    .Include(q => q.Lesson)
-                        .ThenInclude(l => l.Chapter)
+                    .Include(q => q.Lesson!)
+                        .ThenInclude(l => l.Chapter!)
                             .ThenInclude(c => c.Course)
                     .FirstOrDefaultAsync(q => q.QuizId == quizId);
             }
@@ -81,10 +81,10 @@ namespace DataAccessLayer.Repositories
             {
                 return await _dbSet
                     .Include(q => q.Lesson)
-                        .ThenInclude(l => l.Chapter)
-                    .Where(q => q.Lesson.Chapter.CourseId == courseId)
-                    .OrderBy(q => q.Lesson.Chapter.ChapterOrder)
-                    .ThenBy(q => q.Lesson.LessonOrder)
+                        .ThenInclude(l => l!.Chapter)
+                    .Where(q => q.Lesson != null && q.Lesson.Chapter != null && q.Lesson.Chapter.CourseId == courseId)
+                    .OrderBy(q => q.Lesson!.Chapter!.ChapterOrder)
+                    .ThenBy(q => q.Lesson!.LessonOrder)
                     .ThenBy(q => q.QuizCreatedAt)
                     .ToListAsync();
             }
@@ -156,9 +156,11 @@ namespace DataAccessLayer.Repositories
             {
                 var quiz = await _dbSet
                     .Include(q => q.Lesson)
-                        .ThenInclude(l => l.Chapter)
-                            .ThenInclude(c => c.Course)
-                    .FirstOrDefaultAsync(q => q.QuizId == quizId && q.Lesson.Chapter.Course.AuthorId == authorId);
+                        .ThenInclude(l => l!.Chapter)
+                            .ThenInclude(c => c!.Course)
+                    .FirstOrDefaultAsync(q => q.QuizId == quizId &&
+                                         q.Lesson != null && q.Lesson.Chapter != null && q.Lesson.Chapter.Course != null &&
+                                         q.Lesson.Chapter.Course.AuthorId == authorId);
 
                 if (quiz == null)
                     return false;
@@ -413,12 +415,12 @@ namespace DataAccessLayer.Repositories
             {
                 var quiz = await _dbSet
                     .Include(q => q.Lesson)
-                        .ThenInclude(l => l.Chapter)
-                            .ThenInclude(c => c.Course)
-                                .ThenInclude(c => c.Enrollments)
+                        .ThenInclude(l => l!.Chapter)
+                            .ThenInclude(c => c!.Course)
+                                .ThenInclude(c => c!.Enrollments)
                     .FirstOrDefaultAsync(q => q.QuizId == quizId);
 
-                if (quiz == null) return false;
+                if (quiz?.Lesson?.Chapter?.Course == null) return false;
 
                 // Check if user is enrolled in the course
                 var isEnrolled = quiz.Lesson.Chapter.Course.Enrollments

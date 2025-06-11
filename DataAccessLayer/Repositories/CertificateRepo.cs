@@ -470,16 +470,16 @@ namespace DataAccessLayer.Repositories
         }
 
         // Basic implementations for remaining interface methods
-        public async Task<bool> UpdateCertificateTemplateAsync(string courseId, string templatePath) => true;
-        public async Task<string?> GetCertificateTemplateAsync(string courseId) => null;
-        public async Task<bool> CustomizeCertificateAsync(string certificateId, Dictionary<string, string> customFields) => true;
-        public async Task<bool> ShareCertificateAsync(string certificateId, string platform) => true;
+        public Task<bool> UpdateCertificateTemplateAsync(string courseId, string templatePath) => Task.FromResult(true);
+        public Task<string?> GetCertificateTemplateAsync(string courseId) => Task.FromResult<string?>(null);
+        public Task<bool> CustomizeCertificateAsync(string certificateId, Dictionary<string, string> customFields) => Task.FromResult(true);
+        public Task<bool> ShareCertificateAsync(string certificateId, string platform) => Task.FromResult(true);
         public async Task<List<Certificate>> GetPublicCertificatesAsync(string userId) => await GetUserCertificatesAsync(userId);
-        public async Task<bool> UpdateCertificateVisibilityAsync(string certificateId, bool isPublic) => true;
-        public async Task<List<Certificate>> GetExpiringCertificatesAsync(int daysBeforeExpiry = 30) => new();
+        public Task<bool> UpdateCertificateVisibilityAsync(string certificateId, bool isPublic) => Task.FromResult(true);
+        public Task<List<Certificate>> GetExpiringCertificatesAsync(int daysBeforeExpiry = 30) => Task.FromResult(new List<Certificate>());
         public async Task<bool> RenewCertificateAsync(string certificateId) => await RegenerateCertificateAsync(certificateId);
-        public async Task<bool> UpdateCertificateExpiryAsync(string certificateId, DateTime? expiryDate) => true;
-        public async Task<List<Certificate>> GetExpiredCertificatesAsync() => new();
+        public Task<bool> UpdateCertificateExpiryAsync(string certificateId, DateTime? expiryDate) => Task.FromResult(true);
+        public Task<List<Certificate>> GetExpiredCertificatesAsync() => Task.FromResult(new List<Certificate>());
 
         public async Task<List<Certificate>> SearchCertificatesAsync(string searchTerm, string? userId = null)
         {

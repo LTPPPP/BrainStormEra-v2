@@ -257,11 +257,11 @@ namespace DataAccessLayer.Repositories
             }
         }
 
-        public async Task<bool> CheckAndUnlockAchievementsAsync(string userId)
+        public Task<bool> CheckAndUnlockAchievementsAsync(string userId)
         {
             // This would contain logic to check various conditions and unlock achievements
             // For now, returning a basic implementation
-            return true;
+            return Task.FromResult(true);
         }
 
         public async Task<List<Achievement>> GetNewlyUnlockedAchievementsAsync(string userId)
@@ -350,11 +350,12 @@ namespace DataAccessLayer.Repositories
         {
             try
             {
-                return await _context.UserAchievements
+                var stats = await _context.UserAchievements
                     .Include(ua => ua.Achievement)
-                    .Where(ua => ua.UserId == userId)
+                    .Where(ua => ua.UserId == userId && ua.Achievement.AchievementType != null)
                     .GroupBy(ua => ua.Achievement.AchievementType)
-                    .ToDictionaryAsync(g => g.Key, g => g.Count());
+                    .ToDictionaryAsync(g => g.Key!, g => g.Count());
+                return stats;
             }
             catch (Exception ex)
             {
@@ -391,15 +392,18 @@ namespace DataAccessLayer.Repositories
             }
         }
 
-        public async Task<int> GetUserRankingAsync(string userId) => 1; // Basic implementation
-        public async Task<List<(string userId, string userName, int points)>> GetTopUsersByPointsAsync(int top = 10) => new(); // Basic implementation
-        public async Task<bool> ValidateAchievementRequirementsAsync(string userId, string achievementId) => true;
-        public async Task<List<Achievement>> GetEligibleAchievementsAsync(string userId) => new();
-        public async Task<bool> HasPrerequisiteAchievementsAsync(string userId, string achievementId) => true;
+        public Task<int> GetUserRankingAsync(string userId) => Task.FromResult(1); // Basic implementation
+        public Task<List<(string userId, string userName, int points)>> GetTopUsersByPointsAsync(int top = 10) => Task.FromResult(new List<(string userId, string userName, int points)>()); // Basic implementation
+        public Task<bool> ValidateAchievementRequirementsAsync(string userId, string achievementId) => Task.FromResult(true);
+        public Task<List<Achievement>> GetEligibleAchievementsAsync(string userId) => Task.FromResult(new List<Achievement>());
+        public Task<bool> HasPrerequisiteAchievementsAsync(string userId, string achievementId) => Task.FromResult(true);
 
         // Achievement categories and types
-        public async Task<List<string>> GetAchievementTypesAsync() =>
-            await _dbSet.Select(a => a.AchievementType).Distinct().ToListAsync();
+        public async Task<List<string>> GetAchievementTypesAsync()
+        {
+            var types = await _dbSet.Select(a => a.AchievementType).Distinct().ToListAsync();
+            return types.Where(t => !string.IsNullOrEmpty(t)).ToList()!;
+        }
 
         public async Task<List<Achievement>> GetCourseCompletionAchievementsAsync() =>
             await GetAchievementsByTypeAsync("course_completion");
@@ -414,9 +418,9 @@ namespace DataAccessLayer.Repositories
             await GetAchievementsByTypeAsync("social");
 
         // Achievement progress tracking - basic implementations
-        public async Task<bool> UpdateAchievementProgressAsync(string userId, string achievementType, int progress) => true;
-        public async Task<Dictionary<string, int>> GetAchievementProgressAsync(string userId) => new();
-        public async Task<bool> IncrementAchievementProgressAsync(string userId, string achievementType, int increment = 1) => true;
+        public Task<bool> UpdateAchievementProgressAsync(string userId, string achievementType, int progress) => Task.FromResult(true);
+        public Task<Dictionary<string, int>> GetAchievementProgressAsync(string userId) => Task.FromResult(new Dictionary<string, int>());
+        public Task<bool> IncrementAchievementProgressAsync(string userId, string achievementType, int increment = 1) => Task.FromResult(true);
 
         // Missing methods implementation
         public async Task<List<UserAchievement>> GetUserAchievementsAsync(string userId, string? search, int page, int pageSize)

@@ -310,8 +310,11 @@ namespace DataAccessLayer.Repositories
         }
 
         // Basic implementations for remaining interface methods
-        public async Task<List<string>> GetNotificationTypesAsync() =>
-            await _dbSet.Select(n => n.NotificationType).Distinct().ToListAsync();
+        public async Task<List<string>> GetNotificationTypesAsync()
+        {
+            var types = await _dbSet.Select(n => n.NotificationType).Distinct().ToListAsync();
+            return types.Where(t => !string.IsNullOrEmpty(t)).ToList()!;
+        }
 
         public async Task<List<Notification>> GetSystemNotificationsAsync(int page = 1, int pageSize = 20) =>
             await _dbSet.Where(n => n.NotificationType == "system")
@@ -347,17 +350,17 @@ namespace DataAccessLayer.Repositories
             return await CreateNotificationAsync(notification) != null;
         }
 
-        public async Task<bool> CreateCourseNotificationAsync(string courseId, string title, string message, string type = "course")
+        public Task<bool> CreateCourseNotificationAsync(string courseId, string title, string message, string type = "course")
         {
             // This would need to get all enrolled users for the course
             // For now, returning a basic implementation
-            return true;
+            return Task.FromResult(true);
         }
 
-        public async Task<bool> CreateSystemNotificationAsync(string title, string message, List<string>? userIds = null)
+        public Task<bool> CreateSystemNotificationAsync(string title, string message, List<string>? userIds = null)
         {
             // Basic implementation - would need to create notifications for all users or specified users
-            return true;
+            return Task.FromResult(true);
         }
 
         public async Task<bool> CreateAchievementNotificationAsync(string userId, string achievementId, string achievementName)
@@ -367,7 +370,7 @@ namespace DataAccessLayer.Repositories
 
         // Basic implementations for cleanup and statistics methods
         public async Task<bool> DeleteOldNotificationsAsync(int daysOld = 30) => await DeleteExpiredNotificationsAsync();
-        public async Task<bool> DeleteReadNotificationsAsync(string userId, int daysOld = 7) => true;
+        public Task<bool> DeleteReadNotificationsAsync(string userId, int daysOld = 7) => Task.FromResult(true);
         public async Task<int> GetNotificationCountByTypeAsync(string userId, string notificationType) =>
             await _dbSet.CountAsync(n => n.UserId == userId && n.NotificationType == notificationType);
 
@@ -376,12 +379,15 @@ namespace DataAccessLayer.Repositories
                        .OrderByDescending(n => n.NotificationCreatedAt)
                        .ToListAsync();
 
-        public async Task<bool> UpdateNotificationDeliveryStatusAsync(string notificationId, bool delivered) => true;
+        public Task<bool> UpdateNotificationDeliveryStatusAsync(string notificationId, bool delivered) => Task.FromResult(true);
 
-        public async Task<Dictionary<string, int>> GetNotificationStatsByTypeAsync(string userId) =>
-            await _dbSet.Where(n => n.UserId == userId)
+        public async Task<Dictionary<string, int>> GetNotificationStatsByTypeAsync(string userId)
+        {
+            var stats = await _dbSet.Where(n => n.UserId == userId && n.NotificationType != null)
                        .GroupBy(n => n.NotificationType)
-                       .ToDictionaryAsync(g => g.Key, g => g.Count());
+                       .ToDictionaryAsync(g => g.Key!, g => g.Count());
+            return stats;
+        }
 
         public async Task<int> GetTotalNotificationCountAsync(string userId) =>
             await _dbSet.CountAsync(n => n.UserId == userId);
