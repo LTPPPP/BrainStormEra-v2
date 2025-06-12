@@ -18,10 +18,3 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<bool> IsDatabaseConnectedAsync();
     }
 }
-
-
-
-
-
-
-

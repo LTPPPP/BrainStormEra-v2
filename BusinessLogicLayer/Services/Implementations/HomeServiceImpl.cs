@@ -729,10 +729,3 @@ namespace BusinessLogicLayer.Services.Implementations
 
     #endregion
 }
-
-
-
-
-
-
-
