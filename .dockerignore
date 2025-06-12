@@ -1,0 +1,54 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Visual Studio
+.vs/
+.vscode/
+*.user
+*.suo
+*.cache
+
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# Dependencies
+**/node_modules/
+**/packages/
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Database files
+*.db
+*.sqlite
+
+# License and images (optional, remove if needed in container)
+LICENSE
+*.jpg
+*.png
+*.gif
+
+# Init scripts (these are mounted as volumes)
+init_script/ 

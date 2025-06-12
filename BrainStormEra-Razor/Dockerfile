@@ -1,20 +1,28 @@
 # Use the official .NET SDK image as a build stage
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
-WORKDIR /app
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
 
-# Copy the project file and restore dependencies
-COPY *.csproj ./
-RUN dotnet restore
+# Copy solution file and project files
+COPY BrainStormEra.sln ./
+COPY BrainStormEra-Razor/*.csproj ./BrainStormEra-Razor/
 
-# Copy the rest of the application and build it
-COPY . ./
-RUN dotnet publish -c Release -o out
+# Restore dependencies
+RUN dotnet restore BrainStormEra-Razor/BrainStormEra-Razor.csproj
+
+# Copy all source code
+COPY BrainStormEra-Razor/ ./BrainStormEra-Razor/
+
+# Build and publish the application
+WORKDIR /src/BrainStormEra-Razor
+RUN dotnet publish -c Release -o /app/publish --no-restore
 
 # Use the official ASP.NET Core runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-COPY --from=build /app/out ./
+COPY --from=build /app/publish .
 
-# Expose the port and run the application
+# Expose the port and set environment variables
 EXPOSE 5001
+ENV ASPNETCORE_URLS=http://+:5001
+
 ENTRYPOINT ["dotnet", "BrainStormEra-Razor.dll"]

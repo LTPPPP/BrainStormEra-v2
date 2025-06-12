@@ -1,4 +1,4 @@
-﻿@model BrainStormEra_MVC.Models.ViewModels.HomePageGuestViewModel
+@model DataAccessLayer.Models.ViewModels.HomePageGuestViewModel
 @using System.IO
 @{
     ViewData["Title"] = "Home Page";
@@ -264,7 +264,7 @@
             const starElements = document.querySelectorAll('.stars');
             starElements.forEach(starElement => {
                 const rating = parseInt(starElement.getAttribute('data-rating'));
-                starElement.innerHTML = '★★★★★'.split('').map((star, index) => {
+                starElement.innerHTML = '?????'.split('').map((star, index) => {
                     return `<span style="color: ${index < rating ? '#ff9800' : '#e0e0e0'}">${star}</span>`;
                 }).join('');
             });
