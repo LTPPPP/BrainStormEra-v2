@@ -3,6 +3,7 @@ using BusinessLogicLayer.Services.Interfaces;
 using BusinessLogicLayer.Services.Implementations;
 using DataAccessLayer.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using BrainStormEra_MVC.Filters;
 
 namespace BrainStormEra_MVC.Controllers
 {
@@ -31,6 +32,7 @@ namespace BrainStormEra_MVC.Controllers
             return View("~/Views/Courses/Index.cshtml", result.ViewModel);
         }
 
+        [RequireAuthentication("You need to login to view course details. Please login to continue.")]
         public async Task<IActionResult> Details(string id, string? tab = null)
         {
             var result = await _courseServiceImpl.GetCourseDetailsAsync(User, id, tab);
@@ -45,6 +47,22 @@ namespace BrainStormEra_MVC.Controllers
             ViewBag.ActiveTab = result.ActiveTab;
 
             return View("~/Views/Courses/Details.cshtml", result.ViewModel);
+        }
+
+        [RequireAuthentication("You need to login to view course details. Please login to continue.")]
+        public IActionResult CourseDetail()
+        {
+            // Get courseId from cookie
+            string? courseId = Request.Cookies["CourseId"];
+
+            if (string.IsNullOrEmpty(courseId))
+            {
+                TempData["ErrorMessage"] = "Course information not found.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Redirect to Details action with courseId
+            return RedirectToAction("Details", new { id = courseId });
         }
 
         [HttpPost]
@@ -218,6 +236,7 @@ namespace BrainStormEra_MVC.Controllers
 
             return Json(new { success = true, courses = result.Courses });
         }
+
     }
 }
 

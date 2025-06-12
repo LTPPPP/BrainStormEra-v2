@@ -3,6 +3,7 @@ using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using BrainStormEra_MVC.Filters;
 
 namespace BrainStormEra_MVC.Controllers
 {
@@ -48,9 +49,8 @@ namespace BrainStormEra_MVC.Controllers
                 _logger.LogError(ex, "Error loading user management page for instructor {InstructorId}", GetCurrentUserId());
                 return View(new UserManagementViewModel { InstructorId = GetCurrentUserId(), InstructorName = "Unknown" });
             }
-        }
-
-        // GET: User Detail
+        }        // GET: User Detail
+        [RequireAuthentication("You need to login to view user details. Please login to continue.")]
         public async Task<IActionResult> Detail(string userId)
         {
             try

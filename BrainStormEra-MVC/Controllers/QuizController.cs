@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using BrainStormEra_MVC.Filters;
 
 namespace BrainStormEra_MVC.Controllers
 {
@@ -187,9 +188,8 @@ namespace BrainStormEra_MVC.Controllers
             }
 
             return Redirect($"/Course/Details/{result.CourseId}#curriculum");
-        }
-
-        // GET: Quiz/Details/5
+        }        // GET: Quiz/Details/5
+        [RequireAuthentication("You need to login to view quiz details. Please login to continue.")]
         public async Task<IActionResult> Details(string id)
         {
             var result = await _quizServiceImpl.GetQuizDetailsAsync(User, id);
