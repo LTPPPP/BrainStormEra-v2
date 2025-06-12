@@ -50,6 +50,7 @@ namespace BusinessLogicLayer.Services
                     Price = c.Price,
                     CreatedBy = c.Author?.FullName ?? c.Author?.Username ?? "Unknown",
                     Description = c.CourseDescription,
+                    StarRating = 4, // Default rating - could be calculated from actual feedback in the future
                     EnrollmentCount = c.Enrollments?.Count ?? 0,
                     CourseCategories = c.CourseCategories?.Select(cc => cc.CourseCategoryName).ToList() ?? new List<string>()
                 }).ToList();
@@ -60,7 +61,7 @@ namespace BusinessLogicLayer.Services
                 {
                     CategoryId = cc.CourseCategoryId,
                     CategoryName = cc.CourseCategoryName,
-                    CourseCount = cc.Courses?.Count(c => c.CourseStatus == 1) ?? 0
+                    CourseCount = cc.Courses.Count() // Use the loaded courses count
                 }).ToList();
 
                 return new HomePageGuestViewModel
@@ -111,6 +112,8 @@ namespace BusinessLogicLayer.Services
                     Price = c.Price,
                     CreatedBy = c.Author?.FullName ?? c.Author?.Username ?? "Unknown",
                     Description = c.CourseDescription,
+                    StarRating = 4, // Default rating - could be calculated from actual feedback in the future
+                    EnrollmentCount = c.Enrollments?.Count ?? 0,
                     CourseCategories = c.CourseCategories?.Select(cc => cc.CourseCategoryName).ToList() ?? new List<string>()
                 }).ToList();
 

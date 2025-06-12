@@ -122,7 +122,6 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.SafeDeleteServiceImpl>();
 
             // Seed services
-            builder.Services.AddScoped<BusinessLogicLayer.Services.CategorySeedService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.StatusSeedService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.LessonTypeSeedService>();
 
@@ -197,9 +196,7 @@ namespace BrainStormEra_MVC
                     if (canConnect)
                     {
                         // Test a simple query to verify database structure
-                        var accountCount = await context.Accounts.CountAsync();                        // Seed categories if they don't exist
-                        var categorySeeder = scope.ServiceProvider.GetRequiredService<BusinessLogicLayer.Services.CategorySeedService>();
-                        await categorySeeder.SeedCategoriesAsync();
+                        var accountCount = await context.Accounts.CountAsync();
 
                         // Seed statuses if they don't exist
                         var statusSeeder = scope.ServiceProvider.GetRequiredService<BusinessLogicLayer.Services.StatusSeedService>();

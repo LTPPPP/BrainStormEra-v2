@@ -549,12 +549,17 @@ namespace DataAccessLayer.Repositories
         {
             try
             {
-                return await _context.CourseCategories
+                // Get all active categories with their active courses included
+                var categoriesWithCourses = await _context.CourseCategories
+                    .Include(cc => cc.Courses.Where(c => c.CourseStatus == 1))
                     .Where(cc => cc.IsActive == true)
-                    .Where(cc => cc.Courses.Any(c => c.CourseStatus == 1))
-                    .OrderByDescending(cc => cc.Courses.Count(c => c.CourseStatus == 1))
-                    .Take(count)
                     .ToListAsync();
+
+                // Order by course count and take the specified number
+                return categoriesWithCourses
+                    .OrderByDescending(cc => cc.Courses.Count)
+                    .Take(count)
+                    .ToList();
             }
             catch (Exception ex)
             {

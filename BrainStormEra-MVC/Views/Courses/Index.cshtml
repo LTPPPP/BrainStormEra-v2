@@ -155,9 +155,9 @@
                     </button>
                     @foreach (var category in Model.Categories)
                     {
-                        <button class="filter-btn category-filter @(Model.CurrentCategory == category.CourseCategoryName ? "active" : "")" 
-                                data-category="@category.CourseCategoryName">
-                            @category.CourseCategoryName
+                        <button class="filter-btn category-filter @(Model.CurrentCategory == category.CategoryName ? "active" : "")" 
+                                data-category="@category.CategoryName">
+                            @category.CategoryName
                             <span class="count">(@category.CourseCount)</span>
                         </button>
                     }

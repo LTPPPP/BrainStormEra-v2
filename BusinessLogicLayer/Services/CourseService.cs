@@ -58,13 +58,8 @@ namespace BusinessLogicLayer.Services
                 var totalCourses = _courseRepo.GetActiveCourses().Count();
                 var totalPages = (int)Math.Ceiling((double)totalCourses / pageSize);
 
-                var categories = await _courseRepo.GetCategoriesAsync();
-                var categoryViewModels = categories.Select(c => new CourseCategoryViewModel
-                {
-                    CategoryId = c.CourseCategoryId,
-                    CategoryName = c.CourseCategoryName,
-                    CourseCount = 0 // Would need separate query for count
-                }).ToList();
+                // Get categories with proper course count mapping and sorting
+                var categoryViewModels = await GetCategoriesAsync();
 
                 return new CourseListViewModel
                 {
@@ -354,6 +349,72 @@ namespace BusinessLogicLayer.Services
             }
         }
 
+        public async Task<(List<CourseViewModel> courses, int totalCount)> SearchCoursesWithPaginationAsync(string? search, string? category, int page, int pageSize, string? sortBy)
+        {
+            try
+            {
+                var query = _courseRepo.GetActiveCourses();
+
+                query = query.Include(c => c.Author)
+                           .Include(c => c.Enrollments)
+                           .Include(c => c.CourseCategories);
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(c => c.CourseName.Contains(search) ||
+                                           c.CourseDescription!.Contains(search) ||
+                                           c.Author.FullName!.Contains(search));
+                }
+
+                if (!string.IsNullOrWhiteSpace(category))
+                {
+                    query = query.Where(c => c.CourseCategories
+                        .Any(cc => cc.CourseCategoryName == category));
+                }
+
+                // Get total count before pagination
+                var totalCount = await query.CountAsync();
+
+                query = sortBy switch
+                {
+                    "price_asc" => query.OrderBy(c => c.Price),
+                    "price_desc" => query.OrderByDescending(c => c.Price),
+                    "name_asc" => query.OrderBy(c => c.CourseName),
+                    "name_desc" => query.OrderByDescending(c => c.CourseName),
+                    "popular" => query.OrderByDescending(c => c.Enrollments.Count()),
+                    _ => query.OrderByDescending(c => c.CourseCreatedAt)
+                };
+
+                var courses = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(c => new CourseViewModel
+                    {
+                        CourseId = c.CourseId,
+                        CourseName = c.CourseName,
+                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                        Description = c.CourseDescription,
+                        Price = c.Price,
+                        CreatedBy = c.Author.FullName ?? c.Author.Username,
+                        CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
+                        EnrollmentCount = c.Enrollments.Count()
+                    })
+                    .ToListAsync();
+
+                foreach (var course in courses)
+                {
+                    course.StarRating = 4;
+                }
+
+                return (courses, totalCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching courses with pagination");
+                return (new List<CourseViewModel>(), 0);
+            }
+        }
+
         public async Task<bool> EnrollUserAsync(string userId, string courseId)
         {
             try
@@ -386,7 +447,7 @@ namespace BusinessLogicLayer.Services
                     return cachedCategories!;
                 }
 
-                _logger.LogInformation("Loading categories from database");
+                _logger.LogInformation("Loading categories from database with course count mapping");
 
                 var categories = await _context.CourseCategories
                     .AsNoTracking()
@@ -397,16 +458,19 @@ namespace BusinessLogicLayer.Services
                         CategoryName = cc.CourseCategoryName ?? "Unknown Category",
                         CategoryDescription = cc.CategoryDescription,
                         CategoryIcon = cc.CategoryIcon ?? "fas fa-tag",
-                        CourseCount = cc.Courses.Count(c => c.CourseStatus == 1)
+                        CourseCount = cc.Courses.Count(c => c.CourseStatus == 1) // Only count active courses
                     })
+                    .OrderByDescending(cc => cc.CourseCount) // Sort by course count from highest to lowest
+                    .ThenBy(cc => cc.CategoryName) // Secondary sort by name for consistent ordering
                     .ToListAsync();
 
-                _logger.LogInformation("Loaded {Count} categories from database", categories.Count);
+                _logger.LogInformation("Loaded {Count} categories from database, sorted by course count", categories.Count);
 
-                // Log each category for debugging
+                // Log each category with course count for debugging
                 foreach (var category in categories)
                 {
-                    _logger.LogInformation("Category: ID={CategoryId}, Name={CategoryName}", category.CategoryId, category.CategoryName);
+                    _logger.LogInformation("Category: ID={CategoryId}, Name={CategoryName}, CourseCount={CourseCount}",
+                        category.CategoryId, category.CategoryName, category.CourseCount);
                 }
 
                 _cache.Set(cacheKey, categories, CacheExpiration);
@@ -503,7 +567,7 @@ namespace BusinessLogicLayer.Services
                 await _context.SaveChangesAsync();
 
                 // Clear cache since we added a new course
-                _cache.Remove("CourseCategories");
+                RefreshCategoryCache();
 
                 return courseId;
             }
@@ -511,6 +575,22 @@ namespace BusinessLogicLayer.Services
             {
                 _logger.LogError(ex, "Error creating course for author {AuthorId}", authorId);
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Refreshes the category cache to ensure course counts are up to date
+        /// </summary>
+        public void RefreshCategoryCache()
+        {
+            try
+            {
+                _cache.Remove("CourseCategories");
+                _logger.LogInformation("Category cache cleared - will be refreshed on next request");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error clearing category cache");
             }
         }
 
@@ -649,6 +729,9 @@ namespace BusinessLogicLayer.Services
 
                 await _context.SaveChangesAsync();
 
+                // Clear cache since categories were modified
+                RefreshCategoryCache();
+
                 _logger.LogInformation("Course updated successfully: {CourseId}", courseId);
                 return true;
             }
@@ -708,6 +791,9 @@ namespace BusinessLogicLayer.Services
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Clear cache since a course was deleted
+                RefreshCategoryCache();
 
                 _logger.LogInformation("Course soft deleted (archived) successfully: {CourseId}", courseId);
                 return true;
