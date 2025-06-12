@@ -53,82 +53,78 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICertificateRepo, DataAccessLayer.Repositories.CertificateRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAdminRepo, DataAccessLayer.Repositories.AdminRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatbotRepo, DataAccessLayer.Repositories.ChatbotRepo>();
-            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();
-
-            // Register Services with SOLID principles
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IUserService, BrainStormEra_MVC.Services.UserService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseService, BrainStormEra_MVC.Services.CourseService>();
-
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();            // Register Services with SOLID principles - Now using BusinessLogicLayer
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.UserService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseService, BusinessLogicLayer.Services.CourseService>();
 
             // Register Course Service Implementation for business logic layer
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.CourseServiceImpl>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IChapterService, BrainStormEra_MVC.Services.ChapterService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.CourseServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IChapterService, BusinessLogicLayer.Services.ChapterService>();
 
             // Register Chapter Service Implementation for business logic layer
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.ChapterServiceImpl>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ILessonService, BrainStormEra_MVC.Services.LessonService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.ChapterServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ILessonService, BusinessLogicLayer.Services.LessonService>();
 
             // Register Lesson Service Implementation for business logic layer
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.LessonServiceImpl>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IQuestionService, BrainStormEra_MVC.Services.QuestionService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.LessonServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IQuestionService, BusinessLogicLayer.Services.QuestionService>();
 
             // Register Question Service Implementation for business logic layer  
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.QuestionServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.QuestionServiceImpl>();
 
             // Register Quiz Service and Implementation for business logic layer
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IQuizService, BrainStormEra_MVC.Services.Implementations.QuizServiceImpl>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.QuizServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IQuizService, BusinessLogicLayer.Services.Implementations.QuizServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.QuizServiceImpl>();
 
             // Register Achievement Service Implementation for business logic layer
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.AchievementServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AchievementServiceImpl>();
 
             // Register Certificate Service Implementation for business logic layer
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.CertificateServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.CertificateServiceImpl>();
 
             // Register Notification Service Implementation for business logic layer
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.NotificationServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.NotificationServiceImpl>();
 
             // Register Auth Service Implementation for business logic layer
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.AuthServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();
 
             // Register Home Services for data access and business logic
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IHomeService, BrainStormEra_MVC.Services.HomeService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.HomeServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IHomeService, BusinessLogicLayer.Services.HomeService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.HomeServiceImpl>();
 
             // Register Admin Services for data access and business logic
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.AdminService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.AdminServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.AdminService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AdminServiceImpl>();
 
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IEnrollmentService, BrainStormEra_MVC.Services.EnrollmentService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAchievementService, BrainStormEra_MVC.Services.AchievementService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.EnrollmentService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementService, BusinessLogicLayer.Services.AchievementService>();
 
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICertificateService, BrainStormEra_MVC.Services.CertificateService>();
-
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IUserContextService, BrainStormEra_MVC.Services.UserContextService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IResponseService, BrainStormEra_MVC.Services.ResponseService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.INotificationService, BrainStormEra_MVC.Services.NotificationService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IAvatarService, BrainStormEra_MVC.Services.AvatarService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ICourseImageService, BrainStormEra_MVC.Services.CourseImageService>();
-            builder.Services.AddSingleton<BrainStormEra_MVC.Services.Interfaces.ICacheService, BrainStormEra_MVC.Services.CacheService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICertificateService, BusinessLogicLayer.Services.CertificateService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserContextService, BusinessLogicLayer.Services.UserContextService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IResponseService, BusinessLogicLayer.Services.ResponseService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.INotificationService, BusinessLogicLayer.Services.NotificationService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAvatarService, BusinessLogicLayer.Services.AvatarService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseImageService, BusinessLogicLayer.Services.CourseImageService>();
+            builder.Services.AddSingleton<BusinessLogicLayer.Services.Interfaces.ICacheService, BusinessLogicLayer.Services.CacheService>();
 
             // Add Safe Delete Service for secure delete operations
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.ISafeDeleteService, BrainStormEra_MVC.Services.SafeDeleteService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ISafeDeleteService, BusinessLogicLayer.Services.SafeDeleteService>();
 
             // Add Chatbot Service
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IChatbotService, BrainStormEra_MVC.Services.ChatbotService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Interfaces.IPageContextService, BrainStormEra_MVC.Services.PageContextService>();
-            builder.Services.AddHttpClient<BrainStormEra_MVC.Services.ChatbotService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IChatbotService, BusinessLogicLayer.Services.ChatbotService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPageContextService, BusinessLogicLayer.Services.PageContextService>();
+            builder.Services.AddHttpClient<BusinessLogicLayer.Services.ChatbotService>();
 
             // Register Chatbot Service Implementation for business logic layer
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.ChatbotServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.ChatbotServiceImpl>();
 
             // Register SafeDelete Service Implementation for business logic layer
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.Implementations.SafeDeleteServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.SafeDeleteServiceImpl>();
 
             // Seed services
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.CategorySeedService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.StatusSeedService>();
-            builder.Services.AddScoped<BrainStormEra_MVC.Services.LessonTypeSeedService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.CategorySeedService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.StatusSeedService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.LessonTypeSeedService>();
 
             // Add Authentication
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -201,18 +197,16 @@ namespace BrainStormEra_MVC
                     if (canConnect)
                     {
                         // Test a simple query to verify database structure
-                        var accountCount = await context.Accounts.CountAsync();
-
-                        // Seed categories if they don't exist
-                        var categorySeeder = scope.ServiceProvider.GetRequiredService<BrainStormEra_MVC.Services.CategorySeedService>();
+                        var accountCount = await context.Accounts.CountAsync();                        // Seed categories if they don't exist
+                        var categorySeeder = scope.ServiceProvider.GetRequiredService<BusinessLogicLayer.Services.CategorySeedService>();
                         await categorySeeder.SeedCategoriesAsync();
 
                         // Seed statuses if they don't exist
-                        var statusSeeder = scope.ServiceProvider.GetRequiredService<BrainStormEra_MVC.Services.StatusSeedService>();
+                        var statusSeeder = scope.ServiceProvider.GetRequiredService<BusinessLogicLayer.Services.StatusSeedService>();
                         await statusSeeder.SeedStatusesAsync();
 
                         // Seed lesson types if they don't exist
-                        var lessonTypeSeeder = scope.ServiceProvider.GetRequiredService<BrainStormEra_MVC.Services.LessonTypeSeedService>();
+                        var lessonTypeSeeder = scope.ServiceProvider.GetRequiredService<BusinessLogicLayer.Services.LessonTypeSeedService>();
                         await lessonTypeSeeder.SeedLessonTypesAsync();
                     }
                 }
@@ -257,10 +251,8 @@ namespace BrainStormEra_MVC
             // Configure routing
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
-
-            // Configure SignalR Hub
-            app.MapHub<BrainStormEra_MVC.Hubs.NotificationHub>("/notificationHub");
+                pattern: "{controller=Home}/{action=Index}/{id?}");            // Configure SignalR Hub
+            app.MapHub<BusinessLogicLayer.Hubs.NotificationHub>("/notificationHub");
 
             app.Run();
         }

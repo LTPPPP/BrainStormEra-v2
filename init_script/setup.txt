@@ -4,3 +4,6 @@ dotnet add package Microsoft.EntityFrameworkCore.SqlServer
 dotnet add package Newtonsoft.Json
 dotnet add package BCrypt.Net-Next
 dotnet add package VNPAY.NET --version 8.5.0
+dotnet add package Microsoft.AspNetCore.Http.Abstractions
+dotnet add package Microsoft.AspNetCore.Mvc
+dotnet add package Microsoft.AspNetCore.SignalR

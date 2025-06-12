@@ -1,7 +1,7 @@
 using DataAccessLayer.Models;
 using DataAccessLayer.Data;
 using DataAccessLayer.Models.ViewModels;
-using BrainStormEra_MVC.Services.Interfaces;
+using BusinessLogicLayer.Services.Interfaces;
 using BrainStormEra_MVC.Utilities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -481,3 +481,4 @@ namespace BrainStormEra_MVC.Controllers
         #endregion
     }
 }
+

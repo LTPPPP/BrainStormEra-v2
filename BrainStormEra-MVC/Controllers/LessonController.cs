@@ -1,6 +1,6 @@
 using DataAccessLayer.Models;
 using DataAccessLayer.Models.ViewModels;
-using BrainStormEra_MVC.Services.Implementations;
+using BusinessLogicLayer.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -327,3 +327,4 @@ namespace BrainStormEra_MVC.Controllers
         }
     }
 }
+
