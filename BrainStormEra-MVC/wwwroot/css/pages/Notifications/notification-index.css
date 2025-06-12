@@ -482,10 +482,6 @@
     padding: 1.5rem;
   }
 
-  .notification-item:hover {
-    transform: translateX(5px);
-  }
-
   .card-header {
     padding: 1rem 1.5rem;
   }

@@ -47,11 +47,11 @@
       );
     }
 
-    // Add hover effects to course cards
-    elements.courseCards.forEach((card) => {
-      card.addEventListener("mouseenter", handleCardHover);
-      card.addEventListener("mouseleave", handleCardLeave);
-    });
+    // Removed hover effects for course cards
+    // elements.courseCards.forEach((card) => {
+    //   card.addEventListener("mouseenter", handleCardHover);
+    //   card.addEventListener("mouseleave", handleCardLeave);
+    // });
 
     // Add ripple effect to buttons
     const buttons = document.querySelectorAll(
@@ -106,28 +106,28 @@
   }
 
   /**
-   * Handle card hover animation
+   * Handle card hover animation - REMOVED
    */
-  function handleCardHover(e) {
-    const card = this;
-    const image = card.querySelector("img");
+  // function handleCardHover(e) {
+  //   const card = this;
+  //   const image = card.querySelector("img");
 
-    if (image) {
-      image.style.transform = "scale(1.05)";
-    }
-  }
+  //   if (image) {
+  //     image.style.transform = "scale(1.05)";
+  //   }
+  // }
 
   /**
-   * Handle card leave animation
+   * Handle card leave animation - REMOVED
    */
-  function handleCardLeave(e) {
-    const card = this;
-    const image = card.querySelector("img");
+  // function handleCardLeave(e) {
+  //   const card = this;
+  //   const image = card.querySelector("img");
 
-    if (image) {
-      image.style.transform = "scale(1)";
-    }
-  }
+  //   if (image) {
+  //     image.style.transform = "scale(1)";
+  //   }
+  // }
 
   /**
    * Create ripple effect on button click

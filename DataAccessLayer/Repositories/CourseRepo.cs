@@ -529,19 +529,68 @@ namespace DataAccessLayer.Repositories
         {
             try
             {
-                return await _dbSet
+                var recommendedCourses = new List<Course>();
+
+                // First, try to get featured courses
+                var featuredCourses = await _dbSet
                     .Where(c => c.IsFeatured == true &&
                                c.CourseStatus == 1 &&
                                !excludeCourseIds.Contains(c.CourseId))
                     .Include(c => c.Author)
                     .Include(c => c.CourseCategories)
+                    .Include(c => c.Enrollments)
+                    .OrderByDescending(c => c.Enrollments.Count)
                     .Take(count)
                     .ToListAsync();
+
+                recommendedCourses.AddRange(featuredCourses);
+
+                // If we don't have enough courses, add popular courses as fallback
+                if (recommendedCourses.Count < count)
+                {
+                    var remainingCount = count - recommendedCourses.Count;
+                    var usedIds = recommendedCourses.Select(c => c.CourseId).Concat(excludeCourseIds).ToList();
+
+                    var popularCourses = await _dbSet
+                        .Where(c => c.CourseStatus == 1 &&
+                                   !usedIds.Contains(c.CourseId))
+                        .Include(c => c.Author)
+                        .Include(c => c.CourseCategories)
+                        .Include(c => c.Enrollments)
+                        .OrderByDescending(c => c.Enrollments.Count)
+                        .ThenByDescending(c => c.CourseCreatedAt)
+                        .Take(remainingCount)
+                        .ToListAsync();
+
+                    recommendedCourses.AddRange(popularCourses);
+                }
+
+                // If still not enough, add recent courses as final fallback
+                if (recommendedCourses.Count < count)
+                {
+                    var remainingCount = count - recommendedCourses.Count;
+                    var usedIds = recommendedCourses.Select(c => c.CourseId).Concat(excludeCourseIds).ToList();
+
+                    var recentCourses = await _dbSet
+                        .Where(c => c.CourseStatus == 1 &&
+                                   !usedIds.Contains(c.CourseId))
+                        .Include(c => c.Author)
+                        .Include(c => c.CourseCategories)
+                        .Include(c => c.Enrollments)
+                        .OrderByDescending(c => c.CourseCreatedAt)
+                        .Take(remainingCount)
+                        .ToListAsync();
+
+                    recommendedCourses.AddRange(recentCourses);
+                }
+
+                return recommendedCourses.Take(count).ToList();
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error getting recommended courses for user {UserId}", userId);
-                throw;
+                // Return empty list instead of throwing to prevent crashes
+                return new List<Course>();
             }
         }
 

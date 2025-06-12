@@ -1,0 +1,189 @@
+@* Recommendation Debug Panel - Only visible to instructors and admins *@
+@if (User.IsInRole("instructor") || User.IsInRole("admin"))
+{
+    <div class="recommendation-debug-panel position-fixed" style="bottom: 20px; left: 20px; z-index: 1000;">
+        <div class="card shadow-sm" style="width: 300px;">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>Recommendation System
+                </h6>
+                <button class="btn btn-link text-white p-0" onclick="toggleDebugPanel()" title="Toggle Panel">
+                    <i class="fas fa-chevron-up" id="debug-panel-toggle"></i>
+                </button>
+            </div>
+            <div class="card-body" id="debug-panel-body">
+                <div class="mb-3">
+                    <h6>System Status</h6>
+                    <div id="recommendation-stats" class="small text-muted">
+                        Loading...
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success btn-sm" onclick="initializeRecommendations()">
+                        <i class="fas fa-magic me-1"></i>Initialize System
+                    </button>
+                    <button class="btn btn-info btn-sm" onclick="refreshStats()">
+                        <i class="fas fa-sync me-1"></i>Refresh Stats
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="testRecommendations()">
+                        <i class="fas fa-test-tube me-1"></i>Test Recommendations
+                    </button>
+                </div>
+
+                <div class="mt-3">
+                    <div id="debug-messages" class="small" style="max-height: 150px; overflow-y: auto;">
+                        <!-- Debug messages will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let panelCollapsed = false;
+
+        // Load stats when panel is initialized
+        document.addEventListener('DOMContentLoaded', function () {
+            refreshStats();
+        });
+
+        function toggleDebugPanel() {
+            const body = document.getElementById('debug-panel-body');
+            const toggle = document.getElementById('debug-panel-toggle');
+
+            panelCollapsed = !panelCollapsed;
+
+            if (panelCollapsed) {
+                body.style.display = 'none';
+                toggle.className = 'fas fa-chevron-down';
+            } else {
+                body.style.display = 'block';
+                toggle.className = 'fas fa-chevron-up';
+            }
+        }
+
+        async function refreshStats() {
+            try {
+                const response = await fetch('/Home/GetRecommendationStats');
+                const result = await response.json();
+
+                if (result.success) {
+                    const stats = result.stats;
+                    document.getElementById('recommendation-stats').innerHTML = `
+                            <div class="d-flex justify-content-between">
+                                <span>Total Courses:</span>
+                                <strong>${stats.totalActiveCourses}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Featured:</span>
+                                <strong class="${stats.featuredCourses > 0 ? 'text-success' : 'text-warning'}">${stats.featuredCourses}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>With Enrollments:</span>
+                                <strong>${stats.coursesWithEnrollments}</strong>
+                            </div>
+                        `;
+
+                    logMessage(`Stats refreshed: ${stats.featuredCourses}/${stats.totalActiveCourses} featured`, 'info');
+                } else {
+                    logMessage('Failed to get stats', 'error');
+                }
+            } catch (error) {
+                logMessage(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function initializeRecommendations() {
+            try {
+                logMessage('Initializing recommendation system...', 'info');
+
+                const response = await fetch('/Home/InitializeRecommendations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': getAntiForgeryToken()
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    logMessage(`✓ ${result.message}`, 'success');
+                    await refreshStats();
+                } else {
+                    logMessage(`✗ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                logMessage(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRecommendations() {
+            logMessage('Testing recommendation system...', 'info');
+
+            // Test by getting stats and checking if system is working
+            await refreshStats();
+
+            const statsElement = document.getElementById('recommendation-stats');
+            const statsText = statsElement.textContent;
+
+            if (statsText.includes('Featured: 0')) {
+                logMessage('⚠️ No featured courses found - recommendations may be empty', 'warning');
+            } else {
+                logMessage('✓ Recommendation system appears to be working', 'success');
+            }
+        }
+
+        function logMessage(message, type = 'info') {
+            const messagesDiv = document.getElementById('debug-messages');
+            const timestamp = new Date().toLocaleTimeString();
+            const iconClass = {
+                'info': 'fas fa-info-circle text-info',
+                'success': 'fas fa-check-circle text-success',
+                'warning': 'fas fa-exclamation-triangle text-warning',
+                'error': 'fas fa-times-circle text-danger'
+            }[type] || 'fas fa-info-circle text-info';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'border-bottom pb-1 mb-1';
+            messageDiv.innerHTML = `
+                    <div class="d-flex align-items-start">
+                        <i class="${iconClass} me-2 mt-1" style="font-size: 0.8em;"></i>
+                        <div class="flex-grow-1">
+                            <div style="font-size: 0.75em;">${message}</div>
+                            <div class="text-muted" style="font-size: 0.7em;">${timestamp}</div>
+                        </div>
+                    </div>
+                `;
+
+            messagesDiv.insertBefore(messageDiv, messagesDiv.firstChild);
+
+            // Keep only last 10 messages
+            while (messagesDiv.children.length > 10) {
+                messagesDiv.removeChild(messagesDiv.lastChild);
+            }
+        }
+
+        function getAntiForgeryToken() {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            return token ? token.value : '';
+        }
+    </script>
+}
+
+<style>
+    .recommendation-debug-panel {
+        font-size: 0.9em;
+    }
+
+    .recommendation-debug-panel .card {
+        border: 1px solid #007bff;
+    }
+
+    .recommendation-debug-panel .btn-sm {
+        font-size: 0.8em;
+        padding: 0.25rem 0.5rem;
+    }
+</style>
+                                                                                     

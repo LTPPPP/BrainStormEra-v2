@@ -3,6 +3,7 @@ using DataAccessLayer.Models;
 using BrainStormEra_MVC.Models;
 using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Implementations;
+using BusinessLogicLayer.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
@@ -114,6 +115,56 @@ namespace BrainStormEra_MVC.Controllers
         {
             var result = await _homeServiceImpl.HandleGetIncomeDataAsync(User, days);
             return Json(result.JsonResponse);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "admin,instructor")]
+        public async Task<IActionResult> InitializeRecommendations()
+        {
+            try
+            {
+                var recommendationHelper = HttpContext.RequestServices.GetRequiredService<RecommendationHelper>();
+                var success = await recommendationHelper.EnsureFeaturedCoursesExistAsync();
+
+                if (success)
+                {
+                    return Json(new { success = true, message = "Recommendation system initialized successfully" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Failed to initialize recommendations - no courses available" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error initializing recommendations: {ex.Message}" });
+            }
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "admin,instructor")]
+        public async Task<IActionResult> GetRecommendationStats()
+        {
+            try
+            {
+                var recommendationHelper = HttpContext.RequestServices.GetRequiredService<RecommendationHelper>();
+                var stats = await recommendationHelper.GetRecommendationStatsAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    stats = new
+                    {
+                        totalActiveCourses = stats.TotalActiveCourses,
+                        featuredCourses = stats.FeaturedCourses,
+                        coursesWithEnrollments = stats.CoursesWithEnrollments
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error getting stats: {ex.Message}" });
+            }
         }
 
         private async Task<IActionResult> RedirectToUserDashboard()
