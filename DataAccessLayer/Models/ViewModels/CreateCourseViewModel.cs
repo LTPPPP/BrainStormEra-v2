@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-
+using Microsoft.AspNetCore.Http;
 namespace BrainStormEra_MVC.Models.ViewModels
 {
     public class CreateCourseViewModel
