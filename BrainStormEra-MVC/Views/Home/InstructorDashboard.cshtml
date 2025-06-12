@@ -144,7 +144,8 @@
                     <div class="dashboard-card mb-4">
                         <div class="dashboard-card-header d-flex justify-content-between align-items-center">
                             <h2>My Courses</h2>
-                            <a href="#" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
+                            <a href="@Url.Action("Index", "Course")" class="view-all-link">View All <i
+                                    class="fas fa-arrow-right ms-1"></i></a>
                         </div>
                         <div class="dashboard-card-body">
                             @if (Model.RecentCourses.Any())

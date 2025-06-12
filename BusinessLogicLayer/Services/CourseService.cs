@@ -349,7 +349,15 @@ namespace BusinessLogicLayer.Services
             }
         }
 
-        public async Task<(List<CourseViewModel> courses, int totalCount)> SearchCoursesWithPaginationAsync(string? search, string? category, int page, int pageSize, string? sortBy)
+        public async Task<(List<CourseViewModel> courses, int totalCount)> SearchCoursesWithPaginationAsync(
+            string? search,
+            string? category,
+            int page,
+            int pageSize,
+            string? sortBy,
+            string? price = null,
+            string? difficulty = null,
+            string? duration = null)
         {
             try
             {
@@ -370,6 +378,44 @@ namespace BusinessLogicLayer.Services
                 {
                     query = query.Where(c => c.CourseCategories
                         .Any(cc => cc.CourseCategoryName == category));
+                }
+
+                // Price filter
+                if (!string.IsNullOrWhiteSpace(price))
+                {
+                    query = price switch
+                    {
+                        "free" => query.Where(c => c.Price == 0),
+                        "0-50" => query.Where(c => c.Price > 0 && c.Price <= 50),
+                        "50-100" => query.Where(c => c.Price > 50 && c.Price <= 100),
+                        "100-200" => query.Where(c => c.Price > 100 && c.Price <= 200),
+                        "200+" => query.Where(c => c.Price > 200),
+                        _ => query
+                    };
+                }
+
+                // Difficulty filter (using DifficultyLevel: 1=Beginner, 2=Intermediate, 3=Advanced)
+                if (!string.IsNullOrWhiteSpace(difficulty))
+                {
+                    query = difficulty.ToLower() switch
+                    {
+                        "beginner" => query.Where(c => c.DifficultyLevel == 1),
+                        "intermediate" => query.Where(c => c.DifficultyLevel == 2),
+                        "advanced" => query.Where(c => c.DifficultyLevel == 3),
+                        _ => query
+                    };
+                }
+
+                // Duration filter (using EstimatedDuration in hours)
+                if (!string.IsNullOrWhiteSpace(duration))
+                {
+                    query = duration switch
+                    {
+                        "short" => query.Where(c => c.EstimatedDuration <= 2),
+                        "medium" => query.Where(c => c.EstimatedDuration > 2 && c.EstimatedDuration <= 10),
+                        "long" => query.Where(c => c.EstimatedDuration > 10),
+                        _ => query
+                    };
                 }
 
                 // Get total count before pagination

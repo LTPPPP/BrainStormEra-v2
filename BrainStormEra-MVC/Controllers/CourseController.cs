@@ -74,9 +74,17 @@ namespace BrainStormEra_MVC.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> SearchCourses(string? search, string? category, int page = 1, int pageSize = 12, string? sortBy = "newest")
+        public async Task<IActionResult> SearchCourses(
+            string? search,
+            string? category,
+            int page = 1,
+            int pageSize = 12,
+            string? sortBy = "newest",
+            string? price = null,
+            string? difficulty = null,
+            string? duration = null)
         {
-            var result = await _courseServiceImpl.SearchCoursesAsync(search, category, page, pageSize, sortBy);
+            var result = await _courseServiceImpl.SearchCoursesAsync(search, category, page, pageSize, sortBy, price, difficulty, duration);
 
             if (!result.Success)
             {

@@ -135,6 +135,7 @@
                                 <option value="price_asc">Price Low to High</option>
                                 <option value="price_desc">Price High to Low</option>
                                 <option value="popular">Most Popular</option>
+                                <option value="rating">Highest Rated</option>
                             </select>
                         </div>
                     </div>
@@ -142,6 +143,71 @@
                 <div class="col-lg-3">
                     <div class="results-info">
                         <span class="results-count" id="resultsCount">@Model.TotalCourses courses found</span>
+                        <div class="filter-controls">
+                            <button class="btn filter-control-btn" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
+                                <i class="fas fa-filter"></i>
+                                <span>Advanced Filters</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Filters (Collapsible) -->
+            <div class="collapse" id="advancedFilters">
+                <div class="advanced-filters-card mb-3">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <!-- Price Range Filter -->
+                            <div class="filter-group">
+                                <label class="filter-label">
+                                    <i class="fas fa-dollar-sign"></i> Price Range
+                                </label>
+                                <div class="price-filter">
+                                    <select id="priceFilter" class="form-select">
+                                        <option value="">All Prices</option>
+                                        <option value="free">Free</option>
+                                        <option value="0-50">$0 - $50</option>
+                                        <option value="50-100">$50 - $100</option>
+                                        <option value="100-200">$100 - $200</option>
+                                        <option value="200+">$200+</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <!-- Difficulty Level Filter -->
+                            <div class="filter-group">
+                                <label class="filter-label">
+                                    <i class="fas fa-chart-line"></i> Difficulty Level
+                                </label>
+                                <div class="difficulty-filter">
+                                    <select id="difficultyFilter" class="form-select">
+                                        <option value="">All Levels</option>
+                                        <option value="beginner">Beginner</option>
+                                        <option value="intermediate">Intermediate</option>
+                                        <option value="advanced">Advanced</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <!-- Duration Filter -->
+                            <div class="filter-group">
+                                <label class="filter-label">
+                                    <i class="fas fa-clock"></i> Course Duration
+                                </label>
+                                <div class="duration-filter">
+                                    <select id="durationFilter" class="form-select">
+                                        <option value="">Any Duration</option>
+                                        <option value="short">Short (< 2 hours)</option>
+                                        <option value="medium">Medium (2-10 hours)</option>
+                                        <option value="long">Long (10+ hours)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -162,6 +228,12 @@
                         </button>
                     }
                 </div>
+                <div class="filter-actions">
+                    <button id="clearAllFilters" class="btn filter-control-btn clear-filters-btn">
+                        <i class="fas fa-times"></i>
+                        <span>Clear All Filters</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -174,10 +246,10 @@
         </div>
 
         <!-- Course Grid -->
-        <div class="courses-section">
+        <div class="courses-section" id="coursesContainer">
             @if (Model.Courses.Any())
             {
-                <div class="row g-4">
+                <div class="row g-4" id="coursesGrid">
                     @foreach (var course in Model.Courses)
                     {
                         <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
@@ -289,44 +361,35 @@
                 <!-- Pagination -->
                 @if (Model.TotalPages > 1)
                 {
-                    <div class="pagination-wrapper">
+                    <div class="pagination-wrapper" id="paginationWrapper">
                         <nav aria-label="Course pagination">
                             <ul class="pagination justify-content-center">
                                 @if (Model.HasPreviousPage)
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" href="@Url.Action("Index", "Course", new { 
-                                            category = Model.CurrentCategory, 
-                                            search = Model.CurrentSearch, 
-                                            page = Model.CurrentPage - 1 })">
+                                        <button class="page-link pagination-btn" data-page="@(Model.CurrentPage - 1)">
                                             <i class="fas fa-chevron-left"></i>
                                             Previous
-                                        </a>
+                                        </button>
                                     </li>
                                 }
 
                                 @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
                                 {
                                     <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                                        <a class="page-link" href="@Url.Action("Index", "Course", new { 
-                                            category = Model.CurrentCategory, 
-                                            search = Model.CurrentSearch, 
-                                            page = i })">
+                                        <button class="page-link pagination-btn" data-page="@i">
                                             @i
-                                        </a>
+                                        </button>
                                     </li>
                                 }
 
                                 @if (Model.HasNextPage)
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" href="@Url.Action("Index", "Course", new { 
-                                            category = Model.CurrentCategory, 
-                                            search = Model.CurrentSearch, 
-                                            page = Model.CurrentPage + 1 })">
+                                        <button class="page-link pagination-btn" data-page="@(Model.CurrentPage + 1)">
                                             Next
                                             <i class="fas fa-chevron-right"></i>
-                                        </a>
+                                        </button>
                                     </li>
                                 }
                             </ul>
@@ -373,6 +436,7 @@
     <!-- Custom JS -->
     <script src="~/js/components/loader.js"></script>
     <script src="~/js/pages/Course/courses.js"></script>
+    <script src="~/js/pages/Course/course-search.js"></script>
 
     @* Chatbot Script for authenticated users *@
     @if (User.Identity?.IsAuthenticated == true)
@@ -381,13 +445,21 @@
         <script src="~/js/components/chatbot.js"></script>
     }    
     <script>
+        // Initialize Course Search Manager
+        let courseSearchManager;
+        
         // Hide preloader when page is loaded
         window.addEventListener('load', function() {
             document.querySelector('.page-loader').classList.add('loaded');
             setTimeout(() => {
                 document.querySelector('.page-loader').style.display = 'none';
             }, 500);
-        });        // Change header style on scroll
+            
+            // Initialize search manager after page load
+            courseSearchManager = new CourseSearchManager();
+        });
+        
+        // Change header style on scroll
         window.addEventListener('scroll', function () {
             if (window.scrollY > 50) {
                 document.querySelector('.bse-sticky-header').classList.add('scrolled');

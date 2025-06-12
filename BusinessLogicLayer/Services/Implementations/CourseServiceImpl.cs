@@ -80,11 +80,14 @@ namespace BusinessLogicLayer.Services.Implementations
             string? category,
             int page = 1,
             int pageSize = 12,
-            string? sortBy = "newest")
+            string? sortBy = "newest",
+            string? price = null,
+            string? difficulty = null,
+            string? duration = null)
         {
             try
             {
-                var (courses, totalCount) = await _courseService.SearchCoursesWithPaginationAsync(search, category, page, pageSize, sortBy);
+                var (courses, totalCount) = await _courseService.SearchCoursesWithPaginationAsync(search, category, page, pageSize, sortBy, price, difficulty, duration);
                 var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
                 return new CourseSearchResult

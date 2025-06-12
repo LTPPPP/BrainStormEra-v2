@@ -74,7 +74,7 @@
                 <div class="dashboard-card mb-4">
                     <div class="dashboard-card-header d-flex justify-content-between align-items-center">
                         <h2>My Courses</h2>
-                        <a href="#" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
+                        <a href="@Url.Action("Index", "Course")" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
                     </div>
                     <div class="dashboard-card-body">
                         @if (Model.EnrolledCourses.Any())
@@ -125,7 +125,7 @@
                 <div class="dashboard-card">
                     <div class="dashboard-card-header d-flex justify-content-between align-items-center">
                         <h2>Recommended For You</h2>
-                        <a href="#" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
+                        <a href="@Url.Action("Index", "Course")" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
                     </div>
                     <div class="dashboard-card-body">
                         @if (Model.RecommendedCourses.Any())
@@ -181,47 +181,8 @@
                 </div>
             </div>
 
-            <!-- Right Column - Notifications & Stats -->
+            <!-- Right Column - Stats -->
             <div class="col-lg-4">
-                <!-- Notifications Section -->
-                <div class="dashboard-card mb-4">
-                    <div class="dashboard-card-header d-flex justify-content-between align-items-center">
-                        <h2>Notifications</h2>
-                        <a href="#" class="mark-all-read">Mark All Read</a>
-                    </div>
-                    <div class="dashboard-card-body">
-                        @if (Model.Notifications.Any())
-                        {
-                            <div class="notifications-list">
-                                @foreach (var notification in Model.Notifications)
-                                {
-                                    <div class="notification-item @(notification.IsRead ? "" : "unread")">
-                                        <div class="notification-icon">
-                                            <i class="fas fa-bell"></i>
-                                        </div>
-                                        <div class="notification-content">
-                                            <h4 class="notification-title">@notification.Title</h4>
-                                            <p class="notification-message">@notification.Message</p>
-                                            <div class="notification-time">
-                                                @notification.CreatedAt.ToString("MMM dd, yyyy")
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="empty-state">
-                                <img src="/img/empty-notifications.svg" alt="No notifications" class="empty-state-img"
-                                     onerror="this.onerror=null; this.src='/img/defaults/default-logo.svg';">
-                                <h3>No notifications</h3>
-                                <p>You're all caught up!</p>
-                            </div>
-                        }
-                    </div>
-                </div>
-
                 <!-- Learning Stats Widget -->
                 <div class="dashboard-card">
                     <div class="dashboard-card-header">
