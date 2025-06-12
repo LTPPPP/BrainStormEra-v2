@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using BrainStormEra_MVC.Services.Interfaces;
-using BrainStormEra_MVC.Models.ViewModels;
+using DataAccessLayer.Models.ViewModels;
 using DataAccessLayer.Models;
 using DataAccessLayer.Data;
 using System.Security.Claims;

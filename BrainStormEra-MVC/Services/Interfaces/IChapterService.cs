@@ -1,4 +1,4 @@
-using BrainStormEra_MVC.Models.ViewModels;
+using DataAccessLayer.Models.ViewModels;
 
 namespace BrainStormEra_MVC.Services.Interfaces
 {

@@ -1,4 +1,4 @@
-using BrainStormEra_MVC.Models.ViewModels;
+using DataAccessLayer.Models.ViewModels;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace BrainStormEra_MVC.Services.Interfaces

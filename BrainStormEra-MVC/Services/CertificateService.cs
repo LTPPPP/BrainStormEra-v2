@@ -1,5 +1,5 @@
 using DataAccessLayer.Repositories.Interfaces;
-using BrainStormEra_MVC.Models.ViewModels;
+using DataAccessLayer.Models.ViewModels;
 using BrainStormEra_MVC.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 

@@ -1,5 +1,5 @@
 using DataAccessLayer.Models;
-using BrainStormEra_MVC.Models.ViewModels;
+using DataAccessLayer.Models.ViewModels;
 using BrainStormEra_MVC.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

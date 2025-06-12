@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using DataAccessLayer.Models;
 using DataAccessLayer.Data;
-using BrainStormEra_MVC.Models.ViewModels;
+using DataAccessLayer.Models.ViewModels;
 using BrainStormEra_MVC.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 

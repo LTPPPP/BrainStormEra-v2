@@ -1,4 +1,4 @@
-@model BrainStormEra_MVC.Models.ViewModels.CourseDetailViewModel
+@model DataAccessLayer.Models.ViewModels.CourseDetailViewModel
 @{
     ViewData["Title"] = Model.CourseName;
     Layout = null;
@@ -612,7 +612,7 @@
                                                                                             <span>Questions (@(quiz.Questions?.Count ?? 0))</span>
                                                                                         </div>
                                                                                         <div class="quiz-questions-items">
-                                                                                            @foreach (var question in quiz.Questions?.Take(3) ?? Enumerable.Empty<BrainStormEra_MVC.Models.ViewModels.QuestionViewModel>())
+                                                                                            @foreach (var question in quiz.Questions?.Take(3) ?? Enumerable.Empty<DataAccessLayer.Models.ViewModels.QuestionViewModel>())
                                                                                             {
                                                                                                 <div class="question-preview-item">
                                                                                                     <div class="question-preview-number">@((quiz.Questions?.ToList().IndexOf(question) ?? -1) + 1)</div>
