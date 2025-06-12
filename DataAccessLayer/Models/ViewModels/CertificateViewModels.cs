@@ -1,4 +1,4 @@
-namespace BrainStormEra_MVC.Models.ViewModels
+namespace DataAccessLayer.Models.ViewModels
 {
     /// <summary>
     /// ViewModel for displaying certificate summary in the certificates list

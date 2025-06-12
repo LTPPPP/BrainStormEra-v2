@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BrainStormEra_MVC.Models.ViewModels
+namespace DataAccessLayer.Models.ViewModels
 {
     /// <summary>
     /// ViewModel for displaying achievement summary in the achievements list

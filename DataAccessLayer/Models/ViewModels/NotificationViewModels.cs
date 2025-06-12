@@ -1,7 +1,7 @@
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
 
-namespace BrainStormEra_MVC.Models.ViewModels
+namespace DataAccessLayer.Models.ViewModels
 {
     public class NotificationIndexViewModel
     {

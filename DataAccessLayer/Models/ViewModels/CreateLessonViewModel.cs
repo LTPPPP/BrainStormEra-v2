@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using DataAccessLayer.Models;
 using Microsoft.AspNetCore.Http;
-namespace BrainStormEra_MVC.Models.ViewModels
+namespace DataAccessLayer.Models.ViewModels
 {
     public class CreateLessonViewModel
     {

@@ -1,6 +1,4 @@
-using BrainStormEra_MVC.Models.ViewModels;
-
-namespace BrainStormEra_MVC.Models.ViewModels
+namespace DataAccessLayer.Models.ViewModels
 {
     public class QuizDetailsViewModel
     {

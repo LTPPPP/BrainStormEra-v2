@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-
-namespace BrainStormEra_MVC.Models.ViewModels
+using DataAccessLayer.Models.ViewModels;
+namespace DataAccessLayer.Models.ViewModels
 {
     public class AdminDashboardViewModel
     {

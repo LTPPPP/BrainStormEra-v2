@@ -1,7 +1,7 @@
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
 
-namespace BrainStormEra_MVC.Models.ViewModels
+namespace DataAccessLayer.Models.ViewModels
 {
     /// <summary>
     /// View model for displaying deleted items with pagination
