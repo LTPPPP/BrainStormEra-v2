@@ -94,7 +94,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.RecommendationHelper>();
 
             // Register Admin Services for data access and business logic
-            builder.Services.AddScoped<BusinessLogicLayer.Services.AdminService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAdminService, BusinessLogicLayer.Services.AdminService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AdminServiceImpl>();
 
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.EnrollmentService>();

@@ -1,0 +1,217 @@
+@model DataAccessLayer.Models.ViewModels.AdminCoursesViewModel
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Courses (@Model.TotalCourses)</h5>
+    <div class="text-muted">
+        Showing @(((Model.CurrentPage - 1) * Model.PageSize) + 1) - @(Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalCourses)) of @Model.TotalCourses
+    </div>
+</div>
+
+@if (Model.Courses.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Thumbnail</th>
+                    <th>Course</th>
+                    <th>Instructor</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var course in Model.Courses)
+                {
+                    <tr>
+                        <td>
+                            @if (!string.IsNullOrEmpty(course.CoursePicture))
+                            {
+                                <img src="@course.CoursePicture" alt="@course.CourseName" class="course-thumbnail">
+                            }
+                            else
+                            {
+                                <div class="bg-secondary course-thumbnail d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-graduation-cap text-white"></i>
+                                </div>
+                            }
+                        </td>
+                        <td>
+                            <div>
+                                <strong>@course.CourseName</strong>
+                                @if (!string.IsNullOrEmpty(course.CourseDescription) && course.CourseDescription.Length > 50)
+                                {
+                                    <br><small class="text-muted">@(course.CourseDescription.Substring(0, 50))...</small>
+                                }
+                                else if (!string.IsNullOrEmpty(course.CourseDescription))
+                                {
+                                    <br><small class="text-muted">@course.CourseDescription</small>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>@course.InstructorName</strong>
+                                @if (!string.IsNullOrEmpty(course.InstructorEmail))
+                                {
+                                    <br><small class="text-muted">@course.InstructorEmail</small>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            @if (course.Categories != null && course.Categories.Any())
+                            {
+                                <span class="badge bg-secondary">@course.Categories.First().ToUpper()</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No Category</span>
+                            }
+                        </td>
+                        <td>
+                            @if (course.Price == 0)
+                            {
+                                <span class="badge bg-success">FREE</span>
+                            }
+                            else
+                            {
+                                <strong>$@course.Price.ToString("F2")</strong>
+                            }
+                        </td>
+                        <td>
+                            @if (course.IsApproved)
+                            {
+                                <span class="status-badge status-approved">
+                                    <i class="fas fa-check-circle me-1"></i>Approved
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-pending">
+                                    <i class="fas fa-clock me-1"></i>Pending
+                                </span>
+                            }
+                        </td>
+                        <td>@course.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                @if (!course.IsApproved)
+                                {
+                                    <button type="button" class="action-btn btn-approve" data-course-id="@course.CourseId" title="Approve Course">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button type="button" class="action-btn btn-reject" data-course-id="@course.CourseId" title="Reject Course">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="action-btn btn-reject" data-course-id="@course.CourseId" title="Reject Course">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                }
+                                <button type="button" class="action-btn btn-delete" data-course-id="@course.CourseId" title="Delete Course">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Course pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <!-- Previous Page -->
+                <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("ManageCourses", new { 
+                        search = Context.Request.Query["search"], 
+                        categoryFilter = Context.Request.Query["categoryFilter"], 
+                        page = Model.CurrentPage - 1 
+                    })">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+
+                <!-- Page Numbers -->
+                @{
+                    int startPage = Math.Max(1, Model.CurrentPage - 2);
+                    int endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                }
+
+                @if (startPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("ManageCourses", new { 
+                            search = Context.Request.Query["search"], 
+                            categoryFilter = Context.Request.Query["categoryFilter"], 
+                            page = 1 
+                        })">1</a>
+                    </li>
+                    @if (startPage > 2)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                }
+
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("ManageCourses", new { 
+                            search = Context.Request.Query["search"], 
+                            categoryFilter = Context.Request.Query["categoryFilter"], 
+                            page = i 
+                        })">@i</a>
+                    </li>
+                }
+
+                @if (endPage < Model.TotalPages)
+                {
+                    @if (endPage < Model.TotalPages - 1)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("ManageCourses", new { 
+                            search = Context.Request.Query["search"], 
+                            categoryFilter = Context.Request.Query["categoryFilter"], 
+                            page = Model.TotalPages 
+                        })">@Model.TotalPages</a>
+                    </li>
+                }
+
+                <!-- Next Page -->
+                <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("ManageCourses", new { 
+                        search = Context.Request.Query["search"], 
+                        categoryFilter = Context.Request.Query["categoryFilter"], 
+                        page = Model.CurrentPage + 1 
+                    })">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fas fa-graduation-cap fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">No Courses Found</h5>
+        <p class="text-muted">Try adjusting your search criteria or filters.</p>
+    </div>
+}
+
+@Html.AntiForgeryToken()

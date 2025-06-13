@@ -41,6 +41,14 @@ namespace DataAccessLayer.Repositories.Interfaces
         Task<Account?> GetUserWithPaymentPointAsync(string userId);        // Admin dashboard methods
         Task<List<Account>> GetRecentUsersAsync(int count = 5);
 
+        // Admin user management methods
+        Task<List<Account>> GetAllUsersAsync(string? search = null, string? roleFilter = null, int page = 1, int pageSize = 10);
+        Task<int> GetUserCountAsync(string? search = null, string? roleFilter = null);
+        Task<int> GetUserCountByRoleAsync(string role);
+        Task<int> GetBannedUserCountAsync();
+        Task<bool> UpdateUserBanStatusAsync(string userId, bool isBanned);
+        Task<bool> DeleteUserAsync(string userId);
+
         // Chatbot context methods
         Task<Account?> GetUserWithEnrollmentsAndProgressAsync(string userId);
     }

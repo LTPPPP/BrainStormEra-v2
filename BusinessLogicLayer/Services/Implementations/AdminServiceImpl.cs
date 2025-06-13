@@ -57,6 +57,35 @@ namespace BusinessLogicLayer.Services.Implementations
         public decimal Data { get; set; }
     }
 
+    /// <summary>
+    /// Result class for admin user management operations
+    /// </summary>
+    public class AdminUsersResult
+    {
+        public bool IsSuccess { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public AdminUsersViewModel? Data { get; set; }
+    }
+
+    /// <summary>
+    /// Result class for admin course management operations
+    /// </summary>
+    public class AdminCoursesResult
+    {
+        public bool IsSuccess { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public AdminCoursesViewModel? Data { get; set; }
+    }
+
+    /// <summary>
+    /// Result class for admin operations
+    /// </summary>
+    public class AdminOperationResult
+    {
+        public bool IsSuccess { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+
     #endregion
 
     /// <summary>
@@ -69,18 +98,24 @@ namespace BusinessLogicLayer.Services.Implementations
         Task<RecentUsersResult> GetRecentUsersAsync(ClaimsPrincipal user, int count = 5);
         Task<RecentCoursesResult> GetRecentCoursesAsync(ClaimsPrincipal user, int count = 5);
         Task<TotalRevenueResult> GetTotalRevenueAsync(ClaimsPrincipal user);
+        Task<AdminUsersResult> GetAllUsersAsync(ClaimsPrincipal user, string? search = null, string? roleFilter = null, int page = 1, int pageSize = 10);
+        Task<AdminCoursesResult> GetAllCoursesAsync(ClaimsPrincipal user, string? search = null, string? categoryFilter = null, int page = 1, int pageSize = 10);
+        Task<AdminOperationResult> UpdateUserStatusAsync(ClaimsPrincipal user, string userId, bool isBanned);
+        Task<AdminOperationResult> DeleteUserAsync(ClaimsPrincipal user, string userId);
+        Task<AdminOperationResult> UpdateCourseStatusAsync(ClaimsPrincipal user, string courseId, bool isApproved);
+        Task<AdminOperationResult> DeleteCourseAsync(ClaimsPrincipal user, string courseId);
     }
 
     /// <summary>
     /// Business logic implementation for Admin service operations.
     /// Handles authentication, authorization, validation, and error handling.
     /// </summary>
-    public class AdminServiceImpl : IAdminServiceImpl
+    public class AdminServiceImpl
     {
-        private readonly AdminService _adminService;
+        private readonly IAdminService _adminService;
         private readonly ILogger<AdminServiceImpl> _logger;
 
-        public AdminServiceImpl(AdminService adminService, ILogger<AdminServiceImpl> logger)
+        public AdminServiceImpl(IAdminService adminService, ILogger<AdminServiceImpl> logger)
         {
             _adminService = adminService;
             _logger = logger;
@@ -391,6 +426,359 @@ namespace BusinessLogicLayer.Services.Implementations
                     IsSuccess = false,
                     Message = "An error occurred while retrieving total revenue.",
                     Data = 0
+                };
+            }
+        }
+
+        /// <summary>
+        /// Get all users with authorization and pagination
+        /// </summary>
+        public async Task<AdminUsersResult> GetAllUsersAsync(ClaimsPrincipal user, string? search = null, string? roleFilter = null, int page = 1, int pageSize = 10)
+        {
+            try
+            {
+                // Authentication check
+                if (user?.Identity?.IsAuthenticated != true)
+                {
+                    return new AdminUsersResult
+                    {
+                        IsSuccess = false,
+                        Message = "User is not authenticated.",
+                        Data = null
+                    };
+                }
+
+                // Authorization check - only Admin role can access user management
+                var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new AdminUsersResult
+                    {
+                        IsSuccess = false,
+                        Message = "Access denied. Admin role required.",
+                        Data = null
+                    };
+                }
+
+                // Get all users with filtering and pagination
+                var usersData = await _adminService.GetAllUsersAsync(search, roleFilter, page, pageSize);
+
+                return new AdminUsersResult
+                {
+                    IsSuccess = true,
+                    Message = "Users retrieved successfully.",
+                    Data = usersData
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving users for admin {UserId}",
+                    user?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                return new AdminUsersResult
+                {
+                    IsSuccess = false,
+                    Message = "An error occurred while retrieving users.",
+                    Data = null
+                };
+            }
+        }
+
+        /// <summary>
+        /// Get all courses with authorization and pagination
+        /// </summary>
+        public async Task<AdminCoursesResult> GetAllCoursesAsync(ClaimsPrincipal user, string? search = null, string? categoryFilter = null, int page = 1, int pageSize = 10)
+        {
+            try
+            {
+                // Authentication check
+                if (user?.Identity?.IsAuthenticated != true)
+                {
+                    return new AdminCoursesResult
+                    {
+                        IsSuccess = false,
+                        Message = "User is not authenticated.",
+                        Data = null
+                    };
+                }
+
+                // Authorization check - only Admin role can access course management
+                var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new AdminCoursesResult
+                    {
+                        IsSuccess = false,
+                        Message = "Access denied. Admin role required.",
+                        Data = null
+                    };
+                }
+
+                // Get all courses with filtering and pagination
+                var coursesData = await _adminService.GetAllCoursesAsync(search, categoryFilter, page, pageSize);
+
+                return new AdminCoursesResult
+                {
+                    IsSuccess = true,
+                    Message = "Courses retrieved successfully.",
+                    Data = coursesData
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving courses for admin {UserId}",
+                    user?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                return new AdminCoursesResult
+                {
+                    IsSuccess = false,
+                    Message = "An error occurred while retrieving courses.",
+                    Data = null
+                };
+            }
+        }
+
+        /// <summary>
+        /// Update user status with authorization
+        /// </summary>
+        public async Task<AdminOperationResult> UpdateUserStatusAsync(ClaimsPrincipal user, string userId, bool isBanned)
+        {
+            try
+            {
+                // Authentication check
+                if (user?.Identity?.IsAuthenticated != true)
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "User is not authenticated."
+                    };
+                }
+
+                // Authorization check - only Admin role can update user status
+                var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "Access denied. Admin role required."
+                    };
+                }
+
+                // Update user status
+                var success = await _adminService.UpdateUserStatusAsync(userId, isBanned);
+
+                if (success)
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = true,
+                        Message = $"User status updated successfully."
+                    };
+                }
+                else
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "Failed to update user status."
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user status for user {UserId}", userId);
+                return new AdminOperationResult
+                {
+                    IsSuccess = false,
+                    Message = "An error occurred while updating user status."
+                };
+            }
+        }
+
+        /// <summary>
+        /// Delete user with authorization
+        /// </summary>
+        public async Task<AdminOperationResult> DeleteUserAsync(ClaimsPrincipal user, string userId)
+        {
+            try
+            {
+                // Authentication check
+                if (user?.Identity?.IsAuthenticated != true)
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "User is not authenticated."
+                    };
+                }
+
+                // Authorization check - only Admin role can delete users
+                var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "Access denied. Admin role required."
+                    };
+                }
+
+                // Prevent admin from deleting themselves
+                var currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.Equals(currentUserId, userId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "Cannot delete your own account."
+                    };
+                }
+
+                // Delete user
+                var success = await _adminService.DeleteUserAsync(userId);
+
+                if (success)
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = true,
+                        Message = "User deleted successfully."
+                    };
+                }
+                else
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "Failed to delete user."
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting user {UserId}", userId);
+                return new AdminOperationResult
+                {
+                    IsSuccess = false,
+                    Message = "An error occurred while deleting user."
+                };
+            }
+        }
+
+        /// <summary>
+        /// Update course status with authorization
+        /// </summary>
+        public async Task<AdminOperationResult> UpdateCourseStatusAsync(ClaimsPrincipal user, string courseId, bool isApproved)
+        {
+            try
+            {
+                // Authentication check
+                if (user?.Identity?.IsAuthenticated != true)
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "User is not authenticated."
+                    };
+                }
+
+                // Authorization check - only Admin role can update course status
+                var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "Access denied. Admin role required."
+                    };
+                }
+
+                // Update course status
+                var success = await _adminService.UpdateCourseStatusAsync(courseId, isApproved);
+
+                if (success)
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = true,
+                        Message = "Course status updated successfully."
+                    };
+                }
+                else
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "Failed to update course status."
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating course status for course {CourseId}", courseId);
+                return new AdminOperationResult
+                {
+                    IsSuccess = false,
+                    Message = "An error occurred while updating course status."
+                };
+            }
+        }
+
+        /// <summary>
+        /// Delete course with authorization
+        /// </summary>
+        public async Task<AdminOperationResult> DeleteCourseAsync(ClaimsPrincipal user, string courseId)
+        {
+            try
+            {
+                // Authentication check
+                if (user?.Identity?.IsAuthenticated != true)
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "User is not authenticated."
+                    };
+                }
+
+                // Authorization check - only Admin role can delete courses
+                var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "Access denied. Admin role required."
+                    };
+                }
+
+                // Delete course
+                var success = await _adminService.DeleteCourseAsync(courseId);
+
+                if (success)
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = true,
+                        Message = "Course deleted successfully."
+                    };
+                }
+                else
+                {
+                    return new AdminOperationResult
+                    {
+                        IsSuccess = false,
+                        Message = "Failed to delete course."
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting course {CourseId}", courseId);
+                return new AdminOperationResult
+                {
+                    IsSuccess = false,
+                    Message = "An error occurred while deleting course."
                 };
             }
         }

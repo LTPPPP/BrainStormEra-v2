@@ -11,8 +11,44 @@ namespace DataAccessLayer.Models.ViewModels
         public int TotalCourses { get; set; }
         public int TotalEnrollments { get; set; }
         public decimal TotalRevenue { get; set; }
+
+        // Additional statistics for charts
+        public int TotalLearners { get; set; }
+        public int TotalInstructors { get; set; }
+        public int TotalAdmins { get; set; }
+        public int ApprovedCourses { get; set; }
+        public int PendingCourses { get; set; }
+        public int RejectedCourses { get; set; }
+
+        // Time series data for charts
+        public List<MonthlyUserGrowth> UserGrowthData { get; set; } = new List<MonthlyUserGrowth>();
+        public List<MonthlyRevenue> RevenueData { get; set; } = new List<MonthlyRevenue>();
+        public List<WeeklyEnrollment> EnrollmentData { get; set; } = new List<WeeklyEnrollment>();
+
         public List<UserViewModel> RecentUsers { get; set; } = new List<UserViewModel>();
         public List<CourseViewModel> RecentCourses { get; set; } = new List<CourseViewModel>();
+    }
+
+    public class MonthlyUserGrowth
+    {
+        public string Month { get; set; } = string.Empty;
+        public int NewUsers { get; set; }
+        public DateTime Date { get; set; }
+    }
+
+    public class MonthlyRevenue
+    {
+        public string Month { get; set; } = string.Empty;
+        public decimal Revenue { get; set; }
+        public DateTime Date { get; set; }
+    }
+
+    public class WeeklyEnrollment
+    {
+        public string Week { get; set; } = string.Empty;
+        public int NewEnrollments { get; set; }
+        public int CompletedCourses { get; set; }
+        public DateTime Date { get; set; }
     }
 
     public class UserViewModel

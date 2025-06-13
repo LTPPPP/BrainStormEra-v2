@@ -633,5 +633,176 @@ namespace DataAccessLayer.Repositories
                 throw;
             }
         }
+
+        // Admin course management methods
+        public async Task<List<Course>> GetAllCoursesAsync(string? search = null, string? categoryFilter = null, int page = 1, int pageSize = 10)
+        {
+            try
+            {
+                IQueryable<Course> query = _dbSet
+                    .Include(c => c.Author)
+                    .Include(c => c.Enrollments)
+                    .Include(c => c.CourseCategories);
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(c => c.CourseName.Contains(search) ||
+                                           (c.CourseDescription != null && c.CourseDescription.Contains(search)));
+                }
+
+                if (!string.IsNullOrWhiteSpace(categoryFilter))
+                {
+                    query = query.Where(c => c.CourseCategories
+                        .Any(cc => cc.CourseCategoryName == categoryFilter));
+                }
+
+                return await query
+                    .OrderByDescending(c => c.CourseCreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting all courses for admin");
+                throw;
+            }
+        }
+
+        public async Task<int> GetCourseCountAsync(string? search = null, string? categoryFilter = null)
+        {
+            try
+            {
+                IQueryable<Course> query = _dbSet;
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(c => c.CourseName.Contains(search) ||
+                                           (c.CourseDescription != null && c.CourseDescription.Contains(search)));
+                }
+
+                if (!string.IsNullOrWhiteSpace(categoryFilter))
+                {
+                    query = query.Where(c => c.CourseCategories
+                        .Any(cc => cc.CourseCategoryName == categoryFilter));
+                }
+
+                return await query.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting course count");
+                throw;
+            }
+        }
+
+        public async Task<int> GetApprovedCourseCountAsync()
+        {
+            try
+            {
+                return await _dbSet.CountAsync(c => c.ApprovalStatus == "Approved");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting approved course count");
+                throw;
+            }
+        }
+
+        public async Task<int> GetPendingCourseCountAsync()
+        {
+            try
+            {
+                return await _dbSet.CountAsync(c => c.ApprovalStatus == "Pending");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting pending course count");
+                throw;
+            }
+        }
+
+        public async Task<int> GetRejectedCourseCountAsync()
+        {
+            try
+            {
+                return await _dbSet.CountAsync(c => c.ApprovalStatus == "Rejected");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting rejected course count");
+                throw;
+            }
+        }
+
+        public async Task<int> GetFreeCourseCountAsync()
+        {
+            try
+            {
+                return await _dbSet.CountAsync(c => c.Price == 0);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting free course count");
+                throw;
+            }
+        }
+
+        public async Task<int> GetPaidCourseCountAsync()
+        {
+            try
+            {
+                return await _dbSet.CountAsync(c => c.Price > 0);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting paid course count");
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateCourseApprovalAsync(string courseId, bool isApproved)
+        {
+            try
+            {
+                var course = await GetByIdAsync(courseId);
+                if (course == null)
+                    return false;
+
+                course.ApprovalStatus = isApproved ? "Approved" : "Rejected";
+                course.ApprovedAt = DateTime.UtcNow;
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                var result = await SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error updating course approval status");
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteCourseAsync(string courseId)
+        {
+            try
+            {
+                var course = await GetByIdAsync(courseId);
+                if (course == null)
+                    return false;
+
+                // Soft delete by changing status
+                course.CourseStatus = 0; // Inactive/Deleted status
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                var result = await SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error deleting course");
+                throw;
+            }
+        }
     }
 }

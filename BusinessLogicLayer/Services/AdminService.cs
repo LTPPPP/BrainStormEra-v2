@@ -1,14 +1,10 @@
-using DataAccessLayer.Models;
-using DataAccessLayer.Repositories.Interfaces;
 using DataAccessLayer.Models.ViewModels;
+using DataAccessLayer.Repositories.Interfaces;
 using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace BusinessLogicLayer.Services
-{    /// <summary>
-     /// Service class that handles data access operations for Admin functionality.
-     /// This class implements the core data access layer for admin operations.
-     /// </summary>
+{
     public class AdminService : IAdminService
     {
         private readonly IAdminRepo _adminRepo;
@@ -28,73 +24,86 @@ namespace BusinessLogicLayer.Services
             _logger = logger;
         }
 
-        /// <summary>
-        /// Get admin dashboard data
-        /// </summary>
         public async Task<AdminDashboardViewModel> GetAdminDashboardAsync(string userId)
         {
             try
             {
-                // Get admin user info using repository
-                var adminUser = await _userRepo.GetUserBasicInfoAsync(userId);
+                var statistics = await _adminRepo.GetAdminStatisticsAsync();
+                var recentUsers = await _adminRepo.GetRecentUsersAsync(5);
+                var recentCourses = await _adminRepo.GetRecentCoursesAsync(5);
 
-                if (adminUser == null)
-                    throw new InvalidOperationException("Admin user not found");
-
-                // Get statistics
-                var statistics = await _adminRepo.GetSystemStatisticsAsync();
-                var totalRevenue = await GetTotalRevenueAsync();
-                var recentUsers = await GetRecentUsersAsync(5);
-                var recentCourses = await GetRecentCoursesAsync(5);
+                // Get admin user details
+                var adminUser = await _userRepo.GetByIdAsync(userId);
 
                 return new AdminDashboardViewModel
                 {
-                    AdminName = adminUser.FullName ?? adminUser.Username,
-                    AdminImage = adminUser.UserImage ?? "/img/defaults/default-avatar.svg",
-                    TotalUsers = (int)statistics.GetValueOrDefault("TotalUsers", 0),
-                    TotalCourses = (int)statistics.GetValueOrDefault("TotalCourses", 0),
-                    TotalEnrollments = (int)statistics.GetValueOrDefault("TotalEnrollments", 0),
-                    TotalRevenue = totalRevenue,
-                    RecentUsers = recentUsers,
-                    RecentCourses = recentCourses
+                    AdminName = adminUser?.FullName ?? "Admin",
+                    AdminImage = adminUser?.UserImage ?? "/img/defaults/default-avatar.svg",
+                    TotalUsers = statistics.ContainsKey("TotalUsers") ? (int)statistics["TotalUsers"] : 0,
+                    TotalCourses = statistics.ContainsKey("TotalCourses") ? (int)statistics["TotalCourses"] : 0,
+                    TotalEnrollments = statistics.ContainsKey("TotalEnrollments") ? (int)statistics["TotalEnrollments"] : 0,
+                    TotalRevenue = statistics.ContainsKey("TotalRevenue") ? (decimal)statistics["TotalRevenue"] : 0,
+
+                    // Extended statistics for charts
+                    TotalLearners = statistics.ContainsKey("TotalLearners") ? (int)statistics["TotalLearners"] : 0,
+                    TotalInstructors = statistics.ContainsKey("TotalInstructors") ? (int)statistics["TotalInstructors"] : 0,
+                    TotalAdmins = statistics.ContainsKey("TotalAdmins") ? (int)statistics["TotalAdmins"] : 0,
+                    ApprovedCourses = statistics.ContainsKey("ApprovedCourses") ? (int)statistics["ApprovedCourses"] : 0,
+                    PendingCourses = statistics.ContainsKey("PendingCourses") ? (int)statistics["PendingCourses"] : 0,
+                    RejectedCourses = statistics.ContainsKey("RejectedCourses") ? (int)statistics["RejectedCourses"] : 0,
+                    RecentUsers = recentUsers.Select(u => new UserViewModel
+                    {
+                        UserId = u.UserId,
+                        Username = u.Username,
+                        FullName = u.FullName ?? "",
+                        UserEmail = u.UserEmail,
+                        UserRole = u.UserRole,
+                        AccountCreatedAt = u.AccountCreatedAt,
+                        IsBanned = u.IsBanned ?? false
+                    }).ToList(),
+                    RecentCourses = recentCourses.Select(c => new CourseViewModel
+                    {
+                        CourseId = c.CourseId,
+                        CourseName = c.CourseName ?? "",
+                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                        Price = c.Price,
+                        CreatedBy = c.Author?.FullName ?? "",
+                        Description = c.CourseDescription ?? "",
+                        StarRating = 0, // Will be calculated from feedback
+                        EnrollmentCount = c.Enrollments?.Count ?? 0
+                    }).ToList()
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving admin dashboard data for user {UserId}", userId);
+                _logger.LogError(ex, "Error getting admin dashboard for user {UserId}", userId);
                 throw;
             }
         }
 
-        /// <summary>
-        /// Get admin statistics
-        /// </summary>
         public async Task<Dictionary<string, object>> GetAdminStatisticsAsync()
         {
             try
             {
-                return await _adminRepo.GetSystemStatisticsAsync();
+                return await _adminRepo.GetAdminStatisticsAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving admin statistics");
+                _logger.LogError(ex, "Error getting admin statistics");
                 throw;
             }
         }
 
-        /// <summary>
-        /// Get recent users for admin dashboard
-        /// </summary>
-        public async Task<List<UserViewModel>> GetRecentUsersAsync(int count = 5)
+        public async Task<List<UserViewModel>> GetRecentUsersAsync(int count)
         {
             try
             {
-                var users = await _userRepo.GetRecentUsersAsync(count);
+                var users = await _adminRepo.GetRecentUsersAsync(count);
                 return users.Select(u => new UserViewModel
                 {
                     UserId = u.UserId,
                     Username = u.Username,
-                    FullName = u.FullName ?? u.Username,
+                    FullName = u.FullName ?? "",
                     UserEmail = u.UserEmail,
                     UserRole = u.UserRole,
                     AccountCreatedAt = u.AccountCreatedAt,
@@ -103,39 +112,35 @@ namespace BusinessLogicLayer.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving recent users");
+                _logger.LogError(ex, "Error getting recent users with count {Count}", count);
                 throw;
             }
         }
 
-        /// <summary>
-        /// Get recent courses for admin dashboard
-        /// </summary>
-        public async Task<List<CourseViewModel>> GetRecentCoursesAsync(int count = 5)
+        public async Task<List<CourseViewModel>> GetRecentCoursesAsync(int count)
         {
             try
             {
-                var courses = await _courseRepo.GetRecentCoursesAsync(count);
+                var courses = await _adminRepo.GetRecentCoursesAsync(count);
                 return courses.Select(c => new CourseViewModel
                 {
                     CourseId = c.CourseId,
-                    CourseName = c.CourseName,
+                    CourseName = c.CourseName ?? "",
                     CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
                     Price = c.Price,
-                    CreatedBy = c.Author?.FullName ?? c.Author?.Username ?? "Unknown",
-                    Description = c.CourseDescription
+                    CreatedBy = c.Author?.FullName ?? "",
+                    Description = c.CourseDescription ?? "",
+                    StarRating = 0, // Will be calculated from feedback
+                    EnrollmentCount = c.Enrollments?.Count ?? 0
                 }).ToList();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving recent courses");
+                _logger.LogError(ex, "Error getting recent courses with count {Count}", count);
                 throw;
             }
         }
 
-        /// <summary>
-        /// Get total revenue for admin dashboard
-        /// </summary>
         public async Task<decimal> GetTotalRevenueAsync()
         {
             try
@@ -144,16 +149,169 @@ namespace BusinessLogicLayer.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving total revenue");
+                _logger.LogError(ex, "Error getting total revenue");
+                throw;
+            }
+        }
+
+        public async Task<AdminUsersViewModel> GetAllUsersAsync(string? search = null, string? roleFilter = null, int page = 1, int pageSize = 10)
+        {
+            try
+            {
+                List<DataAccessLayer.Models.Account> users;
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    users = await _adminRepo.SearchUsersAsync(search, page, pageSize);
+                }
+                else if (!string.IsNullOrEmpty(roleFilter))
+                {
+                    users = await _adminRepo.GetUsersByRoleAsync(roleFilter, page, pageSize);
+                }
+                else
+                {
+                    users = await _adminRepo.GetAllUsersAsync(page, pageSize);
+                }
+
+                var totalUsers = await _adminRepo.GetTotalUsersCountAsync();
+
+                return new AdminUsersViewModel
+                {
+                    Users = users.Select(u => new AdminUserViewModel
+                    {
+                        UserId = u.UserId,
+                        Username = u.Username,
+                        FullName = u.FullName ?? "",
+                        UserEmail = u.UserEmail,
+                        UserRole = u.UserRole,
+                        UserImage = u.UserImage ?? "/img/defaults/default-avatar.svg",
+                        AccountCreatedAt = u.AccountCreatedAt,
+                        LastLoginDate = u.LastLogin,
+                        IsBanned = u.IsBanned ?? false,
+                        IsActive = !(u.IsBanned ?? false)
+                    }).ToList(),
+                    TotalUsers = totalUsers,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling((double)totalUsers / pageSize)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all users with search: {Search}, roleFilter: {RoleFilter}, page: {Page}, pageSize: {PageSize}",
+                    search, roleFilter, page, pageSize);
+                throw;
+            }
+        }
+
+        public async Task<AdminCoursesViewModel> GetAllCoursesAsync(string? search = null, string? categoryFilter = null, int page = 1, int pageSize = 10)
+        {
+            try
+            {
+                List<DataAccessLayer.Models.Course> courses;
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    courses = await _adminRepo.SearchCoursesAsync(search, page, pageSize);
+                }
+                else
+                {
+                    courses = await _adminRepo.GetAllCoursesAsync(page, pageSize);
+                }
+
+                var totalCourses = await _adminRepo.GetTotalCoursesCountAsync();
+
+                return new AdminCoursesViewModel
+                {
+                    Courses = courses.Select(c => new AdminCourseViewModel
+                    {
+                        CourseId = c.CourseId,
+                        CourseName = c.CourseName ?? "",
+                        CourseDescription = c.CourseDescription ?? "",
+                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                        Price = c.Price,
+                        CreatedAt = c.CourseCreatedAt,
+                        UpdatedAt = c.CourseUpdatedAt,
+                        IsApproved = c.ApprovalStatus == "Approved",
+                        IsFeatured = c.IsFeatured ?? false,
+                        IsActive = c.CourseStatus == 1, // Assuming 1 means active
+                        InstructorId = c.AuthorId,
+                        InstructorName = c.Author?.FullName ?? "",
+                        EnrollmentCount = c.Enrollments?.Count ?? 0,
+                        AverageRating = 0, // Will be calculated from feedback
+                        Revenue = 0 // Will be calculated from payments
+                    }).ToList(),
+                    TotalCourses = totalCourses,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling((double)totalCourses / pageSize)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all courses with search: {Search}, categoryFilter: {CategoryFilter}, page: {Page}, pageSize: {PageSize}",
+                    search, categoryFilter, page, pageSize);
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateUserStatusAsync(string userId, bool isBanned)
+        {
+            try
+            {
+                return await _adminRepo.BanUserAsync(userId, isBanned);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user status for userId: {UserId}, isBanned: {IsBanned}", userId, isBanned);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteUserAsync(string userId)
+        {
+            try
+            {
+                return await _adminRepo.DeleteAsync(userId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting user with userId: {UserId}", userId);
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateCourseStatusAsync(string courseId, bool isApproved)
+        {
+            try
+            {
+                if (isApproved)
+                {
+                    return await _adminRepo.ApproveCourseAsync(courseId, "system");
+                }
+                else
+                {
+                    return await _adminRepo.RejectCourseAsync(courseId, "system", "Course rejected by admin");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating course status for courseId: {CourseId}, isApproved: {IsApproved}", courseId, isApproved);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteCourseAsync(string courseId)
+        {
+            try
+            {
+                return await _courseRepo.DeleteAsync(courseId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting course with courseId: {CourseId}", courseId);
                 throw;
             }
         }
     }
 }
-
-
-
-
-
-
-

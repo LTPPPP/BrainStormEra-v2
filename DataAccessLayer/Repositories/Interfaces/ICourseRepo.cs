@@ -46,11 +46,18 @@ namespace DataAccessLayer.Repositories.Interfaces
         Task<List<CourseCategory>> GetCategoriesWithCourseCountAsync(int count = 8);
 
         // Admin dashboard methods
-        Task<List<Course>> GetRecentCoursesAsync(int count = 5);
-
-        // Statistics methods
+        Task<List<Course>> GetRecentCoursesAsync(int count = 5);        // Statistics methods
         Task<int> GetTotalStudentsForCourseAsync(string courseId);
         Task<decimal> GetAverageRatingForCourseAsync(string courseId);
-        Task<int> GetTotalReviewsForCourseAsync(string courseId);
+        Task<int> GetTotalReviewsForCourseAsync(string courseId);        // Admin course management methods
+        Task<List<Course>> GetAllCoursesAsync(string? search = null, string? categoryFilter = null, int page = 1, int pageSize = 10);
+        Task<int> GetCourseCountAsync(string? search = null, string? categoryFilter = null);
+        Task<int> GetApprovedCourseCountAsync();
+        Task<int> GetPendingCourseCountAsync();
+        Task<int> GetRejectedCourseCountAsync();
+        Task<int> GetFreeCourseCountAsync();
+        Task<int> GetPaidCourseCountAsync();
+        Task<bool> UpdateCourseApprovalAsync(string courseId, bool isApproved);
+        Task<bool> DeleteCourseAsync(string courseId);
     }
 }

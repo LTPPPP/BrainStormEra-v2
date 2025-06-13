@@ -470,7 +470,6 @@ namespace DataAccessLayer.Repositories
                 throw;
             }
         }
-
         public async Task<Account?> GetUserWithEnrollmentsAndProgressAsync(string userId)
         {
             try
@@ -485,6 +484,134 @@ namespace DataAccessLayer.Repositories
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error getting user context for user {UserId}", userId);
+                throw;
+            }
+        }
+
+        // Admin user management methods
+        public async Task<List<Account>> GetAllUsersAsync(string? search = null, string? roleFilter = null, int page = 1, int pageSize = 10)
+        {
+            try
+            {
+                IQueryable<Account> query = _dbSet;
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(a => a.Username.Contains(search) ||
+                                           a.UserEmail.Contains(search) ||
+                                           (a.FullName != null && a.FullName.Contains(search)));
+                }
+
+                if (!string.IsNullOrWhiteSpace(roleFilter))
+                {
+                    query = query.Where(a => a.UserRole == roleFilter);
+                }
+
+                return await query
+                    .OrderByDescending(a => a.AccountCreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting all users for admin");
+                throw;
+            }
+        }
+
+        public async Task<int> GetUserCountAsync(string? search = null, string? roleFilter = null)
+        {
+            try
+            {
+                IQueryable<Account> query = _dbSet;
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(a => a.Username.Contains(search) ||
+                                           a.UserEmail.Contains(search) ||
+                                           (a.FullName != null && a.FullName.Contains(search)));
+                }
+
+                if (!string.IsNullOrWhiteSpace(roleFilter))
+                {
+                    query = query.Where(a => a.UserRole == roleFilter);
+                }
+
+                return await query.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting user count");
+                throw;
+            }
+        }
+
+        public async Task<int> GetUserCountByRoleAsync(string role)
+        {
+            try
+            {
+                return await _dbSet.CountAsync(a => a.UserRole == role);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting user count by role: {Role}", role);
+                throw;
+            }
+        }
+
+        public async Task<int> GetBannedUserCountAsync()
+        {
+            try
+            {
+                return await _dbSet.CountAsync(a => a.IsBanned == true);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting banned user count");
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateUserBanStatusAsync(string userId, bool isBanned)
+        {
+            try
+            {
+                var user = await GetByIdAsync(userId);
+                if (user == null)
+                    return false;
+
+                user.IsBanned = isBanned;
+                user.AccountUpdatedAt = DateTime.UtcNow;
+
+                var result = await SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error updating user ban status");
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteUserAsync(string userId)
+        {
+            try
+            {
+                var user = await GetByIdAsync(userId);
+                if (user == null)
+                    return false;
+
+                // Soft delete by banning the user and marking as deleted
+                user.IsBanned = true;
+                user.AccountUpdatedAt = DateTime.UtcNow;
+
+                var result = await SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error deleting user");
                 throw;
             }
         }
