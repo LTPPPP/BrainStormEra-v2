@@ -27,6 +27,7 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<CreateCourseViewModel?> GetCourseForEditAsync(string courseId, string authorId);
         Task<bool> UpdateCourseAsync(string courseId, CreateCourseViewModel model, string authorId);
         Task<bool> DeleteCourseAsync(string courseId, string authorId);
+        Task<bool> UpdateCourseApprovalStatusAsync(string courseId, string approvalStatus);
     }
 }
 

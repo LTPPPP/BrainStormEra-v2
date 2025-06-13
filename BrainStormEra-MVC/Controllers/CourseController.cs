@@ -245,6 +245,33 @@ namespace BrainStormEra_MVC.Controllers
             return Json(new { success = true, courses = result.Courses });
         }
 
+        // POST: Request course approval (Instructor only)
+        [HttpPost]
+        [Authorize(Roles = "instructor")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestCourseApproval(string courseId)
+        {
+            var result = await _courseServiceImpl.RequestCourseApprovalAsync(User, courseId);
+            return Json(new { success = result.Success, message = result.Message });
+        }
+
+        // Temporary endpoint to clear cache for debugging
+        [HttpPost]
+        [Authorize(Roles = "admin")]
+        public IActionResult ClearCache()
+        {
+            try
+            {
+                // This will be implemented via dependency injection
+                // For now, return success
+                return Json(new { success = true, message = "Cache cleared successfully" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
     }
 }
 

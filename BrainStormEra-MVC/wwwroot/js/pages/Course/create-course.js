@@ -254,7 +254,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 </span>
             `;
 
-      // Add event listener directly to the remove button instead of using inline onclick      const removeBtn = categoryTag.querySelector(".remove-btn");
+      // Add event listener directly to the remove button instead of using inline onclick
+      const removeBtn = categoryTag.querySelector(".remove-btn");
       if (removeBtn) {
         removeBtn.addEventListener("click", () => {
           removeCategory(category.CategoryId);

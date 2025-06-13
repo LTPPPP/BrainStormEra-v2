@@ -22,7 +22,6 @@
     <link rel="stylesheet" href="~/css/components/header.css">
     <link rel="stylesheet" href="~/css/components/loader.css">
     <link rel="stylesheet" href="~/css/pages/Course/courses.css">
-    <link rel="stylesheet" href="~/css/pages/Course/course-quiz-styles.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
     <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
@@ -41,6 +40,42 @@
         <meta name="user-role" content="@User.FindFirst("UserRole")?.Value" />
         <meta name="user-name" content="@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)" />
     }
+    
+    <style>
+        .approval-status {
+            cursor: default !important;
+            opacity: 0.8;
+        }
+        
+        .approval-status.pending {
+            background-color: #fff3cd !important;
+            color: #856404 !important;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .approval-status.approved {
+            background-color: #d4edda !important;
+            color: #155724 !important;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .approval-status.draft {
+            background-color: #e2e3e5 !important;
+            color: #6c757d !important;
+            border: 1px solid #ced4da;
+        }
+        
+        .approval-status.rejected {
+            background-color: #f8d7da !important;
+            color: #721c24 !important;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .approval-status:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -292,6 +327,25 @@
                                             <a href="@Url.Action("EditCourse", "Course", new { id = Model.CourseId })" class="instructor-action-btn">
                                                 <i class="fas fa-edit"></i>Edit Course
                                             </a>
+                                                                        @if (string.IsNullOrEmpty(Model.ApprovalStatus) || Model.ApprovalStatus.ToLower() == "rejected" || Model.ApprovalStatus.ToLower() == "draft")
+                            {
+                                <button type="button" id="requestApprovalBtn" class="instructor-action-btn mt-2" 
+                                        data-course-id="@Model.CourseId" title="Request Course Approval">
+                                    <i class="fas fa-paper-plane"></i>Request Approval
+                                </button>
+                            }
+                                            else if (Model.ApprovalStatus?.ToLower() == "pending")
+                                            {
+                                                <div class="instructor-action-btn mt-2 approval-status pending">
+                                                    <i class="fas fa-clock"></i>Approval Pending
+                                                </div>
+                                            }
+                                            else if (Model.ApprovalStatus?.ToLower() == "approved")
+                                            {
+                                                <div class="instructor-action-btn mt-2 approval-status approved">
+                                                    <i class="fas fa-check-circle"></i>Approved
+                                                </div>
+                                            }
                                         </div>
                                     </div>
                                 }
@@ -438,7 +492,7 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <h3>Course Curriculum</h3>
-                                                <p>@Model.Chapters.Count chapters • @Model.Chapters.Sum(c => c.Lessons.Count) lessons • @Model.Chapters.Sum(c => c.Quizzes.Count) quizzes</p>
+                                                <p>@Model.Chapters.Count chapters • @Model.Chapters.Sum(c => c.Lessons.Count) lessons</p>
                                             </div>
                                             @if (ViewBag.IsAuthor == true)
                                             {
@@ -460,7 +514,7 @@
                                                     data-bs-target="#chapter@(chapter.ChapterOrder)">
                                                     <h4>@chapter.ChapterOrder. @chapter.ChapterName</h4>
                                                     <div class="section-meta">
-                                                        <span>@chapter.Lessons.Count lessons @(chapter.Quizzes.Count > 0 ? $"• {chapter.Quizzes.Count} quizzes" : "")</span>
+                                                        <span>@chapter.Lessons.Count lessons</span>
                                                         @if (ViewBag.IsAuthor == true)
                                                         {
                                                             <div class="chapter-actions me-3">
@@ -492,167 +546,45 @@
                                                         }
                                                         @{
                                                             var orderedLessons = chapter.Lessons.OrderBy(l => l.LessonOrder).ToList();
-                                                            var orderedQuizzes = chapter.Quizzes.OrderBy(q => q.QuizCreatedAt).ToList();
+                                                            var lessonsByType = orderedLessons.GroupBy(l => l.LessonType).OrderBy(g => g.Key).ToList();
                                                             bool hasMoreThan5Lessons = orderedLessons.Count > 5;
-                                                            
-                                                            // Create a dictionary to group quizzes by lesson (filter out null LessonId)
-                                                            var quizzesByLesson = orderedQuizzes
-                                                                .Where(q => q.LessonId != null)
-                                                                .GroupBy(q => q.LessonId!)
-                                                                .ToDictionary(g => g.Key, g => g.ToList());
                                                         }
                                                         <div class="lessons-container @(hasMoreThan5Lessons ? "scrollable-lessons" : "")">
-                                                            @foreach (var lesson in orderedLessons)
+                                                            @foreach (var lessonGroup in lessonsByType)
                                                             {
                                                                 <div class="mb-2">
-                                                                    <!-- Display Lesson -->
-                                                                    <div class="lecture-item @(lesson.IsLocked ? "locked" : "")">
-                                                                        <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
-                                                                        <span class="lesson-name-truncated">@lesson.LessonName</span>
-                                                                        <span class="lesson-type-with-icon">
-                                                                            <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
-                                                                            @lesson.LessonType
-                                                                        </span>
-                                                                        @if (ViewBag.IsAuthor == true)
-                                                                        {
-                                                                            <div class="lesson-actions">
-                                                                                <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-lesson-btn" 
-                                                                                        data-lesson-id="@lesson.LessonId" 
-                                                                                        data-lesson-name="@lesson.LessonName"
-                                                                                        title="Edit Lesson">
-                                                                                    <i class="fas fa-edit"></i>
-                                                                                </button>
-                                                                                <button type="button" class="btn btn-sm btn-outline-danger delete-lesson-btn" 
-                                                                                        data-lesson-id="@lesson.LessonId" 
-                                                                                        data-lesson-name="@lesson.LessonName"
-                                                                                        data-lesson-type="@lesson.LessonType"
-                                                                                        title="Delete Lesson">
-                                                                                    <i class="fas fa-trash-alt"></i>
-                                                                                </button>
-                                                                            </div>
-                                                                        }
-                                                                        @if (lesson.IsLocked)
-                                                                        {
-                                                                            <i class="fas fa-lock lock-icon"></i>
-                                                                        }
-                                                                    </div>
-                                                                    
-                                                                    <!-- Display Quizzes for this Lesson -->
-                                                                    @if (quizzesByLesson.ContainsKey(lesson.LessonId))
+                                                                    @foreach (var lesson in lessonGroup.OrderBy(l => l.LessonOrder))
                                                                     {
-                                                                        var lessonQuizzes = quizzesByLesson[lesson.LessonId];
-                                                                        foreach (var quiz in lessonQuizzes)
-                                                                        {
-                                                                            <div class="quiz-item-container ms-4 mt-2">
-                                                                                <div class="quiz-item-header">
-                                                                                    <div class="quiz-item-icon">
-                                                                                        <i class="fas fa-question-circle"></i>
-                                                                                    </div>
-                                                                                    <div class="quiz-item-content">
-                                                                                        <div class="quiz-item-title">@quiz.QuizName</div>
-                                                                                        <div class="quiz-item-meta">
-                                                                                            <span class="quiz-item-type">
-                                                                                                <i class="fas fa-question-circle"></i> Quiz
-                                                                                            </span>
-                                                                                            @if (quiz.TimeLimit.HasValue)
-                                                                                            {
-                                                                                                <span class="quiz-item-duration">
-                                                                                                    <i class="fas fa-clock"></i> @quiz.TimeLimit min
-                                                                                                </span>
-                                                                                            }
-                                                                                            @if (quiz.Questions?.Any() == true)
-                                                                                            {
-                                                                                                <span class="quiz-item-questions">
-                                                                                                    <i class="fas fa-list"></i> @quiz.Questions.Count questions
-                                                                                                </span>
-                                                                                            }
-                                                                                        </div>
-                                                                                        <div class="quiz-item-badges">
-                                                                                            @if (quiz.IsFinalQuiz)
-                                                                                            {
-                                                                                                <span class="quiz-badge final">Final</span>
-                                                                                            }
-                                                                                            @if (quiz.IsPrerequisiteQuiz)
-                                                                                            {
-                                                                                                <span class="quiz-badge prerequisite">Prerequisite</span>
-                                                                                            }
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    @if (ViewBag.IsAuthor == true)
-                                                                                    {
-                                                                                        <div class="quiz-item-actions">
-                                                                                            <a href="@Url.Action("Details", "Quiz", new { id = quiz.QuizId })" 
-                                                                                               class="btn btn-sm btn-info quiz-action-btn" title="View Quiz Details">
-                                                                                                <i class="fas fa-eye"></i>
-                                                                                            </a>
-                                                                                            <a href="@Url.Action("Create", "Question", new { quizId = quiz.QuizId })" 
-                                                                                               class="btn btn-sm btn-success quiz-action-btn" title="Create Question">
-                                                                                                <i class="fas fa-plus"></i>
-                                                                                            </a>
-                                                                                            <a href="@Url.Action("Edit", "Quiz", new { id = quiz.QuizId })" 
-                                                                                               class="btn btn-sm btn-primary quiz-action-btn" title="Edit Quiz">
-                                                                                                <i class="fas fa-edit"></i>
-                                                                                            </a>
-                                                                                            <button type="button" class="btn btn-sm btn-danger quiz-action-btn delete-quiz-btn" 
-                                                                                                    data-quiz-id="@quiz.QuizId" 
-                                                                                                    data-quiz-name="@quiz.QuizName"
-                                                                                                    title="Delete Quiz">
-                                                                                                <i class="fas fa-trash-alt"></i>
-                                                                                            </button>
-                                                                                        </div>
-                                                                                    }
+                                                                        <div class="lecture-item @(lesson.IsLocked ? "locked" : "")">
+                                                                            <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
+                                                                            <span class="lesson-name-truncated">@lesson.LessonName</span>
+                                                                            <span class="lesson-type-with-icon">
+                                                                                <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
+                                                                                @lesson.LessonType
+                                                                            </span>
+                                                                            @if (ViewBag.IsAuthor == true)
+                                                                            {
+                                                                                <div class="lesson-actions">
+                                                                                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-lesson-btn" 
+                                                                                            data-lesson-id="@lesson.LessonId" 
+                                                                                            data-lesson-name="@lesson.LessonName"
+                                                                                            title="Edit Lesson">
+                                                                                        <i class="fas fa-edit"></i>
+                                                                                    </button>
+                                                                                    <button type="button" class="btn btn-sm btn-outline-danger delete-lesson-btn" 
+                                                                                            data-lesson-id="@lesson.LessonId" 
+                                                                                            data-lesson-name="@lesson.LessonName"
+                                                                                            data-lesson-type="@lesson.LessonType"
+                                                                                            title="Delete Lesson">
+                                                                                        <i class="fas fa-trash-alt"></i>
+                                                                                    </button>
                                                                                 </div>
-                                                                                
-                                                                                <!-- Display Quiz Questions if Available -->
-                                                                                @if (ViewBag.IsAuthor == true && quiz.Questions?.Any() == true)
-                                                                                {
-                                                                                    <div class="quiz-questions-list">
-                                                                                        <div class="quiz-questions-header">
-                                                                                            <i class="fas fa-list-ul"></i>
-                                                                                            <span>Questions (@(quiz.Questions?.Count ?? 0))</span>
-                                                                                        </div>
-                                                                                        <div class="quiz-questions-items">
-                                                                                            @foreach (var question in quiz.Questions?.Take(3) ?? Enumerable.Empty<DataAccessLayer.Models.ViewModels.QuestionViewModel>())
-                                                                                            {
-                                                                                                <div class="question-preview-item">
-                                                                                                    <div class="question-preview-number">@((quiz.Questions?.ToList().IndexOf(question) ?? -1) + 1)</div>
-                                                                                                    <div class="question-preview-content">
-                                                                                                        <div class="question-preview-text">
-                                                                                                            @(question.QuestionText.Length > 50 ? question.QuestionText.Substring(0, 50) + "..." : question.QuestionText)
-                                                                                                        </div>
-                                                                                                        @if (question.AnswerOptions?.Any() == true)
-                                                                                                        {
-                                                                                                            <div class="question-preview-options">
-                                                                                                                <i class="fas fa-list-ol"></i>
-                                                                                                                @question.AnswerOptions.Count options
-                                                                                                            </div>
-                                                                                                        }
-                                                                                                    </div>
-                                                                                                    <div class="question-preview-actions">
-                                                                                                        <a href="@Url.Action("Edit", "Question", new { id = question.QuestionId })" 
-                                                                                                           class="btn btn-xs btn-outline-primary question-action-btn" title="Edit Question">
-                                                                                                            <i class="fas fa-edit"></i>
-                                                                                                        </a>
-                                                                                                        <button type="button" class="btn btn-xs btn-outline-danger question-action-btn delete-question-btn" 
-                                                                                                                data-question-id="@question.QuestionId" 
-                                                                                                                data-question-text="@question.QuestionText" title="Delete Question">
-                                                                                                            <i class="fas fa-trash-alt"></i>
-                                                                                                        </button>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            }
-                                                                                            @if (quiz.Questions?.Count > 3)
-                                                                                            {
-                                                                                                <div class="question-preview-more">
-                                                                                                    <i class="fas fa-ellipsis-h"></i>
-                                                                                                    and @(quiz.Questions.Count - 3) more questions...
-                                                                                                </div>
-                                                                                            }
-                                                                                        </div>
-                                                                                    </div>
-                                                                                }
-                                                                            </div>
-                                                                        }
+                                                                            }
+                                                                            @if (lesson.IsLocked)
+                                                                            {
+                                                                                <i class="fas fa-lock lock-icon"></i>
+                                                                            }
+                                                                        </div>
                                                                     }
                                                                 </div>
                                                             }
@@ -665,26 +597,57 @@
                                                                     Scroll to see all @orderedLessons.Count lessons
                                                                 </small>
                                                             </div>
-                                                        }                                        @if (ViewBag.IsAuthor == true)
-                                        {
-                                            // Check if chapter has lessons with quizzes
-                                            var hasLessonsWithQuizzes = chapter.Lessons.Any() && 
-                                                chapter.Lessons.Any(l => chapter.Quizzes.Any(q => q.LessonId == l.LessonId));
-                                            
-                                            if (!hasLessonsWithQuizzes)
-                                            {
-                                                <div class="lesson-actions mt-3 text-center d-flex gap-2 justify-content-center">
-                                                    <a href="@Url.Action("SelectLessonType", "Lesson", new { chapterId = chapter.ChapterId })" 
-                                                       class="btn btn-sm btn-outline-primary">
-                                                        <i class="fas fa-plus me-2"></i>Create Lesson
-                                                    </a>
-                                                    <a href="@Url.Action("Create", "Quiz", new { chapterId = chapter.ChapterId })" 
-                                                       class="btn btn-sm btn-outline-success">
-                                                        <i class="fas fa-question-circle me-2"></i>Create Quiz
-                                                    </a>
-                                                </div>
-                                            }
-                                        }
+                                                        }
+                                                        @if (ViewBag.IsAuthor == true)
+                                                        {
+                                                            var chapterQuiz = chapter.Lessons.FirstOrDefault(l => l.LessonType == "Quiz");
+                                                            var hasQuiz = chapterQuiz != null;
+                                                            
+                                                            if (!hasQuiz)
+                                                            {
+                                                                <div class="lesson-actions mt-3 text-center" style="justify-content: center;">
+                                                                    <a href="@Url.Action("SelectLessonType", "Lesson", new { chapterId = chapter.ChapterId })" 
+                                                                       class="btn btn-sm btn-outline-primary me-2">
+                                                                        <i class="fas fa-plus me-2"></i>Create Lesson
+                                                                    </a>
+                                                                    <a href="@Url.Action("CreateQuiz", "Quiz", new { chapterId = chapter.ChapterId })" 
+                                                                       class="btn btn-sm btn-outline-success">
+                                                                        <i class="fas fa-question-circle me-2"></i>Create Quiz
+                                                                    </a>
+                                                                </div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="quiz-section mt-3 p-3 bg-light rounded">
+                                                                    <div class="d-flex justify-content-between align-items-center">
+                                                                        <div>
+                                                                            <h6 class="mb-1 text-success">
+                                                                                <i class="fas fa-question-circle me-2"></i>Chapter Quiz
+                                                                            </h6>
+                                                                            <small class="text-muted">Quiz completed - No more lessons can be added to this chapter</small>
+                                                                        </div>
+                                                                        <div class="quiz-actions">
+                                                                            @{
+                                                                                // Find the actual quiz ID for this lesson
+                                                                                var quizId = chapterQuiz.LessonId; // This will be updated by service to get actual quiz ID
+                                                                            }
+                                                                            <a href="@Url.Action("ManageQuestions", "Quiz", new { quizId = quizId })" 
+                                                                               class="btn btn-sm btn-outline-primary me-1"
+                                                                               title="Manage Questions">
+                                                                                <i class="fas fa-cog"></i>
+                                                                            </a>
+                                                                            <button type="button" class="btn btn-sm btn-outline-danger delete-quiz-btn" 
+                                                                                    data-quiz-id="@quizId" 
+                                                                                    data-quiz-name="@chapterQuiz.LessonName"
+                                                                                    data-course-id="@Model.CourseId"
+                                                                                    title="Delete Quiz">
+                                                                                <i class="fas fa-trash-alt"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                        }
                                                     </div>
                                                 </div>
                                             </div>
@@ -867,7 +830,7 @@
                                 <div class="course-summary-stats">
                                     <div class="stat-item">
                                         <i class="fas fa-users"></i>
-                                        <span><strong>@Model.TotalStudents</strong> enrolled</span>
+                                        <span><strong>@Model.TotalStudents</strong> students enrolled</span>
                                     </div>
                                     <div class="stat-item">
                                         <span class="star-combined">
@@ -1126,10 +1089,12 @@
             const deleteQuizButtons = document.querySelectorAll('.delete-quiz-btn');
             const deleteQuizModal = new bootstrap.Modal(document.getElementById('deleteQuizModal'));
             let currentQuizId = null;
+            let currentCourseId = null;
 
             deleteQuizButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     currentQuizId = this.getAttribute('data-quiz-id');
+                    currentCourseId = this.getAttribute('data-course-id');
                     const quizName = this.getAttribute('data-quiz-name');
 
                     // Update modal content
@@ -1142,7 +1107,7 @@
 
             // Confirm delete quiz action
             document.getElementById('confirmDeleteQuiz').addEventListener('click', function() {
-                if (!currentQuizId) return;
+                if (!currentQuizId || !currentCourseId) return;
 
                 // Show loading state
                 this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
@@ -1151,7 +1116,7 @@
                 // Create form and submit
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = '@Url.Action("Delete", "Quiz")';
+                form.action = '@Url.Action("DeleteQuiz", "Quiz")';
 
                 // Add anti-forgery token
                 const token = document.querySelector('input[name="__RequestVerificationToken"]');
@@ -1164,17 +1129,17 @@
                 }
 
                 // Add quiz ID
-                const idInput = document.createElement('input');
-                idInput.type = 'hidden';
-                idInput.name = 'id';
-                idInput.value = currentQuizId;
-                form.appendChild(idInput);
+                const quizIdInput = document.createElement('input');
+                quizIdInput.type = 'hidden';
+                quizIdInput.name = 'quizId';
+                quizIdInput.value = currentQuizId;
+                form.appendChild(quizIdInput);
 
                 // Add course ID for redirect
                 const courseIdInput = document.createElement('input');
                 courseIdInput.type = 'hidden';
                 courseIdInput.name = 'courseId';
-                courseIdInput.value = '@Model.CourseId';
+                courseIdInput.value = currentCourseId;
                 form.appendChild(courseIdInput);
 
                 document.body.appendChild(form);
@@ -1184,70 +1149,83 @@
             // Reset quiz modal when closed
             document.getElementById('deleteQuizModal').addEventListener('hidden.bs.modal', function() {
                 currentQuizId = null;
+                currentCourseId = null;
                 const confirmBtn = document.getElementById('confirmDeleteQuiz');
                 confirmBtn.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Delete Quiz';
                 confirmBtn.disabled = false;
             });
 
-            // Delete Question functionality
-            const deleteQuestionButtons = document.querySelectorAll('.delete-question-btn');
-            const deleteQuestionModal = new bootstrap.Modal(document.getElementById('deleteQuestionModal'));
-            let currentQuestionId = null;
+            // Handle request approval button click
+            const requestApprovalBtn = document.getElementById('requestApprovalBtn');
+            if (requestApprovalBtn) {
+                requestApprovalBtn.addEventListener('click', function() {
+                    const courseId = this.getAttribute('data-course-id');
+                    if (!courseId) return;
 
-            deleteQuestionButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    currentQuestionId = this.getAttribute('data-question-id');
-                    const questionText = this.getAttribute('data-question-text');
+                    // Show confirmation
+                    if (!confirm('Are you sure you want to request approval for this course? This will submit your course for admin review.')) {
+                        return;
+                    }
 
-                    // Update modal content
-                    document.getElementById('deleteQuestionText').textContent = questionText.length > 60 ? questionText.substring(0, 60) + '...' : questionText;
+                    // Show loading state
+                    const originalHtml = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
+                    this.disabled = true;
 
-                    // Show modal
-                    deleteQuestionModal.show();
+                    // Get anti-forgery token
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                    const tokenValue = token ? token.value : '';
+
+                    // Make AJAX request
+                    fetch('@Url.Action("RequestCourseApproval", "Course")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: `courseId=${encodeURIComponent(courseId)}&__RequestVerificationToken=${encodeURIComponent(tokenValue)}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Show success message
+                            if (window.showToast) {
+                                window.showToast('success', data.message);
+                            } else {
+                                alert(data.message);
+                            }
+                            
+                            // Reload page to update approval status
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            // Show error message
+                            if (window.showToast) {
+                                window.showToast('error', data.message);
+                            } else {
+                                alert(data.message);
+                            }
+                            
+                            // Reset button
+                            this.innerHTML = originalHtml;
+                            this.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        if (window.showToast) {
+                            window.showToast('error', 'An error occurred while submitting approval request');
+                        } else {
+                            alert('An error occurred while submitting approval request');
+                        }
+                        
+                        // Reset button
+                        this.innerHTML = originalHtml;
+                        this.disabled = false;
+                    });
                 });
-            });
-
-            // Confirm delete question action
-            document.getElementById('confirmDeleteQuestion').addEventListener('click', function() {
-                if (!currentQuestionId) return;
-
-                // Show loading state
-                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
-                this.disabled = true;
-
-                // Create form and submit
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '@Url.Action("Delete", "Question")';
-
-                // Add anti-forgery token
-                const token = document.querySelector('input[name="__RequestVerificationToken"]');
-                if (token) {
-                    const tokenInput = document.createElement('input');
-                    tokenInput.type = 'hidden';
-                    tokenInput.name = '__RequestVerificationToken';
-                    tokenInput.value = token.value;
-                    form.appendChild(tokenInput);
-                }
-
-                // Add question ID
-                const idInput = document.createElement('input');
-                idInput.type = 'hidden';
-                idInput.name = 'id';
-                idInput.value = currentQuestionId;
-                form.appendChild(idInput);
-
-                document.body.appendChild(form);
-                form.submit();
-            });
-
-            // Reset question modal when closed
-            document.getElementById('deleteQuestionModal').addEventListener('hidden.bs.modal', function() {
-                currentQuestionId = null;
-                const confirmBtn = document.getElementById('confirmDeleteQuestion');
-                confirmBtn.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Delete Question';
-                confirmBtn.disabled = false;
-            });
+            }
         });
     </script>
 
@@ -1371,12 +1349,12 @@
                     <p>Are you sure you want to delete the following quiz?</p>
                     <div class="bg-light p-3 rounded">
                         <h6 class="mb-1"><strong id="deleteQuizName">Quiz Name</strong></h6>
-                        <small class="text-muted">Quiz</small>
+                        <small class="text-muted">Chapter quiz with all questions</small>
                     </div>
                     <div class="mt-3">
                         <p class="text-danger mb-0">
                             <i class="fas fa-info-circle me-1"></i>
-                            This quiz and all its questions will be permanently deleted.
+                            This quiz and all its questions will be permanently deleted. You will be able to create lessons again after deleting the quiz.
                         </p>
                     </div>
                 </div>
@@ -1386,46 +1364,6 @@
                     </button>
                     <button type="button" class="btn btn-danger" id="confirmDeleteQuiz">
                         <i class="fas fa-trash-alt me-2"></i>Delete Quiz
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delete Question Confirmation Modal -->
-    <div class="modal fade" id="deleteQuestionModal" tabindex="-1" aria-labelledby="deleteQuestionModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="deleteQuestionModalLabel">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Delete Question
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-warning">
-                        <i class="fas fa-warning me-2"></i>
-                        <strong>Warning:</strong> This action cannot be undone!
-                    </div>
-                    <p>Are you sure you want to delete the following question?</p>
-                    <div class="bg-light p-3 rounded">
-                        <h6 class="mb-1"><strong id="deleteQuestionText">Question Text</strong></h6>
-                        <small class="text-muted">Question</small>
-                    </div>
-                    <div class="mt-3">
-                        <p class="text-danger mb-0">
-                            <i class="fas fa-info-circle me-1"></i>
-                            This question and all its answer options will be permanently deleted.
-                        </p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Cancel
-                    </button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteQuestion">
-                        <i class="fas fa-trash-alt me-2"></i>Delete Question
                     </button>
                 </div>
             </div>

@@ -101,6 +101,7 @@ namespace BusinessLogicLayer.Services
                     DifficultyLevel = GetDifficultyLevelText(course.DifficultyLevel),
                     Categories = course.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
                     TotalStudents = course.Enrollments.Count,
+                    ApprovalStatus = course.ApprovalStatus,
                     CourseCreatedAt = course.CourseCreatedAt,
                     CourseUpdatedAt = course.CourseUpdatedAt
                 };
@@ -204,6 +205,7 @@ namespace BusinessLogicLayer.Services
                     DifficultyLevel = GetDifficultyLevelText(course.DifficultyLevel),
                     Categories = course.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
                     TotalStudents = course.Enrollments.Count,
+                    ApprovalStatus = course.ApprovalStatus,
                     CourseCreatedAt = course.CourseCreatedAt,
                     CourseUpdatedAt = course.CourseUpdatedAt
                 };
@@ -589,7 +591,7 @@ namespace BusinessLogicLayer.Services
                     EnforceSequentialAccess = model.EnforceSequentialAccess,
                     AllowLessonPreview = model.AllowLessonPreview,
                     CourseStatus = 2, // Inactive status
-                    ApprovalStatus = "Pending",
+                    ApprovalStatus = "draft", // Course is in draft mode, not yet submitted for approval
                     CourseCreatedAt = DateTime.UtcNow,
                     CourseUpdatedAt = DateTime.UtcNow,
                     CourseImage = "/img/defaults/default-course.svg" // Default image, will be updated if file is uploaded
@@ -851,13 +853,36 @@ namespace BusinessLogicLayer.Services
             }
         }
 
+        public async Task<bool> UpdateCourseApprovalStatusAsync(string courseId, string approvalStatus)
+        {
+            try
+            {
+                var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
+                if (course == null)
+                    return false;
+
+                course.ApprovalStatus = approvalStatus;
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating course approval status for course {CourseId}", courseId);
+                return false;
+            }
+        }
+
+
+
         public async Task<CourseListViewModel> GetInstructorCoursesAsync(string authorId, string? search, string? category, int page, int pageSize)
         {
             try
             {
                 var query = _context.Courses
                     .AsNoTracking()
-                    .Where(c => c.AuthorId == authorId); // Filter by instructor's authorId
+                    .Where(c => c.AuthorId == authorId && c.CourseStatus != 4); // Filter by instructor's authorId and exclude archived courses
 
                 query = query.Include(c => c.Author)
                            .Include(c => c.Enrollments)

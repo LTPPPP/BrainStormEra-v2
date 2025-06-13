@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Models.ViewModels;
 using System.Security.Claims;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
@@ -16,15 +17,18 @@ namespace BusinessLogicLayer.Services.Implementations
         private readonly ICourseService _courseService;
         private readonly ICourseImageService _courseImageService;
         private readonly ILogger<CourseServiceImpl> _logger;
+        private readonly IServiceProvider _serviceProvider;
 
         public CourseServiceImpl(
             ICourseService courseService,
             ICourseImageService courseImageService,
-            ILogger<CourseServiceImpl> logger)
+            ILogger<CourseServiceImpl> logger,
+            IServiceProvider serviceProvider)
         {
             _courseService = courseService;
             _courseImageService = courseImageService;
             _logger = logger;
+            _serviceProvider = serviceProvider;
         }
 
         #region Course Listing Operations
@@ -314,7 +318,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 return new CreateCourseResult
                 {
                     Success = true,
-                    SuccessMessage = "Course created successfully! Your course is now pending approval.",
+                    SuccessMessage = "Course created successfully! Your course is saved as draft. Visit the course details page to request approval when you're ready to publish.",
                     WarningMessage = warningMessage,
                     RedirectAction = "InstructorDashboard",
                     RedirectController = "Home"
@@ -597,6 +601,129 @@ namespace BusinessLogicLayer.Services.Implementations
         }
 
         #endregion
+
+        #region Course Approval Operations
+
+        /// <summary>
+        /// Request course approval for admin review
+        /// </summary>
+        public async Task<CourseApprovalResult> RequestCourseApprovalAsync(ClaimsPrincipal user, string courseId)
+        {
+            try
+            {
+                var userId = user.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new CourseApprovalResult
+                    {
+                        Success = false,
+                        Message = "User not authenticated"
+                    };
+                }
+
+                // Check if user is the author of the course
+                var course = await _courseService.GetCourseDetailAsync(courseId, userId);
+                if (course == null)
+                {
+                    return new CourseApprovalResult
+                    {
+                        Success = false,
+                        Message = "Course not found"
+                    };
+                }
+
+                if (course.AuthorId != userId)
+                {
+                    return new CourseApprovalResult
+                    {
+                        Success = false,
+                        Message = "You are not authorized to request approval for this course"
+                    };
+                }
+
+                // Check current approval status
+                if (course.ApprovalStatus?.ToLower() == "approved")
+                {
+                    return new CourseApprovalResult
+                    {
+                        Success = false,
+                        Message = "This course is already approved"
+                    };
+                }
+
+                if (course.ApprovalStatus?.ToLower() == "pending")
+                {
+                    return new CourseApprovalResult
+                    {
+                        Success = false,
+                        Message = "This course is already pending approval"
+                    };
+                }
+
+                // Only allow request for courses that are in draft mode or were rejected
+                if (!string.IsNullOrEmpty(course.ApprovalStatus) &&
+                    course.ApprovalStatus.ToLower() != "draft" &&
+                    course.ApprovalStatus.ToLower() != "rejected")
+                {
+                    return new CourseApprovalResult
+                    {
+                        Success = false,
+                        Message = "This course is not eligible for approval request"
+                    };
+                }
+
+                // Update course status to pending
+                var success = await _courseService.UpdateCourseApprovalStatusAsync(courseId, "Pending");
+                if (success)
+                {
+                    // Send notification to all admins about the approval request
+                    try
+                    {
+                        var notificationService = _serviceProvider.GetService<INotificationService>();
+                        if (notificationService != null)
+                        {
+                            await notificationService.SendToRoleAsync(
+                                "admin",
+                                "New Course Approval Request",
+                                $"Instructor {course.AuthorName} has requested approval for course '{course.CourseName}'. Please review and approve/reject this course.",
+                                "course_approval",
+                                userId
+                            );
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to send notification to admins about course approval request");
+                        // Don't fail the whole operation if notification fails
+                    }
+
+                    return new CourseApprovalResult
+                    {
+                        Success = true,
+                        Message = "Course approval request submitted successfully! Your course is now pending admin review."
+                    };
+                }
+                else
+                {
+                    return new CourseApprovalResult
+                    {
+                        Success = false,
+                        Message = "Failed to submit approval request. Please try again."
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while requesting course approval for course {CourseId}", courseId);
+                return new CourseApprovalResult
+                {
+                    Success = false,
+                    Message = "An error occurred while submitting approval request."
+                };
+            }
+        }
+
+        #endregion
     }
 
     #region Result Classes
@@ -672,6 +799,12 @@ namespace BusinessLogicLayer.Services.Implementations
         public bool Success { get; set; }
         public string? Message { get; set; }
         public object? Courses { get; set; }
+    }
+
+    public class CourseApprovalResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
     }
 
     #endregion

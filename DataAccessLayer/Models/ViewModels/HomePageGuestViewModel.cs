@@ -47,6 +47,7 @@ namespace DataAccessLayer.Models.ViewModels
         public List<ReviewViewModel> Reviews { get; set; } = new List<ReviewViewModel>();
         public bool IsEnrolled { get; set; }
         public bool CanEnroll { get; set; }
+        public string? ApprovalStatus { get; set; }
         public DateTime CourseCreatedAt { get; set; }
         public DateTime CourseUpdatedAt { get; set; }
 

@@ -241,7 +241,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 IQueryable<Course> query = _dbSet
-                    .Where(c => c.AuthorId == authorId)
+                    .Where(c => c.AuthorId == authorId && c.CourseStatus != 4) // Exclude archived courses
                     .Include(c => c.Enrollments)
                     .Include(c => c.CourseCategories);
 
@@ -275,7 +275,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _dbSet
-                    .Where(c => c.AuthorId == instructorId)
+                    .Where(c => c.AuthorId == instructorId && c.CourseStatus != 4) // Exclude archived courses
                     .Select(c => new Course
                     {
                         CourseId = c.CourseId,
@@ -640,6 +640,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 IQueryable<Course> query = _dbSet
+                    .Where(c => c.CourseStatus != 4) // Exclude archived/soft deleted courses
                     .Include(c => c.Author)
                     .Include(c => c.Enrollments)
                     .Include(c => c.CourseCategories);
@@ -673,7 +674,8 @@ namespace DataAccessLayer.Repositories
         {
             try
             {
-                IQueryable<Course> query = _dbSet;
+                IQueryable<Course> query = _dbSet
+                    .Where(c => c.CourseStatus != 4); // Exclude archived/soft deleted courses
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {

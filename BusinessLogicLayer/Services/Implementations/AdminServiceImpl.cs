@@ -693,8 +693,11 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
+                // Get admin user ID
+                var adminId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
                 // Update course status
-                var success = await _adminService.UpdateCourseStatusAsync(courseId, isApproved);
+                var success = await _adminService.UpdateCourseStatusAsync(courseId, isApproved, adminId);
 
                 if (success)
                 {

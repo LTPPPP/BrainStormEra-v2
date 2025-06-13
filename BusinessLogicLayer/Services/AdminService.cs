@@ -303,17 +303,18 @@ namespace BusinessLogicLayer.Services
             }
         }
 
-        public async Task<bool> UpdateCourseStatusAsync(string courseId, bool isApproved)
+        public async Task<bool> UpdateCourseStatusAsync(string courseId, bool isApproved, string? adminId = null)
         {
             try
             {
                 if (isApproved)
                 {
-                    return await _adminRepo.ApproveCourseAsync(courseId, "system");
+                    // Use adminId if provided, otherwise use "system"
+                    return await _adminRepo.ApproveCourseAsync(courseId, adminId ?? "system");
                 }
                 else
                 {
-                    return await _adminRepo.RejectCourseAsync(courseId, "system", "Course rejected by admin");
+                    return await _adminRepo.RejectCourseAsync(courseId, adminId ?? "system", "Course rejected by admin");
                 }
             }
             catch (Exception ex)
