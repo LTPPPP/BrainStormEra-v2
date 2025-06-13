@@ -228,6 +228,13 @@ namespace BrainStormEra_MVC.Controllers
             }
         }
 
+
+
+        private bool IsInRole(string role)
+        {
+            return User?.IsInRole(role) ?? false;
+        }
+
         // Helper method to redirect user to appropriate dashboard based on role
         private IActionResult RedirectToUserDashboard()
         {

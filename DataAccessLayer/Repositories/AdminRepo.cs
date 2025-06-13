@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
+using DataAccessLayer.Models.ViewModels;
 using DataAccessLayer.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -29,12 +30,32 @@ namespace DataAccessLayer.Repositories
                 var totalUsers = await _context.Accounts.CountAsync();
                 var totalCourses = await _context.Courses.CountAsync();
                 var totalEnrollments = await _context.Enrollments.CountAsync();
+                var totalRevenue = await _context.PaymentTransactions
+                    .Where(pt => pt.TransactionStatus == "completed")
+                    .SumAsync(pt => pt.Amount);
+
+                // User role distribution
+                var totalLearners = await _context.Accounts.CountAsync(a => a.UserRole == "learner");
+                var totalInstructors = await _context.Accounts.CountAsync(a => a.UserRole == "instructor");
+                var totalAdmins = await _context.Accounts.CountAsync(a => a.UserRole == "admin");
+
+                // Course status distribution
+                var approvedCourses = await _context.Courses.CountAsync(c => c.ApprovalStatus == "approved");
+                var pendingCourses = await _context.Courses.CountAsync(c => c.ApprovalStatus == "pending");
+                var rejectedCourses = await _context.Courses.CountAsync(c => c.ApprovalStatus == "rejected");
 
                 return new Dictionary<string, object>
                 {
                     { "TotalUsers", totalUsers },
                     { "TotalCourses", totalCourses },
-                    { "TotalEnrollments", totalEnrollments }
+                    { "TotalEnrollments", totalEnrollments },
+                    { "TotalRevenue", totalRevenue },
+                    { "TotalLearners", totalLearners },
+                    { "TotalInstructors", totalInstructors },
+                    { "TotalAdmins", totalAdmins },
+                    { "ApprovedCourses", approvedCourses },
+                    { "PendingCourses", pendingCourses },
+                    { "RejectedCourses", rejectedCourses }
                 };
             }
             catch (Exception ex)
@@ -49,7 +70,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _context.PaymentTransactions
-                    .Where(pt => pt.TransactionStatus == "Success")
+                    .Where(pt => pt.TransactionStatus == "completed")
                     .SumAsync(pt => pt.Amount);
             }
             catch (Exception ex)
@@ -58,6 +79,166 @@ namespace DataAccessLayer.Repositories
                 throw;
             }
         }
+
+        // Real time-series data methods for charts
+        public async Task<List<MonthlyUserGrowth>> GetUserGrowthDataAsync()
+        {
+            try
+            {
+                var sixMonthsAgo = DateTime.Now.AddMonths(-6);
+
+                // First, get the grouped data from database
+                var userGrowthData = await _context.Accounts
+                    .Where(a => a.AccountCreatedAt >= sixMonthsAgo)
+                    .GroupBy(a => new
+                    {
+                        Year = a.AccountCreatedAt.Year,
+                        Month = a.AccountCreatedAt.Month
+                    })
+                    .Select(g => new
+                    {
+                        Year = g.Key.Year,
+                        Month = g.Key.Month,
+                        NewUsers = g.Count()
+                    })
+                    .ToListAsync();
+
+                // Then convert to MonthlyUserGrowth objects in memory
+                var convertedData = userGrowthData.Select(x => new MonthlyUserGrowth
+                {
+                    Month = new DateTime(x.Year, x.Month, 1).ToString("MMMM"),
+                    NewUsers = x.NewUsers,
+                    Date = new DateTime(x.Year, x.Month, 1)
+                }).OrderBy(x => x.Date).ToList();
+
+                // Fill in missing months with zero values
+                var result = new List<MonthlyUserGrowth>();
+                for (int i = 5; i >= 0; i--)
+                {
+                    var monthDate = DateTime.Now.AddMonths(-i);
+                    var existingData = convertedData.FirstOrDefault(x =>
+                        x.Date.Year == monthDate.Year && x.Date.Month == monthDate.Month);
+
+                    result.Add(existingData ?? new MonthlyUserGrowth
+                    {
+                        Month = monthDate.ToString("MMMM"),
+                        NewUsers = 0,
+                        Date = new DateTime(monthDate.Year, monthDate.Month, 1)
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving user growth data");
+                throw;
+            }
+        }
+
+        public async Task<List<MonthlyRevenue>> GetRevenueDataAsync()
+        {
+            try
+            {
+                var sixMonthsAgo = DateTime.Now.AddMonths(-6);
+
+                // First, get the grouped data from database
+                var revenueData = await _context.PaymentTransactions
+                    .Where(pt => pt.TransactionStatus == "completed" && pt.PaymentDate >= sixMonthsAgo)
+                    .GroupBy(pt => new
+                    {
+                        Year = pt.PaymentDate.Value.Year,
+                        Month = pt.PaymentDate.Value.Month
+                    })
+                    .Select(g => new
+                    {
+                        Year = g.Key.Year,
+                        Month = g.Key.Month,
+                        Revenue = g.Sum(pt => pt.Amount)
+                    })
+                    .ToListAsync();
+
+                // Then convert to MonthlyRevenue objects in memory
+                var convertedData = revenueData.Select(x => new MonthlyRevenue
+                {
+                    Month = new DateTime(x.Year, x.Month, 1).ToString("MMMM"),
+                    Revenue = x.Revenue,
+                    Date = new DateTime(x.Year, x.Month, 1)
+                }).OrderBy(x => x.Date).ToList();
+
+                // Fill in missing months with zero values
+                var result = new List<MonthlyRevenue>();
+                for (int i = 5; i >= 0; i--)
+                {
+                    var monthDate = DateTime.Now.AddMonths(-i);
+                    var existingData = convertedData.FirstOrDefault(x =>
+                        x.Date.Year == monthDate.Year && x.Date.Month == monthDate.Month);
+
+                    result.Add(existingData ?? new MonthlyRevenue
+                    {
+                        Month = monthDate.ToString("MMMM"),
+                        Revenue = 0,
+                        Date = new DateTime(monthDate.Year, monthDate.Month, 1)
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving revenue data");
+                throw;
+            }
+        }
+
+        public async Task<List<WeeklyEnrollment>> GetWeeklyEnrollmentDataAsync()
+        {
+            try
+            {
+                var sevenWeeksAgo = DateTime.Now.AddDays(-49); // 7 weeks
+
+                var enrollmentData = await _context.Enrollments
+                    .Where(e => e.EnrollmentCreatedAt >= sevenWeeksAgo)
+                    .ToListAsync();
+
+                var completionData = await _context.UserProgresses
+                    .Where(up => up.IsCompleted == true && up.CompletedAt != null && up.CompletedAt >= sevenWeeksAgo)
+                    .ToListAsync();
+
+                var result = new List<WeeklyEnrollment>();
+
+                for (int i = 6; i >= 0; i--)
+                {
+                    var weekStart = DateTime.Now.AddDays(-7 * i).Date;
+                    var weekEnd = weekStart.AddDays(7);
+
+                    var weeklyEnrollments = enrollmentData
+                        .Where(e => e.EnrollmentCreatedAt >= weekStart && e.EnrollmentCreatedAt < weekEnd)
+                        .Count();
+
+                    var weeklyCompletions = completionData
+                        .Where(up => up.CompletedAt.HasValue && up.CompletedAt >= weekStart && up.CompletedAt < weekEnd)
+                        .Count();
+
+                    result.Add(new WeeklyEnrollment
+                    {
+                        Week = $"Week {7 - i}",
+                        NewEnrollments = weeklyEnrollments,
+                        CompletedCourses = weeklyCompletions,
+                        Date = weekStart
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving weekly enrollment data");
+                throw;
+            }
+        }
+
+
 
         public async Task<int> GetTotalUsersCountAsync()
         {
@@ -713,24 +894,181 @@ namespace DataAccessLayer.Repositories
             }
         }
 
+        // Chatbot Analytics
+        public async Task<Dictionary<string, object>> GetChatbotStatisticsAsync()
+        {
+            try
+            {
+                var totalConversations = await _context.ChatbotConversations.CountAsync();
+                var totalUsers = await _context.ChatbotConversations
+                    .Select(c => c.UserId)
+                    .Distinct()
+                    .CountAsync();
+
+                var averageRating = await _context.ChatbotConversations
+                    .Where(c => c.FeedbackRating.HasValue)
+                    .AverageAsync(c => (double?)c.FeedbackRating) ?? 0;
+
+                var conversationsWithFeedback = await _context.ChatbotConversations
+                    .CountAsync(c => c.FeedbackRating.HasValue);
+
+                var today = DateTime.Today;
+                var todayConversations = await _context.ChatbotConversations
+                    .CountAsync(c => c.ConversationTime >= today);
+
+                var thisWeek = DateTime.Today.AddDays(-7);
+                var weeklyConversations = await _context.ChatbotConversations
+                    .CountAsync(c => c.ConversationTime >= thisWeek);
+
+                return new Dictionary<string, object>
+                {
+                    { "TotalConversations", totalConversations },
+                    { "TotalUsers", totalUsers },
+                    { "AverageRating", Math.Round(averageRating, 2) },
+                    { "ConversationsWithFeedback", conversationsWithFeedback },
+                    { "TodayConversations", todayConversations },
+                    { "WeeklyConversations", weeklyConversations }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving chatbot statistics");
+                throw;
+            }
+        }
+
+        public async Task<List<DailyConversationStats>> GetDailyChatbotUsageAsync(int days = 7)
+        {
+            try
+            {
+                var startDate = DateTime.Today.AddDays(-days);
+
+                var conversationData = await _context.ChatbotConversations
+                    .Where(c => c.ConversationTime >= startDate)
+                    .GroupBy(c => c.ConversationTime.Date)
+                    .Select(g => new
+                    {
+                        Date = g.Key,
+                        ConversationCount = g.Count(),
+                        UniqueUsers = g.Select(x => x.UserId).Distinct().Count()
+                    })
+                    .ToListAsync();
+
+                var result = new List<DailyConversationStats>();
+                for (int i = days - 1; i >= 0; i--)
+                {
+                    var date = DateTime.Today.AddDays(-i);
+                    var existingData = conversationData.FirstOrDefault(x => x.Date == date);
+
+                    result.Add(new DailyConversationStats
+                    {
+                        Date = date,
+                        ConversationCount = existingData?.ConversationCount ?? 0,
+                        UniqueUsers = existingData?.UniqueUsers ?? 0,
+                        DateLabel = date.ToString("MMM dd")
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving daily chatbot usage");
+                throw;
+            }
+        }
+
+        public async Task<List<FeedbackRatingStats>> GetChatbotFeedbackStatsAsync()
+        {
+            try
+            {
+                var feedbackStats = await _context.ChatbotConversations
+                    .Where(c => c.FeedbackRating.HasValue)
+                    .GroupBy(c => c.FeedbackRating.Value)
+                    .Select(g => new FeedbackRatingStats
+                    {
+                        Rating = g.Key,
+                        Count = g.Count()
+                    })
+                    .OrderBy(x => x.Rating)
+                    .ToListAsync();
+
+                // Ensure all ratings from 1-5 are represented
+                var result = new List<FeedbackRatingStats>();
+                for (byte i = 1; i <= 5; i++)
+                {
+                    var existing = feedbackStats.FirstOrDefault(x => x.Rating == i);
+                    result.Add(new FeedbackRatingStats
+                    {
+                        Rating = i,
+                        Count = existing?.Count ?? 0
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving chatbot feedback stats");
+                throw;
+            }
+        }
+
+        public async Task<List<HourlyUsageStats>> GetChatbotHourlyUsageAsync()
+        {
+            try
+            {
+                var last24Hours = DateTime.Now.AddHours(-24);
+
+                var usageData = await _context.ChatbotConversations
+                    .Where(c => c.ConversationTime >= last24Hours)
+                    .GroupBy(c => c.ConversationTime.Hour)
+                    .Select(g => new
+                    {
+                        Hour = g.Key,
+                        ConversationCount = g.Count()
+                    })
+                    .ToListAsync();
+
+                var result = new List<HourlyUsageStats>();
+                for (int hour = 0; hour < 24; hour++)
+                {
+                    var existing = usageData.FirstOrDefault(x => x.Hour == hour);
+                    result.Add(new HourlyUsageStats
+                    {
+                        Hour = hour,
+                        ConversationCount = existing?.ConversationCount ?? 0,
+                        HourLabel = $"{hour:00}:00"
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving chatbot hourly usage");
+                throw;
+            }
+        }
+
         // Missing methods implementation
         public async Task<object> GetDashboardDataAsync(string userId)
         {
             try
             {
                 var stats = await GetAdminStatisticsAsync();
-                var recentUsers = await GetRecentUsersAsync(5);
-                var recentCourses = await GetRecentCoursesAsync(5);
-                var recentEnrollments = await GetRecentEnrollmentsAsync(10);
-                var recentPayments = await GetRecentPaymentsAsync(10);
+                var chatbotStats = await GetChatbotStatisticsAsync();
+                var dailyChatbotUsage = await GetDailyChatbotUsageAsync();
+                var chatbotFeedback = await GetChatbotFeedbackStatsAsync();
+                var chatbotHourlyUsage = await GetChatbotHourlyUsageAsync();
 
                 return new
                 {
                     Statistics = stats,
-                    RecentUsers = recentUsers,
-                    RecentCourses = recentCourses,
-                    RecentEnrollments = recentEnrollments,
-                    RecentPayments = recentPayments
+                    ChatbotStatistics = chatbotStats,
+                    ChatbotDailyUsage = dailyChatbotUsage,
+                    ChatbotFeedback = chatbotFeedback,
+                    ChatbotHourlyUsage = chatbotHourlyUsage
                 };
             }
             catch (Exception ex)
@@ -763,7 +1101,7 @@ namespace DataAccessLayer.Repositories
         public Task<bool> SendBulkNotificationAsync(List<string> userIds, string title, string content, string notificationType = "System") => Task.FromResult(true);
         public Task<bool> CreateSystemAnnouncementAsync(string title, string content, string? targetRole = null) => Task.FromResult(true);
         public Task<List<object>> GetSystemLogsAsync(int page = 1, int pageSize = 20) => Task.FromResult(new List<object>());
-        public Task<Dictionary<string, object>> GetSystemHealthAsync() => Task.FromResult(new Dictionary<string, object>());
+
         public Task<List<Feedback>> GetReportedFeedbackAsync(int page = 1, int pageSize = 20) => Task.FromResult(new List<Feedback>());
         public Task<bool> ModerateFeedbackAsync(string feedbackId, bool isApproved, string? moderatorNote = null) => Task.FromResult(true);
         public Task<List<object>> GetContentModerationQueueAsync(int page = 1, int pageSize = 20) => Task.FromResult(new List<object>());

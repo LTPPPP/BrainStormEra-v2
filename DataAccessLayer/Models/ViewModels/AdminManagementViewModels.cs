@@ -137,4 +137,34 @@ namespace DataAccessLayer.Models.ViewModels
         [Required]
         public bool IsApproved { get; set; }
     }
+
+    // Chatbot Analytics ViewModels
+    public class DailyConversationStats
+    {
+        public DateTime Date { get; set; }
+        public int ConversationCount { get; set; }
+        public int UniqueUsers { get; set; }
+        public string DateLabel { get; set; } = "";
+    }
+
+    public class FeedbackRatingStats
+    {
+        public byte Rating { get; set; }
+        public int Count { get; set; }
+    }
+
+    public class HourlyUsageStats
+    {
+        public int Hour { get; set; }
+        public int ConversationCount { get; set; }
+        public string HourLabel { get; set; } = "";
+    }
+
+    public class ChatbotAnalyticsViewModel
+    {
+        public Dictionary<string, object> Statistics { get; set; } = new();
+        public List<DailyConversationStats> DailyUsage { get; set; } = new();
+        public List<FeedbackRatingStats> FeedbackStats { get; set; } = new();
+        public List<HourlyUsageStats> HourlyUsage { get; set; } = new();
+    }
 }

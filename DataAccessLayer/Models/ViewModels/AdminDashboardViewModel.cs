@@ -27,6 +27,12 @@ namespace DataAccessLayer.Models.ViewModels
 
         public List<UserViewModel> RecentUsers { get; set; } = new List<UserViewModel>();
         public List<CourseViewModel> RecentCourses { get; set; } = new List<CourseViewModel>();
+
+        // Chatbot Analytics
+        public Dictionary<string, object> ChatbotStatistics { get; set; } = new Dictionary<string, object>();
+        public List<DailyConversationStats> ChatbotDailyUsage { get; set; } = new List<DailyConversationStats>();
+        public List<FeedbackRatingStats> ChatbotFeedback { get; set; } = new List<FeedbackRatingStats>();
+        public List<HourlyUsageStats> ChatbotHourlyUsage { get; set; } = new List<HourlyUsageStats>();
     }
 
     public class MonthlyUserGrowth

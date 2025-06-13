@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DataAccessLayer.Models;
+using DataAccessLayer.Models.ViewModels;
 
 namespace DataAccessLayer.Repositories.Interfaces
 {
@@ -14,6 +15,12 @@ namespace DataAccessLayer.Repositories.Interfaces
         Task<object> GetDashboardDataAsync(string userId);
         Task<Dictionary<string, object>> GetSystemStatisticsAsync();
         Task<decimal> GetTotalRevenueAsync();
+
+        // Chart data methods
+        Task<List<MonthlyUserGrowth>> GetUserGrowthDataAsync();
+        Task<List<MonthlyRevenue>> GetRevenueDataAsync();
+        Task<List<WeeklyEnrollment>> GetWeeklyEnrollmentDataAsync();
+
         Task<int> GetTotalUsersCountAsync();
         Task<int> GetTotalCoursesCountAsync();
         Task<int> GetTotalEnrollmentsCountAsync();
@@ -73,7 +80,7 @@ namespace DataAccessLayer.Repositories.Interfaces
         Task<bool> SendBulkNotificationAsync(List<string> userIds, string title, string content, string notificationType = "System");
         Task<bool> CreateSystemAnnouncementAsync(string title, string content, string? targetRole = null);
         Task<List<object>> GetSystemLogsAsync(int page = 1, int pageSize = 20);
-        Task<Dictionary<string, object>> GetSystemHealthAsync();
+
 
         // Content Moderation
         Task<List<Feedback>> GetReportedFeedbackAsync(int page = 1, int pageSize = 20);
@@ -92,6 +99,12 @@ namespace DataAccessLayer.Repositories.Interfaces
         Task<List<object>> GetSuspiciousActivitiesAsync(int page = 1, int pageSize = 20);
         Task<bool> LogAdminActionAsync(string adminId, string action, string details, string? targetId = null);
         Task<List<object>> GetAdminActionLogsAsync(string? adminId = null, int page = 1, int pageSize = 20);
+
+        // Chatbot Analytics
+        Task<Dictionary<string, object>> GetChatbotStatisticsAsync();
+        Task<List<DailyConversationStats>> GetDailyChatbotUsageAsync(int days = 7);
+        Task<List<FeedbackRatingStats>> GetChatbotFeedbackStatsAsync();
+        Task<List<HourlyUsageStats>> GetChatbotHourlyUsageAsync();
     }
 
     // Supporting DTOs for Admin operations
@@ -133,15 +146,7 @@ namespace DataAccessLayer.Repositories.Interfaces
         public decimal AverageTransactionValue { get; set; }
     }
 
-    public class SystemHealthInfo
-    {
-        public double CpuUsage { get; set; }
-        public double MemoryUsage { get; set; }
-        public double DiskUsage { get; set; }
-        public int ActiveConnections { get; set; }
-        public bool DatabaseStatus { get; set; }
-        public DateTime LastChecked { get; set; }
-    }
+
 
     public enum ExportFormat
     {

@@ -35,6 +35,17 @@ namespace BusinessLogicLayer.Services
                 // Get admin user details
                 var adminUser = await _userRepo.GetByIdAsync(userId);
 
+                // Get real chart data
+                var userGrowthData = await _adminRepo.GetUserGrowthDataAsync();
+                var revenueData = await _adminRepo.GetRevenueDataAsync();
+                var enrollmentData = await _adminRepo.GetWeeklyEnrollmentDataAsync();
+
+                // Get chatbot analytics data
+                var chatbotStats = await _adminRepo.GetChatbotStatisticsAsync();
+                var chatbotDailyUsage = await _adminRepo.GetDailyChatbotUsageAsync();
+                var chatbotFeedback = await _adminRepo.GetChatbotFeedbackStatsAsync();
+                var chatbotHourlyUsage = await _adminRepo.GetChatbotHourlyUsageAsync();
+
                 return new AdminDashboardViewModel
                 {
                     AdminName = adminUser?.FullName ?? "Admin",
@@ -51,6 +62,17 @@ namespace BusinessLogicLayer.Services
                     ApprovedCourses = statistics.ContainsKey("ApprovedCourses") ? (int)statistics["ApprovedCourses"] : 0,
                     PendingCourses = statistics.ContainsKey("PendingCourses") ? (int)statistics["PendingCourses"] : 0,
                     RejectedCourses = statistics.ContainsKey("RejectedCourses") ? (int)statistics["RejectedCourses"] : 0,
+
+                    // Real chart data
+                    UserGrowthData = userGrowthData,
+                    RevenueData = revenueData,
+                    EnrollmentData = enrollmentData,
+
+                    // Chatbot analytics data
+                    ChatbotStatistics = chatbotStats,
+                    ChatbotDailyUsage = chatbotDailyUsage,
+                    ChatbotFeedback = chatbotFeedback,
+                    ChatbotHourlyUsage = chatbotHourlyUsage,
                     RecentUsers = recentUsers.Select(u => new UserViewModel
                     {
                         UserId = u.UserId,

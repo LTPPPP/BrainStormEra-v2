@@ -26,6 +26,8 @@
     <link rel="stylesheet" href="~/css/components/toast-notifications.css">
     <!-- Chatbot CSS -->
     <link rel="stylesheet" href="~/css/components/chatbot.css">
+    <!-- Admin Dashboard Charts CSS -->
+    <link rel="stylesheet" href="~/css/pages/Dashboard/admin-dashboard-charts.css">
     <!-- Load page loader script -->
     <script src="~/js/components/loader.js"></script>
     <!-- Chart.js for dashboard charts -->
@@ -39,95 +41,7 @@
         <meta name="user-name" content="@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)" />
     }
 
-    <style>
-        .chart-container {
-            position: relative;
-            height: 350px;
-            width: 100%;
-            padding: 1.5rem;
-        }
-        .chart-card {
-            height: 100%;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            overflow: hidden;
-        }
-        .chart-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-        }
-        .chart-card .dashboard-card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 12px 12px 0 0;
-            padding: 1.5rem;
-        }
-        .chart-card .dashboard-card-header h3 {
-            margin: 0;
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-        .chart-card .dashboard-card-body {
-            padding: 0;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 0 0 12px 12px;
-        }
-        .stats-widget {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-        .stat-item .stat-icon {
-            color: rgba(255, 255, 255, 0.9);
-        }
-        .stat-item .stat-content h4 {
-            color: white;
-        }
-        .stat-item .stat-content p {
-            color: rgba(255, 255, 255, 0.8);
-        }
-        .activity-timeline {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .activity-item {
-            display: flex;
-            align-items: flex-start;
-            padding: 1rem 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .activity-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-            flex-shrink: 0;
-        }
-        .system-status-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border-radius: 16px;
-        }
-        .system-status-card .dashboard-card-header,
-        .system-status-card .dashboard-card-body {
-            background: transparent;
-            color: white;
-        }
-        .status-item {
-            padding: 0.75rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .status-item:last-child {
-            border-bottom: none;
-        }
-    </style>
+
 </head>
 
 <body>
@@ -183,8 +97,8 @@
         <!-- Main Content -->
         <div class="container main-dashboard py-4">
             <div class="row">
-                <!-- Left Column - Charts Analytics -->
-                <div class="col-lg-9">
+                <!-- Charts and Analytics - Full Width -->
+                <div class="col-12">
                     <!-- Platform Statistics -->
                     <div class="dashboard-card mb-4">
                         <div class="dashboard-card-header">
@@ -304,99 +218,138 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Right Column - System Status & Activity -->
-                <div class="col-lg-3">
-                    <!-- System Status Card -->
-                    <div class="dashboard-card system-status-card mb-4">
-                        <div class="dashboard-card-header">
-                            <h2><i class="fas fa-server me-2"></i>System Status</h2>
-                        </div>
-                        <div class="dashboard-card-body">
-                            <div class="status-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-server me-2"></i>Server</span>
-                                    <span class="badge bg-success">Online</span>
+                    <!-- Chatbot Analytics Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="dashboard-card">
+                                <div class="dashboard-card-header">
+                                    <h3><i class="fas fa-robot me-2"></i>Chatbot Analytics</h3>
                                 </div>
-                            </div>
-                            <div class="status-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-database me-2"></i>Database</span>
-                                    <span class="badge bg-success">Connected</span>
-                                </div>
-                            </div>
-                            <div class="status-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-cloud me-2"></i>Storage</span>
-                                    <span class="badge bg-warning">85% Used</span>
-                                </div>
-                            </div>
-                            <div class="status-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-shield-alt me-2"></i>Security</span>
-                                    <span class="badge bg-success">Secure</span>
+                                <div class="dashboard-card-body">
+                                    <!-- Chatbot Statistics -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-2">
+                                            <div class="chatbot-stat-card">
+                                                <div class="chatbot-stat-icon">
+                                                    <i class="fas fa-comments"></i>
+                                                </div>
+                                                <div class="chatbot-stat-content">
+                                                    <h4 id="total-conversations">@(Model.ChatbotStatistics.ContainsKey("TotalConversations") ? Model.ChatbotStatistics["TotalConversations"] : 0)</h4>
+                                                    <p>Total Conversations</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="chatbot-stat-card">
+                                                <div class="chatbot-stat-icon">
+                                                    <i class="fas fa-users"></i>
+                                                </div>
+                                                <div class="chatbot-stat-content">
+                                                    <h4 id="chatbot-users">@(Model.ChatbotStatistics.ContainsKey("TotalUsers") ? Model.ChatbotStatistics["TotalUsers"] : 0)</h4>
+                                                    <p>Active Users</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="chatbot-stat-card">
+                                                <div class="chatbot-stat-icon">
+                                                    <i class="fas fa-star"></i>
+                                                </div>
+                                                <div class="chatbot-stat-content">
+                                                    <h4 id="average-rating">@(Model.ChatbotStatistics.ContainsKey("AverageRating") ? Model.ChatbotStatistics["AverageRating"] : 0)</h4>
+                                                    <p>Avg Rating</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="chatbot-stat-card">
+                                                <div class="chatbot-stat-icon">
+                                                    <i class="fas fa-thumbs-up"></i>
+                                                </div>
+                                                <div class="chatbot-stat-content">
+                                                    <h4 id="feedback-count">@(Model.ChatbotStatistics.ContainsKey("ConversationsWithFeedback") ? Model.ChatbotStatistics["ConversationsWithFeedback"] : 0)</h4>
+                                                    <p>With Feedback</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="chatbot-stat-card">
+                                                <div class="chatbot-stat-icon">
+                                                    <i class="fas fa-calendar-day"></i>
+                                                </div>
+                                                <div class="chatbot-stat-content">
+                                                    <h4 id="today-conversations">@(Model.ChatbotStatistics.ContainsKey("TodayConversations") ? Model.ChatbotStatistics["TodayConversations"] : 0)</h4>
+                                                    <p>Today</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="chatbot-stat-card">
+                                                <div class="chatbot-stat-icon">
+                                                    <i class="fas fa-calendar-week"></i>
+                                                </div>
+                                                <div class="chatbot-stat-content">
+                                                    <h4 id="weekly-conversations">@(Model.ChatbotStatistics.ContainsKey("WeeklyConversations") ? Model.ChatbotStatistics["WeeklyConversations"] : 0)</h4>
+                                                    <p>This Week</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Chatbot Charts -->
+                                    <div class="row">
+                                        <!-- Daily Usage Chart -->
+                                        <div class="col-md-6 mb-4">
+                                            <div class="chart-card">
+                                                <div class="chart-header">
+                                                    <h4><i class="fas fa-chart-line me-2"></i>Daily Conversations</h4>
+                                                </div>
+                                                <div class="chart-body">
+                                                    <div class="chart-container">
+                                                        <canvas id="chatbotDailyUsageChart"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Feedback Ratings Chart -->
+                                        <div class="col-md-6 mb-4">
+                                            <div class="chart-card">
+                                                <div class="chart-header">
+                                                    <h4><i class="fas fa-star me-2"></i>Feedback Ratings</h4>
+                                                </div>
+                                                <div class="chart-body">
+                                                    <div class="chart-container">
+                                                        <canvas id="chatbotFeedbackChart"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hourly Usage Chart -->
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="chart-card">
+                                                <div class="chart-header">
+                                                    <h4><i class="fas fa-clock me-2"></i>24-Hour Usage Pattern</h4>
+                                                </div>
+                                                <div class="chart-body">
+                                                    <div class="chart-container" style="height: 300px;">
+                                                        <canvas id="chatbotHourlyUsageChart"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Recent Activity Card -->
-                    <div class="dashboard-card">
-                        <div class="dashboard-card-header">
-                            <h2><i class="fas fa-clock me-2"></i>Recent Activity</h2>
-                        </div>
-                        <div class="dashboard-card-body">
-                            <div class="activity-timeline">
-                                <div class="activity-item">
-                                    <div class="activity-icon bg-primary">
-                                        <i class="fas fa-user-plus"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <p class="mb-1"><strong>New user registered</strong></p>
-                                        <small class="text-muted">2 minutes ago</small>
-                                    </div>
-                                </div>
-                                <div class="activity-item">
-                                    <div class="activity-icon bg-success">
-                                        <i class="fas fa-check-circle"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <p class="mb-1"><strong>Course approved</strong></p>
-                                        <small class="text-muted">15 minutes ago</small>
-                                    </div>
-                                </div>
-                                <div class="activity-item">
-                                    <div class="activity-icon bg-warning">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <p class="mb-1"><strong>Course pending review</strong></p>
-                                        <small class="text-muted">1 hour ago</small>
-                                    </div>
-                                </div>
-                                <div class="activity-item">
-                                    <div class="activity-icon bg-info">
-                                        <i class="fas fa-graduation-cap"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <p class="mb-1"><strong>New enrollment</strong></p>
-                                        <small class="text-muted">2 hours ago</small>
-                                    </div>
-                                </div>
-                                <div class="activity-item">
-                                    <div class="activity-icon bg-secondary">
-                                        <i class="fas fa-certificate"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <p class="mb-1"><strong>Certificate generated</strong></p>
-                                        <small class="text-muted">3 hours ago</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
+
+
             </div>
         </div>
     </div>
@@ -413,341 +366,35 @@
     <!-- Include chatbot script -->
     <script src="~/js/components/chatbot.js"></script>
 
+    <!-- Pass admin data to JavaScript -->
     <script>
-        // Real data from server
-        const adminData = {
+        // Make admin data available globally with real data
+        window.adminData = {
             totalUsers: @Model.TotalUsers,
-            totalLearners: @(Model.TotalLearners > 0 ? Model.TotalLearners : Model.TotalUsers - 10),
-            totalInstructors: @(Model.TotalInstructors > 0 ? Model.TotalInstructors : 8),
-            totalAdmins: @(Model.TotalAdmins > 0 ? Model.TotalAdmins : 2),
+            totalLearners: @Model.TotalLearners,
+            totalInstructors: @Model.TotalInstructors,
+            totalAdmins: @Model.TotalAdmins,
             totalCourses: @Model.TotalCourses,
-            approvedCourses: @(Model.ApprovedCourses > 0 ? Model.ApprovedCourses : Model.TotalCourses - 5),
-            pendingCourses: @(Model.PendingCourses > 0 ? Model.PendingCourses : 3),
-            rejectedCourses: @(Model.RejectedCourses > 0 ? Model.RejectedCourses : 2),
-            totalRevenue: @Model.TotalRevenue
+            approvedCourses: @Model.ApprovedCourses,
+            pendingCourses: @Model.PendingCourses,
+            rejectedCourses: @Model.RejectedCourses,
+            totalRevenue: @Model.TotalRevenue,
+            totalEnrollments: @Model.TotalEnrollments,
+            
+            // Real chart data
+            userGrowthData: @Html.Raw(Json.Serialize(Model.UserGrowthData)),
+            revenueData: @Html.Raw(Json.Serialize(Model.RevenueData)),
+            enrollmentData: @Html.Raw(Json.Serialize(Model.EnrollmentData)),
+
+            // Chatbot analytics data
+            chatbotStatistics: @Html.Raw(Json.Serialize(Model.ChatbotStatistics)),
+            chatbotDailyUsage: @Html.Raw(Json.Serialize(Model.ChatbotDailyUsage)),
+            chatbotFeedback: @Html.Raw(Json.Serialize(Model.ChatbotFeedback)),
+            chatbotHourlyUsage: @Html.Raw(Json.Serialize(Model.ChatbotHourlyUsage))
         };
-
-        // Generate realistic growth data based on current totals
-        function generateUserGrowthData() {
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-            const baseGrowth = Math.floor(adminData.totalUsers / 6);
-            return months.map((month, index) => {
-                const variance = Math.floor(Math.random() * 10) - 5;
-                return baseGrowth + (index * 2) + variance;
-            });
-        }
-
-        function generateRevenueData() {
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-            const baseRevenue = adminData.totalRevenue / 6;
-            return months.map((month, index) => {
-                const growth = index * 0.15; // 15% growth per month
-                const variance = (Math.random() - 0.5) * 0.2; // ±10% variance
-                return Math.round(baseRevenue * (1 + growth + variance));
-            });
-        }
-
-        function generateEnrollmentData() {
-            const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7'];
-            const baseEnrollments = Math.floor(adminData.totalUsers * 0.6 / 7); // 60% enrollment rate
-            const baseCompletions = Math.floor(baseEnrollments * 0.4); // 40% completion rate
-            
-            return {
-                enrollments: weeks.map((week, index) => {
-                    const variance = Math.floor(Math.random() * 10) - 5;
-                    return baseEnrollments + variance;
-                }),
-                completions: weeks.map((week, index) => {
-                    const variance = Math.floor(Math.random() * 5) - 2;
-                    return baseCompletions + variance;
-                })
-            };
-        }
-
-        // Initialize charts when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Chart.js global configuration
-            Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-            Chart.defaults.font.size = 12;
-            Chart.defaults.color = '#495057';
-
-            // User Growth Chart
-            const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
-            new Chart(userGrowthCtx, {
-                type: 'line',
-                data: {
-                    labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-                    datasets: [{
-                        label: 'New Users',
-                        data: generateUserGrowthData(),
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#667eea',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            borderColor: '#667eea',
-                            borderWidth: 1
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                color: '#6c757d'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                color: '#6c757d'
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Course Statistics Chart
-            const courseStatsCtx = document.getElementById('courseStatsChart').getContext('2d');
-            new Chart(courseStatsCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Approved', 'Pending', 'Rejected'],
-                    datasets: [{
-                        data: [adminData.approvedCourses, adminData.pendingCourses, adminData.rejectedCourses],
-                        backgroundColor: [
-                            '#28a745',
-                            '#ffc107',
-                            '#dc3545'
-                        ],
-                        borderWidth: 0,
-                        hoverOffset: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white'
-                        }
-                    }
-                }
-            });
-
-            // Revenue Trend Chart
-            const revenueTrendCtx = document.getElementById('revenueTrendChart').getContext('2d');
-            new Chart(revenueTrendCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-                    datasets: [{
-                        label: 'Revenue ($)',
-                        data: generateRevenueData(),
-                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                        borderColor: '#667eea',
-                        borderWidth: 2,
-                        borderRadius: 8,
-                        borderSkipped: false,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            callbacks: {
-                                label: function(context) {
-                                    return '$' + context.parsed.y.toLocaleString();
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                color: '#6c757d',
-                                callback: function(value) {
-                                    return '$' + value.toLocaleString();
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                color: '#6c757d'
-                            }
-                        }
-                    }
-                }
-            });
-
-            // User Roles Chart
-            const userRolesCtx = document.getElementById('userRolesChart').getContext('2d');
-            new Chart(userRolesCtx, {
-                type: 'pie',
-                data: {
-                    labels: ['Learners', 'Instructors', 'Admins'],
-                    datasets: [{
-                        data: [adminData.totalLearners, adminData.totalInstructors, adminData.totalAdmins],
-                        backgroundColor: [
-                            '#17a2b8',
-                            '#fd7e14',
-                            '#e83e8c'
-                        ],
-                        borderWidth: 0,
-                        hoverOffset: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white'
-                        }
-                    }
-                }
-            });
-
-            // Enrollment Activity Chart
-            const enrollmentActivityCtx = document.getElementById('enrollmentActivityChart').getContext('2d');
-            const enrollmentData = generateEnrollmentData();
-            
-            new Chart(enrollmentActivityCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7'],
-                    datasets: [{
-                        label: 'New Enrollments',
-                        data: enrollmentData.enrollments,
-                        borderColor: '#e83e8c',
-                        backgroundColor: 'rgba(232, 62, 140, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#e83e8c',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5
-                    }, {
-                        label: 'Course Completions',
-                        data: enrollmentData.completions,
-                        borderColor: '#28a745',
-                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#28a745',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            mode: 'index',
-                            intersect: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                color: '#6c757d'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                color: '#6c757d'
-                            }
-                        }
-                    },
-                    interaction: {
-                        mode: 'nearest',
-                        axis: 'x',
-                        intersect: false
-                    }
-                }
-            });
-        });
-
-        // Initialize AOS animations
-        AOS.init({
-            duration: 800,
-            easing: 'ease-in-out',
-            once: true
-        });
     </script>
+    
+    <!-- Include Admin Dashboard Charts JavaScript -->
+    <script src="~/js/pages/Dashboard/admin-dashboard-charts.js"></script>
 </body>
 </html>

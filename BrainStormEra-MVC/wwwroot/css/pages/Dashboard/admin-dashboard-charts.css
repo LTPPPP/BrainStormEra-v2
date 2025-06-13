@@ -1,0 +1,341 @@
+/* Professional Admin Dashboard Charts Styling */
+
+.chart-container {
+    position: relative;
+    height: 350px;
+    width: 100%;
+    padding: 1.5rem;
+}
+
+.chart-card {
+    height: 100%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+}
+
+.chart-card .dashboard-card-header {
+    background: #f8f9fa;
+    color: #495057;
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 8px 8px 0 0;
+    padding: 1.25rem 1.5rem;
+}
+
+.chart-card .dashboard-card-header h3 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #343a40;
+}
+
+.chart-card .dashboard-card-body {
+    padding: 0;
+    background: white;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Professional Stats Widget */
+.stats-widget {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid #34495e;
+}
+
+.stat-item .stat-icon {
+    color: #ecf0f1;
+}
+
+.stat-item .stat-content h4 {
+    color: white;
+    font-weight: 600;
+}
+
+.stat-item .stat-content p {
+    color: #bdc3c7;
+    margin: 0;
+}
+
+
+
+
+
+/* Professional Admin Dashboard Welcome Section */
+.admin-dashboard .welcome-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.admin-dashboard .welcome-subtitle {
+    font-size: 1.2rem;
+    color: #6c757d;
+    font-weight: 400;
+}
+
+/* Professional Page Header */
+.page-header.dashboard-page.welcome-section {
+    background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .chart-container {
+        height: 300px;
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 250px;
+        padding: 0.75rem;
+    }
+    
+    .chart-card .dashboard-card-header {
+        padding: 1rem;
+    }
+    
+    .chart-card .dashboard-card-header h3 {
+        font-size: 1rem;
+    }
+    
+    .stats-widget {
+        padding: 1.5rem;
+    }
+}
+
+/* Loading Animation for Charts */
+.chart-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: #6c757d;
+}
+
+.chart-loading::after {
+    content: "";
+    width: 20px;
+    height: 20px;
+    border: 2px solid #6c757d;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Chart Legend */
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.chart-legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    color: #495057;
+}
+
+.chart-legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    margin-right: 8px;
+}
+
+/* Dashboard Card Base Styling */
+.dashboard-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+}
+
+.dashboard-card-header {
+    background: #f8f9fa;
+    color: #495057;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1.25rem 1.5rem;
+}
+
+.dashboard-card-header h2,
+.dashboard-card-header h3 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #343a40;
+}
+
+.dashboard-card-body {
+    padding: 1.5rem;
+    background: white;
+}
+
+
+
+/* Status Badges */
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.badge.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+/* Manage Users Button */
+.manage-users-btn {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* Stats Widget Items */
+.stats-widget .stat-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stats-widget .stat-item:last-child {
+    border-bottom: none;
+}
+
+.stats-widget .stat-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+    color: #ecf0f1;
+}
+
+.stats-widget .stat-content h4 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.stats-widget .stat-content p {
+    margin: 0;
+    font-size: 0.875rem;
+    opacity: 0.8;
+} 
+
+/* Chatbot Analytics Styles */
+.chatbot-stat-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+}
+
+.chatbot-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.chatbot-stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.5rem;
+}
+
+.chatbot-stat-content h4 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    color: #2c3e50;
+}
+
+.chatbot-stat-content p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.chart-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.chart-header {
+    background: #f8f9fa;
+    color: #495057;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.25rem;
+}
+
+.chart-header h4 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #343a40;
+}
+
+.chart-body {
+    padding: 1rem;
+}
+
+.chart-body .chart-container {
+    height: 200px;
+    position: relative;
+}
+
+/* Responsive adjustments for chatbot cards */
+@media (max-width: 768px) {
+    .chatbot-stat-card {
+        padding: 1rem 0.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    .chatbot-stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.25rem;
+    }
+    
+    .chatbot-stat-content h4 {
+        font-size: 1.5rem;
+    }
+    
+    .chart-body .chart-container {
+        height: 180px;
+    }
+}
