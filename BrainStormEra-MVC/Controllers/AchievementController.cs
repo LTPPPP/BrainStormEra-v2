@@ -1,6 +1,7 @@
 using BusinessLogicLayer.Services.Implementations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using BrainStormEra_MVC.Filters;
 
 namespace BrainStormEra_MVC.Controllers
 {
@@ -41,6 +42,7 @@ namespace BrainStormEra_MVC.Controllers
             return View("~/Views/Achievements/LearnerAchievements.cshtml", result.AchievementList);
         }
         [HttpGet]
+        [RequireAuthentication("You need to login to view achievement details. Please login to continue.")]
         public async Task<IActionResult> GetAchievementDetails(string achievementId, string userId)
         {
             var result = await _achievementServiceImpl.GetAchievementDetailsAsync(achievementId, userId);

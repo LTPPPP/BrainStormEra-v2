@@ -50,6 +50,7 @@ namespace BusinessLogicLayer.Services
                     Price = c.Price,
                     CreatedBy = c.Author?.FullName ?? c.Author?.Username ?? "Unknown",
                     Description = c.CourseDescription,
+                    StarRating = 4, // Default rating - could be calculated from actual feedback in the future
                     EnrollmentCount = c.Enrollments?.Count ?? 0,
                     CourseCategories = c.CourseCategories?.Select(cc => cc.CourseCategoryName).ToList() ?? new List<string>()
                 }).ToList();
@@ -60,7 +61,7 @@ namespace BusinessLogicLayer.Services
                 {
                     CategoryId = cc.CourseCategoryId,
                     CategoryName = cc.CourseCategoryName,
-                    CourseCount = cc.Courses?.Count(c => c.CourseStatus == 1) ?? 0
+                    CourseCount = cc.Courses.Count() // Use the loaded courses count
                 }).ToList();
 
                 return new HomePageGuestViewModel
@@ -111,21 +112,55 @@ namespace BusinessLogicLayer.Services
                     Price = c.Price,
                     CreatedBy = c.Author?.FullName ?? c.Author?.Username ?? "Unknown",
                     Description = c.CourseDescription,
+                    StarRating = 4, // Default rating - could be calculated from actual feedback in the future
+                    EnrollmentCount = c.Enrollments?.Count ?? 0,
                     CourseCategories = c.CourseCategories?.Select(cc => cc.CourseCategoryName).ToList() ?? new List<string>()
                 }).ToList();
 
-                // Get notifications (placeholder - implement actual notification system if needed)
-                var notifications = new List<NotificationViewModel>
+                // If no recommended courses found, show a helpful message in notifications
+                if (!recommendedCourseViewModels.Any())
                 {
-                    new NotificationViewModel
+                    _logger.LogWarning("No recommended courses found for user {UserId}", userId);
+                }
+
+                // Get notifications (enhanced with dynamic content)
+                var notifications = new List<NotificationViewModel>();
+
+                if (!recommendedCourseViewModels.Any())
+                {
+                    notifications.Add(new NotificationViewModel
                     {
-                        NotificationId = "1",
+                        NotificationId = "no_recommendations",
+                        Title = "No Recommendations Yet",
+                        Message = "We're preparing personalized course recommendations for you. Meanwhile, explore our course catalog to discover amazing learning opportunities!",
+                        CreatedAt = DateTime.Now,
+                        IsRead = false
+                    });
+                }
+                else
+                {
+                    notifications.Add(new NotificationViewModel
+                    {
+                        NotificationId = "welcome",
                         Title = "Welcome to BrainStormEra!",
-                        Message = "Start your learning journey today with our recommended courses.",
+                        Message = $"We found {recommendedCourseViewModels.Count} courses that might interest you. Start your learning journey today!",
                         CreatedAt = DateTime.Now.AddDays(-1),
                         IsRead = false
-                    }
-                };
+                    });
+                }
+
+                // Add additional helpful notifications
+                if (!enrolledCourseViewModels.Any())
+                {
+                    notifications.Add(new NotificationViewModel
+                    {
+                        NotificationId = "first_course",
+                        Title = "Get Started with Your First Course",
+                        Message = "Browse our recommended courses below and enroll in your first course to begin learning!",
+                        CreatedAt = DateTime.Now.AddHours(-2),
+                        IsRead = false
+                    });
+                }
 
                 return new LearnerDashboardViewModel
                 {
@@ -216,6 +251,9 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
+                var recommendedCourses = new List<dynamic>();
+
+                // First, try to get featured courses
                 var featuredCourses = await _context.Courses
                     .AsNoTracking()
                     .Where(c => c.IsFeatured == true && c.CourseStatus == 1)
@@ -234,15 +272,75 @@ namespace BusinessLogicLayer.Services
                         CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
                         AverageRating = 4.5 // Calculate if needed
                     })
+                    .OrderByDescending(c => c.EnrollmentCount)
                     .Take(4)
                     .ToListAsync();
 
-                return featuredCourses.Cast<dynamic>().ToList();
+                recommendedCourses.AddRange(featuredCourses.Cast<dynamic>());
+
+                // If no featured courses, fallback to popular courses
+                if (!recommendedCourses.Any())
+                {
+                    var popularCourses = await _context.Courses
+                        .AsNoTracking()
+                        .Where(c => c.CourseStatus == 1)
+                        .Include(c => c.Author)
+                        .Include(c => c.Enrollments)
+                        .Include(c => c.CourseCategories)
+                        .Select(c => new
+                        {
+                            CourseId = c.CourseId,
+                            CourseName = c.CourseName,
+                            CourseImage = c.CourseImage,
+                            Price = c.Price,
+                            CourseDescription = c.CourseDescription,
+                            AuthorName = c.Author.FullName ?? c.Author.Username,
+                            EnrollmentCount = c.Enrollments.Count(),
+                            CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
+                            AverageRating = 4.5
+                        })
+                        .OrderByDescending(c => c.EnrollmentCount)
+                        .ThenByDescending(c => c.CourseId) // Use CourseId as a proxy for creation date
+                        .Take(4)
+                        .ToListAsync();
+
+                    recommendedCourses.AddRange(popularCourses.Cast<dynamic>());
+                }
+
+                // If still no courses, fallback to any active courses
+                if (!recommendedCourses.Any())
+                {
+                    var anyCourses = await _context.Courses
+                        .AsNoTracking()
+                        .Where(c => c.CourseStatus == 1)
+                        .Include(c => c.Author)
+                        .Include(c => c.Enrollments)
+                        .Include(c => c.CourseCategories)
+                        .Select(c => new
+                        {
+                            CourseId = c.CourseId,
+                            CourseName = c.CourseName,
+                            CourseImage = c.CourseImage,
+                            Price = c.Price,
+                            CourseDescription = c.CourseDescription,
+                            AuthorName = c.Author.FullName ?? c.Author.Username,
+                            EnrollmentCount = c.Enrollments.Count(),
+                            CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
+                            AverageRating = 4.5
+                        })
+                        .Take(4)
+                        .ToListAsync();
+
+                    recommendedCourses.AddRange(anyCourses.Cast<dynamic>());
+                }
+
+                return recommendedCourses;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving recommended courses");
-                throw;
+                // Return empty list instead of throwing to prevent crashes
+                return new List<dynamic>();
             }
         }
 

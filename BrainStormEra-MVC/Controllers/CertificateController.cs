@@ -2,6 +2,7 @@ using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BrainStormEra_MVC.Filters;
 
 namespace BrainStormEra_MVC.Controllers
 {
@@ -43,7 +44,7 @@ namespace BrainStormEra_MVC.Controllers
             SetViewBagData(result.CertificateList!);
             return View("~/Views/Certificates/Index.cshtml", result.CertificateList);
         }
-
+        [RequireAuthentication("You need to login to view certificate details. Please login to continue.")]
         public async Task<IActionResult> Details(string courseId)
         {
             var result = await _certificateServiceImpl.GetCertificateDetailsAsync(User, courseId);

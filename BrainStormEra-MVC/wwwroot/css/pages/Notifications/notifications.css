@@ -57,8 +57,6 @@
 
 .notification-item:hover {
   background-color: #f8f9fa;
-  transform: translateY(-1px);
-  transition: all 0.2s ease;
 }
 
 .notification-actions {

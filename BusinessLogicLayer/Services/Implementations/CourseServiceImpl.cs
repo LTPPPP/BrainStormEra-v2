@@ -72,29 +72,29 @@ namespace BusinessLogicLayer.Services.Implementations
                     ViewModel = new CourseListViewModel()
                 };
             }
-        }
-
-        /// <summary>
-        /// Search courses with advanced filtering and sorting
-        /// </summary>
+        }        /// <summary>
+                 /// Search courses with advanced filtering and sorting
+                 /// </summary>
         public async Task<CourseSearchResult> SearchCoursesAsync(
             string? search,
             string? category,
             int page = 1,
             int pageSize = 12,
-            string? sortBy = "newest")
+            string? sortBy = "newest",
+            string? price = null,
+            string? difficulty = null,
+            string? duration = null)
         {
             try
             {
-                var courses = await _courseService.SearchCoursesAsync(search, category, page, pageSize, sortBy);
-                var totalCourses = courses.Count;
-                var totalPages = (int)Math.Ceiling((double)totalCourses / pageSize);
+                var (courses, totalCount) = await _courseService.SearchCoursesWithPaginationAsync(search, category, page, pageSize, sortBy, price, difficulty, duration);
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
                 return new CourseSearchResult
                 {
                     Success = true,
                     Courses = courses,
-                    TotalCourses = totalCourses,
+                    TotalCourses = totalCount,
                     TotalPages = totalPages,
                     CurrentPage = page,
                     HasNextPage = page < totalPages,

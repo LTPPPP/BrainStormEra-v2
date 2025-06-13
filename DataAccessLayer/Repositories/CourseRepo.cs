@@ -529,19 +529,68 @@ namespace DataAccessLayer.Repositories
         {
             try
             {
-                return await _dbSet
+                var recommendedCourses = new List<Course>();
+
+                // First, try to get featured courses
+                var featuredCourses = await _dbSet
                     .Where(c => c.IsFeatured == true &&
                                c.CourseStatus == 1 &&
                                !excludeCourseIds.Contains(c.CourseId))
                     .Include(c => c.Author)
                     .Include(c => c.CourseCategories)
+                    .Include(c => c.Enrollments)
+                    .OrderByDescending(c => c.Enrollments.Count)
                     .Take(count)
                     .ToListAsync();
+
+                recommendedCourses.AddRange(featuredCourses);
+
+                // If we don't have enough courses, add popular courses as fallback
+                if (recommendedCourses.Count < count)
+                {
+                    var remainingCount = count - recommendedCourses.Count;
+                    var usedIds = recommendedCourses.Select(c => c.CourseId).Concat(excludeCourseIds).ToList();
+
+                    var popularCourses = await _dbSet
+                        .Where(c => c.CourseStatus == 1 &&
+                                   !usedIds.Contains(c.CourseId))
+                        .Include(c => c.Author)
+                        .Include(c => c.CourseCategories)
+                        .Include(c => c.Enrollments)
+                        .OrderByDescending(c => c.Enrollments.Count)
+                        .ThenByDescending(c => c.CourseCreatedAt)
+                        .Take(remainingCount)
+                        .ToListAsync();
+
+                    recommendedCourses.AddRange(popularCourses);
+                }
+
+                // If still not enough, add recent courses as final fallback
+                if (recommendedCourses.Count < count)
+                {
+                    var remainingCount = count - recommendedCourses.Count;
+                    var usedIds = recommendedCourses.Select(c => c.CourseId).Concat(excludeCourseIds).ToList();
+
+                    var recentCourses = await _dbSet
+                        .Where(c => c.CourseStatus == 1 &&
+                                   !usedIds.Contains(c.CourseId))
+                        .Include(c => c.Author)
+                        .Include(c => c.CourseCategories)
+                        .Include(c => c.Enrollments)
+                        .OrderByDescending(c => c.CourseCreatedAt)
+                        .Take(remainingCount)
+                        .ToListAsync();
+
+                    recommendedCourses.AddRange(recentCourses);
+                }
+
+                return recommendedCourses.Take(count).ToList();
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error getting recommended courses for user {UserId}", userId);
-                throw;
+                // Return empty list instead of throwing to prevent crashes
+                return new List<Course>();
             }
         }
 
@@ -549,12 +598,17 @@ namespace DataAccessLayer.Repositories
         {
             try
             {
-                return await _context.CourseCategories
+                // Get all active categories with their active courses included
+                var categoriesWithCourses = await _context.CourseCategories
+                    .Include(cc => cc.Courses.Where(c => c.CourseStatus == 1))
                     .Where(cc => cc.IsActive == true)
-                    .Where(cc => cc.Courses.Any(c => c.CourseStatus == 1))
-                    .OrderByDescending(cc => cc.Courses.Count(c => c.CourseStatus == 1))
-                    .Take(count)
                     .ToListAsync();
+
+                // Order by course count and take the specified number
+                return categoriesWithCourses
+                    .OrderByDescending(cc => cc.Courses.Count)
+                    .Take(count)
+                    .ToList();
             }
             catch (Exception ex)
             {
@@ -576,6 +630,177 @@ namespace DataAccessLayer.Repositories
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error getting recent courses");
+                throw;
+            }
+        }
+
+        // Admin course management methods
+        public async Task<List<Course>> GetAllCoursesAsync(string? search = null, string? categoryFilter = null, int page = 1, int pageSize = 10)
+        {
+            try
+            {
+                IQueryable<Course> query = _dbSet
+                    .Include(c => c.Author)
+                    .Include(c => c.Enrollments)
+                    .Include(c => c.CourseCategories);
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(c => c.CourseName.Contains(search) ||
+                                           (c.CourseDescription != null && c.CourseDescription.Contains(search)));
+                }
+
+                if (!string.IsNullOrWhiteSpace(categoryFilter))
+                {
+                    query = query.Where(c => c.CourseCategories
+                        .Any(cc => cc.CourseCategoryName == categoryFilter));
+                }
+
+                return await query
+                    .OrderByDescending(c => c.CourseCreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting all courses for admin");
+                throw;
+            }
+        }
+
+        public async Task<int> GetCourseCountAsync(string? search = null, string? categoryFilter = null)
+        {
+            try
+            {
+                IQueryable<Course> query = _dbSet;
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(c => c.CourseName.Contains(search) ||
+                                           (c.CourseDescription != null && c.CourseDescription.Contains(search)));
+                }
+
+                if (!string.IsNullOrWhiteSpace(categoryFilter))
+                {
+                    query = query.Where(c => c.CourseCategories
+                        .Any(cc => cc.CourseCategoryName == categoryFilter));
+                }
+
+                return await query.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting course count");
+                throw;
+            }
+        }
+
+        public async Task<int> GetApprovedCourseCountAsync()
+        {
+            try
+            {
+                return await _dbSet.CountAsync(c => c.ApprovalStatus == "Approved");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting approved course count");
+                throw;
+            }
+        }
+
+        public async Task<int> GetPendingCourseCountAsync()
+        {
+            try
+            {
+                return await _dbSet.CountAsync(c => c.ApprovalStatus == "Pending");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting pending course count");
+                throw;
+            }
+        }
+
+        public async Task<int> GetRejectedCourseCountAsync()
+        {
+            try
+            {
+                return await _dbSet.CountAsync(c => c.ApprovalStatus == "Rejected");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting rejected course count");
+                throw;
+            }
+        }
+
+        public async Task<int> GetFreeCourseCountAsync()
+        {
+            try
+            {
+                return await _dbSet.CountAsync(c => c.Price == 0);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting free course count");
+                throw;
+            }
+        }
+
+        public async Task<int> GetPaidCourseCountAsync()
+        {
+            try
+            {
+                return await _dbSet.CountAsync(c => c.Price > 0);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting paid course count");
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateCourseApprovalAsync(string courseId, bool isApproved)
+        {
+            try
+            {
+                var course = await GetByIdAsync(courseId);
+                if (course == null)
+                    return false;
+
+                course.ApprovalStatus = isApproved ? "Approved" : "Rejected";
+                course.ApprovedAt = DateTime.UtcNow;
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                var result = await SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error updating course approval status");
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteCourseAsync(string courseId)
+        {
+            try
+            {
+                var course = await GetByIdAsync(courseId);
+                if (course == null)
+                    return false;
+
+                // Soft delete by changing status
+                course.CourseStatus = 0; // Inactive/Deleted status
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                var result = await SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error deleting course");
                 throw;
             }
         }

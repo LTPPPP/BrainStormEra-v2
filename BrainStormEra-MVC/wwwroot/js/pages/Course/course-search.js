@@ -5,6 +5,9 @@ class CourseSearchManager {
       search: "",
       category: "",
       sortBy: "newest",
+      price: "",
+      difficulty: "",
+      duration: "",
       page: 1,
     };
 
@@ -71,6 +74,34 @@ class CourseSearchManager {
       });
     }
 
+    // Advanced filters
+    const priceFilter = document.getElementById("priceFilter");
+    if (priceFilter) {
+      priceFilter.addEventListener("change", (e) => {
+        this.currentFilters.price = e.target.value;
+        this.currentFilters.page = 1;
+        this.performSearch();
+      });
+    }
+
+    const difficultyFilter = document.getElementById("difficultyFilter");
+    if (difficultyFilter) {
+      difficultyFilter.addEventListener("change", (e) => {
+        this.currentFilters.difficulty = e.target.value;
+        this.currentFilters.page = 1;
+        this.performSearch();
+      });
+    }
+
+    const durationFilter = document.getElementById("durationFilter");
+    if (durationFilter) {
+      durationFilter.addEventListener("change", (e) => {
+        this.currentFilters.duration = e.target.value;
+        this.currentFilters.page = 1;
+        this.performSearch();
+      });
+    }
+
     // Pagination buttons (delegated event)
     document.addEventListener("click", (e) => {
       if (
@@ -85,6 +116,15 @@ class CourseSearchManager {
         if (page && page !== this.currentFilters.page) {
           this.goToPage(page);
         }
+      }
+
+      // Clear all filters button (delegated for dynamic content)
+      if (
+        e.target.id === "clearAllFilters" ||
+        e.target.closest("#clearAllFilters")
+      ) {
+        e.preventDefault();
+        this.clearAllFilters();
       }
     });
 
@@ -102,6 +142,9 @@ class CourseSearchManager {
     this.currentFilters.search = urlParams.get("search") || "";
     this.currentFilters.category = urlParams.get("category") || "";
     this.currentFilters.sortBy = urlParams.get("sortBy") || "newest";
+    this.currentFilters.price = urlParams.get("price") || "";
+    this.currentFilters.difficulty = urlParams.get("difficulty") || "";
+    this.currentFilters.duration = urlParams.get("duration") || "";
     this.currentFilters.page = parseInt(urlParams.get("page")) || 1;
 
     // Update UI
@@ -114,6 +157,21 @@ class CourseSearchManager {
     const sortSelect = document.getElementById("sortSelect");
     if (sortSelect) {
       sortSelect.value = this.currentFilters.sortBy;
+    }
+
+    const priceFilter = document.getElementById("priceFilter");
+    if (priceFilter) {
+      priceFilter.value = this.currentFilters.price;
+    }
+
+    const difficultyFilter = document.getElementById("difficultyFilter");
+    if (difficultyFilter) {
+      difficultyFilter.value = this.currentFilters.difficulty;
+    }
+
+    const durationFilter = document.getElementById("durationFilter");
+    if (durationFilter) {
+      durationFilter.value = this.currentFilters.duration;
     }
 
     // Update category filter active state
@@ -146,6 +204,9 @@ class CourseSearchManager {
       search: this.currentFilters.search,
       category: this.currentFilters.category,
       sortBy: this.currentFilters.sortBy,
+      price: this.currentFilters.price,
+      difficulty: this.currentFilters.difficulty,
+      duration: this.currentFilters.duration,
       page: this.currentFilters.page,
       pageSize: 12,
     });
@@ -216,27 +277,19 @@ class CourseSearchManager {
     return courses
       .map(
         (course) => `
-            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+            <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
                 <div class="course-card" data-course-id="${course.courseId}">
                     <div class="course-image">
                         <img src="${course.coursePicture}" alt="${
           course.courseName
         }" loading="lazy" onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
-                        <div class="course-overlay">
-                            <a href="/Course/Details/${
-                              course.courseId
-                            }" class="view-course-btn">
-                                <i class="fas fa-eye"></i>
-                                View Details
-                            </a>
-                        </div>
                         ${
                           course.price > 0
                             ? `<div class="course-price">$${course.price.toLocaleString()}</div>`
                             : `<div class="course-price free">Free</div>`
                         }
                     </div>
-                    <div class="course-content">
+                    <div class="course-details">
                         <div class="course-categories">
                             ${course.courseCategories
                               .slice(0, 2)
@@ -246,11 +299,7 @@ class CourseSearchManager {
                               )
                               .join("")}
                         </div>
-                        <h3 class="course-title">
-                            <a href="/Course/Details/${course.courseId}">
-                                ${course.courseName}
-                            </a>
-                        </h3>
+                        <h3 class="course-title">${course.courseName}</h3>
                         <p class="course-description">
                             ${
                               course.description &&
@@ -280,7 +329,7 @@ class CourseSearchManager {
                         <div class="course-actions">
                             <a href="/Course/Details/${
                               course.courseId
-                            }" class="btn btn-outline-primary">
+                            }" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-info-circle"></i>
                                 Learn More
                             </a>
@@ -475,6 +524,9 @@ class CourseSearchManager {
       search: "",
       category: "",
       sortBy: "newest",
+      price: "",
+      difficulty: "",
+      duration: "",
       page: 1,
     };
 
@@ -487,6 +539,21 @@ class CourseSearchManager {
     const sortSelect = document.getElementById("sortSelect");
     if (sortSelect) {
       sortSelect.value = "newest";
+    }
+
+    const priceFilter = document.getElementById("priceFilter");
+    if (priceFilter) {
+      priceFilter.value = "";
+    }
+
+    const difficultyFilter = document.getElementById("difficultyFilter");
+    if (difficultyFilter) {
+      difficultyFilter.value = "";
+    }
+
+    const durationFilter = document.getElementById("durationFilter");
+    if (durationFilter) {
+      durationFilter.value = "";
     }
 
     this.showClearButton("");
@@ -559,6 +626,18 @@ class CourseSearchManager {
 
     if (this.currentFilters.sortBy !== "newest") {
       params.set("sortBy", this.currentFilters.sortBy);
+    }
+
+    if (this.currentFilters.price) {
+      params.set("price", this.currentFilters.price);
+    }
+
+    if (this.currentFilters.difficulty) {
+      params.set("difficulty", this.currentFilters.difficulty);
+    }
+
+    if (this.currentFilters.duration) {
+      params.set("duration", this.currentFilters.duration);
     }
 
     if (this.currentFilters.page > 1) {

@@ -86,14 +86,15 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.NotificationServiceImpl>();
 
             // Register Auth Service Implementation for business logic layer
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();
-
-            // Register Home Services for data access and business logic
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();            // Register Home Services for data access and business logic
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IHomeService, BusinessLogicLayer.Services.HomeService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.HomeServiceImpl>();
 
+            // Register Recommendation Helper
+            builder.Services.AddScoped<BusinessLogicLayer.Services.RecommendationHelper>();
+
             // Register Admin Services for data access and business logic
-            builder.Services.AddScoped<BusinessLogicLayer.Services.AdminService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAdminService, BusinessLogicLayer.Services.AdminService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AdminServiceImpl>();
 
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.EnrollmentService>();
@@ -122,7 +123,6 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.SafeDeleteServiceImpl>();
 
             // Seed services
-            builder.Services.AddScoped<BusinessLogicLayer.Services.CategorySeedService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.StatusSeedService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.LessonTypeSeedService>();
 
@@ -138,14 +138,12 @@ namespace BrainStormEra_MVC
                     options.Cookie.Name = "BrainStormEraAuth";
                     options.Cookie.HttpOnly = true;
                     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                });
-
-            // Add Authorization
+                });            // Add Authorization
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
-                options.AddPolicy("InstructorOnly", policy => policy.RequireRole("instructor"));
-                options.AddPolicy("LearnerOnly", policy => policy.RequireRole("learner"));
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin", "Admin"));
+                options.AddPolicy("InstructorOnly", policy => policy.RequireRole("instructor", "Instructor"));
+                options.AddPolicy("LearnerOnly", policy => policy.RequireRole("learner", "Learner"));
             });
 
             // Add session support
@@ -197,9 +195,7 @@ namespace BrainStormEra_MVC
                     if (canConnect)
                     {
                         // Test a simple query to verify database structure
-                        var accountCount = await context.Accounts.CountAsync();                        // Seed categories if they don't exist
-                        var categorySeeder = scope.ServiceProvider.GetRequiredService<BusinessLogicLayer.Services.CategorySeedService>();
-                        await categorySeeder.SeedCategoriesAsync();
+                        var accountCount = await context.Accounts.CountAsync();
 
                         // Seed statuses if they don't exist
                         var statusSeeder = scope.ServiceProvider.GetRequiredService<BusinessLogicLayer.Services.StatusSeedService>();

@@ -2,7 +2,7 @@ using DataAccessLayer.Models;
 using DataAccessLayer.Data;
 using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Interfaces;
-using BrainStormEra_MVC.Utilities;
+using BusinessLogicLayer.Utilities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;

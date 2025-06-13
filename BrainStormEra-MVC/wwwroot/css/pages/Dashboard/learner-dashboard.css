@@ -56,12 +56,7 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.explore-courses-btn:hover {
-  background-color: rgba(255, 255, 255, 0.95);
-  transform: translateY(-3px);
-  box-shadow: var(--hover-shadow);
-  color: var(--primary-dark);
-}
+/* Removed hover animation */
 
 /* Dashboard Cards */
 .dashboard-card {
@@ -74,10 +69,7 @@
   border: 1px solid rgba(52, 152, 219, 0.1);
 }
 
-.dashboard-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--hover-shadow);
-}
+/* Removed hover animation */
 
 .dashboard-card-header {
   padding: 1.5rem;
@@ -108,11 +100,7 @@
   transition: var(--transition-fast);
 }
 
-.view-all-link:hover {
-  color: var(--primary-dark);
-  text-decoration: none;
-  transform: translateX(5px);
-}
+/* Removed hover animation */
 
 .mark-all-read {
   color: var(--primary-color);
@@ -122,10 +110,7 @@
   transition: color var(--transition-speed) ease;
 }
 
-.mark-all-read:hover {
-  color: var(--primary-dark);
-  text-decoration: underline;
-}
+/* Removed hover animation */
 
 /* Course Cards */
 .course-card {
@@ -140,10 +125,7 @@
   background: white;
 }
 
-.course-card:hover {
-  transform: translateY(-8px);
-  box-shadow: var(--hover-shadow);
-}
+/* Removed hover animation */
 
 .course-image {
   position: relative;
@@ -159,9 +141,7 @@
   transition: var(--transition-medium);
 }
 
-.course-card:hover .course-image img {
-  transform: scale(1.08);
-}
+/* Removed hover animation */
 
 .progress-overlay {
   position: absolute;
@@ -258,17 +238,7 @@
   box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
 }
 
-.continue-btn:hover,
-.enroll-btn:hover {
-  background: linear-gradient(
-    45deg,
-    var(--primary-dark),
-    var(--secondary-color)
-  );
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-}
+/* Removed hover animation */
 
 /* Empty States */
 .empty-state {
@@ -334,10 +304,7 @@
   box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
 }
 
-.notification-item:hover {
-  background-color: rgba(52, 152, 219, 0.06);
-  transform: translateX(5px);
-}
+/* Removed hover animation */
 
 .notification-icon {
   margin-right: 1.2rem;
@@ -394,15 +361,7 @@
   border: 1px solid rgba(52, 152, 219, 0.1);
 }
 
-.stat-item:hover {
-  transform: translateY(-3px);
-  background: linear-gradient(
-    135deg,
-    rgba(52, 152, 219, 0.1),
-    rgba(52, 152, 219, 0.05)
-  );
-  box-shadow: var(--card-shadow);
-}
+/* Removed hover animation */
 
 .stat-icon {
   width: 50px;
@@ -500,9 +459,7 @@
   animation: fadeInUp 0.6s ease-out;
 }
 
-.course-card:hover .course-price {
-  animation: pulse 1s infinite;
-}
+/* Removed hover animation */
 
 .stat-icon {
   animation: fadeInUp 0.8s ease-out;
@@ -523,9 +480,7 @@
   border-radius: 3px;
 }
 
-.notifications-list::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-dark);
-}
+/* Removed hover animation */
 
 .stat-item {
   width: 100%;

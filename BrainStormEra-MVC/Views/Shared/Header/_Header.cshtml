@@ -20,13 +20,25 @@
                     <li class="nav-item">
                         <a class="nav-link" href="@Url.Action("Index", "Home")">DASHBOARD</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="@Url.Action("Index", "Course")">COURSE</a>
-                    </li>
+                    @if (User.Identity?.IsAuthenticated != true || (!User.IsInRole("admin") && !User.IsInRole("Admin")))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("Index", "Course")">COURSE</a>
+                        </li>
+                    }
                     @if (User.Identity?.IsAuthenticated == true && User.IsInRole("instructor"))
                     {
                         <li class="nav-item">
                             <a class="nav-link" href="@Url.Action("Index", "User")">USER</a>
+                        </li>
+                    }
+                    @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("admin") || User.IsInRole("Admin")))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("ManageUsers", "Admin")">MANAGE USERS</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("ManageCourses", "Admin")">MANAGE COURSES</a>
                         </li>
                     }
                     @if (User.Identity?.IsAuthenticated == true && User.IsInRole("learner"))

@@ -415,13 +415,11 @@
             if (selectedCategories.length > 0 && availableCategories.length > 0) {
                 // Clear the placeholder text
                 const selectedCategoriesContainer = document.getElementById('selectedCategories');
-                selectedCategoriesContainer.innerHTML = '';
-
-                // Add each selected category
+                selectedCategoriesContainer.innerHTML = '';                // Add each selected category
                 selectedCategories.forEach(categoryId => {
-                    const category = availableCategories.find(c => c.courseCategoryId === categoryId);
+                    const category = availableCategories.find(c => c.categoryId === categoryId);
                     if (category) {
-                        addSelectedCategory(categoryId, category.courseCategoryName, category.courseCategoryIcon);
+                        addSelectedCategory(categoryId, category.categoryName, category.categoryIcon);
                     }
                 });
             }

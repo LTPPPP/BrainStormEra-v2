@@ -74,7 +74,7 @@
                 <div class="dashboard-card mb-4">
                     <div class="dashboard-card-header d-flex justify-content-between align-items-center">
                         <h2>My Courses</h2>
-                        <a href="#" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
+                        <a href="@Url.Action("Index", "Course")" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
                     </div>
                     <div class="dashboard-card-body">
                         @if (Model.EnrolledCourses.Any())
@@ -125,7 +125,7 @@
                 <div class="dashboard-card">
                     <div class="dashboard-card-header d-flex justify-content-between align-items-center">
                         <h2>Recommended For You</h2>
-                        <a href="#" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
+                        <a href="@Url.Action("Index", "Course")" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
                     </div>
                     <div class="dashboard-card-body">
                         @if (Model.RecommendedCourses.Any())
@@ -159,58 +159,30 @@
                         }
                         else
                         {
-                            <div class="empty-state">
+                            <div class="empty-state" id="recommendations-empty-state">
                                 <img src="/img/empty-recommendations.svg" alt="No recommendations" class="empty-state-img"
                                      onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
                                 <h3>No recommendations yet</h3>
-                                <p>We'll suggest courses based on your interests soon!</p>
+                                <p>We're preparing personalized course recommendations for you. This usually takes just a moment!</p>
+                                <div class="mt-3">
+                                    <div class="spinner-border text-primary" role="status" style="width: 1.5rem; height: 1.5rem;">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="text-muted mt-2 small">Setting up recommendations...</p>
+                                </div>
+                                <div class="mt-3">
+                                    <a href="@Url.Action("Index", "Course")" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-search me-1"></i>Browse All Courses
+                                    </a>
+                                </div>
                             </div>
                         }
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column - Notifications & Stats -->
+            <!-- Right Column - Stats -->
             <div class="col-lg-4">
-                <!-- Notifications Section -->
-                <div class="dashboard-card mb-4">
-                    <div class="dashboard-card-header d-flex justify-content-between align-items-center">
-                        <h2>Notifications</h2>
-                        <a href="#" class="mark-all-read">Mark All Read</a>
-                    </div>
-                    <div class="dashboard-card-body">
-                        @if (Model.Notifications.Any())
-                        {
-                            <div class="notifications-list">
-                                @foreach (var notification in Model.Notifications)
-                                {
-                                    <div class="notification-item @(notification.IsRead ? "" : "unread")">
-                                        <div class="notification-icon">
-                                            <i class="fas fa-bell"></i>
-                                        </div>
-                                        <div class="notification-content">
-                                            <h4 class="notification-title">@notification.Title</h4>
-                                            <p class="notification-message">@notification.Message</p>
-                                            <div class="notification-time">
-                                                @notification.CreatedAt.ToString("MMM dd, yyyy")
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="empty-state">
-                                <img src="/img/empty-notifications.svg" alt="No notifications" class="empty-state-img"
-                                     onerror="this.onerror=null; this.src='/img/defaults/default-logo.svg';">
-                                <h3>No notifications</h3>
-                                <p>You're all caught up!</p>
-                            </div>
-                        }
-                    </div>
-                </div>
-
                 <!-- Learning Stats Widget -->
                 <div class="dashboard-card">
                     <div class="dashboard-card-header">
@@ -279,18 +251,19 @@
         }, 500);
     });
 
-    // Enhanced course card interactions
+    // Enhanced course card interactions - REMOVED HOVER ANIMATIONS
     document.addEventListener('DOMContentLoaded', function() {
-        const courseCards = document.querySelectorAll('.course-card');
-        courseCards.forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-8px) scale(1.02)';
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0) scale(1)';
-            });
-        });
+        // Removed hover animations for course cards
+        // const courseCards = document.querySelectorAll('.course-card');
+        // courseCards.forEach(card => {
+        //     card.addEventListener('mouseenter', function() {
+        //         this.style.transform = 'translateY(-8px) scale(1.02)';
+        //     });
+        //     
+        //     card.addEventListener('mouseleave', function() {
+        //         this.style.transform = 'translateY(0) scale(1)';
+        //     });
+        // });
 
         // Animate statistics on scroll
         const statItems = document.querySelectorAll('.stat-item');
@@ -306,6 +279,12 @@
         statItems.forEach(item => observer.observe(item));
     });
 </script>
+
+<!-- Recommendation Manager Script -->
+<script src="~/js/components/recommendation-manager.js"></script>
+
+<!-- Debug Panel for Instructors/Admins -->
+@await Html.PartialAsync("~/Views/Shared/_RecommendationDebugPanel.cshtml")
 
 </body>
 </html>

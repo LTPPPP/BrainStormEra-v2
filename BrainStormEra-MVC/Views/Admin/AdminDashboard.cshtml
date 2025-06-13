@@ -1,15 +1,51 @@
 @model DataAccessLayer.Models.ViewModels.AdminDashboardViewModel
 @{
     ViewData["Title"] = "Admin Dashboard";
+    Layout = null;
 }
+<!DOCTYPE html>
+<html lang="en">
 
-@await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/pages/Dashboard/admin-dashboard.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/homePage.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/landing_page.css">
+    <link rel="stylesheet" href="~/css/components/placeholders.css">
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+    <!-- Chatbot CSS -->
+    <link rel="stylesheet" href="~/css/components/chatbot.css">
+    <!-- Admin Dashboard Charts CSS -->
+    <link rel="stylesheet" href="~/css/pages/Dashboard/admin-dashboard-charts.css">
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+    <!-- Chart.js for dashboard charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Page Header Theme CSS -->
-<link rel="stylesheet" href="~/css/components/page-header-themes.css">
+    @* User authentication meta tags for JavaScript access *@
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <meta name="user-id" content="@User.FindFirst("UserId")?.Value" />
+        <meta name="user-role" content="@User.FindFirst("UserRole")?.Value" />
+        <meta name="user-name" content="@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)" />
+    }
 
-<div class="dashboard-container">
-    <!-- Toast notification data containers -->
+
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
     @if (TempData["SuccessMessage"] != null)
     {
         <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
@@ -27,226 +63,338 @@
         <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
     }
 
-    <!-- Welcome Section -->
-    <div class="page-header dashboard-page welcome-section">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="welcome-title">Admin Dashboard - Welcome, @Model.AdminName!</h1>
-                    <p class="welcome-subtitle">Manage your platform and monitor system activity.</p>
-                </div>
-                <div class="col-md-4 text-md-end">
-                    <a href="#" class="btn btn-primary manage-users-btn">
-                        <i class="fas fa-users-cog me-2"></i>Manage Users
-                    </a>
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Page Header Theme CSS -->
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
+
+    <div class="dashboard-container">
+        @Html.AntiForgeryToken()
+
+        <!-- Welcome Section -->
+        <div class="page-header dashboard-page welcome-section">
+            <div class="container welcome-container">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="welcome-title">Admin Dashboard - Welcome, @Model.AdminName!</h1>
+                        <p class="welcome-subtitle">Comprehensive platform analytics and insights</p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <a href="@Url.Action("ManageUsers", "Admin")" class="btn btn-primary manage-users-btn">
+                            <i class="fas fa-users-cog me-2"></i>Manage Users
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Main Content -->
-    <div class="container main-dashboard py-4">
-        <div class="row">
-            <!-- Left Column - Statistics Overview -->
-            <div class="col-lg-8">
-                <!-- Platform Statistics -->
-                <div class="dashboard-card mb-4">
-                    <div class="dashboard-card-header">
-                        <h2>Platform Overview</h2>
+        <!-- Main Content -->
+        <div class="container main-dashboard py-4">
+            <div class="row">
+                <!-- Charts and Analytics - Full Width -->
+                <div class="col-12">
+                    <!-- Platform Statistics -->
+                    <div class="dashboard-card mb-4">
+                        <div class="dashboard-card-header">
+                            <h2>Platform Overview</h2>
+                        </div>
+                        <div class="dashboard-card-body">
+                            <div class="stats-widget">
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h4 class="stat-value">@Model.TotalUsers</h4>
+                                        <p class="stat-label">Total Users</p>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-book"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h4 class="stat-value">@Model.TotalCourses</h4>
+                                        <p class="stat-label">Total Courses</p>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-graduation-cap"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h4 class="stat-value">@Model.TotalEnrollments</h4>
+                                        <p class="stat-label">Enrollments</p>
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h4 class="stat-value">$@Model.TotalRevenue.ToString("N2")</h4>
+                                        <p class="stat-label">Total Revenue</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="dashboard-card-body">
-                        <div class="stats-widget">
-                            <div class="stat-item">
-                                <div class="stat-icon">
-                                    <i class="fas fa-users"></i>
+
+                    <!-- Charts Section -->
+                    <div class="row mb-4">
+                        <!-- User Growth Chart -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="dashboard-card chart-card">
+                                <div class="dashboard-card-header">
+                                    <h3><i class="fas fa-chart-line me-2"></i>User Growth Trend</h3>
                                 </div>
-                                <div class="stat-content">
-                                    <h4 class="stat-value">@Model.TotalUsers</h4>
-                                    <p class="stat-label">Total Users</p>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon">
-                                    <i class="fas fa-book"></i>
-                                </div>
-                                <div class="stat-content">
-                                    <h4 class="stat-value">@Model.TotalCourses</h4>
-                                    <p class="stat-label">Total Courses</p>
+                                <div class="dashboard-card-body">
+                                    <div class="chart-container">
+                                        <canvas id="userGrowthChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="stat-item">
-                                <div class="stat-icon">
-                                    <i class="fas fa-graduation-cap"></i>
+                        </div>
+
+                        <!-- Course Statistics Chart -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="dashboard-card chart-card">
+                                <div class="dashboard-card-header">
+                                    <h3><i class="fas fa-graduation-cap me-2"></i>Course Status Distribution</h3>
                                 </div>
-                                <div class="stat-content">
-                                    <h4 class="stat-value">@Model.TotalEnrollments</h4>
-                                    <p class="stat-label">Enrollments</p>
+                                <div class="dashboard-card-body">
+                                    <div class="chart-container">
+                                        <canvas id="courseStatsChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="stat-item">
-                                <div class="stat-icon">
-                                    <i class="fas fa-dollar-sign"></i>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <!-- Revenue Trend Chart -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="dashboard-card chart-card">
+                                <div class="dashboard-card-header">
+                                    <h3><i class="fas fa-chart-bar me-2"></i>Monthly Revenue Analysis</h3>
                                 </div>
-                                <div class="stat-content">
-                                    <h4 class="stat-value">$@Model.TotalRevenue.ToString("N2")</h4>
-                                    <p class="stat-label">Total Revenue</p>
+                                <div class="dashboard-card-body">
+                                    <div class="chart-container">
+                                        <canvas id="revenueTrendChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Roles Distribution Chart -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="dashboard-card chart-card">
+                                <div class="dashboard-card-header">
+                                    <h3><i class="fas fa-users-cog me-2"></i>User Role Distribution</h3>
+                                </div>
+                                <div class="dashboard-card-body">
+                                    <div class="chart-container">
+                                        <canvas id="userRolesChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enrollment Activity Chart -->
+                    <div class="dashboard-card mb-4">
+                        <div class="dashboard-card-header">
+                            <h3><i class="fas fa-activity me-2"></i>Weekly Enrollment & Completion Activity</h3>
+                        </div>
+                        <div class="dashboard-card-body">
+                            <div class="chart-container" style="height: 400px;">
+                                <canvas id="enrollmentActivityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chatbot Analytics Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="dashboard-card">
+                                <div class="dashboard-card-header">
+                                    <h3><i class="fas fa-robot me-2"></i>Chatbot Analytics</h3>
+                                </div>
+                                <div class="dashboard-card-body">
+                                    <!-- Chatbot Statistics -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-2">
+                                            <div class="chatbot-stat-card">
+                                                <div class="chatbot-stat-icon">
+                                                    <i class="fas fa-comments"></i>
+                                                </div>
+                                                <div class="chatbot-stat-content">
+                                                    <h4 id="total-conversations">@(Model.ChatbotStatistics.ContainsKey("TotalConversations") ? Model.ChatbotStatistics["TotalConversations"] : 0)</h4>
+                                                    <p>Total Conversations</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="chatbot-stat-card">
+                                                <div class="chatbot-stat-icon">
+                                                    <i class="fas fa-users"></i>
+                                                </div>
+                                                <div class="chatbot-stat-content">
+                                                    <h4 id="chatbot-users">@(Model.ChatbotStatistics.ContainsKey("TotalUsers") ? Model.ChatbotStatistics["TotalUsers"] : 0)</h4>
+                                                    <p>Active Users</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="chatbot-stat-card">
+                                                <div class="chatbot-stat-icon">
+                                                    <i class="fas fa-star"></i>
+                                                </div>
+                                                <div class="chatbot-stat-content">
+                                                    <h4 id="average-rating">@(Model.ChatbotStatistics.ContainsKey("AverageRating") ? Model.ChatbotStatistics["AverageRating"] : 0)</h4>
+                                                    <p>Avg Rating</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="chatbot-stat-card">
+                                                <div class="chatbot-stat-icon">
+                                                    <i class="fas fa-thumbs-up"></i>
+                                                </div>
+                                                <div class="chatbot-stat-content">
+                                                    <h4 id="feedback-count">@(Model.ChatbotStatistics.ContainsKey("ConversationsWithFeedback") ? Model.ChatbotStatistics["ConversationsWithFeedback"] : 0)</h4>
+                                                    <p>With Feedback</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="chatbot-stat-card">
+                                                <div class="chatbot-stat-icon">
+                                                    <i class="fas fa-calendar-day"></i>
+                                                </div>
+                                                <div class="chatbot-stat-content">
+                                                    <h4 id="today-conversations">@(Model.ChatbotStatistics.ContainsKey("TodayConversations") ? Model.ChatbotStatistics["TodayConversations"] : 0)</h4>
+                                                    <p>Today</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="chatbot-stat-card">
+                                                <div class="chatbot-stat-icon">
+                                                    <i class="fas fa-calendar-week"></i>
+                                                </div>
+                                                <div class="chatbot-stat-content">
+                                                    <h4 id="weekly-conversations">@(Model.ChatbotStatistics.ContainsKey("WeeklyConversations") ? Model.ChatbotStatistics["WeeklyConversations"] : 0)</h4>
+                                                    <p>This Week</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Chatbot Charts -->
+                                    <div class="row">
+                                        <!-- Daily Usage Chart -->
+                                        <div class="col-md-6 mb-4">
+                                            <div class="chart-card">
+                                                <div class="chart-header">
+                                                    <h4><i class="fas fa-chart-line me-2"></i>Daily Conversations</h4>
+                                                </div>
+                                                <div class="chart-body">
+                                                    <div class="chart-container">
+                                                        <canvas id="chatbotDailyUsageChart"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Feedback Ratings Chart -->
+                                        <div class="col-md-6 mb-4">
+                                            <div class="chart-card">
+                                                <div class="chart-header">
+                                                    <h4><i class="fas fa-star me-2"></i>Feedback Ratings</h4>
+                                                </div>
+                                                <div class="chart-body">
+                                                    <div class="chart-container">
+                                                        <canvas id="chatbotFeedbackChart"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hourly Usage Chart -->
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="chart-card">
+                                                <div class="chart-header">
+                                                    <h4><i class="fas fa-clock me-2"></i>24-Hour Usage Pattern</h4>
+                                                </div>
+                                                <div class="chart-body">
+                                                    <div class="chart-container" style="height: 300px;">
+                                                        <canvas id="chatbotHourlyUsageChart"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Recent Courses Section -->
-                <div class="dashboard-card">
-                    <div class="dashboard-card-header d-flex justify-content-between align-items-center">
-                        <h2>Recent Courses</h2>
-                        <a href="#" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
-                    </div>
-                    <div class="dashboard-card-body">
-                        @if (Model.RecentCourses.Any())
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Course Name</th>
-                                            <th>Instructor</th>
-                                            <th>Price</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var course in Model.RecentCourses)
-                                        {
-                                            <tr>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="@course.CoursePicture" alt="@course.CourseName" class="course-thumb me-3"
-                                                             onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
-                                                        <div>
-                                                            <h6 class="mb-0">@course.CourseName</h6>
-                                                            <small class="text-muted">@(course.Description != null ? course.Description.Substring(0, Math.Min(50, course.Description.Length)) + "..." : "No description")</small>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>@course.CreatedBy</td>
-                                                <td>@(course.Price > 0 ? $"${course.Price}" : "Free")</td>
-                                                <td>
-                                                    <div class="btn-group" role="group">
-                                                        <button type="button" class="btn btn-sm btn-outline-primary view-btn" data-course-id="@course.CourseId">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                        <button type="button" class="btn btn-sm btn-outline-warning edit-btn" data-course-id="@course.CourseId">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                        <button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-course-id="@course.CourseId">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="empty-state">
-                                <img src="/img/empty-courses.svg" alt="No courses" class="empty-state-img"
-                                     onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
-                                <h3>No courses found</h3>
-                                <p>No courses have been created yet.</p>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
 
-            <!-- Right Column - Recent Users -->
-            <div class="col-lg-4">
-                <!-- Recent Users Section -->
-                <div class="dashboard-card">
-                    <div class="dashboard-card-header d-flex justify-content-between align-items-center">
-                        <h2>Recent Users</h2>
-                        <a href="#" class="view-all-link">View All <i class="fas fa-arrow-right ms-1"></i></a>
-                    </div>
-                    <div class="dashboard-card-body">
-                        @if (Model.RecentUsers.Any())
-                        {
-                            <div class="users-list">
-                                @foreach (var user in Model.RecentUsers)
-                                {
-                                    <div class="user-item d-flex align-items-center mb-3">
-                                        <div class="user-avatar me-3">
-                                            <i class="fas fa-user-circle fa-2x text-secondary"></i>
-                                        </div>
-                                        <div class="user-info flex-grow-1">
-                                            <h6 class="mb-0">@user.FullName</h6>
-                                            <small class="text-muted">@user.UserEmail</small>
-                                            <div class="user-role">
-                                                <span class="badge bg-@(user.UserRole.ToLower() switch 
-                                                { 
-                                                    "admin" => "danger", 
-                                                    "instructor" => "warning", 
-                                                    "learner" => "info", 
-                                                    _ => "secondary" 
-                                                })">
-                                                    @user.UserRole
-                                                </span>
-                                                @if (user.IsBanned)
-                                                {
-                                                    <span class="badge bg-danger ms-1">Banned</span>
-                                                }
-                                            </div>
-                                        </div>
-                                        <div class="user-actions">
-                                            <div class="dropdown">
-                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                    <i class="fas fa-ellipsis-v"></i>
-                                                </button>
-                                                <ul class="dropdown-menu">
-                                                    <li><a class="dropdown-item" href="#" data-user-id="@user.UserId"><i class="fas fa-eye me-2"></i>View Profile</a></li>
-                                                    <li><a class="dropdown-item" href="#" data-user-id="@user.UserId"><i class="fas fa-edit me-2"></i>Edit User</a></li>
-                                                    <li><hr class="dropdown-divider"></li>
-                                                    @if (user.IsBanned)
-                                                    {
-                                                        <li><a class="dropdown-item text-success" href="#" data-user-id="@user.UserId"><i class="fas fa-unlock me-2"></i>Unban User</a></li>
-                                                    }
-                                                    else
-                                                    {
-                                                        <li><a class="dropdown-item text-warning" href="#" data-user-id="@user.UserId"><i class="fas fa-ban me-2"></i>Ban User</a></li>
-                                                    }
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="empty-state">
-                                <img src="/img/empty-users.svg" alt="No users" class="empty-state-img"
-                                     onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
-                                <h3>No users found</h3>
-                                <p>No users have registered yet.</p>
-                            </div>
-                        }
-                    </div>
-                </div>
             </div>
         </div>
     </div>
-</div>
 
-@await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+    <!-- Include Footer partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/pages/admin-dashboard.css">
-}
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" defer></script>
+    <!-- Include toast notifications script -->
+    <script src="~/js/components/toast-notifications.js"></script>
+    <!-- Include chatbot script -->
+    <script src="~/js/components/chatbot.js"></script>
 
-@section Scripts {
-    <script src="~/js/shared/toast-notifications.js"></script>
-    <script src="~/js/pages/admin-dashboard.js"></script>
-}
+    <!-- Pass admin data to JavaScript -->
+    <script>
+        // Make admin data available globally with real data
+        window.adminData = {
+            totalUsers: @Model.TotalUsers,
+            totalLearners: @Model.TotalLearners,
+            totalInstructors: @Model.TotalInstructors,
+            totalAdmins: @Model.TotalAdmins,
+            totalCourses: @Model.TotalCourses,
+            approvedCourses: @Model.ApprovedCourses,
+            pendingCourses: @Model.PendingCourses,
+            rejectedCourses: @Model.RejectedCourses,
+            totalRevenue: @Model.TotalRevenue,
+            totalEnrollments: @Model.TotalEnrollments,
+            
+            // Real chart data
+            userGrowthData: @Html.Raw(Json.Serialize(Model.UserGrowthData)),
+            revenueData: @Html.Raw(Json.Serialize(Model.RevenueData)),
+            enrollmentData: @Html.Raw(Json.Serialize(Model.EnrollmentData)),
+
+            // Chatbot analytics data
+            chatbotStatistics: @Html.Raw(Json.Serialize(Model.ChatbotStatistics)),
+            chatbotDailyUsage: @Html.Raw(Json.Serialize(Model.ChatbotDailyUsage)),
+            chatbotFeedback: @Html.Raw(Json.Serialize(Model.ChatbotFeedback)),
+            chatbotHourlyUsage: @Html.Raw(Json.Serialize(Model.ChatbotHourlyUsage))
+        };
+    </script>
+    
+    <!-- Include Admin Dashboard Charts JavaScript -->
+    <script src="~/js/pages/Dashboard/admin-dashboard-charts.js"></script>
+</body>
+</html>
