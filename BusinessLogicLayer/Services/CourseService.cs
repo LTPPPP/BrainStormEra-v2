@@ -33,6 +33,9 @@ namespace BusinessLogicLayer.Services
             _context = context;
             _cache = cache;
             _logger = logger;
+
+            // Clear category cache to ensure updated counts
+            RefreshCategoryCache();
         }
         public async Task<CourseListViewModel> GetCoursesAsync(string? search, string? category, int page, int pageSize)
         {
@@ -55,11 +58,20 @@ namespace BusinessLogicLayer.Services
                     StarRating = 4 // Default rating
                 }).ToList();
 
-                var totalCourses = _courseRepo.GetActiveCourses().Count();
+                // Count total courses using the same logic as category counting
+                var totalCourses = await _context.Courses
+                    .CountAsync(c => (c.CourseStatus == 1 || c.CourseStatus == 2) && c.ApprovalStatus == "Approved");
                 var totalPages = (int)Math.Ceiling((double)totalCourses / pageSize);
 
                 // Get categories with proper course count mapping and sorting
                 var categoryViewModels = await GetCategoriesAsync();
+
+                // Log category information for debugging
+                _logger.LogInformation("Loaded {Count} categories for course listing", categoryViewModels.Count);
+                foreach (var cat in categoryViewModels)
+                {
+                    _logger.LogInformation("Category: {Name} - {Count} courses", cat.CategoryName, cat.CourseCount);
+                }
 
                 return new CourseListViewModel
                 {
@@ -292,7 +304,9 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                var query = _courseRepo.GetActiveCourses();
+                // Use consistent filtering logic with category counting
+                var query = _context.Courses
+                    .Where(c => (c.CourseStatus == 1 || c.CourseStatus == 2) && c.ApprovalStatus == "Approved");
 
                 query = query.Include(c => c.Author)
                            .Include(c => c.Enrollments)
@@ -302,7 +316,8 @@ namespace BusinessLogicLayer.Services
                 {
                     query = query.Where(c => c.CourseName.Contains(search) ||
                                            c.CourseDescription!.Contains(search) ||
-                                           c.Author.FullName!.Contains(search));
+                                           c.Author.FullName!.Contains(search) ||
+                                           c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(search)));
                 }
 
                 if (!string.IsNullOrWhiteSpace(category))
@@ -363,7 +378,9 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                var query = _courseRepo.GetActiveCourses();
+                // Use consistent filtering logic with category counting
+                var query = _context.Courses
+                    .Where(c => (c.CourseStatus == 1 || c.CourseStatus == 2) && c.ApprovalStatus == "Approved");
 
                 query = query.Include(c => c.Author)
                            .Include(c => c.Enrollments)
@@ -373,7 +390,8 @@ namespace BusinessLogicLayer.Services
                 {
                     query = query.Where(c => c.CourseName.Contains(search) ||
                                            c.CourseDescription!.Contains(search) ||
-                                           c.Author.FullName!.Contains(search));
+                                           c.Author.FullName!.Contains(search) ||
+                                           c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(search)));
                 }
 
                 if (!string.IsNullOrWhiteSpace(category))
@@ -506,7 +524,10 @@ namespace BusinessLogicLayer.Services
                         CategoryName = cc.CourseCategoryName ?? "Unknown Category",
                         CategoryDescription = cc.CategoryDescription,
                         CategoryIcon = cc.CategoryIcon ?? "fas fa-tag",
-                        CourseCount = cc.Courses.Count(c => c.CourseStatus == 1) // Only count active courses
+                        CourseCount = cc.Courses.Count(c =>
+                            (c.CourseStatus == 1 || c.CourseStatus == 2) && // Published or Active
+                            c.ApprovalStatus == "Approved" // Only approved courses
+                        )
                     })
                     .OrderByDescending(cc => cc.CourseCount) // Sort by course count from highest to lowest
                     .ThenBy(cc => cc.CategoryName) // Secondary sort by name for consistent ordering
@@ -519,6 +540,18 @@ namespace BusinessLogicLayer.Services
                 {
                     _logger.LogInformation("Category: ID={CategoryId}, Name={CategoryName}, CourseCount={CourseCount}",
                         category.CategoryId, category.CategoryName, category.CourseCount);
+                }
+
+                // Additional debugging: Log approval status distribution
+                var statusDistribution = await _context.Courses
+                    .GroupBy(c => c.ApprovalStatus)
+                    .Select(g => new { Status = g.Key, Count = g.Count() })
+                    .ToListAsync();
+
+                _logger.LogInformation("Course approval status distribution:");
+                foreach (var status in statusDistribution)
+                {
+                    _logger.LogInformation("ApprovalStatus: {Status} - Count: {Count}", status.Status, status.Count);
                 }
 
                 _cache.Set(cacheKey, categories, CacheExpiration);
@@ -634,7 +667,7 @@ namespace BusinessLogicLayer.Services
             try
             {
                 _cache.Remove("CourseCategories");
-                _logger.LogInformation("Category cache cleared - will be refreshed on next request");
+                _logger.LogInformation("Category cache cleared - will be refreshed on next request with updated course counts");
             }
             catch (Exception ex)
             {
@@ -891,7 +924,8 @@ namespace BusinessLogicLayer.Services
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(c => c.CourseName.Contains(search) ||
-                                           c.CourseDescription!.Contains(search));
+                                           c.CourseDescription!.Contains(search) ||
+                                           c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(search)));
                 }
 
                 if (!string.IsNullOrWhiteSpace(category))

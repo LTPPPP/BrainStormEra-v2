@@ -3,7 +3,6 @@ class CourseSearchManager {
   constructor() {
     this.currentFilters = {
       search: "",
-      category: "",
       sortBy: "newest",
       price: "",
       difficulty: "",
@@ -55,14 +54,7 @@ class CourseSearchManager {
       });
     }
 
-    // Category filters
-    const categoryFilters = document.querySelectorAll(".category-filter");
-    categoryFilters.forEach((filter) => {
-      filter.addEventListener("click", (e) => {
-        e.preventDefault();
-        this.selectCategory(e.target);
-      });
-    });
+    // Category filters removed
 
     // Sort dropdown
     const sortSelect = document.getElementById("sortSelect");
@@ -140,7 +132,6 @@ class CourseSearchManager {
   initializeFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     this.currentFilters.search = urlParams.get("search") || "";
-    this.currentFilters.category = urlParams.get("category") || "";
     this.currentFilters.sortBy = urlParams.get("sortBy") || "newest";
     this.currentFilters.price = urlParams.get("price") || "";
     this.currentFilters.difficulty = urlParams.get("difficulty") || "";
@@ -174,8 +165,8 @@ class CourseSearchManager {
       durationFilter.value = this.currentFilters.duration;
     }
 
-    // Update category filter active state
-    this.updateCategoryFilters();
+    // Log initial filter state for debugging
+    console.log("Initial filters from URL:", this.currentFilters);
   }
 
   debounceSearch(searchTerm) {
@@ -202,7 +193,6 @@ class CourseSearchManager {
 
     const params = new URLSearchParams({
       search: this.currentFilters.search,
-      category: this.currentFilters.category,
       sortBy: this.currentFilters.sortBy,
       price: this.currentFilters.price,
       difficulty: this.currentFilters.difficulty,
@@ -217,6 +207,9 @@ class CourseSearchManager {
         params.delete(key);
       }
     }
+
+    // Log the search request for debugging
+    console.log("Search parameters:", Object.fromEntries(params.entries()));
 
     fetch(`/Course/SearchCourses?${params.toString()}`, {
       method: "GET",
@@ -468,31 +461,9 @@ class CourseSearchManager {
         `;
   }
 
-  selectCategory(categoryElement) {
-    // Remove active class from all category filters
-    document.querySelectorAll(".category-filter").forEach((filter) => {
-      filter.classList.remove("active");
-    });
+  // selectCategory method removed
 
-    // Add active class to selected category
-    categoryElement.classList.add("active");
-
-    // Update current filters
-    this.currentFilters.category = categoryElement.dataset.category || "";
-    this.currentFilters.page = 1;
-
-    // Perform search
-    this.performSearch();
-  }
-
-  updateCategoryFilters() {
-    document.querySelectorAll(".category-filter").forEach((filter) => {
-      filter.classList.remove("active");
-      if (filter.dataset.category === this.currentFilters.category) {
-        filter.classList.add("active");
-      }
-    });
-  }
+  // updateCategoryFilters method removed
 
   goToPage(page) {
     this.currentFilters.page = page;
@@ -522,7 +493,6 @@ class CourseSearchManager {
     // Reset all filters
     this.currentFilters = {
       search: "",
-      category: "",
       sortBy: "newest",
       price: "",
       difficulty: "",
@@ -557,7 +527,6 @@ class CourseSearchManager {
     }
 
     this.showClearButton("");
-    this.updateCategoryFilters();
     this.performSearch();
   }
 
@@ -600,17 +569,7 @@ class CourseSearchManager {
       }
     });
 
-    // Toggle category filters
-    document.querySelectorAll(".category-filter").forEach((filter) => {
-      filter.disabled = !enabled;
-      if (enabled) {
-        filter.style.pointerEvents = "auto";
-        filter.style.opacity = "1";
-      } else {
-        filter.style.pointerEvents = "none";
-        filter.style.opacity = "0.6";
-      }
-    });
+    // Category filters removed
   }
 
   updateURL() {
@@ -618,10 +577,6 @@ class CourseSearchManager {
 
     if (this.currentFilters.search) {
       params.set("search", this.currentFilters.search);
-    }
-
-    if (this.currentFilters.category) {
-      params.set("category", this.currentFilters.category);
     }
 
     if (this.currentFilters.sortBy !== "newest") {

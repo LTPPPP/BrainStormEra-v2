@@ -653,8 +653,10 @@ namespace DataAccessLayer.Repositories
                 return await _context.Courses
                     .Where(c => c.CourseStatus != 4) // Exclude archived/soft deleted courses
                     .Include(c => c.Author)
+                    .Include(c => c.CourseCategories) // Include categories for search
                     .Where(c => c.CourseName.Contains(searchTerm) ||
-                               (c.CourseDescription != null && c.CourseDescription.Contains(searchTerm)))
+                               (c.CourseDescription != null && c.CourseDescription.Contains(searchTerm)) ||
+                               c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(searchTerm)))
                     .OrderByDescending(c => c.CourseCreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)

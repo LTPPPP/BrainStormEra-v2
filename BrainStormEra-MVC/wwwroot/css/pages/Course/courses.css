@@ -191,62 +191,22 @@
   display: inline-block;
 }
 
-/* Category Filters */
-.category-filters {
+/* Category Filters - Removed */
+
+/* Filter Actions Only */
+.filter-actions-only {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 1rem;
-  flex-wrap: wrap;
+  margin-top: 1rem;
 }
 
-.filter-label {
-  font-weight: 600;
-  color: var(--text-color);
-  white-space: nowrap;
-}
-
-.filter-buttons {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.filter-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: var(--bg-light);
-  color: var(--text-color);
-  text-decoration: none;
-  border: none;
+.filter-actions-only .btn {
   border-radius: 4px;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-  cursor: pointer;
-  border: 1px solid var(--border-color);
-}
-
-.filter-btn:hover:not(:disabled) {
-  background: var(--primary-color);
-  color: white;
-  text-decoration: none;
-}
-
-.filter-btn.active {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-}
-
-.filter-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.filter-btn .count {
+  padding: 0.5rem 1rem;
   font-size: 0.85rem;
-  opacity: 0.8;
+  font-weight: 500;
 }
 
 /* Advanced Filters */

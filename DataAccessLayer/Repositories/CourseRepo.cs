@@ -114,7 +114,8 @@ namespace DataAccessLayer.Repositories
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(c => c.CourseName.Contains(search) ||
-                                           c.CourseDescription!.Contains(search));
+                                           c.CourseDescription!.Contains(search) ||
+                                           c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(search)));
                 }
 
                 if (!string.IsNullOrWhiteSpace(category))
@@ -248,7 +249,8 @@ namespace DataAccessLayer.Repositories
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(c => c.CourseName.Contains(search) ||
-                                           c.CourseDescription!.Contains(search));
+                                           c.CourseDescription!.Contains(search) ||
+                                           c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(search)));
                 }
 
                 if (!string.IsNullOrWhiteSpace(category))
@@ -648,7 +650,8 @@ namespace DataAccessLayer.Repositories
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(c => c.CourseName.Contains(search) ||
-                                           (c.CourseDescription != null && c.CourseDescription.Contains(search)));
+                                           (c.CourseDescription != null && c.CourseDescription.Contains(search)) ||
+                                           c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(search)));
                 }
 
                 if (!string.IsNullOrWhiteSpace(categoryFilter))
@@ -675,12 +678,14 @@ namespace DataAccessLayer.Repositories
             try
             {
                 IQueryable<Course> query = _dbSet
-                    .Where(c => c.CourseStatus != 4); // Exclude archived/soft deleted courses
+                    .Where(c => c.CourseStatus != 4) // Exclude archived/soft deleted courses
+                    .Include(c => c.CourseCategories); // Need to include for category search
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(c => c.CourseName.Contains(search) ||
-                                           (c.CourseDescription != null && c.CourseDescription.Contains(search)));
+                                           (c.CourseDescription != null && c.CourseDescription.Contains(search)) ||
+                                           c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(search)));
                 }
 
                 if (!string.IsNullOrWhiteSpace(categoryFilter))

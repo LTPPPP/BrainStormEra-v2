@@ -22,7 +22,8 @@ namespace BrainStormEra_MVC.Controllers
 
         public async Task<IActionResult> Index(string? search, string? category, int page = 1, int pageSize = 12)
         {
-            var result = await _courseServiceImpl.GetCoursesAsync(User, search, category, page, pageSize);
+            // Category filtering removed - always pass null
+            var result = await _courseServiceImpl.GetCoursesAsync(User, search, null, page, pageSize);
 
             if (!result.Success)
             {
@@ -84,7 +85,8 @@ namespace BrainStormEra_MVC.Controllers
             string? difficulty = null,
             string? duration = null)
         {
-            var result = await _courseServiceImpl.SearchCoursesAsync(search, category, page, pageSize, sortBy, price, difficulty, duration);
+            // Category filtering removed - always pass null  
+            var result = await _courseServiceImpl.SearchCoursesAsync(search, null, page, pageSize, sortBy, price, difficulty, duration);
 
             if (!result.Success)
             {

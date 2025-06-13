@@ -212,28 +212,12 @@
                 </div>
             </div>
 
-            <!-- Category Filters -->
-            <div class="category-filters">
-                <div class="filter-label">Categories:</div>
-                <div class="filter-buttons">
-                    <button class="filter-btn category-filter active" data-category="">
-                        All Courses
-                    </button>
-                    @foreach (var category in Model.Categories)
-                    {
-                        <button class="filter-btn category-filter @(Model.CurrentCategory == category.CategoryName ? "active" : "")" 
-                                data-category="@category.CategoryName">
-                            @category.CategoryName
-                            <span class="count">(@category.CourseCount)</span>
-                        </button>
-                    }
-                </div>
-                <div class="filter-actions">
-                    <button id="clearAllFilters" class="btn filter-control-btn clear-filters-btn">
-                        <i class="fas fa-times"></i>
-                        <span>Clear All Filters</span>
-                    </button>
-                </div>
+            <!-- Filter Actions -->
+            <div class="filter-actions-only">
+                <button id="clearAllFilters" class="btn filter-control-btn clear-filters-btn">
+                    <i class="fas fa-times"></i>
+                    <span>Clear All Filters</span>
+                </button>
             </div>
         </div>
 
