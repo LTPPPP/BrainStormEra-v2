@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BrainStormEra_MVC.Controllers
 {
-    [Authorize(Roles = "admin")]
+    [Authorize(Roles = "admin,Admin")]
     public class AdminController : Controller
     {
         private readonly BrainStormEraContext _context;

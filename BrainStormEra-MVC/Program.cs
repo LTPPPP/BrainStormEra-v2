@@ -138,14 +138,12 @@ namespace BrainStormEra_MVC
                     options.Cookie.Name = "BrainStormEraAuth";
                     options.Cookie.HttpOnly = true;
                     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                });
-
-            // Add Authorization
+                });            // Add Authorization
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
-                options.AddPolicy("InstructorOnly", policy => policy.RequireRole("instructor"));
-                options.AddPolicy("LearnerOnly", policy => policy.RequireRole("learner"));
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin", "Admin"));
+                options.AddPolicy("InstructorOnly", policy => policy.RequireRole("instructor", "Instructor"));
+                options.AddPolicy("LearnerOnly", policy => policy.RequireRole("learner", "Learner"));
             });
 
             // Add session support

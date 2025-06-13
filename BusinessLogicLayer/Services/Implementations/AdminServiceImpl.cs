@@ -118,7 +118,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 // Authorization check - only Admin role can access admin dashboard
                 var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
-                if (userRole != "Admin")
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
                 {
                     return new AdminDashboardResult
                     {
@@ -181,7 +181,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 // Authorization check - only Admin role can access statistics
                 var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
-                if (userRole != "Admin")
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
                 {
                     return new AdminStatisticsResult
                     {
@@ -234,7 +234,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 // Authorization check - only Admin role can access user data
                 var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
-                if (userRole != "Admin")
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
                 {
                     return new RecentUsersResult
                     {
@@ -298,7 +298,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 // Authorization check - only Admin role can access course data
                 var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
-                if (userRole != "Admin")
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
                 {
                     return new RecentCoursesResult
                     {
@@ -362,7 +362,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 // Authorization check - only Admin role can access revenue data
                 var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
-                if (userRole != "Admin")
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
                 {
                     return new TotalRevenueResult
                     {
