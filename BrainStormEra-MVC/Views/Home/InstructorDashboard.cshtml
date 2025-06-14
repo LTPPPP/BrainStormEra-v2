@@ -166,10 +166,40 @@
                                                     {
                                                         <div class="course-price free">Free</div>
                                                     }
+
                                                 </div>
                                                 <div class="course-details">
                                                     <h3 class="course-title">@course.CourseName</h3>
                                                     <p class="course-students">@course.EnrollmentCount enrolled</p>
+                                                    @* Status display for instructor *@
+                                                    @if (course.ApprovalStatus?.ToLower() == "pending")
+                                                    {
+                                                        <p class="course-status text-warning"><i class="fas fa-clock"></i> Status: Pending</p>
+                                                    }
+                                                    else if (course.ApprovalStatus?.ToLower() == "denied" || course.ApprovalStatus?.ToLower() == "rejected")
+                                                    {
+                                                        <p class="course-status text-danger"><i class="fas fa-times-circle"></i> Status: Rejected</p>
+                                                    }
+                                                    else if (course.CourseStatus == 4)
+                                                    {
+                                                        <p class="course-status text-secondary"><i class="fas fa-trash"></i> Status: Deleted</p>
+                                                    }
+                                                    else if (course.ApprovalStatus?.ToLower() == "draft")
+                                                    {
+                                                        <p class="course-status text-info"><i class="fas fa-edit"></i> Status: Draft</p>
+                                                    }
+                                                    else if (course.ApprovalStatus?.ToLower() == "approved")
+                                                    {
+                                                        <p class="course-status text-success"><i class="fas fa-check-circle"></i> Status: Approved</p>
+                                                    }
+                                                    else if (string.IsNullOrEmpty(course.ApprovalStatus))
+                                                    {
+                                                        <p class="course-status text-info"><i class="fas fa-edit"></i> Status: Draft</p>
+                                                    }
+                                                    else
+                                                    {
+                                                        <p class="course-status text-muted"><i class="fas fa-question-circle"></i> Status: @(course.ApprovalStatus ?? "Unknown")</p>
+                                                    }
                                                     <div class="course-actions">
                                                         <a href="@Url.Action("Details", "Course", new { id = course.CourseId })"
                                                             class="btn btn-sm btn-outline-info" title="View Course Details">
