@@ -2289,3 +2289,76 @@
     min-width: 120px;
   }
 }
+
+/* ========================================
+ * STATUS BADGES FOR COURSE CARDS
+ * Role-based visibility for instructors and admins
+ * ======================================== */
+.status-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 0.25rem 0.5rem;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.status-badge i {
+  font-size: 0.7rem;
+}
+
+.status-badge.pending {
+  background: rgba(255, 193, 7, 0.95);
+  color: #856404;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.status-badge.denied {
+  background: rgba(220, 53, 69, 0.95);
+  color: white;
+  border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.status-badge.deleted {
+  background: rgba(108, 117, 125, 0.95);
+  color: white;
+  border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.status-badge.draft {
+  background: rgba(13, 110, 253, 0.95);
+  color: white;
+  border: 1px solid rgba(13, 110, 253, 0.3);
+}
+
+/* Hover effects */
+.course-card:hover .status-badge {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive adjustments for status badges */
+@media (max-width: 768px) {
+  .status-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+    top: 8px;
+    left: 8px;
+  }
+  
+  .status-badge i {
+    font-size: 0.6rem;
+  }
+}
+
+

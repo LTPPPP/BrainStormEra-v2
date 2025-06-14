@@ -143,6 +143,9 @@ namespace DataAccessLayer.Models.ViewModels
         public int StarRating { get; set; }
         public int EnrollmentCount { get; set; }
         public List<string> CourseCategories { get; set; } = new List<string>();
+        public string? ApprovalStatus { get; set; }
+        public int? CourseStatus { get; set; }
+        public string? AuthorId { get; set; }
     }
     public class CourseCategoryViewModel
     {

@@ -76,8 +76,8 @@ namespace BrainStormEra_MVC.Controllers
 
         [HttpGet]
         public async Task<IActionResult> SearchCourses(
-            string? search,
-            string? category,
+            string? courseSearch,
+            string? categorySearch,
             int page = 1,
             int pageSize = 12,
             string? sortBy = "newest",
@@ -85,8 +85,8 @@ namespace BrainStormEra_MVC.Controllers
             string? difficulty = null,
             string? duration = null)
         {
-            // Category filtering removed - always pass null  
-            var result = await _courseServiceImpl.SearchCoursesAsync(search, null, page, pageSize, sortBy, price, difficulty, duration);
+            // Pass user info for role-based search (instructors see denied/pending, admins see deleted)
+            var result = await _courseServiceImpl.SearchCoursesAsync(User, courseSearch, categorySearch, page, pageSize, sortBy, price, difficulty, duration);
 
             if (!result.Success)
             {

@@ -367,37 +367,58 @@ namespace BusinessLogicLayer.Services
         }
 
         public async Task<(List<CourseViewModel> courses, int totalCount)> SearchCoursesWithPaginationAsync(
-            string? search,
-            string? category,
+            string? courseSearch,
+            string? categorySearch,
             int page,
             int pageSize,
             string? sortBy,
             string? price = null,
             string? difficulty = null,
-            string? duration = null)
+            string? duration = null,
+            string? userRole = null,
+            string? userId = null)
         {
             try
             {
-                // Use consistent filtering logic with category counting
-                var query = _context.Courses
-                    .Where(c => (c.CourseStatus == 1 || c.CourseStatus == 2) && c.ApprovalStatus == "Approved");
+                // Role-based filtering logic
+                var query = _context.Courses.AsQueryable();
+
+                if (userRole?.Equals("admin", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    // Admin sees ALL courses including deleted ones
+                    query = query.Where(c => true); // No filtering for admin
+                }
+                else if (userRole?.Equals("instructor", StringComparison.OrdinalIgnoreCase) == true && !string.IsNullOrEmpty(userId))
+                {
+                    // Instructor sees their own courses (all statuses) + public approved courses
+                    query = query.Where(c =>
+                        (c.AuthorId == userId) || // Their own courses regardless of status
+                        ((c.CourseStatus == 1 || c.CourseStatus == 2) && c.ApprovalStatus == "Approved") // Public approved courses
+                    );
+                }
+                else
+                {
+                    // Regular users see only approved and published courses
+                    query = query.Where(c => (c.CourseStatus == 1 || c.CourseStatus == 2) && c.ApprovalStatus == "Approved");
+                }
 
                 query = query.Include(c => c.Author)
                            .Include(c => c.Enrollments)
                            .Include(c => c.CourseCategories);
 
-                if (!string.IsNullOrWhiteSpace(search))
+                // Separate course search - search in course name, description, and author name
+                if (!string.IsNullOrWhiteSpace(courseSearch))
                 {
-                    query = query.Where(c => c.CourseName.Contains(search) ||
-                                           c.CourseDescription!.Contains(search) ||
-                                           c.Author.FullName!.Contains(search) ||
-                                           c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(search)));
+                    query = query.Where(c => c.CourseName.Contains(courseSearch) ||
+                                           c.CourseDescription!.Contains(courseSearch) ||
+                                           c.Author.FullName!.Contains(courseSearch));
                 }
 
-                if (!string.IsNullOrWhiteSpace(category))
+                // Separate category search - search in category names
+                if (!string.IsNullOrWhiteSpace(categorySearch))
                 {
                     query = query.Where(c => c.CourseCategories
-                        .Any(cc => cc.CourseCategoryName == category));
+                        .Any(cc => cc.CourseCategoryName!.Contains(categorySearch)));
                 }
 
                 // Price filter
@@ -463,7 +484,10 @@ namespace BusinessLogicLayer.Services
                         Price = c.Price,
                         CreatedBy = c.Author.FullName ?? c.Author.Username,
                         CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
-                        EnrollmentCount = c.Enrollments.Count()
+                        EnrollmentCount = c.Enrollments.Count(),
+                        ApprovalStatus = c.ApprovalStatus,
+                        CourseStatus = c.CourseStatus,
+                        AuthorId = c.AuthorId
                     })
                     .ToListAsync();
 

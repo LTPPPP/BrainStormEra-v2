@@ -76,12 +76,14 @@ namespace BusinessLogicLayer.Services.Implementations
                     ViewModel = new CourseListViewModel()
                 };
             }
-        }        /// <summary>
-                 /// Search courses with advanced filtering and sorting
-                 /// </summary>
+        }                        /// <summary>
+                                 /// Search courses with advanced filtering and sorting (separated course and category search)
+                                 /// Role-based: Instructors see denied/pending courses, Admins see deleted courses
+                                 /// </summary>
         public async Task<CourseSearchResult> SearchCoursesAsync(
-            string? search,
-            string? category,
+            ClaimsPrincipal user,
+            string? courseSearch,
+            string? categorySearch,
             int page = 1,
             int pageSize = 12,
             string? sortBy = "newest",
@@ -91,7 +93,12 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                var (courses, totalCount) = await _courseService.SearchCoursesWithPaginationAsync(search, category, page, pageSize, sortBy, price, difficulty, duration);
+                // Get user role and ID for role-based filtering
+                string? userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                string? userId = user.FindFirst("UserId")?.Value;
+
+                var (courses, totalCount) = await _courseService.SearchCoursesWithPaginationAsync(
+                    courseSearch, categorySearch, page, pageSize, sortBy, price, difficulty, duration, userRole, userId);
                 var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
                 return new CourseSearchResult

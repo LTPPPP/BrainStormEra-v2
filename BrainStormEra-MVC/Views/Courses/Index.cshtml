@@ -106,16 +106,28 @@
         <div class="filters-section">
             <div class="row align-items-center mb-3">
                 <div class="col-lg-6">
-                    <!-- Search Bar -->
+                    <!-- Separate Search Bars -->
                     <div class="search-form">
-                        <div class="search-wrapper">
-                            <input type="text" id="searchInput" class="form-control search-input" 
-                                   placeholder="Search courses..." value="@Model.CurrentSearch">
-                            <button type="button" id="clearSearch" class="clear-search-btn" style="display: none;">
+                        <!-- Course Search -->
+                        <div class="search-wrapper mb-2">
+                            <input type="text" id="courseSearchInput" class="form-control search-input" 
+                                   placeholder="Search by course name, description, instructor..." value="@Model.CurrentSearch">
+                            <button type="button" id="clearCourseSearch" class="clear-search-btn" style="display: none;">
                                 <i class="fas fa-times"></i>
                             </button>
-                            <button type="button" id="searchBtn" class="search-btn">
+                            <button type="button" id="courseSearchBtn" class="search-btn">
                                 <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <!-- Category Search -->
+                        <div class="search-wrapper">
+                            <input type="text" id="categorySearchInput" class="form-control search-input" 
+                                   placeholder="Search by category name..." value="">
+                            <button type="button" id="clearCategorySearch" class="clear-search-btn" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button type="button" id="categorySearchBtn" class="search-btn">
+                                <i class="fas fa-tags"></i>
                             </button>
                         </div>
                     </div>
@@ -158,7 +170,26 @@
             <div class="collapse" id="advancedFilters">
                 <div class="advanced-filters-card mb-3">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <!-- Category Filter -->
+                            <div class="filter-group">
+                                <label class="filter-label">
+                                    <i class="fas fa-tags"></i> Category
+                                </label>
+                                <div class="category-filter">
+                                    <select id="categoryFilter" class="form-select">
+                                        <option value="">All Categories</option>
+                                        @foreach (var category in Model.Categories)
+                                        {
+                                            <option value="@category.CategoryName" selected="@(Model.SelectedCategory == category.CategoryName)">
+                                                @category.CategoryName (@category.CourseCount)
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
                             <!-- Price Range Filter -->
                             <div class="filter-group">
                                 <label class="filter-label">
@@ -176,7 +207,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <!-- Difficulty Level Filter -->
                             <div class="filter-group">
                                 <label class="filter-label">
@@ -192,7 +223,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <!-- Duration Filter -->
                             <div class="filter-group">
                                 <label class="filter-label">
@@ -429,6 +460,12 @@
         <script src="~/js/components/chatbot.js"></script>
     }    
     <script>
+        // Global user authentication state
+        window.userAuth = {
+            isAuthenticated: @(ViewBag.IsAuthenticated?.ToString().ToLower() ?? "false"),
+            userRole: '@(ViewBag.UserRole ?? "")'
+        };
+        
         // Initialize Course Search Manager
         let courseSearchManager;
         
