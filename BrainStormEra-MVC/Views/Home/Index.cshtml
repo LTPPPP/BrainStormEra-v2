@@ -79,22 +79,8 @@
 
     <!-- Categories Section -->
     <div class="container">
-        <div class="filters mb-3">
-            <div class="categories d-flex justify-content-start p-2 rounded" style="font-size: 2.2rem;">
-                Top Recommended Courses
-            </div>
-            <div class="mt-4">
-                <button class="filter-btn active" onclick="filterCoursesByCategory('')">All</button>
-                @if (Model?.Categories != null && Model.Categories.Any())
-                {
-                    @foreach (var category in Model.Categories)
-                    {
-                        <button class="filter-btn" onclick="filterCoursesByCategory('@category.CategoryName')">
-                            @category.CategoryName (@category.CourseCount)
-                        </button>
-                    }
-                }
-            </div>
+        <div class="mb-3">
+            <h2>Top Recommend Course</h2>
         </div>
     </div>
 
@@ -269,14 +255,7 @@
                 }).join('');
             });
 
-            // Filter buttons
-            const filterBtns = document.querySelectorAll('.filter-btn');
-            filterBtns.forEach(button => {
-                button.addEventListener('click', function () {
-                    filterBtns.forEach(btn => btn.classList.remove('active'));
-                    this.classList.add('active');
-                });
-            });
+
 
             // Add animation classes to elements when they come into view
             const animateElements = document.querySelectorAll('.feature-card');
@@ -294,53 +273,7 @@
             });
         });
 
-        function filterCoursesByCategory(categoryName = '') {
-            // Get all course cards
-            const courseCards = document.querySelectorAll('.course-card');
-            const filterButtons = document.querySelectorAll('.filter-btn');
 
-            // Update active button state
-            filterButtons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // Show loading animation
-            courseCards.forEach(card => {
-                card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                card.style.opacity = '0.5';
-                card.style.transform = 'scale(0.95)';
-            });
-
-            setTimeout(() => {
-                courseCards.forEach(card => {
-                    const courseCategories = JSON.parse(card.getAttribute('data-categories') || '[]');
-                    const shouldShow = categoryName === '' || courseCategories.some(cat => cat === categoryName);
-
-                    if (shouldShow) {
-                        card.style.display = 'block';
-                        card.style.opacity = '1';
-                        card.style.transform = 'scale(1)';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-
-                // Update results count
-                const visibleCards = Array.from(courseCards).filter(card => card.style.display !== 'none');
-                const resultsText = categoryName === '' ?
-                    `Showing all ${courseCards.length} courses` :
-                    `Showing ${visibleCards.length} courses in "${categoryName}" category`;
-
-                // Add results info if it doesn't exist
-                let resultsInfo = document.querySelector('.filter-results-info');
-                if (!resultsInfo) {
-                    resultsInfo = document.createElement('div');
-                    resultsInfo.className = 'filter-results-info text-muted mt-3 mb-4';
-                    const filterSection = document.querySelector('.filters');
-                    filterSection.parentNode.insertBefore(resultsInfo, filterSection.nextSibling);
-                }
-                resultsInfo.textContent = resultsText;
-            }, 300);
-        }
     </script>
 </body>
 
