@@ -8,3 +8,13 @@ obj/
 # Settings
 appsettings.json
 appsettings.Development.json
+
+# Images
+*.png
+*.jpg
+*.webp
+*.jpeg
+
+# Temporary files
+*.tmp
+*.txt
