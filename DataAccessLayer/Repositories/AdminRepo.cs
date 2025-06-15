@@ -257,7 +257,7 @@ namespace DataAccessLayer.Repositories
         {
             try
             {
-                return await _context.Courses.CountAsync();
+                return await _context.Courses.Where(c => c.CourseStatus != 4).CountAsync(); // Exclude archived/soft deleted courses
             }
             catch (Exception ex)
             {
@@ -296,7 +296,7 @@ namespace DataAccessLayer.Repositories
         {
             try
             {
-                return await _context.Courses.Where(c => c.CourseStatus == 1).CountAsync(); // Active status
+                return await _context.Courses.Where(c => c.CourseStatus == 1).CountAsync(); // Active status only
             }
             catch (Exception ex)
             {
@@ -309,7 +309,7 @@ namespace DataAccessLayer.Repositories
         {
             try
             {
-                return await _context.Courses.Where(c => c.ApprovalStatus == "Pending").CountAsync();
+                return await _context.Courses.Where(c => c.ApprovalStatus == "Pending" && c.CourseStatus != 4).CountAsync(); // Exclude archived/soft deleted courses
             }
             catch (Exception ex)
             {
@@ -491,6 +491,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _context.Courses
+                    .Where(c => c.CourseStatus != 4) // Exclude archived/soft deleted courses
                     .Include(c => c.Author)
                     .OrderByDescending(c => c.CourseCreatedAt)
                     .Skip((page - 1) * pageSize)
@@ -509,6 +510,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _context.Courses
+                    .Where(c => c.CourseStatus != 4) // Exclude archived/soft deleted courses
                     .Include(c => c.Author)
                     .Where(c => c.ApprovalStatus == status)
                     .OrderByDescending(c => c.CourseCreatedAt)
@@ -564,7 +566,18 @@ namespace DataAccessLayer.Repositories
                     return false;
 
                 course.ApprovalStatus = "Approved";
-                course.ApprovedBy = adminId;
+
+                // Only set ApprovedBy if adminId exists in account table
+                if (!string.IsNullOrEmpty(adminId) && adminId != "system")
+                {
+                    var adminExists = await _context.Accounts.AnyAsync(a => a.UserId == adminId);
+                    if (adminExists)
+                    {
+                        course.ApprovedBy = adminId;
+                    }
+                    // If admin doesn't exist, leave ApprovedBy as null
+                }
+
                 course.ApprovedAt = DateTime.UtcNow;
                 course.CourseUpdatedAt = DateTime.UtcNow;
 
@@ -587,7 +600,18 @@ namespace DataAccessLayer.Repositories
                     return false;
 
                 course.ApprovalStatus = "Rejected";
-                course.ApprovedBy = adminId;
+
+                // Only set ApprovedBy if adminId exists in account table
+                if (!string.IsNullOrEmpty(adminId) && adminId != "system")
+                {
+                    var adminExists = await _context.Accounts.AnyAsync(a => a.UserId == adminId);
+                    if (adminExists)
+                    {
+                        course.ApprovedBy = adminId;
+                    }
+                    // If admin doesn't exist, leave ApprovedBy as null
+                }
+
                 course.ApprovedAt = DateTime.UtcNow;
                 course.CourseUpdatedAt = DateTime.UtcNow;
 
@@ -627,9 +651,12 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _context.Courses
+                    .Where(c => c.CourseStatus != 4) // Exclude archived/soft deleted courses
                     .Include(c => c.Author)
+                    .Include(c => c.CourseCategories) // Include categories for search
                     .Where(c => c.CourseName.Contains(searchTerm) ||
-                               (c.CourseDescription != null && c.CourseDescription.Contains(searchTerm)))
+                               (c.CourseDescription != null && c.CourseDescription.Contains(searchTerm)) ||
+                               c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(searchTerm)))
                     .OrderByDescending(c => c.CourseCreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)

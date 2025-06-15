@@ -90,7 +90,7 @@ CREATE TABLE course (
     estimated_duration INT, -- in minutes
     difficulty_level TINYINT CHECK (difficulty_level IN (1, 2, 3, 4, 5)), -- 1: Beginner, 5: Expert
     is_featured BIT DEFAULT 0,
-    approval_status VARCHAR(20) DEFAULT 'pending' CHECK (approval_status IN ('pending', 'approved', 'rejected')),
+    approval_status VARCHAR(20) DEFAULT 'draft' CHECK (approval_status IN ('draft', 'pending', 'approved', 'rejected')),
     approved_by VARCHAR(36),
     approved_at DATETIME,
     enforce_sequential_access BIT DEFAULT 1, -- Whether this course requires lessons to be completed in order

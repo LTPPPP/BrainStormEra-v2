@@ -2,8 +2,8 @@
 class CourseSearchManager {
   constructor() {
     this.currentFilters = {
-      search: "",
-      category: "",
+      courseSearch: "",
+      categorySearch: "",
       sortBy: "newest",
       price: "",
       difficulty: "",
@@ -11,7 +11,8 @@ class CourseSearchManager {
       page: 1,
     };
 
-    this.searchTimeout = null;
+    this.courseSearchTimeout = null;
+    this.categorySearchTimeout = null;
     this.isLoading = false;
 
     this.init();
@@ -23,15 +24,15 @@ class CourseSearchManager {
   }
 
   bindEvents() {
-    // Search input with debounce
-    const searchInput = document.getElementById("searchInput");
-    if (searchInput) {
-      searchInput.addEventListener("input", (e) => {
-        this.showClearButton(e.target.value);
-        this.debounceSearch(e.target.value);
+    // Course search input with debounce
+    const courseSearchInput = document.getElementById("courseSearchInput");
+    if (courseSearchInput) {
+      courseSearchInput.addEventListener("input", (e) => {
+        this.showClearButton("course", e.target.value);
+        this.debounceCourseSearch(e.target.value);
       });
 
-      searchInput.addEventListener("keypress", (e) => {
+      courseSearchInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
           this.performSearch();
@@ -39,30 +40,63 @@ class CourseSearchManager {
       });
     }
 
-    // Search button
-    const searchBtn = document.getElementById("searchBtn");
-    if (searchBtn) {
-      searchBtn.addEventListener("click", () => {
+    // Course search button
+    const courseSearchBtn = document.getElementById("courseSearchBtn");
+    if (courseSearchBtn) {
+      courseSearchBtn.addEventListener("click", () => {
         this.performSearch();
       });
     }
 
-    // Clear search button
-    const clearSearch = document.getElementById("clearSearch");
-    if (clearSearch) {
-      clearSearch.addEventListener("click", () => {
-        this.clearSearch();
+    // Clear course search button
+    const clearCourseSearch = document.getElementById("clearCourseSearch");
+    if (clearCourseSearch) {
+      clearCourseSearch.addEventListener("click", () => {
+        this.clearCourseSearch();
       });
     }
 
-    // Category filters
-    const categoryFilters = document.querySelectorAll(".category-filter");
-    categoryFilters.forEach((filter) => {
-      filter.addEventListener("click", (e) => {
-        e.preventDefault();
-        this.selectCategory(e.target);
+    // Category search input with debounce
+    const categorySearchInput = document.getElementById("categorySearchInput");
+    if (categorySearchInput) {
+      categorySearchInput.addEventListener("input", (e) => {
+        this.showClearButton("category", e.target.value);
+        this.debounceCategorySearch(e.target.value);
       });
-    });
+
+      categorySearchInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this.performSearch();
+        }
+      });
+    }
+
+    // Category search button
+    const categorySearchBtn = document.getElementById("categorySearchBtn");
+    if (categorySearchBtn) {
+      categorySearchBtn.addEventListener("click", () => {
+        this.performSearch();
+      });
+    }
+
+    // Clear category search button
+    const clearCategorySearch = document.getElementById("clearCategorySearch");
+    if (clearCategorySearch) {
+      clearCategorySearch.addEventListener("click", () => {
+        this.clearCategorySearch();
+      });
+    }
+
+    // Category filter
+    const categoryFilter = document.getElementById("categoryFilter");
+    if (categoryFilter) {
+      categoryFilter.addEventListener("change", (e) => {
+        this.currentFilters.category = e.target.value;
+        this.currentFilters.page = 1;
+        this.performSearch();
+      });
+    }
 
     // Sort dropdown
     const sortSelect = document.getElementById("sortSelect");
@@ -139,8 +173,8 @@ class CourseSearchManager {
 
   initializeFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
-    this.currentFilters.search = urlParams.get("search") || "";
-    this.currentFilters.category = urlParams.get("category") || "";
+    this.currentFilters.courseSearch = urlParams.get("courseSearch") || "";
+    this.currentFilters.categorySearch = urlParams.get("categorySearch") || "";
     this.currentFilters.sortBy = urlParams.get("sortBy") || "newest";
     this.currentFilters.price = urlParams.get("price") || "";
     this.currentFilters.difficulty = urlParams.get("difficulty") || "";
@@ -148,10 +182,21 @@ class CourseSearchManager {
     this.currentFilters.page = parseInt(urlParams.get("page")) || 1;
 
     // Update UI
-    const searchInput = document.getElementById("searchInput");
-    if (searchInput) {
-      searchInput.value = this.currentFilters.search;
-      this.showClearButton(this.currentFilters.search);
+    const courseSearchInput = document.getElementById("courseSearchInput");
+    if (courseSearchInput) {
+      courseSearchInput.value = this.currentFilters.courseSearch;
+      this.showClearButton("course", this.currentFilters.courseSearch);
+    }
+
+    const categorySearchInput = document.getElementById("categorySearchInput");
+    if (categorySearchInput) {
+      categorySearchInput.value = this.currentFilters.categorySearch;
+      this.showClearButton("category", this.currentFilters.categorySearch);
+    }
+
+    const categoryFilter = document.getElementById("categoryFilter");
+    if (categoryFilter) {
+      categoryFilter.value = "";
     }
 
     const sortSelect = document.getElementById("sortSelect");
@@ -174,15 +219,26 @@ class CourseSearchManager {
       durationFilter.value = this.currentFilters.duration;
     }
 
-    // Update category filter active state
-    this.updateCategoryFilters();
+    // Log initial filter state for debugging
+    console.log("Initial filters from URL:", this.currentFilters);
   }
 
-  debounceSearch(searchTerm) {
-    clearTimeout(this.searchTimeout);
-    this.searchTimeout = setTimeout(() => {
+  debounceCourseSearch(searchTerm) {
+    clearTimeout(this.courseSearchTimeout);
+    this.courseSearchTimeout = setTimeout(() => {
       if (searchTerm.length >= 2 || searchTerm.length === 0) {
-        this.currentFilters.search = searchTerm;
+        this.currentFilters.courseSearch = searchTerm;
+        this.currentFilters.page = 1;
+        this.performSearch();
+      }
+    }, 500);
+  }
+
+  debounceCategorySearch(searchTerm) {
+    clearTimeout(this.categorySearchTimeout);
+    this.categorySearchTimeout = setTimeout(() => {
+      if (searchTerm.length >= 2 || searchTerm.length === 0) {
+        this.currentFilters.categorySearch = searchTerm;
         this.currentFilters.page = 1;
         this.performSearch();
       }
@@ -192,17 +248,22 @@ class CourseSearchManager {
   performSearch() {
     if (this.isLoading) return;
 
-    const searchInput = document.getElementById("searchInput");
-    if (searchInput) {
-      this.currentFilters.search = searchInput.value.trim();
+    const courseSearchInput = document.getElementById("courseSearchInput");
+    if (courseSearchInput) {
+      this.currentFilters.courseSearch = courseSearchInput.value.trim();
+    }
+
+    const categorySearchInput = document.getElementById("categorySearchInput");
+    if (categorySearchInput) {
+      this.currentFilters.categorySearch = categorySearchInput.value.trim();
     }
 
     this.showLoading();
     this.updateURL();
 
     const params = new URLSearchParams({
-      search: this.currentFilters.search,
-      category: this.currentFilters.category,
+      courseSearch: this.currentFilters.courseSearch,
+      categorySearch: this.currentFilters.categorySearch,
       sortBy: this.currentFilters.sortBy,
       price: this.currentFilters.price,
       difficulty: this.currentFilters.difficulty,
@@ -217,6 +278,9 @@ class CourseSearchManager {
         params.delete(key);
       }
     }
+
+    // Log the search request for debugging
+    console.log("Search parameters:", Object.fromEntries(params.entries()));
 
     fetch(`/Course/SearchCourses?${params.toString()}`, {
       method: "GET",
@@ -259,7 +323,7 @@ class CourseSearchManager {
       const paginationHTML = this.generatePaginationHTML(data);
 
       coursesContainer.innerHTML = `
-                <div class="row" id="coursesGrid">
+                <div class="row g-4" id="coursesGrid">
                     ${coursesHTML}
                 </div>
                 ${paginationHTML}
@@ -288,6 +352,7 @@ class CourseSearchManager {
                             ? `<div class="course-price">$${course.price.toLocaleString()}</div>`
                             : `<div class="course-price free">Free</div>`
                         }
+                        ${this.generateStatusBadge(course)}
                     </div>
                     <div class="course-details">
                         <div class="course-categories">
@@ -315,24 +380,16 @@ class CourseSearchManager {
                             </div>
                             <div class="rating">
                                 ${this.generateStarRating(course.starRating)}
-                                <span class="rating-text">(${
-                                  course.starRating
-                                }.0)</span>
+                                <span class="rating-text">(${course.starRating.toFixed(1)})</span>
                             </div>
                         </div>
-                        <div class="course-stats">
-                            <span class="enrollment-count">
-                                <i class="fas fa-users"></i>
-                                ${course.enrollmentCount} students
-                            </span>
-                        </div>
+                        <p class="course-students">${course.enrollmentCount} enrolled</p>
                         <div class="course-actions">
-                            <a href="/Course/Details/${
-                              course.courseId
-                            }" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-info-circle"></i>
-                                Learn More
+                            <a href="/Course/Details/${course.courseId}" 
+                               class="btn btn-sm btn-outline-info" title="View Course Details">
+                                <i class="fas fa-eye"></i> Details
                             </a>
+                            ${this.generateCourseActionButtons(course)}
                         </div>
                     </div>
                 </div>
@@ -341,6 +398,48 @@ class CourseSearchManager {
       )
       .join("");
   }
+
+  generateStatusBadge(course) {
+    // Only show status badges for instructors/admins viewing special status courses
+    if (course.approvalStatus === "Pending") {
+      return '<div class="status-badge pending"><i class="fas fa-clock"></i> Pending</div>';
+    } else if (course.approvalStatus === "Denied") {
+      return '<div class="status-badge denied"><i class="fas fa-times-circle"></i> Denied</div>';
+    } else if (course.courseStatus === 4) { // Archived/Deleted
+      return '<div class="status-badge deleted"><i class="fas fa-trash"></i> Deleted</div>';
+    } else if (course.approvalStatus === "draft") {
+      return '<div class="status-badge draft"><i class="fas fa-edit"></i> Draft</div>';
+    }
+    return ""; // No badge for approved courses
+  }
+
+  generateCourseActionButtons(course) {
+    // Check if user is authenticated and is a learner
+    if (window.userAuth && window.userAuth.isAuthenticated && window.userAuth.userRole === "Learner") {
+      if (course.price > 0) {
+        return `
+          <button class="btn btn-sm btn-outline-primary" onclick="enrollInCourse('${course.courseId}')" title="Purchase Course">
+            <i class="fas fa-shopping-cart"></i> Buy Now
+          </button>
+        `;
+      } else {
+        return `
+          <button class="btn btn-sm btn-outline-success" onclick="enrollInCourse('${course.courseId}')" title="Enroll for Free">
+            <i class="fas fa-play"></i> Enroll Free
+          </button>
+        `;
+      }
+    } else {
+      return `
+        <a href="/Course/Details/${course.courseId}" 
+           class="btn btn-sm btn-outline-primary" title="Learn More">
+          <i class="fas fa-info-circle"></i> Learn More
+        </a>
+      `;
+    }
+  }
+
+
 
   generateStarRating(rating) {
     let stars = "";
@@ -443,7 +542,8 @@ class CourseSearchManager {
 
   generateNoCoursesHTML() {
     const hasFilters =
-      this.currentFilters.search || this.currentFilters.category;
+      this.currentFilters.courseSearch || this.currentFilters.categorySearch ||
+      this.currentFilters.price || this.currentFilters.difficulty || this.currentFilters.duration;
 
     return `
             <div class="no-courses" id="noCoursesMessage">
@@ -468,31 +568,9 @@ class CourseSearchManager {
         `;
   }
 
-  selectCategory(categoryElement) {
-    // Remove active class from all category filters
-    document.querySelectorAll(".category-filter").forEach((filter) => {
-      filter.classList.remove("active");
-    });
+  // selectCategory method removed
 
-    // Add active class to selected category
-    categoryElement.classList.add("active");
-
-    // Update current filters
-    this.currentFilters.category = categoryElement.dataset.category || "";
-    this.currentFilters.page = 1;
-
-    // Perform search
-    this.performSearch();
-  }
-
-  updateCategoryFilters() {
-    document.querySelectorAll(".category-filter").forEach((filter) => {
-      filter.classList.remove("active");
-      if (filter.dataset.category === this.currentFilters.category) {
-        filter.classList.add("active");
-      }
-    });
-  }
+  // updateCategoryFilters method removed
 
   goToPage(page) {
     this.currentFilters.page = page;
@@ -505,24 +583,37 @@ class CourseSearchManager {
     }
   }
 
-  clearSearch() {
-    const searchInput = document.getElementById("searchInput");
-    if (searchInput) {
-      searchInput.value = "";
-      searchInput.focus();
+  clearCourseSearch() {
+    const courseSearchInput = document.getElementById("courseSearchInput");
+    if (courseSearchInput) {
+      courseSearchInput.value = "";
+      courseSearchInput.focus();
     }
 
-    this.currentFilters.search = "";
+    this.currentFilters.courseSearch = "";
     this.currentFilters.page = 1;
-    this.showClearButton("");
+    this.showClearButton("course", "");
+    this.performSearch();
+  }
+
+  clearCategorySearch() {
+    const categorySearchInput = document.getElementById("categorySearchInput");
+    if (categorySearchInput) {
+      categorySearchInput.value = "";
+      categorySearchInput.focus();
+    }
+
+    this.currentFilters.categorySearch = "";
+    this.currentFilters.page = 1;
+    this.showClearButton("category", "");
     this.performSearch();
   }
 
   clearAllFilters() {
     // Reset all filters
     this.currentFilters = {
-      search: "",
-      category: "",
+      courseSearch: "",
+      categorySearch: "",
       sortBy: "newest",
       price: "",
       difficulty: "",
@@ -531,9 +622,19 @@ class CourseSearchManager {
     };
 
     // Update UI
-    const searchInput = document.getElementById("searchInput");
-    if (searchInput) {
-      searchInput.value = "";
+    const courseSearchInput = document.getElementById("courseSearchInput");
+    if (courseSearchInput) {
+      courseSearchInput.value = "";
+    }
+
+    const categorySearchInput = document.getElementById("categorySearchInput");
+    if (categorySearchInput) {
+      categorySearchInput.value = "";
+    }
+
+    const categoryFilter = document.getElementById("categoryFilter");
+    if (categoryFilter) {
+      categoryFilter.value = "";
     }
 
     const sortSelect = document.getElementById("sortSelect");
@@ -557,14 +658,20 @@ class CourseSearchManager {
     }
 
     this.showClearButton("");
-    this.updateCategoryFilters();
     this.performSearch();
   }
 
-  showClearButton(searchValue) {
-    const clearBtn = document.getElementById("clearSearch");
-    if (clearBtn) {
-      clearBtn.style.display = searchValue ? "block" : "none";
+  showClearButton(searchType, searchValue) {
+    if (searchType === "course") {
+      const clearBtn = document.getElementById("clearCourseSearch");
+      if (clearBtn) {
+        clearBtn.style.display = searchValue ? "block" : "none";
+      }
+    } else if (searchType === "category") {
+      const clearBtn = document.getElementById("clearCategorySearch");
+      if (clearBtn) {
+        clearBtn.style.display = searchValue ? "block" : "none";
+      }
     }
   }
 
@@ -600,28 +707,18 @@ class CourseSearchManager {
       }
     });
 
-    // Toggle category filters
-    document.querySelectorAll(".category-filter").forEach((filter) => {
-      filter.disabled = !enabled;
-      if (enabled) {
-        filter.style.pointerEvents = "auto";
-        filter.style.opacity = "1";
-      } else {
-        filter.style.pointerEvents = "none";
-        filter.style.opacity = "0.6";
-      }
-    });
+    // Category filters removed
   }
 
   updateURL() {
     const params = new URLSearchParams();
 
-    if (this.currentFilters.search) {
-      params.set("search", this.currentFilters.search);
+    if (this.currentFilters.courseSearch) {
+      params.set("courseSearch", this.currentFilters.courseSearch);
     }
 
-    if (this.currentFilters.category) {
-      params.set("category", this.currentFilters.category);
+    if (this.currentFilters.categorySearch) {
+      params.set("categorySearch", this.currentFilters.categorySearch);
     }
 
     if (this.currentFilters.sortBy !== "newest") {

@@ -47,6 +47,7 @@ namespace DataAccessLayer.Models.ViewModels
         public List<ReviewViewModel> Reviews { get; set; } = new List<ReviewViewModel>();
         public bool IsEnrolled { get; set; }
         public bool CanEnroll { get; set; }
+        public string? ApprovalStatus { get; set; }
         public DateTime CourseCreatedAt { get; set; }
         public DateTime CourseUpdatedAt { get; set; }
 
@@ -142,6 +143,9 @@ namespace DataAccessLayer.Models.ViewModels
         public int StarRating { get; set; }
         public int EnrollmentCount { get; set; }
         public List<string> CourseCategories { get; set; } = new List<string>();
+        public string? ApprovalStatus { get; set; }
+        public int? CourseStatus { get; set; }
+        public string? AuthorId { get; set; }
     }
     public class CourseCategoryViewModel
     {

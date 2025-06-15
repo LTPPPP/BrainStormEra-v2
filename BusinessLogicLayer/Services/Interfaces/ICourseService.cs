@@ -10,14 +10,16 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<CourseListViewModel> GetInstructorCoursesAsync(string authorId, string? search, string? category, int page, int pageSize); Task<CourseDetailViewModel?> GetCourseDetailAsync(string courseId);
         Task<CourseDetailViewModel?> GetCourseDetailAsync(string courseId, string? currentUserId = null); Task<List<CourseViewModel>> SearchCoursesAsync(string? search, string? category, int page, int pageSize, string? sortBy);
         Task<(List<CourseViewModel> courses, int totalCount)> SearchCoursesWithPaginationAsync(
-            string? search,
-            string? category,
+            string? courseSearch,
+            string? categorySearch,
             int page,
             int pageSize,
             string? sortBy,
             string? price = null,
             string? difficulty = null,
-            string? duration = null);
+            string? duration = null,
+            string? userRole = null,
+            string? userId = null);
         Task<bool> EnrollUserAsync(string userId, string courseId);
         Task<bool> IsUserEnrolledAsync(string userId, string courseId);
         Task<List<CourseCategoryViewModel>> GetCategoriesAsync();
@@ -27,6 +29,7 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<CreateCourseViewModel?> GetCourseForEditAsync(string courseId, string authorId);
         Task<bool> UpdateCourseAsync(string courseId, CreateCourseViewModel model, string authorId);
         Task<bool> DeleteCourseAsync(string courseId, string authorId);
+        Task<bool> UpdateCourseApprovalStatusAsync(string courseId, string approvalStatus);
     }
 }
 

@@ -114,7 +114,8 @@ namespace DataAccessLayer.Repositories
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(c => c.CourseName.Contains(search) ||
-                                           c.CourseDescription!.Contains(search));
+                                           c.CourseDescription!.Contains(search) ||
+                                           c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(search)));
                 }
 
                 if (!string.IsNullOrWhiteSpace(category))
@@ -241,14 +242,15 @@ namespace DataAccessLayer.Repositories
             try
             {
                 IQueryable<Course> query = _dbSet
-                    .Where(c => c.AuthorId == authorId)
+                    .Where(c => c.AuthorId == authorId && c.CourseStatus != 4) // Exclude archived courses
                     .Include(c => c.Enrollments)
                     .Include(c => c.CourseCategories);
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(c => c.CourseName.Contains(search) ||
-                                           c.CourseDescription!.Contains(search));
+                                           c.CourseDescription!.Contains(search) ||
+                                           c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(search)));
                 }
 
                 if (!string.IsNullOrWhiteSpace(category))
@@ -275,7 +277,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _dbSet
-                    .Where(c => c.AuthorId == instructorId)
+                    .Where(c => c.AuthorId == instructorId && c.CourseStatus != 4) // Exclude archived courses
                     .Select(c => new Course
                     {
                         CourseId = c.CourseId,
@@ -640,6 +642,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 IQueryable<Course> query = _dbSet
+                    .Where(c => c.CourseStatus != 4) // Exclude archived/soft deleted courses
                     .Include(c => c.Author)
                     .Include(c => c.Enrollments)
                     .Include(c => c.CourseCategories);
@@ -647,7 +650,8 @@ namespace DataAccessLayer.Repositories
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(c => c.CourseName.Contains(search) ||
-                                           (c.CourseDescription != null && c.CourseDescription.Contains(search)));
+                                           (c.CourseDescription != null && c.CourseDescription.Contains(search)) ||
+                                           c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(search)));
                 }
 
                 if (!string.IsNullOrWhiteSpace(categoryFilter))
@@ -673,12 +677,15 @@ namespace DataAccessLayer.Repositories
         {
             try
             {
-                IQueryable<Course> query = _dbSet;
+                IQueryable<Course> query = _dbSet
+                    .Where(c => c.CourseStatus != 4) // Exclude archived/soft deleted courses
+                    .Include(c => c.CourseCategories); // Need to include for category search
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(c => c.CourseName.Contains(search) ||
-                                           (c.CourseDescription != null && c.CourseDescription.Contains(search)));
+                                           (c.CourseDescription != null && c.CourseDescription.Contains(search)) ||
+                                           c.CourseCategories.Any(cc => cc.CourseCategoryName!.Contains(search)));
                 }
 
                 if (!string.IsNullOrWhiteSpace(categoryFilter))

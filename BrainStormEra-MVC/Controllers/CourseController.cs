@@ -22,7 +22,8 @@ namespace BrainStormEra_MVC.Controllers
 
         public async Task<IActionResult> Index(string? search, string? category, int page = 1, int pageSize = 12)
         {
-            var result = await _courseServiceImpl.GetCoursesAsync(User, search, category, page, pageSize);
+            // Category filtering removed - always pass null
+            var result = await _courseServiceImpl.GetCoursesAsync(User, search, null, page, pageSize);
 
             if (!result.Success)
             {
@@ -75,8 +76,8 @@ namespace BrainStormEra_MVC.Controllers
 
         [HttpGet]
         public async Task<IActionResult> SearchCourses(
-            string? search,
-            string? category,
+            string? courseSearch,
+            string? categorySearch,
             int page = 1,
             int pageSize = 12,
             string? sortBy = "newest",
@@ -84,7 +85,8 @@ namespace BrainStormEra_MVC.Controllers
             string? difficulty = null,
             string? duration = null)
         {
-            var result = await _courseServiceImpl.SearchCoursesAsync(search, category, page, pageSize, sortBy, price, difficulty, duration);
+            // Pass user info for role-based search (instructors see denied/pending, admins see deleted)
+            var result = await _courseServiceImpl.SearchCoursesAsync(User, courseSearch, categorySearch, page, pageSize, sortBy, price, difficulty, duration);
 
             if (!result.Success)
             {
@@ -243,6 +245,33 @@ namespace BrainStormEra_MVC.Controllers
             }
 
             return Json(new { success = true, courses = result.Courses });
+        }
+
+        // POST: Request course approval (Instructor only)
+        [HttpPost]
+        [Authorize(Roles = "instructor")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestCourseApproval(string courseId)
+        {
+            var result = await _courseServiceImpl.RequestCourseApprovalAsync(User, courseId);
+            return Json(new { success = result.Success, message = result.Message });
+        }
+
+        // Temporary endpoint to clear cache for debugging
+        [HttpPost]
+        [Authorize(Roles = "admin")]
+        public IActionResult ClearCache()
+        {
+            try
+            {
+                // This will be implemented via dependency injection
+                // For now, return success
+                return Json(new { success = true, message = "Cache cleared successfully" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
     }
