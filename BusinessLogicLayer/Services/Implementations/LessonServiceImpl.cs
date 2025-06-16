@@ -792,7 +792,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 try
                 {
                     // Create uploads directory if it doesn't exist
-                    var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "videos");
+                    var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "..", "SharedMedia", "uploads");
                     Directory.CreateDirectory(uploadsDir);
 
                     // Generate unique filename
@@ -806,7 +806,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     }
 
                     // Add file reference to content
-                    content += $"\n\n[VIDEO_FILE]/uploads/videos/{fileName}[/VIDEO_FILE]";
+                    content += $"\n\n[VIDEO_FILE]/SharedMedia/uploads/{fileName}[/VIDEO_FILE]";
 
                     _logger.LogInformation("Video file uploaded: {FileName}", fileName);
                 }
@@ -849,7 +849,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 try
                 {
                     // Create uploads directory if it doesn't exist
-                    var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "documents");
+                    var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "..", "SharedMedia", "documents");
                     Directory.CreateDirectory(uploadsDir);
 
                     var uploadedFiles = new List<string>();
@@ -868,7 +868,7 @@ namespace BusinessLogicLayer.Services.Implementations
                                 await file.CopyToAsync(stream);
                             }
 
-                            uploadedFiles.Add($"/uploads/documents/{fileName}|{Path.GetFileName(file.FileName)}");
+                            uploadedFiles.Add($"/SharedMedia/documents/{fileName}|{Path.GetFileName(file.FileName)}");
                             _logger.LogInformation("Document file uploaded: {FileName}", fileName);
                         }
                     }

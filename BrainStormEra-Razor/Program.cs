@@ -5,6 +5,7 @@ using DataAccessLayer.Repositories.Interfaces;
 using DataAccessLayer.Repositories;
 using BusinessLogicLayer.Services.Interfaces;
 using BusinessLogicLayer.Services;
+using Microsoft.Extensions.FileProviders;
 
 namespace BrainStormEra_Razor
 {
@@ -65,7 +66,28 @@ namespace BrainStormEra_Razor
             }
 
             app.UseHttpsRedirection();
+
+            // Configure default static files from wwwroot
             app.UseStaticFiles();
+
+            // Configure additional static files from SharedMedia folder
+            var sharedMediaPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "SharedMedia");
+            var absoluteSharedMediaPath = Path.GetFullPath(sharedMediaPath);
+
+            // Log the path for debugging
+            Console.WriteLine($"SharedMedia path: {absoluteSharedMediaPath}");
+            Console.WriteLine($"SharedMedia exists: {Directory.Exists(absoluteSharedMediaPath)}");
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(absoluteSharedMediaPath),
+                RequestPath = "/SharedMedia",
+                OnPrepareResponse = ctx =>
+                {
+                    // Add caching headers for better performance
+                    ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000");
+                }
+            });
 
             app.UseRouting();
 
@@ -77,6 +99,23 @@ namespace BrainStormEra_Razor
             {
                 context.Response.Redirect("/Admin/Login");
                 return Task.CompletedTask;
+            });
+
+            // Test endpoint for debugging SharedMedia
+            app.MapGet("/debug/sharedmedia", () =>
+            {
+                var sharedMediaPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "SharedMedia");
+                var absoluteSharedMediaPath = Path.GetFullPath(sharedMediaPath);
+                return Results.Ok(new
+                {
+                    CurrentDirectory = Directory.GetCurrentDirectory(),
+                    SharedMediaPath = sharedMediaPath,
+                    AbsoluteSharedMediaPath = absoluteSharedMediaPath,
+                    Exists = Directory.Exists(absoluteSharedMediaPath),
+                    Files = Directory.Exists(absoluteSharedMediaPath)
+                        ? Directory.GetFiles(absoluteSharedMediaPath, "*", SearchOption.AllDirectories).Take(10).ToArray()
+                        : new string[0]
+                });
             });
 
             app.MapRazorPages();

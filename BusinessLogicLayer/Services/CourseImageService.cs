@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Constants;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.IO;
@@ -12,14 +13,16 @@ namespace BusinessLogicLayer.Services
     {
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ILogger<CourseImageService> _logger;
-        private const string CourseImageDirectory = "img/courses";
+        private readonly IMediaPathService _mediaPathService;
+        private const string MediaCategory = MediaConstants.Categories.Courses;
         private const long MaxFileSize = 10 * 1024 * 1024; // 5MB
         private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
 
-        public CourseImageService(IWebHostEnvironment webHostEnvironment, ILogger<CourseImageService> logger)
+        public CourseImageService(IWebHostEnvironment webHostEnvironment, ILogger<CourseImageService> logger, IMediaPathService mediaPathService)
         {
             _webHostEnvironment = webHostEnvironment;
             _logger = logger;
+            _mediaPathService = mediaPathService;
         }
 
         public async Task<(bool Success, string? ImagePath, string? ErrorMessage)> UploadCourseImageAsync(IFormFile file, string courseId)
@@ -46,11 +49,8 @@ namespace BusinessLogicLayer.Services
                 }
 
                 // Create upload directory if it doesn't exist
-                var uploadDir = Path.Combine(_webHostEnvironment.WebRootPath, CourseImageDirectory);
-                if (!Directory.Exists(uploadDir))
-                {
-                    Directory.CreateDirectory(uploadDir);
-                }
+                _mediaPathService.EnsureDirectoryExists(MediaCategory);
+                var uploadDir = _mediaPathService.GetPhysicalPath(MediaCategory);
 
                 // Generate unique filename
                 var fileName = $"{courseId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
@@ -63,7 +63,7 @@ namespace BusinessLogicLayer.Services
                 }
 
                 _logger.LogInformation("Course image uploaded successfully for course {CourseId}: {FileName}", courseId, fileName);
-                return (true, $"/{CourseImageDirectory}/{fileName}", null);
+                return (true, _mediaPathService.GetWebUrl(MediaCategory, fileName), null);
             }
             catch (Exception ex)
             {
@@ -81,7 +81,7 @@ namespace BusinessLogicLayer.Services
 
                 // Extract filename from path if needed
                 var fileName = Path.GetFileName(imageFileName);
-                var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, CourseImageDirectory, fileName);
+                var imagePath = Path.Combine(_mediaPathService.GetPhysicalPath(MediaCategory), fileName);
 
                 if (File.Exists(imagePath))
                 {
@@ -100,13 +100,13 @@ namespace BusinessLogicLayer.Services
         public string GetCourseImageUrl(string? imageFileName)
         {
             if (string.IsNullOrEmpty(imageFileName))
-                return "/img/defaults/default-course.svg"; // Return default course image URL
+                return MediaConstants.Defaults.DefaultCoursePath; // Return default course image URL
 
             // If imageFileName is already a full path, return as is
             if (imageFileName.StartsWith("/"))
                 return imageFileName;
 
-            return $"/{CourseImageDirectory}/{imageFileName}";
+            return _mediaPathService.GetWebUrl(MediaCategory, imageFileName);
         }
 
         public bool CourseImageExists(string? imageFileName)
@@ -115,7 +115,7 @@ namespace BusinessLogicLayer.Services
                 return false;
 
             var fileName = Path.GetFileName(imageFileName);
-            var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, CourseImageDirectory, fileName);
+            var imagePath = Path.Combine(_mediaPathService.GetPhysicalPath(MediaCategory), fileName);
             return File.Exists(imagePath);
         }
 

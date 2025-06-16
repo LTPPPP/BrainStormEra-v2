@@ -4,6 +4,7 @@ using DataAccessLayer.Models;
 using DataAccessLayer.Repositories.Interfaces;
 using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Constants;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace BusinessLogicLayer.Services
@@ -160,7 +161,7 @@ namespace BusinessLogicLayer.Services
                     AchievementId = ua.AchievementId,
                     AchievementName = ua.Achievement.AchievementName,
                     AchievementDescription = ua.Achievement.AchievementDescription ?? "",
-                    AchievementIcon = ua.Achievement.AchievementIcon ?? "/img/defaults/default-achievement.svg",
+                    AchievementIcon = ua.Achievement.AchievementIcon ?? MediaConstants.Defaults.DefaultAchievementPath,
                     AchievementType = ua.Achievement.AchievementType ?? "",
                     PointsReward = ua.Achievement.PointsReward,
                     ReceivedDate = ua.ReceivedDate.ToDateTime(TimeOnly.MinValue),

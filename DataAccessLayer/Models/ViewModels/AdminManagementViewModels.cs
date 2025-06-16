@@ -32,7 +32,7 @@ namespace DataAccessLayer.Models.ViewModels
         public required string FullName { get; set; }
         public required string UserEmail { get; set; }
         public required string UserRole { get; set; }
-        public string UserImage { get; set; } = "/img/defaults/default-avatar.svg";
+        public string UserImage { get; set; } = "/SharedMedia/defaults/default-avatar.svg";
         public DateTime AccountCreatedAt { get; set; }
         public DateTime? LastLoginDate { get; set; }
         public bool IsBanned { get; set; }
@@ -82,7 +82,7 @@ namespace DataAccessLayer.Models.ViewModels
         public required string CourseId { get; set; }
         public required string CourseName { get; set; }
         public string CourseDescription { get; set; } = "";
-        public string CoursePicture { get; set; } = "/img/defaults/default-course.svg";
+        public string CoursePicture { get; set; } = "/SharedMedia/defaults/default-course.svg";
         public decimal Price { get; set; }
         public string? DifficultyLevel { get; set; }
         public int? EstimatedDuration { get; set; }

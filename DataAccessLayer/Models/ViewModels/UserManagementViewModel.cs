@@ -8,7 +8,7 @@ namespace DataAccessLayer.Models.ViewModels
         public required string Username { get; set; }
         public required string FullName { get; set; }
         public required string Email { get; set; }
-        public string UserImage { get; set; } = "/img/defaults/default-avatar.svg";
+        public string UserImage { get; set; } = "/SharedMedia/defaults/default-avatar.svg";
         public required string CourseId { get; set; }
         public required string CourseName { get; set; }
         public DateTime EnrollmentDate { get; set; }
@@ -74,7 +74,7 @@ namespace DataAccessLayer.Models.ViewModels
         public required string FullName { get; set; }
         public required string Email { get; set; }
         public string? PhoneNumber { get; set; }
-        public string UserImage { get; set; } = "/img/defaults/default-avatar.svg";
+        public string UserImage { get; set; } = "/SharedMedia/defaults/default-avatar.svg";
         public DateTime AccountCreatedAt { get; set; }
         public List<UserCourseEnrollment> Enrollments { get; set; } = new List<UserCourseEnrollment>();
         public List<UserAchievementSummary> Achievements { get; set; } = new List<UserAchievementSummary>();
@@ -115,7 +115,7 @@ namespace DataAccessLayer.Models.ViewModels
     {
         public required string CourseId { get; set; }
         public required string CourseName { get; set; }
-        public string CourseImage { get; set; } = "/img/defaults/default-course.svg";
+        public string CourseImage { get; set; } = "/SharedMedia/defaults/default-course.svg";
         public DateTime EnrollmentDate { get; set; }
         public DateTime LastAccessDate { get; set; }
         public decimal ProgressPercentage { get; set; }

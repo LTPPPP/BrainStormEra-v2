@@ -24,7 +24,7 @@ class ChatbotManager {
     const chatbotHTML = `
             <div class="chatbot-container">                <!-- Chatbot Bubble -->
                 <div class="chatbot-bubble" id="chatbot-bubble">
-                    <img src="/img/logo/logowithoutbackground.png" alt="BrainStormEra" style="width: 32px; height: 32px; object-fit: contain;" />
+                    <img src="/SharedMedia/logo/logowithoutbackground.png" alt="BrainStormEra" style="width: 32px; height: 32px; object-fit: contain;" />
                 </div>
 
                 <!-- Chatbot Window -->
@@ -32,7 +32,7 @@ class ChatbotManager {
                     <!-- Header -->
                     <div class="chatbot-header">
                         <div class="bot-info">
-                            <img src="/img/logo/logowithoutbackground.png" alt="Bot" class="bot-avatar" />
+                            <img src="/SharedMedia/logo/logowithoutbackground.png" alt="Bot" class="bot-avatar" />
                             <div>
                                 <div class="bot-name">BrainStormEra</div>
                                 <div class="bot-status">Online</div>
@@ -239,8 +239,8 @@ class ChatbotManager {
     });
 
     const avatarSrc = isUser
-      ? this.getUserAvatar() || "/img/default-avatar.svg"
-      : "/img/logo/logowithoutbackground.png";
+                      ? this.getUserAvatar() || "/SharedMedia/defaults/default-avatar.svg"
+                : "/SharedMedia/logo/logowithoutbackground.png";
 
     const messageHTML = `
             <div class="message ${
@@ -248,7 +248,7 @@ class ChatbotManager {
             }" data-conversation-id="${conversationId || ""}">
                 <img src="${avatarSrc}" alt="${
       isUser ? "User" : "Bot"
-    }" class="message-avatar" onerror="this.src='/img/default-avatar.svg'" />
+                }" class="message-avatar" onerror="this.src='/SharedMedia/defaults/default-avatar.svg'" />
                 <div class="message-wrapper">
                     <div class="message-content" id="message-${Date.now()}"></div>
                     <div class="message-time">${timestamp}</div>
@@ -384,7 +384,7 @@ class ChatbotManager {
 
     const typingHTML = `
             <div class="message typing-indicator" id="typing-indicator">
-                <img src="/img/logo/logowithoutbackground.png" alt="Bot" class="message-avatar" />
+                <img src="/SharedMedia/logo/logowithoutbackground.png" alt="Bot" class="message-avatar" />
                 <div class="message-wrapper">
                     <div class="message-content">
                         <div class="typing-dots">
@@ -563,8 +563,8 @@ class ChatbotManager {
       if (Notification.permission === "granted") {
         new Notification("BrainStormEra Chat", {
           body: message,
-          icon: "/img/logo/logowithoutbackground.png",
-          badge: "/img/logo/logowithoutbackground.png",
+          icon: "/SharedMedia/logo/logowithoutbackground.png",
+          badge: "/SharedMedia/logo/logowithoutbackground.png",
         });
       } else if (Notification.permission !== "denied") {
         // Request permission
@@ -572,8 +572,8 @@ class ChatbotManager {
           if (permission === "granted") {
             new Notification("BrainStormEra Chat", {
               body: message,
-              icon: "/img/logo/logowithoutbackground.png",
-              badge: "/img/logo/logowithoutbackground.png",
+              icon: "/SharedMedia/logo/logowithoutbackground.png",
+              badge: "/SharedMedia/logo/logowithoutbackground.png",
             });
           }
         });

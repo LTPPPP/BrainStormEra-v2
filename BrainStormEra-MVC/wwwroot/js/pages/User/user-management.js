@@ -36,7 +36,8 @@ class UserManagement {
         };
         img.onerror = () => {
           // If image fails to load, use default avatar
-          const defaultAvatar = "/img/defaults/default-avatar.svg";
+          const defaultAvatar = "/SharedMedia/defaults/default-avatar.svg";
+    const SHARED_MEDIA_AVATARS = "/SharedMedia/avatars/";
           this.avatarCache.set(userId, defaultAvatar);
           if (avatarImg.src !== defaultAvatar) {
             avatarImg.src = defaultAvatar;
@@ -595,16 +596,16 @@ class UserManagement {
                 // Add error handling for the restored avatar
                 avatarImg.onerror = function () {
                   this.onerror = null;
-                  this.src = "/img/defaults/default-avatar.svg";
-                  avatarCache.set(userId, "/img/defaults/default-avatar.svg");
+                  this.src = "/SharedMedia/defaults/default-avatar.svg";
+                  avatarCache.set(userId, "/SharedMedia/defaults/default-avatar.svg");
                 };
               }
             } else if (userId && avatarImg) {
               // If no cache exists, ensure proper error handling
               avatarImg.onerror = function () {
                 this.onerror = null;
-                this.src = "/img/defaults/default-avatar.svg";
-                avatarCache.set(userId, "/img/defaults/default-avatar.svg");
+                this.src = "/SharedMedia/defaults/default-avatar.svg";
+                avatarCache.set(userId, "/SharedMedia/defaults/default-avatar.svg");
               };
             }
           });

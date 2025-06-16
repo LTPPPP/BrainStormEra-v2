@@ -346,7 +346,7 @@ class CourseSearchManager {
                     <div class="course-image">
                         <img src="${course.coursePicture}" alt="${
           course.courseName
-        }" loading="lazy" onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
+        }" loading="lazy" onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
                         ${
                           course.price > 0
                             ? `<div class="course-price">$${course.price.toLocaleString()}</div>`

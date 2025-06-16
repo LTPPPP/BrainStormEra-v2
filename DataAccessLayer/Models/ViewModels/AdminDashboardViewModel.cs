@@ -82,7 +82,7 @@ namespace DataAccessLayer.Models.ViewModels
         public required string FullName { get; set; }
         public required string UserEmail { get; set; }
         public required string UserRole { get; set; }
-        public string UserImage { get; set; } = "/img/defaults/default-avatar.svg";
+        public string UserImage { get; set; } = "/SharedMedia/defaults/default-avatar.svg";
         public DateTime AccountCreatedAt { get; set; }
         public bool IsBanned { get; set; }
     }

@@ -9,7 +9,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewData["Title"] - BrainStormEra</title>
-    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="icon" type="image/x-icon" href="~/SharedMedia/logo/logowithoutbackground.png" sizes="48x48">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" href="~/css/layouts/base.css">
@@ -86,7 +86,7 @@
                                         <div class="course-card">
                                             <div class="course-image">
                                                 <img src="@course.CourseImage" alt="@course.CourseName"
-                                                     onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
+                                                     onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
                                                 <div class="progress-overlay">
                                                     <div class="progress">
                                                         <div class="progress-bar" role="progressbar"
@@ -111,8 +111,8 @@
                         else
                         {
                             <div class="empty-state">
-                                <img src="/img/empty-courses.svg" alt="No courses" class="empty-state-img"
-                                     onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
+                                <img src="/SharedMedia/static/empty-courses.svg" alt="No courses" class="empty-state-img"
+                                     onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
                                 <h3>No courses yet</h3>
                                 <p>You haven't enrolled in any courses yet. Start exploring!</p>
                                 <a href="#" class="btn btn-primary">Find Courses</a>
@@ -137,7 +137,7 @@
                                         <div class="course-card">
                                             <div class="course-image">
                                                 <img src="@course.CourseImage" alt="@course.CourseName"
-                                                     onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
+                                                     onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
                                                 @if (course.Price > 0)
                                                 {
                                                     <div class="course-price">$@course.Price</div>
@@ -203,8 +203,8 @@
                         else
                         {
                             <div class="empty-state" id="recommendations-empty-state">
-                                <img src="/img/empty-recommendations.svg" alt="No recommendations" class="empty-state-img"
-                                     onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
+                                <img src="/SharedMedia/static/empty-recommendations.svg" alt="No recommendations" class="empty-state-img"
+                                     onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
                                 <h3>No recommendations yet</h3>
                                 <p>We're preparing personalized course recommendations for you. This usually takes just a moment!</p>
                                 <div class="mt-3">

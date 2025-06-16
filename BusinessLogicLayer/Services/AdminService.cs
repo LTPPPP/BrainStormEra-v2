@@ -49,7 +49,7 @@ namespace BusinessLogicLayer.Services
                 return new AdminDashboardViewModel
                 {
                     AdminName = adminUser?.FullName ?? "Admin",
-                    AdminImage = adminUser?.UserImage ?? "/img/defaults/default-avatar.svg",
+                    AdminImage = adminUser?.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
                     TotalUsers = statistics.ContainsKey("TotalUsers") ? (int)statistics["TotalUsers"] : 0,
                     TotalCourses = statistics.ContainsKey("TotalCourses") ? (int)statistics["TotalCourses"] : 0,
                     TotalEnrollments = statistics.ContainsKey("TotalEnrollments") ? (int)statistics["TotalEnrollments"] : 0,
@@ -93,7 +93,7 @@ namespace BusinessLogicLayer.Services
                         FullName = u.FullName ?? "",
                         UserEmail = u.UserEmail,
                         UserRole = u.UserRole,
-                        UserImage = u.UserImage ?? "/img/defaults/default-avatar.svg",
+                        UserImage = u.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
                         AccountCreatedAt = u.AccountCreatedAt,
                         IsBanned = u.IsBanned ?? false
                     }).ToList(),
@@ -101,7 +101,7 @@ namespace BusinessLogicLayer.Services
                     {
                         CourseId = c.CourseId,
                         CourseName = c.CourseName ?? "",
-                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                        CoursePicture = c.CourseImage ?? "/SharedMedia/defaults/default-course.svg",
                         Price = c.Price,
                         CreatedBy = c.Author?.FullName ?? "",
                         Description = c.CourseDescription ?? "",
@@ -142,7 +142,7 @@ namespace BusinessLogicLayer.Services
                     FullName = u.FullName ?? "",
                     UserEmail = u.UserEmail,
                     UserRole = u.UserRole,
-                    UserImage = u.UserImage ?? "/img/defaults/default-avatar.svg",
+                    UserImage = u.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
                     AccountCreatedAt = u.AccountCreatedAt,
                     IsBanned = u.IsBanned ?? false
                 }).ToList();
@@ -163,7 +163,7 @@ namespace BusinessLogicLayer.Services
                 {
                     CourseId = c.CourseId,
                     CourseName = c.CourseName ?? "",
-                    CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                    CoursePicture = c.CourseImage ?? "/SharedMedia/defaults/default-course.svg",
                     Price = c.Price,
                     CreatedBy = c.Author?.FullName ?? "",
                     Description = c.CourseDescription ?? "",
@@ -221,7 +221,7 @@ namespace BusinessLogicLayer.Services
                         FullName = u.FullName ?? "",
                         UserEmail = u.UserEmail,
                         UserRole = u.UserRole,
-                        UserImage = u.UserImage ?? "/img/defaults/default-avatar.svg",
+                        UserImage = u.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
                         AccountCreatedAt = u.AccountCreatedAt,
                         LastLoginDate = u.LastLogin,
                         IsBanned = u.IsBanned ?? false,
@@ -265,7 +265,7 @@ namespace BusinessLogicLayer.Services
                         CourseId = c.CourseId,
                         CourseName = c.CourseName ?? "",
                         CourseDescription = c.CourseDescription ?? "",
-                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                        CoursePicture = c.CourseImage ?? "/SharedMedia/defaults/default-course.svg",
                         Price = c.Price,
                         CreatedAt = c.CourseCreatedAt,
                         UpdatedAt = c.CourseUpdatedAt,

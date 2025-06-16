@@ -5,6 +5,7 @@ using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using BusinessLogicLayer.Constants;
 
 namespace BusinessLogicLayer.Services
 {    /// <summary>
@@ -46,7 +47,7 @@ namespace BusinessLogicLayer.Services
                 {
                     CourseId = c.CourseId,
                     CourseName = c.CourseName,
-                    CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                    CoursePicture = c.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                     Price = c.Price,
                     CreatedBy = c.Author?.FullName ?? c.Author?.Username ?? "Unknown",
                     Description = c.CourseDescription,
@@ -96,7 +97,7 @@ namespace BusinessLogicLayer.Services
                 {
                     CourseId = e.Course?.CourseId ?? "",
                     CourseName = e.Course?.CourseName ?? "",
-                    CourseImage = e.Course?.CourseImage ?? "/img/defaults/default-course.svg",
+                    CourseImage = e.Course?.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                     AuthorName = e.Course?.Author?.FullName ?? e.Course?.Author?.Username ?? "Unknown",
                     CompletionPercentage = (int)(e.ProgressPercentage ?? 0)
                 }).ToList();
@@ -108,7 +109,7 @@ namespace BusinessLogicLayer.Services
                 {
                     CourseId = c.CourseId,
                     CourseName = c.CourseName,
-                    CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                    CoursePicture = c.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                     Price = c.Price,
                     CreatedBy = c.Author?.FullName ?? c.Author?.Username ?? "Unknown",
                     Description = c.CourseDescription,
@@ -166,7 +167,7 @@ namespace BusinessLogicLayer.Services
                 {
                     UserName = user.Username,
                     FullName = user.FullName ?? user.Username,
-                    UserImage = user.UserImage ?? "/img/default-avatar.svg",
+                    UserImage = user.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
                     EnrolledCourses = enrolledCourseViewModels,
                     RecommendedCourses = recommendedCourseViewModels,
                     Notifications = notifications
@@ -198,7 +199,7 @@ namespace BusinessLogicLayer.Services
                 {
                     CourseId = c.CourseId,
                     CourseName = c.CourseName,
-                    CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                    CoursePicture = c.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                     Price = c.Price,
                     CreatedBy = user.FullName ?? user.Username,
                     Description = c.CourseDescription,
@@ -227,7 +228,7 @@ namespace BusinessLogicLayer.Services
                 return new InstructorDashboardViewModel
                 {
                     InstructorName = user.FullName ?? user.Username,
-                    InstructorImage = user.UserImage ?? "/img/default-avatar.svg",
+                    InstructorImage = user.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
                     TotalCourses = totalCourses,
                     TotalStudents = totalStudents,
                     TotalRevenue = totalRevenue,

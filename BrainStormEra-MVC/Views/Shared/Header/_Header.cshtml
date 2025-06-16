@@ -8,8 +8,8 @@
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
             <a class="navbar-brand" href="@Url.Action("Index", "Home")">
-                <img src="~/img/logo/logowithoutbackground.png" alt="BrainStormEra Logo" class="logo_img"
-                    onerror="this.onerror=null; this.src='/img/defaults/default-logo.svg';">
+                <img src="~/SharedMedia/logo/logowithoutbackground.png" alt="BrainStormEra Logo" class="logo_img"
+                    onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-logo.svg';">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -89,7 +89,7 @@
                                 aria-expanded="false">
                                 <img src="@Url.Action("GetAvatar", "Auth", new { userId = User.FindFirst("UserId")?.Value })"
                                     alt="User Avatar"
-                                    onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
+                                    onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-avatar.svg';">
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li class="dropdown-header">
