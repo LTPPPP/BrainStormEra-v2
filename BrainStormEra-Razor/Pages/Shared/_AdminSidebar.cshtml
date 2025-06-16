@@ -1,0 +1,66 @@
+@model dynamic
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo">
+            <i class="fas fa-brain"></i>
+            BrainStorm Era
+        </div>
+        <div class="admin-info dropdown">
+            <div class="admin-profile" id="adminProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <img src="@(Model?.AdminImage ?? "/img/defaults/default-avatar.svg")" alt="Admin" class="admin-avatar" 
+                     onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
+                <div class="admin-details">
+                    <h6>@(Model?.AdminName ?? "Admin User")</h6>
+                    <small>Administrator</small>
+                </div>
+                <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </div>
+            <ul class="dropdown-menu admin-dropdown-menu">
+                <li>
+                    <a class="dropdown-item @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Profile" ? "active" : "")" href="/Admin/Profile">
+                        <i class="fas fa-user"></i>
+                        Profile
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item text-danger" href="/Admin/Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="/Admin/Dashboard" class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Dashboard" ? "active" : "")" data-section="overview">
+            <i class="fas fa-chart-bar"></i>
+            @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Dashboard" ? "Overview" : "Dashboard")
+        </a>
+        <a href="/Admin/Users" class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Users" ? "active" : "")" data-section="users">
+            <i class="fas fa-users"></i>
+            Users
+        </a>
+        <a href="/Admin/Courses" class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Courses" ? "active" : "")" data-section="courses">
+            <i class="fas fa-book"></i>
+            Courses
+        </a>
+        <a href="/Admin/Points" class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Points" ? "active" : "")" data-section="points">
+            <i class="fas fa-coins"></i>
+            Points
+        </a>
+        <a href="/Admin/Certificates" class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Certificates" ? "active" : "")" data-section="certificates">
+            <i class="fas fa-certificate"></i>
+            Certificates
+        </a>
+        <a href="/Admin/Chatbot" class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Chatbot" ? "active" : "")" data-section="chatbot">
+            <i class="fas fa-robot"></i>
+            Chatbot
+        </a>
+        <a href="/Admin/Reports" class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Reports" ? "active" : "")" data-section="reports">
+            <i class="fas fa-chart-line"></i>
+            Reports
+        </a>
+    </nav>
+</div> 

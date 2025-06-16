@@ -1,82 +1,14 @@
 @page
 @model BrainStormEra_Razor.Pages.Admin.ProfileModel
 @{
-    ViewData["Title"] = "Admin Profile";
-    Layout = null;
+    ViewData["Title"] = "Admin Profile - BrainStormEra";
+    ViewData["AdminData"] = null; // Profile page can determine admin data from current user
+    Layout = "_AdminLayout";
 }
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"] - BrainStormEra</title>
-    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-    <link rel="stylesheet" href="~/css/layouts/base.css">
-    <link rel="stylesheet" href="~/css/admin-dashboard.css">
+
+@section Styles {
     <link rel="stylesheet" href="~/css/admin-profile.css">
-    <link rel="stylesheet" href="~/css/global.css">
-</head>
-
-<body class="admin-body">
-    <div class="dashboard-wrapper">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <i class="fas fa-brain"></i>
-                    BrainStorm Era
-                </div>
-                <div class="admin-info dropdown">
-                    <div class="admin-profile" id="adminProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img src="/img/defaults/default-avatar.svg" alt="Admin" class="admin-avatar" 
-                             onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
-                        <div class="admin-details">
-                            <h6>Admin User</h6>
-                            <small>Administrator</small>
-                        </div>
-                        <i class="fas fa-chevron-down dropdown-arrow"></i>
-                    </div>
-                    <ul class="dropdown-menu admin-dropdown-menu">
-                        <li>
-                            <a class="dropdown-item active" href="/Admin/Profile">
-                                <i class="fas fa-user"></i>
-                                Profile
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item text-danger" href="/Admin/Logout">
-                                <i class="fas fa-sign-out-alt"></i>
-                                Logout
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="/Admin/Dashboard" class="nav-link">
-                    <i class="fas fa-chart-bar"></i>
-                    Dashboard
-                </a>
-                <a href="/Admin/Users" class="nav-link">
-                    <i class="fas fa-users"></i>
-                    Users
-                </a>
-                <a href="/Admin/Courses" class="nav-link">
-                    <i class="fas fa-book"></i>
-                    Courses
-                </a>
-                <a href="/Admin/Reports" class="nav-link">
-                    <i class="fas fa-chart-line"></i>
-                    Reports
-                </a>
-            </nav>
-        </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
+}
             <!-- Profile Content -->
             <div class="profile-container">
                 <!-- Profile Header Card -->
@@ -200,14 +132,10 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Notification Container -->
-    <div id="notificationContainer" class="notification-container"></div>
+<!-- Notification Container -->
+<div id="notificationContainer" class="notification-container"></div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+@section Scripts {
     <script src="~/js/admin-profile.js"></script>
-</body>
-</html>
+}

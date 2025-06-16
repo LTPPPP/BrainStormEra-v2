@@ -2,19 +2,11 @@
 @model BrainStormEra_Razor.Pages.Admin.DashboardModel
 @{
     ViewData["Title"] = "Admin Dashboard - BrainStorm Era";
-    Layout = null;
+    ViewData["AdminData"] = Model.Dashboard;
+    Layout = "_AdminLayout";
 }
 
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"]</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="~/css/admin-dashboard.css" rel="stylesheet">
-    
+@section HeadScripts {
     <!-- Chart.js for interactive charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -25,73 +17,7 @@
     <!-- Date picker for filters -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-</head>
-<body>
-    <div class="dashboard-wrapper">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <i class="fas fa-brain"></i>
-                    BrainStorm Era
-                </div>
-                <div class="admin-info dropdown">
-                    <div class="admin-profile" id="adminProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img src="@Model.Dashboard.AdminImage" alt="Admin" class="admin-avatar" 
-                             onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
-                        <div class="admin-details">
-                            <h6>@Model.Dashboard.AdminName</h6>
-                            <small>Administrator</small>
-                        </div>
-                        <i class="fas fa-chevron-down dropdown-arrow"></i>
-                    </div>
-                                            <ul class="dropdown-menu admin-dropdown-menu">
-                            <li>
-                                <a class="dropdown-item" href="/Admin/Profile">
-                                    <i class="fas fa-user"></i>
-                                    Profile
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item text-danger" href="/Admin/Logout">
-                                    <i class="fas fa-sign-out-alt"></i>
-                                    Logout
-                                </a>
-                            </li>
-                        </ul>
-                </div>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="#overview" class="nav-link active" data-section="overview">
-                    <i class="fas fa-chart-bar"></i>
-                    Overview
-                </a>
-                <a href="#users" class="nav-link" data-section="users">
-                    <i class="fas fa-users"></i>
-                    Users
-                </a>
-                <a href="#courses" class="nav-link" data-section="courses">
-                    <i class="fas fa-book"></i>
-                    Courses
-                </a>
-                <a href="#points" class="nav-link" data-section="points">
-                    <i class="fas fa-coins"></i>
-                    Points
-                </a>
-                <a href="#certificates" class="nav-link" data-section="certificates">
-                    <i class="fas fa-certificate"></i>
-                    Certificates
-                </a>
-                <a href="#chatbot" class="nav-link" data-section="chatbot">
-                    <i class="fas fa-robot"></i>
-                    Chatbot
-                </a>
-            </nav>
-        </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
+}
             <!-- Header with filters -->
             <div class="page-header">
                 <div>
@@ -400,12 +326,8 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+@section Scripts {
     <script src="~/js/admin-dashboard.js"></script>
     
     <!-- Data for JavaScript -->
@@ -432,5 +354,4 @@
             expiredCertificates: @Model.Dashboard.ExpiredCertificates
         };
     </script>
-</body>
-</html>
+}
