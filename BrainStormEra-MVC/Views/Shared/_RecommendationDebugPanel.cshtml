@@ -1,5 +1,5 @@
-@* Recommendation Debug Panel - Only visible to instructors and admins *@
-@if (User.IsInRole("instructor") || User.IsInRole("admin"))
+@* Recommendation Debug Panel - Only visible to instructors *@
+@if (User.IsInRole("instructor"))
 {
     <div class="recommendation-debug-panel position-fixed" style="bottom: 20px; left: 20px; z-index: 1000;">
         <div class="card shadow-sm" style="width: 300px;">

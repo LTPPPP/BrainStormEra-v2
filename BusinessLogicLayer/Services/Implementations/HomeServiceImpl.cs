@@ -499,14 +499,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var userRole = user.FindFirst("UserRole")?.Value;
                 var username = user.Identity?.Name; _logger.LogInformation("GetUserDashboardRedirect - CurrentUserRole: '{Role}', UserId: {UserId}",
                     userRole, userId);
-
-                if (string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
-                {
-                    _logger.LogInformation("Redirecting admin user to Admin Dashboard");
-                    result.RedirectAction = "AdminDashboard";
-                    result.RedirectController = "Admin";
-                }
-                else if (string.Equals(userRole, "instructor", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(userRole, "instructor", StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogInformation("Redirecting instructor user to Instructor Dashboard");
                     result.RedirectAction = "InstructorDashboard";
@@ -522,7 +515,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 {
                     _logger.LogWarning("Invalid user role detected: '{Role}' for user: {UserId}", userRole, userId);
                     result.HasError = true;
-                    result.ErrorMessage = "Invalid user role. Please contact support.";
+                    result.ErrorMessage = "Invalid login attempt.";
                     result.RedirectAction = "Index";
                     result.RedirectController = "Login";
                 }

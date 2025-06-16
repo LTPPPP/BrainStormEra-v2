@@ -88,7 +88,7 @@
                             <div class="stat-number">@Model.UnreadCount</div>
                             <div class="stat-label">Unread Messages</div>
                         </div>
-                        @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                        @if (User.IsInRole("instructor"))
                         {
                             <a href="@Url.Action("Create", "Notification")" class="btn btn-primary create-notification-btn" title="Create New Notification">
                                 <i class="fas fa-plus"></i>
@@ -169,7 +169,7 @@
                                                         <i class="fas fa-check"></i>
                                                     </button>
                                                 }
-                                                @if (notification.CreatedBy == Model.CurrentUserId && (User.IsInRole("admin") || User.IsInRole("instructor")))
+                                                @if (notification.CreatedBy == Model.CurrentUserId && User.IsInRole("instructor"))
                                                 {
                                                     <a href="@Url.Action("Edit", "Notification", new { id = notification.NotificationId })" 
                                                        class="btn btn-sm edit-btn" 

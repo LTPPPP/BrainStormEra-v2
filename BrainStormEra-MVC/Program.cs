@@ -51,7 +51,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.INotificationRepo, DataAccessLayer.Repositories.NotificationRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAchievementRepo, DataAccessLayer.Repositories.AchievementRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICertificateRepo, DataAccessLayer.Repositories.CertificateRepo>();
-            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAdminRepo, DataAccessLayer.Repositories.AdminRepo>();
+
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatbotRepo, DataAccessLayer.Repositories.ChatbotRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();            // Register Services with SOLID principles - Now using BusinessLogicLayer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.UserService>();
@@ -93,9 +93,8 @@ namespace BrainStormEra_MVC
             // Register Recommendation Helper
             builder.Services.AddScoped<BusinessLogicLayer.Services.RecommendationHelper>();
 
-            // Register Admin Services for data access and business logic
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAdminService, BusinessLogicLayer.Services.AdminService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AdminServiceImpl>();
+            // Register Services for data access and business logic
+
 
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.EnrollmentService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementService, BusinessLogicLayer.Services.AchievementService>();
@@ -141,7 +140,7 @@ namespace BrainStormEra_MVC
                 });            // Add Authorization
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin", "Admin"));
+
                 options.AddPolicy("InstructorOnly", policy => policy.RequireRole("instructor", "Instructor"));
                 options.AddPolicy("LearnerOnly", policy => policy.RequireRole("learner", "Learner"));
             });

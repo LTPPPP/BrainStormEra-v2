@@ -98,8 +98,6 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                _logger.LogInformation("User found: {Username}, Role: {Role}", user.Username, user.UserRole);
-
                 // Check if user is banned
                 if (user.IsBanned == true)
                 {
@@ -124,15 +122,29 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                _logger.LogInformation("Password verified successfully for user: {Username}", user.Username);                // Validate user role (ensure it's one of the allowed roles)
-                var validRoles = new[] { "admin", "instructor", "learner" };
+                _logger.LogInformation("Password verified successfully for user: {Username}", user.Username);
+
+                // Block admin role from logging in
+                if (string.Equals(user.UserRole, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Admin login attempt blocked for user: {Username}", user.Username);
+                    return new LoginResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Invalid login attempt.",
+                        ViewModel = model
+                    };
+                }
+
+                // Validate user role (ensure it's one of the allowed roles)
+                var validRoles = new[] { "instructor", "learner" };
                 if (!validRoles.Contains(user.UserRole, StringComparer.OrdinalIgnoreCase))
                 {
                     _logger.LogWarning("Invalid role for user: {Username}, Role: {Role}", user.Username, user.UserRole);
                     return new LoginResult
                     {
                         Success = false,
-                        ErrorMessage = "Invalid user role. Please contact system administrator.",
+                        ErrorMessage = "Invalid login attempt.",
                         ViewModel = model
                     };
                 }
@@ -1162,7 +1174,6 @@ namespace BusinessLogicLayer.Services.Implementations
             // Role-based redirect (case-insensitive)
             return userRole.ToLower() switch
             {
-                "admin" => "/Admin/AdminDashboard",
                 "instructor" => "/Home/InstructorDashboard",
                 "learner" => "/Home/LearnerDashboard",
                 _ => "/Home/Index"

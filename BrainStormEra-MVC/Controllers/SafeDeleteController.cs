@@ -35,11 +35,11 @@ namespace BrainStormEra_MVC.Controllers
         {
             var result = await _safeDeleteServiceImpl.HandleSoftDeleteAsync(request);
             return Json(result.JsonResponse);
-        }        /// <summary>
-                 /// Perform hard delete operation (admin only for most entities)
-                 /// </summary>
+        }                /// <summary>
+                         /// Perform hard delete operation (instructor only for most entities)
+                         /// </summary>
         [HttpPost]
-        [Authorize(Roles = "admin,instructor")]
+        [Authorize(Roles = "instructor")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> HardDelete([FromBody] SafeDeleteServiceImpl.DeleteRequest request)
         {
@@ -66,29 +66,6 @@ namespace BrainStormEra_MVC.Controllers
         {
             var result = await _safeDeleteServiceImpl.HandleGetDeletedEntitiesAsync(entityType);
             return Json(result.JsonResponse);
-        }        /// <summary>
-                 /// Admin interface for managing deleted items
-                 /// </summary>
-        [HttpGet]
-        [Authorize(Roles = "admin")]
-        public async Task<IActionResult> AdminDeletedItems(string search = "", string entityType = "All", int page = 1, int pageSize = 10)
-        {
-            var result = await _safeDeleteServiceImpl.HandleAdminDeletedItemsAsync(User, search, entityType, page, pageSize);
-
-            if (!result.IsSuccess)
-            {
-                if (!string.IsNullOrEmpty(result.TempDataErrorMessage))
-                {
-                    TempData["ErrorMessage"] = result.TempDataErrorMessage;
-                }
-
-                if (result.ShouldRedirect)
-                {
-                    return RedirectToAction(result.RedirectAction, result.RedirectController);
-                }
-            }
-
-            return View(result.ViewModel);
         }
     }
 }
