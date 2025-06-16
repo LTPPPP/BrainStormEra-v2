@@ -100,6 +100,14 @@ namespace DataAccessLayer.Repositories.Interfaces
         Task<bool> LogAdminActionAsync(string adminId, string action, string details, string? targetId = null);
         Task<List<object>> GetAdminActionLogsAsync(string? adminId = null, int page = 1, int pageSize = 20);
 
+        // Certificate Analytics
+        Task<List<MonthlyCertificateIssued>> GetMonthlyCertificateDataAsync();
+        Task<List<CourseCompletionRate>> GetCourseCompletionRatesAsync();
+
+        // Point Analytics
+        Task<List<PointDistribution>> GetPointDistributionDataAsync();
+        Task<List<MonthlyPointsEarned>> GetMonthlyPointsDataAsync();
+
         // Chatbot Analytics
         Task<Dictionary<string, object>> GetChatbotStatisticsAsync();
         Task<List<DailyConversationStats>> GetDailyChatbotUsageAsync(int days = 7);

@@ -68,6 +68,19 @@ namespace BusinessLogicLayer.Services
                     RevenueData = revenueData,
                     EnrollmentData = enrollmentData,
 
+                    // Certificate analytics data
+                    TotalCertificates = statistics.ContainsKey("TotalCertificates") ? (int)statistics["TotalCertificates"] : 0,
+                    ValidCertificates = statistics.ContainsKey("ValidCertificates") ? (int)statistics["ValidCertificates"] : 0,
+                    ExpiredCertificates = statistics.ContainsKey("ExpiredCertificates") ? (int)statistics["ExpiredCertificates"] : 0,
+                    CertificateData = await _adminRepo.GetMonthlyCertificateDataAsync(),
+                    CourseCompletionRates = await _adminRepo.GetCourseCompletionRatesAsync(),
+
+                    // Point analytics data
+                    TotalPointsInSystem = statistics.ContainsKey("TotalPointsInSystem") ? (decimal)statistics["TotalPointsInSystem"] : 0,
+                    AverageUserPoints = statistics.ContainsKey("AverageUserPoints") ? (decimal)statistics["AverageUserPoints"] : 0,
+                    PointDistributionData = await _adminRepo.GetPointDistributionDataAsync(),
+                    MonthlyPointsData = await _adminRepo.GetMonthlyPointsDataAsync(),
+
                     // Chatbot analytics data
                     ChatbotStatistics = chatbotStats,
                     ChatbotDailyUsage = chatbotDailyUsage,
@@ -80,6 +93,7 @@ namespace BusinessLogicLayer.Services
                         FullName = u.FullName ?? "",
                         UserEmail = u.UserEmail,
                         UserRole = u.UserRole,
+                        UserImage = u.UserImage ?? "/img/defaults/default-avatar.svg",
                         AccountCreatedAt = u.AccountCreatedAt,
                         IsBanned = u.IsBanned ?? false
                     }).ToList(),
@@ -128,6 +142,7 @@ namespace BusinessLogicLayer.Services
                     FullName = u.FullName ?? "",
                     UserEmail = u.UserEmail,
                     UserRole = u.UserRole,
+                    UserImage = u.UserImage ?? "/img/defaults/default-avatar.svg",
                     AccountCreatedAt = u.AccountCreatedAt,
                     IsBanned = u.IsBanned ?? false
                 }).ToList();

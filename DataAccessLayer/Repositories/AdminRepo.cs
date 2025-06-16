@@ -44,6 +44,17 @@ namespace DataAccessLayer.Repositories
                 var pendingCourses = await _context.Courses.CountAsync(c => c.ApprovalStatus == "pending");
                 var rejectedCourses = await _context.Courses.CountAsync(c => c.ApprovalStatus == "rejected");
 
+                // Certificate statistics
+                var totalCertificates = await _context.Certificates.CountAsync();
+                var validCertificates = await _context.Certificates.CountAsync(c => c.IsValid == true);
+                var expiredCertificates = totalCertificates - validCertificates;
+
+                // Point statistics
+                var totalPointsInSystem = await _context.Accounts
+                    .Where(a => a.PaymentPoint.HasValue)
+                    .SumAsync(a => a.PaymentPoint.Value);
+                var averageUserPoints = totalUsers > 0 ? totalPointsInSystem / totalUsers : 0;
+
                 return new Dictionary<string, object>
                 {
                     { "TotalUsers", totalUsers },
@@ -55,7 +66,12 @@ namespace DataAccessLayer.Repositories
                     { "TotalAdmins", totalAdmins },
                     { "ApprovedCourses", approvedCourses },
                     { "PendingCourses", pendingCourses },
-                    { "RejectedCourses", rejectedCourses }
+                    { "RejectedCourses", rejectedCourses },
+                    { "TotalCertificates", totalCertificates },
+                    { "ValidCertificates", validCertificates },
+                    { "ExpiredCertificates", expiredCertificates },
+                    { "TotalPointsInSystem", totalPointsInSystem },
+                    { "AverageUserPoints", averageUserPoints }
                 };
             }
             catch (Exception ex)
@@ -1116,7 +1132,196 @@ namespace DataAccessLayer.Repositories
                 _logger?.LogError(ex, "Error getting system statistics");
                 throw;
             }
-        }        // Basic implementations for remaining interface methods (to be expanded based on specific needs)
+        }
+
+        // Certificate Analytics Methods
+        public async Task<List<MonthlyCertificateIssued>> GetMonthlyCertificateDataAsync()
+        {
+            try
+            {
+                var sixMonthsAgo = DateTime.Now.AddMonths(-6);
+
+                var certificateData = await _context.Certificates
+                    .Where(c => c.CertificateCreatedAt >= sixMonthsAgo)
+                    .GroupBy(c => new
+                    {
+                        Year = c.CertificateCreatedAt.Year,
+                        Month = c.CertificateCreatedAt.Month
+                    })
+                    .Select(g => new
+                    {
+                        Year = g.Key.Year,
+                        Month = g.Key.Month,
+                        CertificatesIssued = g.Count()
+                    })
+                    .ToListAsync();
+
+                var convertedData = certificateData.Select(x => new MonthlyCertificateIssued
+                {
+                    Month = new DateTime(x.Year, x.Month, 1).ToString("MMMM"),
+                    CertificatesIssued = x.CertificatesIssued,
+                    Date = new DateTime(x.Year, x.Month, 1)
+                }).OrderBy(x => x.Date).ToList();
+
+                // Fill in missing months with zero values
+                var result = new List<MonthlyCertificateIssued>();
+                for (int i = 5; i >= 0; i--)
+                {
+                    var monthDate = DateTime.Now.AddMonths(-i);
+                    var existingData = convertedData.FirstOrDefault(x =>
+                        x.Date.Year == monthDate.Year && x.Date.Month == monthDate.Month);
+
+                    result.Add(existingData ?? new MonthlyCertificateIssued
+                    {
+                        Month = monthDate.ToString("MMMM"),
+                        CertificatesIssued = 0,
+                        Date = new DateTime(monthDate.Year, monthDate.Month, 1)
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving monthly certificate data");
+                throw;
+            }
+        }
+
+        public async Task<List<CourseCompletionRate>> GetCourseCompletionRatesAsync()
+        {
+            try
+            {
+                var courseCompletionData = await _context.Courses
+                    .Include(c => c.Enrollments)
+                    .ThenInclude(e => e.Certificates)
+                    .Where(c => c.ApprovalStatus == "approved")
+                    .Select(c => new CourseCompletionRate
+                    {
+                        CourseId = c.CourseId,
+                        CourseName = c.CourseName ?? "Unknown Course",
+                        TotalEnrollments = c.Enrollments!.Count(),
+                        CompletedCount = c.Enrollments!.Count(e => e.Certificates!.Any()),
+                        CompletionRate = c.Enrollments!.Count() > 0 ?
+                            (decimal)c.Enrollments!.Count(e => e.Certificates!.Any()) / c.Enrollments!.Count() * 100 : 0
+                    })
+                    .OrderByDescending(c => c.CompletionRate)
+                    .Take(10)
+                    .ToListAsync();
+
+                return courseCompletionData;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving course completion rates");
+                throw;
+            }
+        }
+
+        // Point Analytics Methods
+        public async Task<List<PointDistribution>> GetPointDistributionDataAsync()
+        {
+            try
+            {
+                var pointRanges = new[]
+                {
+                    new { Min = 0, Max = 100, Label = "0-100" },
+                    new { Min = 101, Max = 500, Label = "101-500" },
+                    new { Min = 501, Max = 1000, Label = "501-1000" },
+                    new { Min = 1001, Max = 5000, Label = "1001-5000" },
+                    new { Min = 5001, Max = int.MaxValue, Label = "5000+" }
+                };
+
+                var result = new List<PointDistribution>();
+
+                foreach (var range in pointRanges)
+                {
+                    int userCount;
+                    if (range.Max == int.MaxValue)
+                    {
+                        userCount = await _context.Accounts
+                            .Where(a => a.PaymentPoint >= range.Min)
+                            .CountAsync();
+                    }
+                    else
+                    {
+                        userCount = await _context.Accounts
+                            .Where(a => a.PaymentPoint >= range.Min && a.PaymentPoint <= range.Max)
+                            .CountAsync();
+                    }
+
+                    result.Add(new PointDistribution
+                    {
+                        PointRange = range.Label,
+                        UserCount = userCount
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving point distribution data");
+                throw;
+            }
+        }
+
+        public async Task<List<MonthlyPointsEarned>> GetMonthlyPointsDataAsync()
+        {
+            try
+            {
+                var sixMonthsAgo = DateOnly.FromDateTime(DateTime.Now.AddMonths(-6));
+
+                // Get points earned from achievements
+                var pointsData = await _context.UserAchievements
+                    .Include(ua => ua.Achievement)
+                    .Where(ua => ua.ReceivedDate >= sixMonthsAgo)
+                    .GroupBy(ua => new
+                    {
+                        Year = ua.ReceivedDate.Year,
+                        Month = ua.ReceivedDate.Month
+                    })
+                    .Select(g => new
+                    {
+                        Year = g.Key.Year,
+                        Month = g.Key.Month,
+                        TotalPointsEarned = g.Sum(ua => ua.Achievement!.PointsReward ?? 0)
+                    })
+                    .ToListAsync();
+
+                var convertedData = pointsData.Select(x => new MonthlyPointsEarned
+                {
+                    Month = new DateTime(x.Year, x.Month, 1).ToString("MMMM"),
+                    TotalPointsEarned = x.TotalPointsEarned,
+                    Date = new DateTime(x.Year, x.Month, 1)
+                }).OrderBy(x => x.Date).ToList();
+
+                // Fill in missing months with zero values
+                var result = new List<MonthlyPointsEarned>();
+                for (int i = 5; i >= 0; i--)
+                {
+                    var monthDate = DateTime.Now.AddMonths(-i);
+                    var existingData = convertedData.FirstOrDefault(x =>
+                        x.Date.Year == monthDate.Year && x.Date.Month == monthDate.Month);
+
+                    result.Add(existingData ?? new MonthlyPointsEarned
+                    {
+                        Month = monthDate.ToString("MMMM"),
+                        TotalPointsEarned = 0,
+                        Date = new DateTime(monthDate.Year, monthDate.Month, 1)
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving monthly points data");
+                throw;
+            }
+        }
+
+        // Basic implementations for remaining interface methods (to be expanded based on specific needs)
         public Task<Dictionary<string, int>> GetUserRegistrationsByMonthAsync(int year) => Task.FromResult(new Dictionary<string, int>());
         public Task<Dictionary<string, int>> GetCourseCreationsByMonthAsync(int year) => Task.FromResult(new Dictionary<string, int>());
         public Task<Dictionary<string, int>> GetEnrollmentsByMonthAsync(int year) => Task.FromResult(new Dictionary<string, int>());

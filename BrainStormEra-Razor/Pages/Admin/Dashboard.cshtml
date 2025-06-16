@@ -14,6 +14,17 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="~/css/admin-dashboard.css" rel="stylesheet">
+    
+    <!-- Chart.js for interactive charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
+    <!-- ApexCharts for advanced visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
+    <!-- Date picker for filters -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body>
     <div class="dashboard-wrapper">
@@ -28,137 +39,387 @@
                     <img src="@Model.Dashboard.AdminImage" alt="Admin" class="admin-avatar">
                     <div class="admin-details">
                         <h6>@Model.Dashboard.AdminName</h6>
-                        <small>Quản trị viên</small>
+                        <small>Administrator</small>
                     </div>
                 </div>
             </div>
             <nav class="sidebar-nav">
-                <a href="#" class="nav-link active">
+                <a href="#overview" class="nav-link active" data-section="overview">
                     <i class="fas fa-chart-bar"></i>
-                    Dashboard
+                    Overview
                 </a>
-                <a href="#" class="nav-link">
+                <a href="#users" class="nav-link" data-section="users">
                     <i class="fas fa-users"></i>
-                    Quản lý người dùng
+                    Users
                 </a>
-                <a href="#" class="nav-link">
+                <a href="#courses" class="nav-link" data-section="courses">
                     <i class="fas fa-book"></i>
-                    Quản lý khóa học
+                    Courses
                 </a>
-                <a href="#" class="nav-link">
-                    <i class="fas fa-graduation-cap"></i>
-                    Quản lý đăng ký
+                <a href="#points" class="nav-link" data-section="points">
+                    <i class="fas fa-coins"></i>
+                    Points
                 </a>
-                <a href="#" class="nav-link">
-                    <i class="fas fa-chart-line"></i>
-                    Báo cáo
+                <a href="#certificates" class="nav-link" data-section="certificates">
+                    <i class="fas fa-certificate"></i>
+                    Certificates
+                </a>
+                <a href="#chatbot" class="nav-link" data-section="chatbot">
+                    <i class="fas fa-robot"></i>
+                    Chatbot
                 </a>
                 <a href="#" class="nav-link">
                     <i class="fas fa-cog"></i>
-                    Cài đặt
+                    Settings
                 </a>
             </nav>
         </div>
 
         <!-- Main Content -->
         <div class="main-content">
+            <!-- Header with filters -->
             <div class="page-header">
                 <div>
-                    <h1 class="page-title">Dashboard</h1>
-                    <p class="page-subtitle">Tổng quan hệ thống BrainStorm Era</p>
+                    <h1 class="page-title">Dashboard Analytics</h1>
+                    <p class="page-subtitle">BrainStorm Era System Overview</p>
                 </div>
-                <a href="/Admin/Logout" class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Đăng xuất
-                </a>
-            </div>
-
-            <!-- Stats Cards -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div class="stat-icon users">
-                            <i class="fas fa-users"></i>
-                        </div>
+                <div class="header-controls">
+                    <!-- Filter Controls -->
+                    <div class="filter-group">
+                        <select id="timeFilter" class="form-select">
+                            <option value="7days">Last 7 days</option>
+                            <option value="30days" selected>Last 30 days</option>
+                            <option value="90days">Last 90 days</option>
+                            <option value="6months">Last 6 months</option>
+                            <option value="1year">Last year</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="text" id="dateRange" class="form-control" placeholder="Select date range" style="display: none;">
                     </div>
-                    <h3 class="stat-value">@Model.Dashboard.TotalUsers.ToString("N0")</h3>
-                    <p class="stat-label">Tổng người dùng</p>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div class="stat-icon courses">
-                            <i class="fas fa-book"></i>
-                        </div>
-                    </div>
-                    <h3 class="stat-value">@Model.Dashboard.TotalCourses.ToString("N0")</h3>
-                    <p class="stat-label">Tổng khóa học</p>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div class="stat-icon enrollments">
-                            <i class="fas fa-graduation-cap"></i>
-                        </div>
-                    </div>
-                    <h3 class="stat-value">@Model.Dashboard.TotalEnrollments.ToString("N0")</h3>
-                    <p class="stat-label">Tổng đăng ký</p>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div class="stat-icon revenue">
-                            <i class="fas fa-dollar-sign"></i>
-                        </div>
-                    </div>
-                    <h3 class="stat-value">@Model.Dashboard.TotalRevenue.ToString("C0")</h3>
-                    <p class="stat-label">Tổng doanh thu</p>
+                    <button id="refreshData" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                    <a href="/Admin/Logout" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
                 </div>
             </div>
 
-            <!-- Recent Activity -->
-            <div class="activity-grid">
-                <div class="activity-card">
-                    <h4 class="activity-title">Người dùng mới</h4>
-                    <ul class="activity-list">
-                        @foreach (var user in Model.Dashboard.RecentUsers.Take(5))
-                        {
-                            <li class="activity-item">
-                                <img src="/img/defaults/default-avatar.svg" alt="User" class="activity-avatar">
-                                <div class="activity-content">
-                                    <h6>@user.FullName</h6>
-                                    <small>@user.UserEmail - @user.UserRole</small>
-                                </div>
-                                <div class="activity-meta">
-                                    @user.AccountCreatedAt.ToString("dd/MM")
-                                </div>
-                            </li>
-                        }
-                    </ul>
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
+                </div>
+            </div>
+
+            <!-- Overview Section -->
+            <div id="overview-section" class="dashboard-section active">
+                <!-- Main Charts Grid -->
+                <div class="charts-grid">
+                    <div class="chart-card large">
+                        <div class="chart-header">
+                            <h4>User Growth</h4>
+                            <div class="chart-controls">
+                                <button class="btn btn-sm btn-outline-primary" data-chart="userGrowth" data-type="line">Line</button>
+                                <button class="btn btn-sm btn-primary" data-chart="userGrowth" data-type="bar">Bar</button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="userGrowthChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>User Distribution by Role</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="userRoleChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>Monthly Revenue</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>Course Enrollments</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="enrollmentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Section -->
+            <div id="users-section" class="dashboard-section">
+                <div class="section-header">
+                    <h2>User Analytics</h2>
+                    <div class="section-filters">
+                        <select class="form-select" id="userRoleFilter">
+                            <option value="">All Roles</option>
+                            <option value="learner">Learner</option>
+                            <option value="instructor">Instructor</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>Daily User Activity</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="userActivityChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>New vs Returning Users</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="userNewVsReturnChart"></canvas>
+                        </div>
+                    </div>
                 </div>
 
+                <!-- Recent Users List -->
                 <div class="activity-card">
-                    <h4 class="activity-title">Khóa học mới</h4>
-                    <ul class="activity-list">
-                        @foreach (var course in Model.Dashboard.RecentCourses.Take(5))
-                        {
-                            <li class="activity-item">
-                                <img src="@course.CoursePicture" alt="Course" class="activity-avatar">
-                                <div class="activity-content">
-                                    <h6>@course.CourseName</h6>
-                                    <small>Bởi @course.CreatedBy - @course.Price.ToString("C0")</small>
-                                </div>
-                                <div class="activity-meta">
-                                    @course.EnrollmentCount SV
-                                </div>
-                            </li>
-                        }
-                    </ul>
+                    <h4 class="activity-title">Recent Users</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Avatar</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Created Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var user in Model.Dashboard.RecentUsers.Take(10))
+                                {
+                                    <tr>
+                                        <td>
+                                            <img src="@user.UserImage" alt="@user.FullName" class="table-avatar" 
+                                                 onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
+                                        </td>
+                                        <td>@user.FullName</td>
+                                        <td>@user.UserEmail</td>
+                                        <td>
+                                            <span class="badge bg-@(user.UserRole == "admin" ? "danger" : user.UserRole == "instructor" ? "warning" : "primary")">
+                                                @user.UserRole
+                                            </span>
+                                        </td>
+                                        <td>@user.AccountCreatedAt.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            <span class="badge bg-@(user.IsBanned ? "danger" : "success")">
+                                                @(user.IsBanned ? "Banned" : "Active")
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Courses Section -->
+            <div id="courses-section" class="dashboard-section">
+                <div class="section-header">
+                    <h2>Course Analytics</h2>
+                    <div class="section-filters">
+                        <select class="form-select" id="courseStatusFilter">
+                            <option value="">All Status</option>
+                            <option value="approved">Approved</option>
+                            <option value="pending">Pending</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>Course Status</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="courseStatusChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>Most Popular Courses</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="popularCoursesChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card large">
+                        <div class="chart-header">
+                            <h4>Course Completion Rate</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="courseCompletionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Points Section -->
+            <div id="points-section" class="dashboard-section">
+                <div class="section-header">
+                    <h2>Points Analytics</h2>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>Points Distribution</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="pointDistributionChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>Monthly Average Points</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="monthlyPointsChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card large">
+                        <div class="chart-header">
+                            <h4>Top Users with Highest Points</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="topUsersPointsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificates Section -->
+            <div id="certificates-section" class="dashboard-section">
+                <div class="section-header">
+                    <h2>Certificate Analytics</h2>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>Monthly Certificates</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="certificateMonthlyChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>Certificate Status</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="certificateStatusChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card large">
+                        <div class="chart-header">
+                            <h4>Certificate Issuance Rate by Course</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="certificateRateChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chatbot Section -->
+            <div id="chatbot-section" class="dashboard-section">
+                <div class="section-header">
+                    <h2>Chatbot Analytics</h2>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>Daily Activity</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chatbotDailyChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>Feedback Ratings</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chatbotFeedbackChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>Hourly Usage</h4>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chatbotHourlyChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="~/js/admin-dashboard.js"></script>
+    
+    <!-- Data for JavaScript -->
+    <script>
+        window.dashboardData = {
+            userGrowthData: @Html.Raw(Json.Serialize(Model.Dashboard.UserGrowthData)),
+            revenueData: @Html.Raw(Json.Serialize(Model.Dashboard.RevenueData)),
+            enrollmentData: @Html.Raw(Json.Serialize(Model.Dashboard.EnrollmentData)),
+            certificateData: @Html.Raw(Json.Serialize(Model.Dashboard.CertificateData)),
+            pointDistributionData: @Html.Raw(Json.Serialize(Model.Dashboard.PointDistributionData)),
+            monthlyPointsData: @Html.Raw(Json.Serialize(Model.Dashboard.MonthlyPointsData)),
+            chatbotDailyUsage: @Html.Raw(Json.Serialize(Model.Dashboard.ChatbotDailyUsage)),
+            chatbotFeedback: @Html.Raw(Json.Serialize(Model.Dashboard.ChatbotFeedback)),
+            chatbotHourlyUsage: @Html.Raw(Json.Serialize(Model.Dashboard.ChatbotHourlyUsage)),
+            courseCompletionRates: @Html.Raw(Json.Serialize(Model.Dashboard.CourseCompletionRates)),
+            totalUsers: @Model.Dashboard.TotalUsers,
+            totalLearners: @Model.Dashboard.TotalLearners,
+            totalInstructors: @Model.Dashboard.TotalInstructors,
+            totalAdmins: @Model.Dashboard.TotalAdmins,
+            approvedCourses: @Model.Dashboard.ApprovedCourses,
+            pendingCourses: @Model.Dashboard.PendingCourses,
+            rejectedCourses: @Model.Dashboard.RejectedCourses,
+            validCertificates: @Model.Dashboard.ValidCertificates,
+            expiredCertificates: @Model.Dashboard.ExpiredCertificates
+        };
+    </script>
 </body>
 </html>
