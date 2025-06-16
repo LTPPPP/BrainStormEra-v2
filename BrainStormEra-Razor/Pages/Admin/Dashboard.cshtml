@@ -35,12 +35,31 @@
                     <i class="fas fa-brain"></i>
                     BrainStorm Era
                 </div>
-                <div class="admin-info">
-                    <img src="@Model.Dashboard.AdminImage" alt="Admin" class="admin-avatar">
-                    <div class="admin-details">
-                        <h6>@Model.Dashboard.AdminName</h6>
-                        <small>Administrator</small>
+                <div class="admin-info dropdown">
+                    <div class="admin-profile" id="adminProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="@Model.Dashboard.AdminImage" alt="Admin" class="admin-avatar" 
+                             onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
+                        <div class="admin-details">
+                            <h6>@Model.Dashboard.AdminName</h6>
+                            <small>Administrator</small>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
                     </div>
+                                            <ul class="dropdown-menu admin-dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="/Admin/Profile">
+                                    <i class="fas fa-user"></i>
+                                    Profile
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="/Admin/Logout">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    Logout
+                                </a>
+                            </li>
+                        </ul>
                 </div>
             </div>
             <nav class="sidebar-nav">
@@ -67,10 +86,6 @@
                 <a href="#chatbot" class="nav-link" data-section="chatbot">
                     <i class="fas fa-robot"></i>
                     Chatbot
-                </a>
-                <a href="#" class="nav-link">
-                    <i class="fas fa-cog"></i>
-                    Settings
                 </a>
             </nav>
         </div>
@@ -100,10 +115,6 @@
                         <i class="fas fa-sync-alt"></i>
                         Refresh
                     </button>
-                    <a href="/Admin/Logout" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Logout
-                    </a>
                 </div>
             </div>
 

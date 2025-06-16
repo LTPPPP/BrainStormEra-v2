@@ -53,6 +53,8 @@ body {
     border-radius: 12px;
     margin-top: 1rem;
     backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 1000;
 }
 
 .admin-avatar {
@@ -67,6 +69,99 @@ body {
 
 .admin-avatar:hover {
     transform: scale(1.1);
+}
+
+/* Admin Profile Dropdown */
+.admin-profile {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.admin-profile:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-details {
+    flex: 1;
+    margin-right: 0.5rem;
+}
+
+.admin-details h6 {
+    margin: 0;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.admin-details small {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+}
+
+.dropdown-arrow {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.admin-info.dropdown.show .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.admin-dropdown-menu {
+    background: white;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+    min-width: 200px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 9999 !important;
+    position: absolute !important;
+}
+
+.admin-dropdown-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: #2d3748;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.admin-dropdown-menu .dropdown-item:hover {
+    background: #f7fafc;
+    color: #2d3748;
+    transform: translateX(5px);
+}
+
+.admin-dropdown-menu .dropdown-item.text-danger {
+    color: #e53e3e;
+}
+
+.admin-dropdown-menu .dropdown-item.text-danger:hover {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.admin-dropdown-menu .dropdown-item i {
+    margin-right: 0.75rem;
+    width: 16px;
+    text-align: center;
+}
+
+.admin-dropdown-menu .dropdown-divider {
+    margin: 0.5rem 0;
+    border-color: #e2e8f0;
 }
 
 .nav-link {
@@ -544,6 +639,23 @@ body {
     
     .chart-card.large .chart-container {
         height: 300px;
+    }
+
+    /* Admin dropdown responsive */
+    .admin-dropdown-menu {
+        position: fixed !important;
+        top: auto !important;
+        left: 1rem !important;
+        right: 1rem !important;
+        width: auto !important;
+        min-width: auto !important;
+        margin-top: 0.5rem;
+        transform: none !important;
+        z-index: 1050;
+    }
+
+    .admin-info.dropdown {
+        position: static;
     }
 }
 

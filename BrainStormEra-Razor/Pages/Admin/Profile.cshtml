@@ -1,0 +1,224 @@
+@page
+@model BrainStormEra_Razor.Pages.Admin.ProfileModel
+@{
+    ViewData["Title"] = "Admin Profile";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/admin-profile.css" />
+
+<body class="admin-body">
+    <div class="dashboard-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-brain"></i>
+                    BrainStorm Era
+                </div>
+                <div class="admin-info dropdown">
+                    <div class="admin-profile" id="adminProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="/img/defaults/default-avatar.svg" alt="Admin" class="admin-avatar" 
+                             onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
+                        <div class="admin-details">
+                            <h6>Admin User</h6>
+                            <small>Administrator</small>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    <ul class="dropdown-menu admin-dropdown-menu">
+                        <li>
+                            <a class="dropdown-item active" href="/Admin/Profile">
+                                <i class="fas fa-user"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="/Admin/Logout">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/Admin/Dashboard" class="nav-link">
+                    <i class="fas fa-chart-bar"></i>
+                    Dashboard
+                </a>
+                <a href="/Admin/Users" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    Users
+                </a>
+                <a href="/Admin/Courses" class="nav-link">
+                    <i class="fas fa-book"></i>
+                    Courses
+                </a>
+                <a href="/Admin/Reports" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    Reports
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="page-header">
+                <div class="header-content">
+                    <div class="breadcrumb">
+                        <a href="/Admin/Dashboard">Dashboard</a>
+                        <span>/</span>
+                        <span>Profile</span>
+                    </div>
+                    <h1 class="page-title">Admin Profile</h1>
+                    <p class="page-subtitle">Manage your personal information and account settings</p>
+                </div>
+            </div>
+
+            <!-- Profile Content -->
+            <div class="profile-container">
+                <!-- Profile Header Card -->
+                <div class="profile-header-card">
+                    <div class="profile-cover">
+                        <div class="cover-overlay"></div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="avatar-section">
+                            <div class="avatar-container">
+                                <img src="/img/defaults/default-avatar.svg" alt="Admin Avatar" class="profile-avatar" id="profileAvatar" 
+                                     onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
+                                <button class="avatar-upload-btn" onclick="triggerAvatarUpload()">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                                <input type="file" id="avatarUpload" accept="image/*" style="display: none;" onchange="previewAvatar(this)">
+                            </div>
+                        </div>
+                        <div class="profile-details">
+                            <h2 class="admin-name">Admin User</h2>
+                            <p class="admin-role">System Administrator</p>
+                            <div class="profile-stats">
+                                <div class="stat-item">
+                                    <span class="stat-number">150</span>
+                                    <span class="stat-label">Total Users</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number">45</span>
+                                    <span class="stat-label">Total Courses</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number">30</span>
+                                    <span class="stat-label">Days Active</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Form -->
+                <div class="profile-form-section">
+                    <div class="form-card">
+                        <div class="card-header">
+                            <h3>Personal Information</h3>
+                            <p>Update your personal details and contact information</p>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" class="profile-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="fullName">Full Name</label>
+                                        <input type="text" id="fullName" name="FullName" class="form-control" value="Admin User" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="username">Username</label>
+                                        <input type="text" id="username" name="Username" class="form-control" value="admin" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="email">Email Address</label>
+                                        <input type="email" id="email" name="Email" class="form-control" value="admin@brainstormera.com" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="phone">Phone Number</label>
+                                        <input type="tel" id="phone" name="PhoneNumber" class="form-control" value="+1234567890">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="bio">Bio / Description</label>
+                                    <textarea id="bio" name="Bio" class="form-control" rows="4" placeholder="Tell us about yourself...">System Administrator for BrainStorm Era platform.</textarea>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i>
+                                        Save Changes
+                                    </button>
+                                    <button type="reset" class="btn btn-secondary">
+                                        <i class="fas fa-undo"></i>
+                                        Reset
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Security Settings -->
+                    <div class="form-card">
+                        <div class="card-header">
+                            <h3>Security Settings</h3>
+                            <p>Manage your password and security preferences</p>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" class="security-form">
+                                <div class="form-group">
+                                    <label for="currentPassword">Current Password</label>
+                                    <input type="password" id="currentPassword" name="CurrentPassword" class="form-control" required>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="newPassword">New Password</label>
+                                        <input type="password" id="newPassword" name="NewPassword" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="confirmPassword">Confirm New Password</label>
+                                        <input type="password" id="confirmPassword" name="ConfirmPassword" class="form-control" required>
+                                    </div>
+                                </div>
+
+                                <div class="security-options">
+                                    <div class="option-item">
+                                        <input type="checkbox" id="twoFactor" name="TwoFactorEnabled">
+                                        <label for="twoFactor">Enable Two-Factor Authentication</label>
+                                        <small>Add an extra layer of security to your account</small>
+                                    </div>
+                                    <div class="option-item">
+                                        <input type="checkbox" id="emailNotifications" name="EmailNotifications" checked>
+                                        <label for="emailNotifications">Email Security Notifications</label>
+                                        <small>Receive alerts for important security events</small>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fas fa-key"></i>
+                                        Update Password
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/admin-profile.js"></script>
+</body>

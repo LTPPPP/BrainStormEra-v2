@@ -17,6 +17,7 @@ class AdminDashboard {
         this.initCharts();
 
         this.initMobileMenu();
+        this.initAdminDropdown();
         this.initPerformanceOptimizations();
     }
 
@@ -995,6 +996,54 @@ class AdminDashboard {
             
             if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
                 sidebar.classList.remove('open');
+            }
+        });
+    }
+
+    // Admin Profile Dropdown
+    initAdminDropdown() {
+        const dropdown = document.querySelector('.admin-info.dropdown');
+        const dropdownToggle = document.querySelector('#adminProfileDropdown');
+        const dropdownMenu = document.querySelector('.admin-dropdown-menu');
+
+        if (!dropdown || !dropdownToggle || !dropdownMenu) return;
+
+        // Toggle dropdown on click
+        dropdownToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const isOpen = dropdown.classList.contains('show');
+            
+            // Close all other dropdowns first
+            document.querySelectorAll('.dropdown.show').forEach(d => {
+                if (d !== dropdown) {
+                    d.classList.remove('show');
+                }
+            });
+            
+            // Toggle current dropdown
+            dropdown.classList.toggle('show', !isOpen);
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Close dropdown when pressing escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Close dropdown when clicking on dropdown items
+        dropdownMenu.addEventListener('click', (e) => {
+            if (e.target.classList.contains('dropdown-item')) {
+                dropdown.classList.remove('show');
             }
         });
     }
