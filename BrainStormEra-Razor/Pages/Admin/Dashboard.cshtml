@@ -1,0 +1,164 @@
+@page
+@model BrainStormEra_Razor.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Admin Dashboard - BrainStorm Era";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="~/css/admin-dashboard.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-brain"></i>
+                    BrainStorm Era
+                </div>
+                <div class="admin-info">
+                    <img src="@Model.Dashboard.AdminImage" alt="Admin" class="admin-avatar">
+                    <div class="admin-details">
+                        <h6>@Model.Dashboard.AdminName</h6>
+                        <small>Quản trị viên</small>
+                    </div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-link active">
+                    <i class="fas fa-chart-bar"></i>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    Quản lý người dùng
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-book"></i>
+                    Quản lý khóa học
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-graduation-cap"></i>
+                    Quản lý đăng ký
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    Báo cáo
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    Cài đặt
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Dashboard</h1>
+                    <p class="page-subtitle">Tổng quan hệ thống BrainStorm Era</p>
+                </div>
+                <a href="/Admin/Logout" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Đăng xuất
+                </a>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon users">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <h3 class="stat-value">@Model.Dashboard.TotalUsers.ToString("N0")</h3>
+                    <p class="stat-label">Tổng người dùng</p>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon courses">
+                            <i class="fas fa-book"></i>
+                        </div>
+                    </div>
+                    <h3 class="stat-value">@Model.Dashboard.TotalCourses.ToString("N0")</h3>
+                    <p class="stat-label">Tổng khóa học</p>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon enrollments">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                    </div>
+                    <h3 class="stat-value">@Model.Dashboard.TotalEnrollments.ToString("N0")</h3>
+                    <p class="stat-label">Tổng đăng ký</p>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon revenue">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                    </div>
+                    <h3 class="stat-value">@Model.Dashboard.TotalRevenue.ToString("C0")</h3>
+                    <p class="stat-label">Tổng doanh thu</p>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="activity-grid">
+                <div class="activity-card">
+                    <h4 class="activity-title">Người dùng mới</h4>
+                    <ul class="activity-list">
+                        @foreach (var user in Model.Dashboard.RecentUsers.Take(5))
+                        {
+                            <li class="activity-item">
+                                <img src="/img/defaults/default-avatar.svg" alt="User" class="activity-avatar">
+                                <div class="activity-content">
+                                    <h6>@user.FullName</h6>
+                                    <small>@user.UserEmail - @user.UserRole</small>
+                                </div>
+                                <div class="activity-meta">
+                                    @user.AccountCreatedAt.ToString("dd/MM")
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <div class="activity-card">
+                    <h4 class="activity-title">Khóa học mới</h4>
+                    <ul class="activity-list">
+                        @foreach (var course in Model.Dashboard.RecentCourses.Take(5))
+                        {
+                            <li class="activity-item">
+                                <img src="@course.CoursePicture" alt="Course" class="activity-avatar">
+                                <div class="activity-content">
+                                    <h6>@course.CourseName</h6>
+                                    <small>Bởi @course.CreatedBy - @course.Price.ToString("C0")</small>
+                                </div>
+                                <div class="activity-meta">
+                                    @course.EnrollmentCount SV
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
