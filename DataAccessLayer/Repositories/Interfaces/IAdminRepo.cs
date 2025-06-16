@@ -46,6 +46,7 @@ namespace DataAccessLayer.Repositories.Interfaces
         Task<Course?> GetCourseWithDetailsAsync(string courseId);
         Task<bool> ApproveCourseAsync(string courseId, string adminId);
         Task<bool> RejectCourseAsync(string courseId, string adminId, string reason);
+        Task<bool> BanCourseAsync(string courseId, string adminId, string reason = "");
         Task<bool> FeatureCourseAsync(string courseId, bool isFeatured);
         Task<List<Course>> SearchCoursesAsync(string searchTerm, int page = 1, int pageSize = 20);
 

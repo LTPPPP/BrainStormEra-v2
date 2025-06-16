@@ -1,7 +1,7 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f7fafc;
-    color: #2d3748;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
     overflow-x: hidden;
 }
 
@@ -12,13 +12,13 @@ body {
 
 .sidebar {
     width: 280px;
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: var(--primary-gradient);
+    color: var(--text-light);
     position: fixed;
     height: 100vh;
     overflow-y: auto;
-    z-index: 1000;
-    transition: transform 0.3s ease;
+    z-index: var(--z-dropdown);
+    transition: transform var(--transition-normal);
 }
 
 .sidebar-header {
@@ -115,12 +115,12 @@ body {
 }
 
 .admin-dropdown-menu {
-    background: white;
+    background: var(--bg-primary);
     border: none;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    padding: 0.5rem 0;
-    margin-top: 0.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    padding: var(--spacing-sm) 0;
+    margin-top: var(--spacing-sm);
     min-width: 200px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -221,6 +221,9 @@ body {
     padding: 2rem;
     min-height: 100vh;
     transition: margin-left 0.3s ease;
+    width: calc(100% - 280px);
+    max-width: calc(100vw - 280px);
+    overflow-x: auto;
 }
 
 .page-header {
@@ -603,6 +606,8 @@ body {
     .main-content {
         margin-left: 0;
         padding: 1rem;
+        width: 100%;
+        max-width: 100vw;
     }
     
     .page-header {

@@ -1,6 +1,6 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--primary-gradient);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -8,11 +8,11 @@ body {
 }
 
 .login-container {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--bg-overlay);
     backdrop-filter: blur(20px);
-    border-radius: 24px;
-    padding: 3rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border-radius: var(--radius-3xl);
+    padding: var(--spacing-2xl);
+    box-shadow: var(--shadow-lg);
     width: 100%;
     max-width: 450px;
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -26,13 +26,13 @@ body {
 .logo-icon {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, #667eea, #f093fb);
-    border-radius: 20px;
+    background: var(--primary-gradient);
+    border-radius: var(--radius-2xl);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1rem;
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-primary);
 }
 
 .logo-icon i {
@@ -41,31 +41,31 @@ body {
 }
 
 .welcome-text {
-    color: #2d3748;
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--spacing-sm);
 }
 
 .welcome-subtitle {
-    color: #718096;
-    font-size: 1rem;
+    color: var(--text-secondary);
+    font-size: var(--text-base);
 }
 
 .form-floating > .form-control {
     height: 60px;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    background: #f8fafc;
-    padding: 1rem 1rem 1rem 3rem;
-    font-size: 1rem;
-    transition: all 0.3s ease;
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    background: var(--secondary-light);
+    padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) var(--spacing-2xl);
+    font-size: var(--text-base);
+    transition: all var(--transition-normal);
 }
 
 .form-floating > .form-control:focus {
-    border-color: #667eea;
+    border-color: var(--primary-blue);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    background: white;
+    background: var(--bg-primary);
 }
 
 .form-floating > label {

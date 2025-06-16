@@ -70,14 +70,15 @@ class AdminDashboard {
 
     // Section Navigation
     initSectionNavigation() {
-        document.querySelectorAll('.nav-link[data-section]').forEach(link => {
+        // Only handle section navigation within the same page, not main navigation
+        document.querySelectorAll('.dashboard-section-nav .nav-link[data-section]').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const section = e.target.closest('.nav-link').dataset.section;
                 this.showSection(section);
                 
                 // Update active state
-                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                document.querySelectorAll('.dashboard-section-nav .nav-link').forEach(l => l.classList.remove('active'));
                 e.target.closest('.nav-link').classList.add('active');
             });
         });
@@ -1047,8 +1048,6 @@ class AdminDashboard {
             }
         });
     }
-
-
 
     // Performance Optimizations
     initPerformanceOptimizations() {

@@ -1,0 +1,653 @@
+@page
+@model BrainStormEra_Razor.Pages.Admin.CoursesModel
+@{
+    ViewData["Title"] = "Course Management";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-courses.css" asp-append-version="true" />
+}
+
+<div class="courses-wrapper">
+    <div class="container-fluid">
+        <!-- Modern Page Header -->
+        <div class="page-header">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1>Course Management</h1>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="/Admin/Dashboard">Dashboard</a></li>
+                                <li class="breadcrumb-item active">Courses</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div class="text-white-50">
+                        <strong>@Model.TotalCourses</strong> total courses
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modern Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card primary">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value">@Model.TotalCourses</div>
+                        <div class="stat-label">Total Courses</div>
+                    </div>
+                    <div class="stat-icon primary">
+                        <i class="fas fa-book"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value">@Model.ApprovedCount</div>
+                        <div class="stat-label">Approved</div>
+                    </div>
+                    <div class="stat-icon success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value">@Model.PendingCount</div>
+                        <div class="stat-label">Pending Review</div>
+                    </div>
+                    <div class="stat-icon warning">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card danger">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value">@Model.RejectedCount</div>
+                        <div class="stat-label">Rejected</div>
+                    </div>
+                    <div class="stat-icon danger">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="content-card">
+            <div class="card-header">
+                <h6>Filters & Search</h6>
+            </div>
+            <div class="card-body">
+            <form method="get" class="row align-items-end">
+                <!-- Search -->
+                <div class="col-md-4 mb-3">
+                    <label for="search" class="form-label">Search Courses</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="@Model.SearchQuery" placeholder="Course name, description...">
+                </div>
+
+                <!-- Category Filter -->
+                <div class="col-md-3 mb-3">
+                    <label for="categoryFilter" class="form-label">Category</label>
+                    <select class="form-control" id="categoryFilter" name="categoryFilter">
+                        <option value="">All Categories</option>
+                        @foreach (var category in Model.Categories)
+                        {
+                            @if (Model.CategoryFilter == category.CategoryName)
+                            {
+                                <option value="@category.CategoryName" selected>@category.CategoryName (@category.CourseCount)</option>
+                            }
+                            else
+                            {
+                                <option value="@category.CategoryName">@category.CategoryName (@category.CourseCount)</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="col-md-3 mb-3">
+                    <label for="statusFilter" class="form-label">Status</label>
+                    <select class="form-control" id="statusFilter" name="statusFilter">
+                        <option value="">All Statuses</option>
+                        @if (Model.StatusFilter == "approved")
+                        {
+                            <option value="approved" selected>Approved</option>
+                        }
+                        else
+                        {
+                            <option value="approved">Approved</option>
+                        }
+                        @if (Model.StatusFilter == "pending")
+                        {
+                            <option value="pending" selected>Pending</option>
+                        }
+                        else
+                        {
+                            <option value="pending">Pending</option>
+                        }
+                        @if (Model.StatusFilter == "rejected")
+                        {
+                            <option value="rejected" selected>Rejected</option>
+                        }
+                        else
+                        {
+                            <option value="rejected">Rejected</option>
+                        }
+                        @if (Model.StatusFilter == "banned")
+                        {
+                            <option value="banned" selected>Banned</option>
+                        }
+                        else
+                        {
+                            <option value="banned">Banned</option>
+                        }
+                        @if (Model.StatusFilter == "draft")
+                        {
+                            <option value="draft" selected>Draft</option>
+                        }
+                        else
+                        {
+                            <option value="draft">Draft</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Actions -->
+                <div class="col-md-2 mb-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </form>
+
+            @if (!string.IsNullOrEmpty(Model.SearchQuery) || !string.IsNullOrEmpty(Model.CategoryFilter) || !string.IsNullOrEmpty(Model.StatusFilter))
+            {
+                <div class="mt-3">
+                    <a href="/Admin/Courses" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-times"></i> Clear Filters
+                    </a>
+                </div>
+            }
+            </div>
+        </div>
+
+        <!-- Courses Table -->
+        <div class="content-card">
+            <div class="card-header">
+                <h6>
+                    Courses List
+                    @if (Model.Courses.Any())
+                    {
+                        <small class="text-white-50 ms-2">(Showing @((Model.CurrentPage - 1) * Model.PageSize + 1) - @(Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalCourses)) of @Model.TotalCourses)</small>
+                    }
+                </h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Courses.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table" id="coursesTable">
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th>Instructor</th>
+                                <th>Categories</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Created Date</th>
+                                <th>Enrollments</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var course in Model.Courses)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="@course.CoursePicture" alt="@course.CourseName" 
+                                                 class="table-avatar me-3"
+                                                 onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
+                                            <div>
+                                                <h6 class="mb-1">@course.CourseName</h6>
+                                                <small class="text-muted">
+                                                    @(course.CourseDescription.Length > 60 
+                                                      ? course.CourseDescription.Substring(0, 60) + "..." 
+                                                      : course.CourseDescription)
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>@course.InstructorName</strong>
+                                            <br>
+                                            <small class="text-muted">@course.InstructorEmail</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (course.Categories.Any())
+                                        {
+                                            @foreach (var category in course.Categories)
+                                            {
+                                                <span class="badge bg-secondary me-1">@category</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No categories</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong class="@(course.Price > 0 ? "text-success" : "text-primary")">
+                                            @course.PriceText
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge @course.StatusBadgeClass">
+                                            @course.StatusText
+                                        </span>
+                                        @if (course.IsFeatured)
+                                        {
+                                            <br><span class="badge bg-warning mt-1">Featured</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div>
+                                            @course.CreatedAt.ToString("MMM dd, yyyy")
+                                            <br>
+                                            <small class="text-muted">@course.CreatedAt.ToString("HH:mm")</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <strong>@course.EnrollmentCount</strong>
+                                        @if (course.Revenue > 0)
+                                        {
+                                            <br><small class="text-success">$@course.Revenue.ToString("N2")</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group-vertical btn-group-sm" role="group">
+                                            <!-- Approve/Reject Actions -->
+                                            @if (course.StatusText == "Pending")
+                                            {
+                                                <button type="button" class="btn btn-success btn-sm" 
+                                                        onclick="updateCourseStatus('@course.CourseId', true)">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </button>
+                                                <button type="button" class="btn btn-danger btn-sm" 
+                                                        onclick="updateCourseStatus('@course.CourseId', false)">
+                                                    <i class="fas fa-times"></i> Reject
+                                                </button>
+                                            }
+                                            else if (course.StatusText == "Approved")
+                                            {
+                                                <button type="button" class="btn btn-warning btn-sm" 
+                                                        onclick="banCourse('@course.CourseId')">
+                                                    <i class="fas fa-ban"></i> Ban
+                                                </button>
+                                            }
+                                            else if (course.StatusText == "Rejected")
+                                            {
+                                                <button type="button" class="btn btn-success btn-sm" 
+                                                        onclick="updateCourseStatus('@course.CourseId', true)">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </button>
+                                            }
+
+                                            <!-- Feature Toggle -->
+                                            <button type="button" class="btn @(course.IsFeatured ? "btn-warning" : "btn-outline-warning") btn-sm" 
+                                                    onclick="toggleFeature('@course.CourseId', @(course.IsFeatured ? "false" : "true"))">
+                                                <i class="fas fa-star"></i> @(course.IsFeatured ? "Unfeature" : "Feature")
+                                            </button>
+
+                                            <!-- View Details -->
+                                            <button type="button" class="btn btn-info btn-sm" 
+                                                    onclick="viewCourseDetails('@course.CourseId')">
+                                                <i class="fas fa-eye"></i> View
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <nav aria-label="Course pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <!-- Previous Page -->
+                            @if (Model.CurrentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Page("/Admin/Courses", new { 
+                                        search = Model.SearchQuery, 
+                                        categoryFilter = Model.CategoryFilter,
+                                        statusFilter = Model.StatusFilter,
+                                        page = Model.CurrentPage - 1 
+                                    })">
+                                        <i class="fas fa-chevron-left"></i> Previous
+                                    </a>
+                                </li>
+                            }
+
+                            <!-- Page Numbers -->
+                            @{
+                                int startPage = Math.Max(1, Model.CurrentPage - 2);
+                                int endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                            }
+
+                            @if (startPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Page("/Admin/Courses", new { 
+                                        search = Model.SearchQuery, 
+                                        categoryFilter = Model.CategoryFilter,
+                                        statusFilter = Model.StatusFilter,
+                                        page = 1 
+                                    })">1</a>
+                                </li>
+                                @if (startPage > 2)
+                                {
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                }
+                            }
+
+                            @for (int i = startPage; i <= endPage; i++)
+                            {
+                                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                    <a class="page-link" href="@Url.Page("/Admin/Courses", new { 
+                                        search = Model.SearchQuery, 
+                                        categoryFilter = Model.CategoryFilter,
+                                        statusFilter = Model.StatusFilter,
+                                        page = i 
+                                    })">@i</a>
+                                </li>
+                            }
+
+                            @if (endPage < Model.TotalPages)
+                            {
+                                @if (endPage < Model.TotalPages - 1)
+                                {
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                }
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Page("/Admin/Courses", new { 
+                                        search = Model.SearchQuery, 
+                                        categoryFilter = Model.CategoryFilter,
+                                        statusFilter = Model.StatusFilter,
+                                        page = Model.TotalPages 
+                                    })">@Model.TotalPages</a>
+                                </li>
+                            }
+
+                            <!-- Next Page -->
+                            @if (Model.CurrentPage < Model.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Page("/Admin/Courses", new { 
+                                        search = Model.SearchQuery, 
+                                        categoryFilter = Model.CategoryFilter,
+                                        statusFilter = Model.StatusFilter,
+                                        page = Model.CurrentPage + 1 
+                                    })">
+                                        Next <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No courses found</h5>
+                    @if (!string.IsNullOrEmpty(Model.SearchQuery) || !string.IsNullOrEmpty(Model.CategoryFilter) || !string.IsNullOrEmpty(Model.StatusFilter))
+                    {
+                        <p class="text-muted">Try adjusting your search criteria or clear filters to see all courses.</p>
+                        <a href="/Admin/Courses" class="btn btn-primary">Clear Filters</a>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No courses have been created yet.</p>
+                    }
+                </div>
+            }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Course Details Modal -->
+<div class="modal fade" id="courseDetailsModal" tabindex="-1" aria-labelledby="courseDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="courseDetailsModalLabel">Course Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="courseDetailsContent">
+                <!-- Content will be loaded dynamically -->
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin-courses.js" asp-append-version="true"></script>
+    <script>
+        // Update course status (approve/reject)
+        async function updateCourseStatus(courseId, isApproved) {
+            const action = isApproved ? 'approve' : 'reject';
+            const actionText = isApproved ? 'Approve' : 'Reject';
+            
+            if (!confirm(`Are you sure you want to ${action} this course?`)) {
+                return;
+            }
+
+            try {
+                showLoading();
+                
+                const response = await fetch('/Admin/Courses?handler=UpdateStatus', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify({
+                        courseId: courseId,
+                        isApproved: isApproved
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess(`Course ${action}d successfully!`);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showError(result.message || `Failed to ${action} course`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError(`An error occurred while trying to ${action} the course`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Ban course
+        async function banCourse(courseId) {
+            if (!confirm('Are you sure you want to ban this course? This will make it inactive and hidden from students.')) {
+                return;
+            }
+
+            try {
+                showLoading();
+                
+                const response = await fetch('/Admin/Courses?handler=BanCourse', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify({
+                        courseId: courseId
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess('Course banned successfully!');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showError(result.message || 'Failed to ban course');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred while trying to ban the course');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Toggle featured status
+        async function toggleFeature(courseId, isFeatured) {
+            const action = isFeatured ? 'feature' : 'unfeature';
+            
+            if (!confirm(`Are you sure you want to ${action} this course?`)) {
+                return;
+            }
+
+            try {
+                showLoading();
+                
+                const response = await fetch('/Admin/Courses?handler=ToggleFeature', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify({
+                        courseId: courseId,
+                        isFeatured: isFeatured
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess(`Course ${action}d successfully!`);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showError(result.message || `Failed to ${action} course`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError(`An error occurred while trying to ${action} the course`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // View course details
+        async function viewCourseDetails(courseId) {
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('courseDetailsModal'));
+                const contentElement = document.getElementById('courseDetailsContent');
+                
+                // Show loading state
+                contentElement.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="spinner-border mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="text-muted">Loading course details...</div>
+                    </div>
+                `;
+                
+                modal.show();
+                
+                const response = await fetch(`/Admin/Courses?handler=CourseDetails&courseId=${courseId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const html = await response.text();
+                contentElement.innerHTML = html;
+                
+                // Handle image loading errors for all images in the modal
+                const images = contentElement.querySelectorAll('img');
+                images.forEach(img => {
+                    img.addEventListener('error', function() {
+                        if (this.classList.contains('course-detail-image')) {
+                            this.src = '/img/defaults/default-course.svg';
+                        } else if (this.classList.contains('instructor-avatar')) {
+                            this.src = '/img/defaults/default-avatar.svg';
+                        }
+                    });
+                    
+                    // Add loading animation
+                    img.addEventListener('load', function() {
+                        this.style.opacity = '0';
+                        this.style.transition = 'opacity 0.3s ease';
+                        setTimeout(() => {
+                            this.style.opacity = '1';
+                        }, 50);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('courseDetailsContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Error:</strong> Unable to load course details. Please try again later.
+                    </div>
+                `;
+            }
+        }
+
+        // Utility functions for notifications
+        function showLoading() {
+            showSimpleLoading();
+        }
+
+        function showSuccess(message) {
+            showSimpleSuccess(message);
+        }
+
+        function showError(message) {
+            showSimpleError(message);
+        }
+
+        // Note: Form auto-submit is handled in admin-courses.js
+    </script>
+} 

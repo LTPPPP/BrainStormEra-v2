@@ -14,6 +14,7 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<bool> UpdateUserStatusAsync(string userId, bool isBanned);
         Task<bool> DeleteUserAsync(string userId);
         Task<bool> UpdateCourseStatusAsync(string courseId, bool isApproved, string? adminId = null);
+        Task<bool> BanCourseAsync(string courseId, string? adminId = null);
         Task<bool> DeleteCourseAsync(string courseId);
     }
 }

@@ -662,6 +662,40 @@ namespace DataAccessLayer.Repositories
             }
         }
 
+        public async Task<bool> BanCourseAsync(string courseId, string adminId, string reason = "")
+        {
+            try
+            {
+                var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
+                if (course == null)
+                    return false;
+
+                course.ApprovalStatus = "Banned";
+                course.CourseStatus = 0; // Set to inactive status
+
+                // Only set ApprovedBy if adminId exists in account table
+                if (!string.IsNullOrEmpty(adminId) && adminId != "system")
+                {
+                    var adminExists = await _context.Accounts.AnyAsync(a => a.UserId == adminId);
+                    if (adminExists)
+                    {
+                        course.ApprovedBy = adminId;
+                    }
+                }
+
+                course.ApprovedAt = DateTime.UtcNow;
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                var result = await SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error banning course: {CourseId}", courseId);
+                throw;
+            }
+        }
+
         public async Task<List<Course>> SearchCoursesAsync(string searchTerm, int page = 1, int pageSize = 20)
         {
             try
