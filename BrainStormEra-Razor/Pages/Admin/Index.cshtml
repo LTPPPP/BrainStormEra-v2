@@ -30,69 +30,7 @@
     }
     @await Html.PartialAsync("Admin/_AdminHeader", headerModel)
 
-    <!-- Dashboard Filters -->
-    <div class="dashboard-filters">
-        <div class="filter-header">
-            <h3><i class="fas fa-filter"></i> Analytics Filters</h3>
-            <button type="button" class="filter-toggle" onclick="toggleFilters()">
-                <i class="fas fa-chevron-down"></i>
-            </button>
-        </div>
-        <div class="filter-content">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label for="filterYear"><i class="fas fa-calendar-alt"></i> Year:</label>
-                    <select id="filterYear" asp-for="FilterYear">
-                        <option value="">All Years</option>
-                        <option value="2024">2024</option>
-                        <option value="2023">2023</option>
-                        <option value="2022">2022</option>
-                    </select>
-                </div>
 
-                <div class="filter-group">
-                    <label for="filterMonth"><i class="fas fa-calendar"></i> Month:</label>
-                    <select id="filterMonth" asp-for="FilterMonth">
-                        <option value="">All Months</option>
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="filterCategory"><i class="fas fa-tag"></i> Category:</label>
-                    <select id="filterCategory" asp-for="FilterCategory">
-                        <option value="">All Categories</option>
-                        <option value="programming">Programming</option>
-                        <option value="design">Design</option>
-                        <option value="business">Business</option>
-                        <option value="marketing">Marketing</option>
-                        <option value="language">Language</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label>&nbsp;</label>
-                    <button type="button" class="apply-filters-btn" onclick="applyFilters()">
-                        <i class="fas fa-search"></i> Apply Filters
-                    </button>
-                    <button type="button" class="clear-filters-btn" onclick="clearFilters()">
-                        <i class="fas fa-times"></i> Clear
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Charts Grid -->
     <div class="charts-grid">
@@ -421,7 +359,7 @@
         
         // Chart.js configuration
         Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-        Chart.defaults.font.size = 12;
+        Chart.defaults.font.size = 10;
         Chart.defaults.color = '#64748b';
     </script>
     

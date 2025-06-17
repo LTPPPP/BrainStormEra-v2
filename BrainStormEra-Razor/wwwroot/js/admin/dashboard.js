@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Set Chart.js defaults
   if (typeof Chart !== 'undefined') {
     Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-    Chart.defaults.font.size = 12;
+    Chart.defaults.font.size = 5;
     Chart.defaults.color = '#64748b';
   }
   
@@ -45,13 +45,9 @@ function setupEventListeners() {
     logoutBtn.addEventListener("click", handleLogoutClick);
   }
 
-  // Filter toggle
-  const filterToggle = document.querySelector(".filter-toggle");
-  if (filterToggle) {
-    filterToggle.addEventListener("click", toggleFilters);
-  }
 
-  // Auto-refresh toggle
+
+    // Auto-refresh toggle
   document.addEventListener("keydown", function(e) {
     if (e.ctrlKey && e.key === 'r') {
       e.preventDefault();
@@ -62,6 +58,8 @@ function setupEventListeners() {
   // Resize handler for responsive charts
   window.addEventListener('resize', debounce(handleResize, 250));
 }
+
+
 
 // ==============================================
 // CHART INITIALIZATION
@@ -96,10 +94,10 @@ function initializeUsersChart() {
           data.totalAdmins || 0
         ],
         backgroundColor: colorSchemes.primary,
-        borderWidth: 3,
+        borderWidth: 1,
         borderColor: '#ffffff',
-        hoverBorderWidth: 5,
-        hoverOffset: 10
+        hoverBorderWidth: 2,
+        hoverOffset: 5
       }]
     },
     options: {
@@ -109,10 +107,10 @@ function initializeUsersChart() {
         legend: {
           position: 'bottom',
           labels: {
-            padding: 20,
+            padding: 7,
             usePointStyle: true,
             font: {
-              size: 14,
+              size: 5,
               weight: '600'
             }
           }
@@ -122,8 +120,8 @@ function initializeUsersChart() {
           titleColor: '#ffffff',
           bodyColor: '#ffffff',
           borderColor: '#4f46e5',
-          borderWidth: 2,
-          cornerRadius: 10,
+          borderWidth: 1,
+          cornerRadius: 5,
           callbacks: {
             label: function(context) {
               const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -136,7 +134,7 @@ function initializeUsersChart() {
       animation: {
         animateRotate: true,
         animateScale: true,
-        duration: 2000,
+        duration: 1000,
         easing: 'easeOutQuart'
       }
     }
@@ -792,56 +790,7 @@ function updateChart(chartType, data) {
 // FILTER FUNCTIONS
 // ==============================================
 
-function toggleFilters() {
-  const filterContent = document.querySelector('.filter-content');
-  const filterToggle = document.querySelector('.filter-toggle i');
-  
-  if (filterContent && filterToggle) {
-    if (filterContent.style.display === 'none') {
-      filterContent.style.display = 'block';
-      filterToggle.style.transform = 'rotate(180deg)';
-    } else {
-      filterContent.style.display = 'none';
-      filterToggle.style.transform = 'rotate(0deg)';
-    }
-  }
-}
 
-async function applyFilters() {
-  const year = document.getElementById("filterYear")?.value;
-  const month = document.getElementById("filterMonth")?.value;
-  const category = document.getElementById("filterCategory")?.value;
-
-  showLoading('all');
-  
-  try {
-    const chartTypes = ['users', 'courses', 'certificates', 'points', 'chatbot'];
-    
-    for (const chartType of chartTypes) {
-      await loadChartData(chartType, year, month, category);
-    }
-    
-    showToast('Filters applied successfully', 'success');
-  } catch (error) {
-    console.error('Error applying filters:', error);
-    showToast('Error applying filters', 'error');
-  } finally {
-    hideLoading('all');
-  }
-}
-
-function clearFilters() {
-  const yearSelect = document.getElementById("filterYear");
-  const monthSelect = document.getElementById("filterMonth");
-  const categorySelect = document.getElementById("filterCategory");
-  
-  if (yearSelect) yearSelect.value = "";
-  if (monthSelect) monthSelect.value = "";
-  if (categorySelect) categorySelect.value = "";
-  
-  loadAllChartData();
-  showToast('Filters cleared', 'info');
-}
 
 // ==============================================
 // ACTIVITY TAB FUNCTIONS
