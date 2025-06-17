@@ -1,0 +1,38 @@
+@model FilterSectionViewModel
+
+<div class="filters-section">
+    <form method="get" action="@Model.ActionUrl">
+        <div class="filters-row">
+            @foreach (var filter in Model.Filters)
+            {
+                <div class="filter-group">
+                    <label for="@filter.Name">@filter.Label</label>
+                    @if (filter.Type == FilterType.Text)
+                    {
+                        <input type="text" id="@filter.Name" name="@filter.Name" value="@filter.Value" 
+                               placeholder="@filter.Placeholder" />
+                    }
+                    else if (filter.Type == FilterType.Select)
+                    {
+                        <select id="@filter.Name" name="@filter.Name">
+                            @foreach (var option in filter.Options)
+                            {
+                                <option value="@option.Value" selected="@(option.Value == filter.Value)">@option.Text</option>
+                            }
+                        </select>
+                    }
+                </div>
+            }
+            <div class="filter-actions">
+                <button type="submit" class="btn-filter">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <a href="@Model.ClearUrl" class="btn-clear">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+ 

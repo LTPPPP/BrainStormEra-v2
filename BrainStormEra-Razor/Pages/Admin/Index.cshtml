@@ -7,94 +7,69 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/admin/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin/components.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 }
 
 <div class="admin-dashboard">
     <!-- Dashboard Header -->
-    <div class="dashboard-header">
-        <div class="header-left">
-            <h1><i class="fas fa-chart-line"></i> Admin Dashboard</h1>
-            <p class="header-subtitle">Comprehensive analytics and system overview</p>
-        </div>
-        <div class="header-right">
-            <div class="admin-info">
-                <div class="admin-avatar">
-                    <img src="@Model.DashboardData.AdminImage" alt="Admin Avatar" 
-                         onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-avatar.svg';" />
-                </div>
-                <div class="admin-details">
-                    <span class="admin-name">Welcome, @Model.AdminName</span>
-                    <span class="login-time">Last login: @Model.LoginTime.ToString("MMM dd, yyyy HH:mm")</span>
-                </div>
-            </div>
-            <div class="header-actions">
-                <button type="button" class="refresh-btn" onclick="refreshDashboard()" title="Refresh Dashboard">
-                    <i class="fas fa-sync-alt"></i>
-                </button>
-                <button type="button" class="export-btn" onclick="exportData()" title="Export Data">
-                    <i class="fas fa-download"></i>
-                </button>
-                <a href="/auth/logout" class="btn-logout" title="Logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                </a>
-            </div>
-        </div>
-    </div>
+    @{
+        var headerModel = new AdminHeaderViewModel
+        {
+            Title = "Admin Dashboard",
+            Subtitle = "Comprehensive analytics and system overview",
+            Icon = "fa-chart-line",
+            AdminName = Model.AdminName ?? "Admin",
+            AdminImage = Model.DashboardData.AdminImage,
+            LoginTime = Model.LoginTime,
+            ShowQuickLinks = true,
+            ShowRefresh = true,
+            ShowExport = true,
+            ShowBackButton = false
+        };
+    }
+    @await Html.PartialAsync("Admin/_AdminHeader", headerModel)
 
     <!-- Quick Stats Cards -->
+    @{
+        var statsModel = new List<StatCardViewModel>
+        {
+            new StatCardViewModel
+            {
+                Value = Model.DashboardData.TotalUsers.ToString("N0"),
+                Label = "Total Users",
+                Change = "+12% from last month",
+                IsPositive = true,
+                CssClass = "users"
+            },
+            new StatCardViewModel
+            {
+                Value = Model.DashboardData.TotalCourses.ToString("N0"),
+                Label = "Total Courses",
+                Change = "+8% from last month",
+                IsPositive = true,
+                CssClass = "courses"
+            },
+            new StatCardViewModel
+            {
+                Value = Model.DashboardData.TotalEnrollments.ToString("N0"),
+                Label = "Total Enrollments",
+                Change = "+25% from last month",
+                IsPositive = true,
+                CssClass = "enrollments"
+            },
+            new StatCardViewModel
+            {
+                Value = "$" + Model.DashboardData.TotalRevenue.ToString("N0"),
+                Label = "Total Revenue",
+                Change = "+18% from last month",
+                IsPositive = true,
+                CssClass = "revenue"
+            }
+        };
+    }
     <div class="quick-stats">
-        <div class="stat-card users">
-            <div class="stat-icon">
-                <i class="fas fa-users"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number">@Model.DashboardData.TotalUsers.ToString("N0")</div>
-                <div class="stat-label">Total Users</div>
-                <div class="stat-change positive">
-                    <i class="fas fa-arrow-up"></i> +12% from last month
-                </div>
-            </div>
-        </div>
-
-        <div class="stat-card courses">
-            <div class="stat-icon">
-                <i class="fas fa-book"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number">@Model.DashboardData.TotalCourses.ToString("N0")</div>
-                <div class="stat-label">Total Courses</div>
-                <div class="stat-change positive">
-                    <i class="fas fa-arrow-up"></i> +8% from last month
-                </div>
-            </div>
-        </div>
-
-        <div class="stat-card enrollments">
-            <div class="stat-icon">
-                <i class="fas fa-graduation-cap"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number">@Model.DashboardData.TotalEnrollments.ToString("N0")</div>
-                <div class="stat-label">Total Enrollments</div>
-                <div class="stat-change positive">
-                    <i class="fas fa-arrow-up"></i> +25% from last month
-                </div>
-            </div>
-        </div>
-
-        <div class="stat-card revenue">
-            <div class="stat-icon">
-                <i class="fas fa-dollar-sign"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number">$@Model.DashboardData.TotalRevenue.ToString("N0")</div>
-                <div class="stat-label">Total Revenue</div>
-                <div class="stat-change positive">
-                    <i class="fas fa-arrow-up"></i> +18% from last month
-                </div>
-            </div>
-        </div>
+        @await Html.PartialAsync("Admin/_StatsCards", statsModel)
     </div>
 
     <!-- Dashboard Filters -->
@@ -555,6 +530,9 @@
         Chart.defaults.font.size = 12;
         Chart.defaults.color = '#64748b';
     </script>
+    
+    <!-- Shared Admin Functions -->
+    <script src="~/js/admin/shared-functions.js" asp-append-version="true"></script>
     
     <!-- Dashboard JavaScript -->
     <script src="~/js/admin/dashboard.js" asp-append-version="true"></script>

@@ -106,6 +106,44 @@ body {
   font-weight: 500;
 }
 
+.quick-access-links {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.quick-link {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  color: white;
+  text-decoration: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.quick-link:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
+  color: white;
+  text-decoration: none;
+}
+
+.quick-link:nth-child(2) {
+  background: linear-gradient(135deg, var(--success-color), #059669);
+}
+
+.quick-link:nth-child(2):hover {
+  background: linear-gradient(135deg, #059669, var(--success-color));
+}
+
 .header-right {
   display: flex;
   align-items: center;

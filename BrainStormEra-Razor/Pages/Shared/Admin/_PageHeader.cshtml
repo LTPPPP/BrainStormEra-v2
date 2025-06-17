@@ -1,0 +1,21 @@
+@model PageHeaderViewModel
+
+<div class="page-header">
+    <div>
+        <h1><i class="fas @Model.Icon"></i> @Model.Title</h1>
+        <p class="text-muted">@Model.Description</p>
+    </div>
+    @if (Model.Actions.Any())
+    {
+        <div>
+            @foreach (var action in Model.Actions)
+            {
+                <a href="@action.Url" class="@action.CssClass">
+                    <i class="fas @action.Icon"></i> @action.Text
+                </a>
+            }
+        </div>
+    }
+</div>
+
+ 
