@@ -385,4 +385,29 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+/* Filter status styling */
+.filter-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.filter-status i {
+  font-size: 1rem;
+}
+
+.filter-status .text-success {
+  color: #28a745 !important;
+}
+
+.filter-status .text-primary {
+  color: #007bff !important;
 } 

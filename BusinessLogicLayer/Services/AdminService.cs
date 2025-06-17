@@ -198,26 +198,46 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                List<DataAccessLayer.Models.Account> users;
+                // Get all users first, then apply filters in memory for better flexibility
+                var allUsers = await _adminRepo.GetAllUsersAsync();
 
+                // Apply filters
+                var filteredUsers = allUsers.AsQueryable();
+
+                // Apply search filter
                 if (!string.IsNullOrEmpty(search))
                 {
-                    users = await _adminRepo.SearchUsersAsync(search, page, pageSize);
-                }
-                else if (!string.IsNullOrEmpty(roleFilter))
-                {
-                    users = await _adminRepo.GetUsersByRoleAsync(roleFilter, page, pageSize);
-                }
-                else
-                {
-                    users = await _adminRepo.GetAllUsersAsync(page, pageSize);
+                    filteredUsers = filteredUsers.Where(u =>
+                        (u.FullName != null && u.FullName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.Username != null && u.Username.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.UserEmail != null && u.UserEmail.Contains(search, StringComparison.OrdinalIgnoreCase)));
                 }
 
-                var totalUsers = await _adminRepo.GetTotalUsersCountAsync();
+                // Apply role filter
+                if (!string.IsNullOrEmpty(roleFilter))
+                {
+                    filteredUsers = filteredUsers.Where(u =>
+                        u.UserRole != null && u.UserRole.Equals(roleFilter, StringComparison.OrdinalIgnoreCase));
+                }
+
+                var users = filteredUsers.ToList();
+                var totalUsers = users.Count;
+
+                // Apply pagination
+                var paginatedUsers = users
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                // Calculate statistics
+                var totalAdmins = allUsers.Count(u => u.UserRole?.Equals("admin", StringComparison.OrdinalIgnoreCase) == true);
+                var totalInstructors = allUsers.Count(u => u.UserRole?.Equals("instructor", StringComparison.OrdinalIgnoreCase) == true);
+                var totalLearners = allUsers.Count(u => u.UserRole?.Equals("learner", StringComparison.OrdinalIgnoreCase) == true);
+                var bannedUsers = allUsers.Count(u => u.IsBanned == true);
 
                 return new AdminUsersViewModel
                 {
-                    Users = users.Select(u => new AdminUserViewModel
+                    Users = paginatedUsers.Select(u => new AdminUserViewModel
                     {
                         UserId = u.UserId,
                         Username = u.Username,
@@ -228,9 +248,23 @@ namespace BusinessLogicLayer.Services
                         AccountCreatedAt = u.AccountCreatedAt,
                         LastLoginDate = u.LastLogin,
                         IsBanned = u.IsBanned ?? false,
-                        IsActive = !(u.IsBanned ?? false)
+                        IsActive = !(u.IsBanned ?? false),
+                        PhoneNumber = u.PhoneNumber,
+                        UserAddress = u.UserAddress,
+                        DateOfBirth = u.DateOfBirth,
+                        Gender = u.Gender,
+                        PaymentPoint = u.PaymentPoint,
+                        BankName = u.BankName,
+                        BankAccountNumber = u.BankAccountNumber,
+                        AccountHolderName = u.AccountHolderName
                     }).ToList(),
+                    SearchQuery = search,
+                    RoleFilter = roleFilter,
                     TotalUsers = totalUsers,
+                    TotalAdmins = totalAdmins,
+                    TotalInstructors = totalInstructors,
+                    TotalLearners = totalLearners,
+                    BannedUsers = bannedUsers,
                     CurrentPage = page,
                     PageSize = pageSize,
                     TotalPages = (int)Math.Ceiling((double)totalUsers / pageSize)

@@ -87,6 +87,37 @@
             gap: 8px;
         }
         
+        .btn-auto-search {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-auto-search.active {
+            background: #28a745 !important;
+        }
+        
+        .btn-auto-search:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .filter-input, .filter-select {
+            transition: border-color 0.3s ease;
+        }
+        
+        .filter-input:focus, .filter-select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
         .stats-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -223,6 +254,11 @@
             gap: 4px;
         }
         
+        .btn-view {
+            background: #007bff;
+            color: white;
+        }
+        
         .btn-ban {
             background: #ffc107;
             color: #212529;
@@ -230,11 +266,6 @@
         
         .btn-unban {
             background: #28a745;
-            color: white;
-        }
-        
-        .btn-delete {
-            background: #dc3545;
             color: white;
         }
         
@@ -363,6 +394,19 @@
                 },
                 new FilterViewModel
                 {
+                    Name = "StatusFilter",
+                    Label = "Status Filter",
+                    Type = FilterType.Select,
+                    Value = Model.StatusFilter,
+                    Options = new List<FilterOptionViewModel>
+                    {
+                        new FilterOptionViewModel { Value = "", Text = "All Status" },
+                        new FilterOptionViewModel { Value = "active", Text = "Active Users" },
+                        new FilterOptionViewModel { Value = "banned", Text = "Banned Users" }
+                    }
+                },
+                new FilterViewModel
+                {
                     Name = "PageSize",
                     Label = "Items per page",
                     Type = FilterType.Select,
@@ -391,6 +435,7 @@
             {
                 { "SearchQuery", Model.SearchQuery },
                 { "RoleFilter", Model.RoleFilter },
+                { "StatusFilter", Model.StatusFilter },
                 { "PageSize", Model.PageSize.ToString() }
             }
         };
@@ -441,6 +486,9 @@
                                 <td>@(user.LastLoginDate?.ToString("MMM dd, yyyy") ?? "Never")</td>
                                 <td>
                                     <div class="action-buttons">
+                                        <a href="/admin/users/@user.UserId" class="btn-action btn-view">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
                                         @if (user.IsBanned)
                                         {
                                             <button type="button" class="btn-action btn-unban" 
@@ -455,10 +503,6 @@
                                                 <i class="fas fa-ban"></i> Ban
                                             </button>
                                         }
-                                        <button type="button" class="btn-action btn-delete" 
-                                                onclick="deleteUser('@user.UserId', '@user.FullName')">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -510,29 +554,6 @@
             }
         }
 
-        function deleteUser(userId, userName) {
-            if (confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
-                fetch('/admin/users?handler=DeleteUser', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                    },
-                    body: JSON.stringify({ userId: userId })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while deleting user');
-                });
-            }
-        }
+
     </script>
 } 
