@@ -43,6 +43,13 @@ namespace DataAccessLayer.Models.ViewModels
         public int CreatedCoursesCount { get; set; }
         public decimal TotalSpent { get; set; }
 
+        // Profile additional fields
+        public string? Bio { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Location { get; set; }
+        public string? Timezone { get; set; }
+        public string? PreferredLanguage { get; set; }
+
         // Computed properties
         public string StatusText => IsBanned ? "Banned" : (IsActive ? "Active" : "Inactive");
         public string RoleBadgeClass => UserRole.ToLower() switch

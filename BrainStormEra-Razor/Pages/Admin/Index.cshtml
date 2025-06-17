@@ -30,48 +30,6 @@
     }
     @await Html.PartialAsync("Admin/_AdminHeader", headerModel)
 
-    <!-- Quick Stats Cards -->
-    @{
-        var statsModel = new List<StatCardViewModel>
-        {
-            new StatCardViewModel
-            {
-                Value = Model.DashboardData.TotalUsers.ToString("N0"),
-                Label = "Total Users",
-                Change = "+12% from last month",
-                IsPositive = true,
-                CssClass = "users"
-            },
-            new StatCardViewModel
-            {
-                Value = Model.DashboardData.TotalCourses.ToString("N0"),
-                Label = "Total Courses",
-                Change = "+8% from last month",
-                IsPositive = true,
-                CssClass = "courses"
-            },
-            new StatCardViewModel
-            {
-                Value = Model.DashboardData.TotalEnrollments.ToString("N0"),
-                Label = "Total Enrollments",
-                Change = "+25% from last month",
-                IsPositive = true,
-                CssClass = "enrollments"
-            },
-            new StatCardViewModel
-            {
-                Value = "$" + Model.DashboardData.TotalRevenue.ToString("N0"),
-                Label = "Total Revenue",
-                Change = "+18% from last month",
-                IsPositive = true,
-                CssClass = "revenue"
-            }
-        };
-    }
-    <div class="quick-stats">
-        @await Html.PartialAsync("Admin/_StatsCards", statsModel)
-    </div>
-
     <!-- Dashboard Filters -->
     <div class="dashboard-filters">
         <div class="filter-header">

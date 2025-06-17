@@ -5,22 +5,11 @@
         <h1><i class="fas @Model.Icon"></i> @Model.Title</h1>
         <p class="header-subtitle">@Model.Subtitle</p>
     </div>
-    @if (Model.ShowQuickLinks)
-    {
-        <div class="quick-access-links">
-            <a href="/admin/users" class="quick-link">
-                <i class="fas fa-users"></i> Manage Users
-            </a>
-            <a href="/admin/courses" class="quick-link">
-                <i class="fas fa-book"></i> Manage Courses
-            </a>
-        </div>
-    }
     <div class="header-right">
         <div class="admin-info">
             <div class="admin-avatar">
-                <img src="@Model.AdminImage" alt="Admin Avatar" 
-                     onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-avatar.svg';" />
+                <img src="@Model.AdminImage" alt="Admin Avatar"
+                    onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-avatar.svg';" />
             </div>
             <div class="admin-details">
                 <span class="admin-name">Welcome, @Model.AdminName</span>
@@ -52,5 +41,3 @@
         </div>
     </div>
 </div>
-
- 
