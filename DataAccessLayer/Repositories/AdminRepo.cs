@@ -28,7 +28,11 @@ namespace DataAccessLayer.Repositories
             try
             {
                 var totalUsers = await _context.Accounts.CountAsync();
-                var totalCourses = await _context.Courses.CountAsync();
+                var totalCourses = await _context.Courses
+                    .Where(c => c.CourseStatus != 4 && // Exclude archived/soft deleted courses
+                               !string.IsNullOrEmpty(c.ApprovalStatus) && // Must have approval status
+                               c.ApprovalStatus.ToLower() != "draft") // Exclude draft courses
+                    .CountAsync();
                 var totalEnrollments = await _context.Enrollments.CountAsync();
                 var totalRevenue = await _context.PaymentTransactions
                     .Where(pt => pt.TransactionStatus == "completed")
@@ -39,10 +43,13 @@ namespace DataAccessLayer.Repositories
                 var totalInstructors = await _context.Accounts.CountAsync(a => a.UserRole == "instructor");
                 var totalAdmins = await _context.Accounts.CountAsync(a => a.UserRole == "admin");
 
-                // Course status distribution
-                var approvedCourses = await _context.Courses.CountAsync(c => c.ApprovalStatus == "approved");
-                var pendingCourses = await _context.Courses.CountAsync(c => c.ApprovalStatus == "pending");
-                var rejectedCourses = await _context.Courses.CountAsync(c => c.ApprovalStatus == "rejected");
+                // Course status distribution (exclude drafts)
+                var approvedCourses = await _context.Courses
+                    .CountAsync(c => c.ApprovalStatus == "approved" && c.CourseStatus != 4);
+                var pendingCourses = await _context.Courses
+                    .CountAsync(c => c.ApprovalStatus == "pending" && c.CourseStatus != 4);
+                var rejectedCourses = await _context.Courses
+                    .CountAsync(c => c.ApprovalStatus == "rejected" && c.CourseStatus != 4);
 
                 // Certificate statistics
                 var totalCertificates = await _context.Certificates.CountAsync();
@@ -273,7 +280,11 @@ namespace DataAccessLayer.Repositories
         {
             try
             {
-                return await _context.Courses.Where(c => c.CourseStatus != 4).CountAsync(); // Exclude archived/soft deleted courses
+                return await _context.Courses
+                    .Where(c => c.CourseStatus != 4 && // Exclude archived/soft deleted courses
+                               !string.IsNullOrEmpty(c.ApprovalStatus) && // Must have approval status
+                               c.ApprovalStatus.ToLower() != "draft") // Exclude draft courses
+                    .CountAsync();
             }
             catch (Exception ex)
             {
@@ -507,7 +518,9 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _context.Courses
-                    .Where(c => c.CourseStatus != 4) // Exclude archived/soft deleted courses
+                    .Where(c => c.CourseStatus != 4 && // Exclude archived/soft deleted courses
+                               !string.IsNullOrEmpty(c.ApprovalStatus) && // Must have approval status
+                               c.ApprovalStatus.ToLower() != "draft") // Exclude draft courses
                     .Include(c => c.Author)
                     .OrderByDescending(c => c.CourseCreatedAt)
                     .Skip((page - 1) * pageSize)
@@ -701,7 +714,9 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _context.Courses
-                    .Where(c => c.CourseStatus != 4) // Exclude archived/soft deleted courses
+                    .Where(c => c.CourseStatus != 4 && // Exclude archived/soft deleted courses
+                               !string.IsNullOrEmpty(c.ApprovalStatus) && // Must have approval status
+                               c.ApprovalStatus.ToLower() != "draft") // Exclude draft courses
                     .Include(c => c.Author)
                     .Include(c => c.CourseCategories) // Include categories for search
                     .Where(c => c.CourseName.Contains(searchTerm) ||

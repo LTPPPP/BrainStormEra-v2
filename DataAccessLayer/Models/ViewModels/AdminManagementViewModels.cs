@@ -119,6 +119,7 @@ namespace DataAccessLayer.Models.ViewModels
         public int? EstimatedDuration { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public string? ApprovalStatus { get; set; }
         public bool IsApproved { get; set; }
         public bool IsFeatured { get; set; }
         public bool IsActive { get; set; } = true;
@@ -138,8 +139,26 @@ namespace DataAccessLayer.Models.ViewModels
         public List<string> Categories { get; set; } = new List<string>();
 
         // Computed properties
-        public string StatusText => IsApproved ? "Approved" : "Pending";
-        public string StatusBadgeClass => IsApproved ? "bg-success" : "bg-warning";
+        public string StatusText => ApprovalStatus?.ToLower() switch
+        {
+            "approved" => "Approved",
+            "pending" => "Pending",
+            "rejected" => "Rejected",
+            "banned" => "Banned",
+            "draft" => "Draft",
+            _ => IsApproved ? "Approved" : "Pending"
+        };
+
+        public string StatusBadgeClass => ApprovalStatus?.ToLower() switch
+        {
+            "approved" => "status-approved",
+            "pending" => "status-pending",
+            "rejected" => "status-rejected",
+            "banned" => "status-banned",
+            "draft" => "status-draft",
+            _ => IsApproved ? "status-approved" : "status-pending"
+        };
+
         public string PriceText => Price > 0 ? $"${Price:N2}" : "Free";
         public string DifficultyText => DifficultyLevel switch
         {

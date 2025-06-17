@@ -306,6 +306,7 @@ namespace BusinessLogicLayer.Services
                         Price = c.Price,
                         CreatedAt = c.CourseCreatedAt,
                         UpdatedAt = c.CourseUpdatedAt,
+                        ApprovalStatus = c.ApprovalStatus,
                         IsApproved = c.ApprovalStatus == "Approved",
                         IsFeatured = c.IsFeatured ?? false,
                         IsActive = c.CourseStatus == 1, // Assuming 1 means active
