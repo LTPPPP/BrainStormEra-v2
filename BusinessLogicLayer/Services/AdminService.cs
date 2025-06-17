@@ -10,17 +10,20 @@ namespace BusinessLogicLayer.Services
         private readonly IAdminRepo _adminRepo;
         private readonly IUserRepo _userRepo;
         private readonly ICourseRepo _courseRepo;
+        private readonly IAchievementRepo _achievementRepo;
         private readonly ILogger<AdminService> _logger;
 
         public AdminService(
             IAdminRepo adminRepo,
             IUserRepo userRepo,
             ICourseRepo courseRepo,
+            IAchievementRepo achievementRepo,
             ILogger<AdminService> logger)
         {
             _adminRepo = adminRepo;
             _userRepo = userRepo;
             _courseRepo = courseRepo;
+            _achievementRepo = achievementRepo;
             _logger = logger;
         }
 
@@ -361,6 +364,172 @@ namespace BusinessLogicLayer.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting course with courseId: {CourseId}", courseId);
+                throw;
+            }
+        }
+
+        // Achievement Management Methods
+        public async Task<AdminAchievementsViewModel> GetAllAchievementsAsync(string? search = null, string? typeFilter = null, string? pointsFilter = null, int page = 1, int pageSize = 12)
+        {
+            try
+            {
+                var allAchievements = await _achievementRepo.GetAllAchievementsAsync();
+
+                // Apply filters
+                var filteredAchievements = allAchievements.AsQueryable();
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    filteredAchievements = filteredAchievements.Where(a =>
+                        a.AchievementName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                        (a.AchievementDescription != null && a.AchievementDescription.Contains(search, StringComparison.OrdinalIgnoreCase)));
+                }
+
+                if (!string.IsNullOrEmpty(typeFilter))
+                {
+                    filteredAchievements = filteredAchievements.Where(a =>
+                        a.AchievementType != null && a.AchievementType.Equals(typeFilter, StringComparison.OrdinalIgnoreCase));
+                }
+
+
+
+                var achievements = filteredAchievements.ToList();
+                var totalAchievements = achievements.Count;
+
+                // Apply pagination
+                var paginatedAchievements = achievements
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                // Calculate statistics
+                var courseAchievements = allAchievements.Count(a => a.AchievementType?.Equals("course", StringComparison.OrdinalIgnoreCase) == true);
+                var quizAchievements = allAchievements.Count(a => a.AchievementType?.Equals("quiz", StringComparison.OrdinalIgnoreCase) == true);
+                var specialAchievements = allAchievements.Count(a => a.AchievementType?.Equals("special", StringComparison.OrdinalIgnoreCase) == true);
+                var milestoneAchievements = allAchievements.Count(a => a.AchievementType?.Equals("milestone", StringComparison.OrdinalIgnoreCase) == true);
+
+                // Calculate total times awarded (would need user achievements data, using placeholder for now)
+                var totalAwarded = 0; // This would require joining with UserAchievement table
+
+                return new AdminAchievementsViewModel
+                {
+                    Achievements = paginatedAchievements.Select(a => new AdminAchievementViewModel
+                    {
+                        AchievementId = a.AchievementId,
+                        AchievementName = a.AchievementName,
+                        AchievementDescription = a.AchievementDescription ?? "",
+                        AchievementIcon = a.AchievementIcon ?? "fas fa-trophy",
+                        AchievementType = a.AchievementType ?? "general",
+
+                        AchievementCreatedAt = a.AchievementCreatedAt,
+                        IsActive = true, // Add this field to Achievement model if needed
+                        TimesAwarded = 0 // This would require joining with UserAchievement table
+                    }).ToList(),
+                    SearchQuery = search,
+                    TypeFilter = typeFilter,
+                    PointsFilter = pointsFilter,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling((double)totalAchievements / pageSize),
+                    TotalAchievements = allAchievements.Count,
+                    CourseAchievements = courseAchievements,
+                    QuizAchievements = quizAchievements,
+                    SpecialAchievements = specialAchievements,
+                    MilestoneAchievements = milestoneAchievements,
+                    TotalAwarded = totalAwarded
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all achievements with search: {Search}, typeFilter: {TypeFilter}, pointsFilter: {PointsFilter}, page: {Page}, pageSize: {PageSize}",
+                    search, typeFilter, pointsFilter, page, pageSize);
+                throw;
+            }
+        }
+
+        public async Task<AdminAchievementViewModel?> GetAchievementByIdAsync(string achievementId)
+        {
+            try
+            {
+                var achievement = await _achievementRepo.GetByIdAsync(achievementId);
+                if (achievement == null) return null;
+
+                return new AdminAchievementViewModel
+                {
+                    AchievementId = achievement.AchievementId,
+                    AchievementName = achievement.AchievementName,
+                    AchievementDescription = achievement.AchievementDescription ?? "",
+                    AchievementIcon = achievement.AchievementIcon ?? "fas fa-trophy",
+                    AchievementType = achievement.AchievementType ?? "general",
+
+                    AchievementCreatedAt = achievement.AchievementCreatedAt,
+                    IsActive = true,
+                    TimesAwarded = achievement.UserAchievements?.Count ?? 0
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting achievement by ID: {AchievementId}", achievementId);
+                throw;
+            }
+        }
+
+        public async Task<bool> CreateAchievementAsync(CreateAchievementRequest request, string? adminId = null)
+        {
+            try
+            {
+                var achievement = new DataAccessLayer.Models.Achievement
+                {
+                    AchievementId = Guid.NewGuid().ToString(),
+                    AchievementName = request.AchievementName,
+                    AchievementDescription = request.AchievementDescription,
+                    AchievementIcon = request.AchievementIcon,
+                    AchievementType = request.AchievementType,
+
+                    AchievementCreatedAt = DateTime.UtcNow
+                };
+
+                var result = await _achievementRepo.CreateAchievementAsync(achievement);
+                return !string.IsNullOrEmpty(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating achievement: {AchievementName}", request.AchievementName);
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateAchievementAsync(UpdateAchievementRequest request, string? adminId = null)
+        {
+            try
+            {
+                var existingAchievement = await _achievementRepo.GetByIdAsync(request.AchievementId);
+                if (existingAchievement == null) return false;
+
+                existingAchievement.AchievementName = request.AchievementName;
+                existingAchievement.AchievementDescription = request.AchievementDescription;
+                existingAchievement.AchievementIcon = request.AchievementIcon;
+                existingAchievement.AchievementType = request.AchievementType;
+
+
+                return await _achievementRepo.UpdateAchievementAsync(existingAchievement);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating achievement: {AchievementId}", request.AchievementId);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteAchievementAsync(string achievementId, string? adminId = null)
+        {
+            try
+            {
+                return await _achievementRepo.DeleteAchievementAsync(achievementId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting achievement: {AchievementId}", achievementId);
                 throw;
             }
         }

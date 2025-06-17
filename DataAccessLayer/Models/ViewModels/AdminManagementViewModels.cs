@@ -167,4 +167,110 @@ namespace DataAccessLayer.Models.ViewModels
         public List<FeedbackRatingStats> FeedbackStats { get; set; } = new();
         public List<HourlyUsageStats> HourlyUsage { get; set; } = new();
     }
+
+    // Achievement Management ViewModels
+    public class AdminAchievementsViewModel
+    {
+        public List<AdminAchievementViewModel> Achievements { get; set; } = new List<AdminAchievementViewModel>();
+        public string? SearchQuery { get; set; }
+        public string? TypeFilter { get; set; }
+        public string? PointsFilter { get; set; }
+        public int CurrentPage { get; set; } = 1;
+        public int TotalPages { get; set; }
+        public int TotalAchievements { get; set; }
+        public int PageSize { get; set; } = 12;
+
+        // Summary statistics
+        public int CourseAchievements { get; set; }
+        public int QuizAchievements { get; set; }
+        public int SpecialAchievements { get; set; }
+        public int MilestoneAchievements { get; set; }
+        public int TotalAwarded { get; set; }
+
+        // Additional properties for compatibility
+        public bool HasPreviousPage => CurrentPage > 1;
+        public bool HasNextPage => CurrentPage < TotalPages;
+    }
+
+    public class AdminAchievementViewModel
+    {
+        public required string AchievementId { get; set; }
+        public required string AchievementName { get; set; }
+        public string AchievementDescription { get; set; } = "";
+        public string AchievementIcon { get; set; } = "fas fa-trophy";
+        public string AchievementType { get; set; } = "general";
+        public int PointsReward { get; set; }
+        public DateTime AchievementCreatedAt { get; set; }
+        public DateTime? LastUpdatedAt { get; set; }
+        public bool IsActive { get; set; } = true;
+
+        // Statistics
+        public int TimesAwarded { get; set; }
+        public int TotalPointsDistributed => TimesAwarded * PointsReward;
+
+        // Computed properties
+        public string TypeBadgeClass => AchievementType.ToLower() switch
+        {
+            "course" => "bg-success",
+            "quiz" => "bg-warning",
+            "special" => "bg-danger",
+            "milestone" => "bg-info",
+            _ => "bg-secondary"
+        };
+
+        public string TypeDisplayName => AchievementType.ToLower() switch
+        {
+            "course" => "Course Completion",
+            "quiz" => "Quiz Achievement",
+            "special" => "Special Achievement",
+            "milestone" => "Milestone",
+            _ => "General"
+        };
+
+        public string PointsText => PointsReward switch
+        {
+            0 => "No Points",
+            1 => "1 Point",
+            _ => $"{PointsReward} Points"
+        };
+    }
+
+    public class CreateAchievementRequest
+    {
+        [Required]
+        [StringLength(100)]
+        public required string AchievementName { get; set; }
+
+        [StringLength(500)]
+        public string? AchievementDescription { get; set; }
+
+        [StringLength(100)]
+        public string AchievementIcon { get; set; } = "fas fa-trophy";
+
+        [Required]
+        [StringLength(50)]
+        public required string AchievementType { get; set; }
+    }
+
+    public class UpdateAchievementRequest
+    {
+        [Required]
+        public required string AchievementId { get; set; }
+
+        [Required]
+        [StringLength(100)]
+        public required string AchievementName { get; set; }
+
+        [StringLength(500)]
+        public string? AchievementDescription { get; set; }
+
+        [StringLength(100)]
+        public string AchievementIcon { get; set; } = "fas fa-trophy";
+
+        [Required]
+        [StringLength(50)]
+        public required string AchievementType { get; set; }
+
+        public bool IsActive { get; set; } = true;
+    }
 }
