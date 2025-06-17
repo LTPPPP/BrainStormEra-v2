@@ -151,6 +151,104 @@ namespace DataAccessLayer.Models.ViewModels
         };
     }
 
+    public class AdminCourseDetailsViewModel
+    {
+        public required string CourseId { get; set; }
+        public required string CourseName { get; set; }
+        public string CourseDescription { get; set; } = "";
+        public string CoursePicture { get; set; } = "/SharedMedia/defaults/default-course.svg";
+        public decimal Price { get; set; }
+        public string? DifficultyLevel { get; set; }
+        public int? EstimatedDuration { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public string? ApprovalStatus { get; set; }
+        public bool IsApproved { get; set; }
+        public bool IsFeatured { get; set; }
+        public bool IsActive { get; set; } = true;
+        public bool EnforceSequentialAccess { get; set; }
+        public bool AllowLessonPreview { get; set; }
+        public string? ApprovedBy { get; set; }
+        public DateTime? ApprovedAt { get; set; }
+
+        // Instructor information
+        public required string InstructorId { get; set; }
+        public required string InstructorName { get; set; }
+        public string InstructorEmail { get; set; } = "";
+        public string InstructorBio { get; set; } = "";
+        public string InstructorImage { get; set; } = "/SharedMedia/defaults/default-avatar.svg";
+
+        // Course structure
+        public List<CourseChapterSummary> Chapters { get; set; } = new List<CourseChapterSummary>();
+        public List<string> Categories { get; set; } = new List<string>();
+
+        // Course statistics
+        public int EnrollmentCount { get; set; }
+        public decimal AverageRating { get; set; }
+        public int ReviewCount { get; set; }
+        public decimal Revenue { get; set; }
+        public int TotalLessons { get; set; }
+        public int TotalQuizzes { get; set; }
+        public int CompletionRate { get; set; }
+
+        // Recent activity
+        public List<CourseReviewSummary> RecentReviews { get; set; } = new List<CourseReviewSummary>();
+        public List<CourseEnrollmentSummary> RecentEnrollments { get; set; } = new List<CourseEnrollmentSummary>();
+
+        // Computed properties
+        public string StatusText => ApprovalStatus ?? (IsApproved ? "Approved" : "Pending");
+        public string StatusBadgeClass => ApprovalStatus?.ToLower() switch
+        {
+            "approved" => "bg-success",
+            "pending" => "bg-warning",
+            "rejected" => "bg-danger",
+            "banned" => "bg-dark",
+            _ => IsApproved ? "bg-success" : "bg-warning"
+        };
+        public string PriceText => Price > 0 ? $"${Price:N2}" : "Free";
+        public string DifficultyText => DifficultyLevel switch
+        {
+            "1" => "Beginner",
+            "2" => "Intermediate",
+            "3" => "Advanced",
+            "4" => "Expert",
+            _ => "Unknown"
+        };
+        public string DurationText => EstimatedDuration.HasValue ? $"{EstimatedDuration} hours" : "Not specified";
+        public string CategoriesText => Categories.Any() ? string.Join(", ", Categories) : "No categories";
+        public string CompletionRateText => $"{CompletionRate}%";
+        public string ApprovalStatusText => ApprovalStatus ?? "Unknown";
+    }
+
+    public class CourseChapterSummary
+    {
+        public required string ChapterId { get; set; }
+        public required string ChapterName { get; set; }
+        public int ChapterOrder { get; set; }
+        public int LessonCount { get; set; }
+        public bool IsLocked { get; set; }
+    }
+
+    public class CourseReviewSummary
+    {
+        public required string UserId { get; set; }
+        public required string UserName { get; set; }
+        public string UserImage { get; set; } = "/SharedMedia/defaults/default-avatar.svg";
+        public decimal Rating { get; set; }
+        public string Comment { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class CourseEnrollmentSummary
+    {
+        public required string UserId { get; set; }
+        public required string UserName { get; set; }
+        public string UserImage { get; set; } = "/SharedMedia/defaults/default-avatar.svg";
+        public DateTime EnrolledAt { get; set; }
+        public int ProgressPercentage { get; set; }
+        public string PaymentStatus { get; set; } = "";
+    }
+
     public class UpdateUserStatusRequest
     {
         [Required]

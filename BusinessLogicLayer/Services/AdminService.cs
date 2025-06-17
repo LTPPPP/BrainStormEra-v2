@@ -278,7 +278,7 @@ namespace BusinessLogicLayer.Services
             }
         }
 
-        public async Task<AdminCoursesViewModel> GetAllCoursesAsync(string? search = null, string? categoryFilter = null, int page = 1, int pageSize = 10)
+        public async Task<AdminCoursesViewModel> GetAllCoursesAsync(string? search = null, string? categoryFilter = null, string? statusFilter = null, string? priceFilter = null, string? difficultyFilter = null, string? instructorFilter = null, string? sortBy = null, int page = 1, int pageSize = 12)
         {
             try
             {
@@ -325,6 +325,108 @@ namespace BusinessLogicLayer.Services
             {
                 _logger.LogError(ex, "Error getting all courses with search: {Search}, categoryFilter: {CategoryFilter}, page: {Page}, pageSize: {PageSize}",
                     search, categoryFilter, page, pageSize);
+                throw;
+            }
+        }
+
+        public async Task<AdminCourseDetailsViewModel?> GetCourseDetailsAsync(string courseId)
+        {
+            try
+            {
+                var course = await _adminRepo.GetCourseWithDetailsAsync(courseId);
+                if (course == null)
+                {
+                    return null;
+                }
+
+                // Calculate statistics
+                var averageRating = course.Feedbacks?.Any() == true
+                    ? course.Feedbacks.Average(f => f.StarRating ?? 0)
+                    : 0;
+
+                var totalRevenue = course.PaymentTransactions?.Where(p => p.TransactionStatus == "completed")
+                    .Sum(p => p.Amount) ?? 0;
+
+                var completionRate = 0; // Would need to calculate from enrollments progress
+
+                return new AdminCourseDetailsViewModel
+                {
+                    CourseId = course.CourseId,
+                    CourseName = course.CourseName,
+                    CourseDescription = course.CourseDescription ?? "",
+                    CoursePicture = course.CourseImage ?? "/SharedMedia/defaults/default-course.svg",
+                    Price = course.Price,
+                    DifficultyLevel = course.DifficultyLevel?.ToString(),
+                    EstimatedDuration = course.EstimatedDuration,
+                    CreatedAt = course.CourseCreatedAt,
+                    UpdatedAt = course.CourseUpdatedAt,
+                    ApprovalStatus = course.ApprovalStatus,
+                    IsApproved = course.ApprovalStatus == "Approved",
+                    IsFeatured = course.IsFeatured ?? false,
+                    IsActive = course.CourseStatus == 1,
+                    EnforceSequentialAccess = course.EnforceSequentialAccess ?? false,
+                    AllowLessonPreview = course.AllowLessonPreview ?? false,
+                    ApprovedBy = course.ApprovedBy,
+                    ApprovedAt = course.ApprovedAt,
+
+                    // Instructor information
+                    InstructorId = course.AuthorId,
+                    InstructorName = course.Author?.FullName ?? "",
+                    InstructorEmail = course.Author?.UserEmail ?? "",
+                    InstructorBio = "", // Bio property doesn't exist in Account model
+                    InstructorImage = course.Author?.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
+
+                    // Course structure
+                    Chapters = course.Chapters?.Select(ch => new CourseChapterSummary
+                    {
+                        ChapterId = ch.ChapterId,
+                        ChapterName = ch.ChapterName,
+                        ChapterOrder = ch.ChapterOrder ?? 0,
+                        LessonCount = ch.Lessons?.Count ?? 0,
+                        IsLocked = ch.IsLocked ?? false
+                    }).OrderBy(ch => ch.ChapterOrder).ToList() ?? new List<CourseChapterSummary>(),
+
+                    Categories = course.CourseCategories?.Select(cc => cc.CourseCategoryName ?? "").ToList() ?? new List<string>(),
+
+                    // Statistics
+                    EnrollmentCount = course.Enrollments?.Count ?? 0,
+                    AverageRating = (decimal)averageRating,
+                    ReviewCount = course.Feedbacks?.Count ?? 0,
+                    Revenue = totalRevenue,
+                    TotalLessons = course.Chapters?.Sum(ch => ch.Lessons?.Count ?? 0) ?? 0,
+                    TotalQuizzes = course.Quizzes?.Count ?? 0,
+                    CompletionRate = completionRate,
+
+                    // Recent reviews (limit to 5 most recent)
+                    RecentReviews = course.Feedbacks?.OrderByDescending(f => f.FeedbackCreatedAt)
+                        .Take(5)
+                        .Select(f => new CourseReviewSummary
+                        {
+                            UserId = f.UserId,
+                            UserName = f.User?.FullName ?? "Unknown User",
+                            UserImage = f.User?.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
+                            Rating = (decimal)(f.StarRating ?? 0),
+                            Comment = f.Comment ?? "",
+                            CreatedAt = f.FeedbackCreatedAt
+                        }).ToList() ?? new List<CourseReviewSummary>(),
+
+                    // Recent enrollments (limit to 5 most recent)
+                    RecentEnrollments = course.Enrollments?.OrderByDescending(e => e.EnrollmentCreatedAt)
+                        .Take(5)
+                        .Select(e => new CourseEnrollmentSummary
+                        {
+                            UserId = e.UserId,
+                            UserName = e.User?.FullName ?? "Unknown User",
+                            UserImage = e.User?.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
+                            EnrolledAt = e.EnrollmentCreatedAt,
+                            ProgressPercentage = (int)Math.Round(e.ProgressPercentage ?? 0),
+                            PaymentStatus = "Unknown" // PaymentStatus doesn't exist in Enrollment model
+                        }).ToList() ?? new List<CourseEnrollmentSummary>()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting course details for courseId: {CourseId}", courseId);
                 throw;
             }
         }
@@ -393,11 +495,14 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                return await _courseRepo.DeleteAsync(courseId);
+                // Admin cannot permanently delete courses created by instructors
+                // They can only ban courses. Only instructors can delete their own courses.
+                _logger.LogWarning("Admin attempted to delete course {CourseId}. Admins can only ban courses, not delete them permanently.", courseId);
+                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting course with courseId: {CourseId}", courseId);
+                _logger.LogError(ex, "Error in delete course operation for courseId: {CourseId}", courseId);
                 throw;
             }
         }
@@ -424,8 +529,6 @@ namespace BusinessLogicLayer.Services
                     filteredAchievements = filteredAchievements.Where(a =>
                         a.AchievementType != null && a.AchievementType.Equals(typeFilter, StringComparison.OrdinalIgnoreCase));
                 }
-
-
 
                 var achievements = filteredAchievements.ToList();
                 var totalAchievements = achievements.Count;
@@ -544,7 +647,6 @@ namespace BusinessLogicLayer.Services
                 existingAchievement.AchievementDescription = request.AchievementDescription;
                 existingAchievement.AchievementIcon = request.AchievementIcon;
                 existingAchievement.AchievementType = request.AchievementType;
-
 
                 return await _achievementRepo.UpdateAchievementAsync(existingAchievement);
             }

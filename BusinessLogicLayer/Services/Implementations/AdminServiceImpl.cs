@@ -514,7 +514,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
 
                 // Get all courses with filtering and pagination
-                var coursesData = await _adminService.GetAllCoursesAsync(search, categoryFilter, page, pageSize);
+                var coursesData = await _adminService.GetAllCoursesAsync(search, categoryFilter, null, null, null, null, null, page, pageSize);
 
                 return new AdminCoursesResult
                 {
