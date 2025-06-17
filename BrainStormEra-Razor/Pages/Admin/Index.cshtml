@@ -541,13 +541,16 @@
 @section Scripts {
     <!-- Chart.js with plugins -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
     
     <!-- Dashboard data injection -->
     <script>
         window.dashboardData = @Html.Raw(Json.Serialize(Model.DashboardData));
         window.userId = '@Model.UserId';
+        
+        // Chart.js configuration
+        Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#64748b';
     </script>
     
     <!-- Dashboard JavaScript -->

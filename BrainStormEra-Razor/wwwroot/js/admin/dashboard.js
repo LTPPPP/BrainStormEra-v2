@@ -1,18 +1,29 @@
 // ==============================================
-// MODERN ADMIN DASHBOARD JAVASCRIPT
+// SIMPLIFIED ADMIN DASHBOARD JAVASCRIPT
 // ==============================================
 
 // Global variables
 let charts = {};
 let chartInstances = {};
-let chartData = {};
 let isLoading = false;
-let autoRefreshInterval = null;
 
 // Chart.js configuration
-Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-Chart.defaults.font.size = 12;
-Chart.defaults.color = '#64748b';
+document.addEventListener("DOMContentLoaded", function () {
+  // Set Chart.js defaults
+  if (typeof Chart !== 'undefined') {
+    Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = '#64748b';
+  }
+  
+  console.log("Dashboard initializing...");
+  
+  initializeCharts();
+  setupEventListeners();
+  loadAllChartData();
+  
+  console.log("Dashboard initialized successfully");
+});
 
 // Color schemes
 const colorSchemes = {
@@ -20,32 +31,8 @@ const colorSchemes = {
   success: ['#10b981', '#059669', '#047857', '#065f46'],
   warning: ['#f59e0b', '#d97706', '#b45309', '#92400e'],
   danger: ['#ef4444', '#dc2626', '#b91c1c', '#991b1b'],
-  info: ['#06b6d4', '#0891b2', '#0e7490', '#155e75'],
-  gradient: {
-    primary: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    success: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-    warning: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    danger: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-    info: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'
-  }
+  info: ['#06b6d4', '#0891b2', '#0e7490', '#155e75']
 };
-
-// ==============================================
-// INITIALIZATION
-// ==============================================
-
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("Dashboard initializing...");
-  
-  initializeCharts();
-  loadAllChartData();
-  setupEventListeners();
-  setupAutoRefresh();
-  setupTooltips();
-  addLoadingStates();
-  
-  console.log("Dashboard initialized successfully");
-});
 
 // ==============================================
 // EVENT LISTENERS SETUP
@@ -83,9 +70,6 @@ function setupEventListeners() {
 function initializeCharts() {
   console.log("Initializing charts with data:", window.dashboardData);
   
-  // Register Chart.js plugins
-  Chart.register(ChartDataLabels);
-  
   // Initialize each chart
   initializeUsersChart();
   initializeCoursesChart();
@@ -121,10 +105,6 @@ function initializeUsersChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: {
-        intersect: false,
-        mode: 'index'
-      },
       plugins: {
         legend: {
           position: 'bottom',
@@ -147,24 +127,9 @@ function initializeUsersChart() {
           callbacks: {
             label: function(context) {
               const total = context.dataset.data.reduce((a, b) => a + b, 0);
-              const percentage = ((context.parsed / total) * 100).toFixed(1);
+              const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : '0';
               return `${context.label}: ${context.parsed.toLocaleString()} (${percentage}%)`;
             }
-          }
-        },
-        datalabels: {
-          display: function(context) {
-            return context.parsed > 0;
-          },
-          color: '#ffffff',
-          font: {
-            weight: 'bold',
-            size: 14
-          },
-          formatter: function(value, context) {
-            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-            const percentage = ((value / total) * 100).toFixed(1);
-            return percentage + '%';
           }
         }
       },
@@ -233,18 +198,6 @@ function initializeCoursesChart() {
             label: function(context) {
               return `Count: ${context.parsed.y.toLocaleString()}`;
             }
-          }
-        },
-        datalabels: {
-          anchor: 'end',
-          align: 'top',
-          color: '#374151',
-          font: {
-            weight: 'bold',
-            size: 14
-          },
-          formatter: function(value) {
-            return value.toLocaleString();
           }
         }
       },
@@ -345,9 +298,6 @@ function initializeCertificatesChart() {
               return `Certificates: ${context.parsed.y.toLocaleString()}`;
             }
           }
-        },
-        datalabels: {
-          display: false
         }
       },
       scales: {
@@ -399,16 +349,7 @@ function initializePointsChart() {
       datasets: [{
         label: 'Points Earned',
         data: pointsData.map(p => p.totalPointsEarned) || [1200, 1500, 1300, 1800, 1600, 2000],
-        backgroundColor: function(context) {
-          const chart = context.chart;
-          const {ctx, chartArea} = chart;
-          if (!chartArea) return colorSchemes.danger[0];
-          
-          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          gradient.addColorStop(0, colorSchemes.danger[0]);
-          gradient.addColorStop(1, colorSchemes.danger[1]);
-          return gradient;
-        },
+        backgroundColor: colorSchemes.danger[0],
         borderColor: colorSchemes.danger[0],
         borderWidth: 2,
         borderRadius: 8,
@@ -436,18 +377,6 @@ function initializePointsChart() {
             label: function(context) {
               return `Points: ${context.parsed.y.toLocaleString()}`;
             }
-          }
-        },
-        datalabels: {
-          anchor: 'end',
-          align: 'top',
-          color: '#374151',
-          font: {
-            weight: 'bold',
-            size: 12
-          },
-          formatter: function(value) {
-            return value.toLocaleString();
           }
         }
       },
@@ -499,8 +428,13 @@ function initializeChatbotChart() {
   charts.chatbot = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: chatbotData.map(c => new Date(c.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) || 
-              ['1/1', '1/2', '1/3', '1/4', '1/5', '1/6', '1/7'],
+      labels: chatbotData.map(c => {
+        try {
+          return new Date(c.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        } catch {
+          return c.date || 'N/A';
+        }
+      }) || ['1/1', '1/2', '1/3', '1/4', '1/5', '1/6', '1/7'],
       datasets: [{
         label: 'Daily Conversations',
         data: chatbotData.map(c => c.conversationCount) || [5, 8, 12, 7, 15, 10, 18],
@@ -551,9 +485,6 @@ function initializeChatbotChart() {
               return `Conversations: ${context.parsed.y}`;
             }
           }
-        },
-        datalabels: {
-          display: false
         }
       },
       scales: {
@@ -652,9 +583,6 @@ function initializeRevenueChart() {
               return `Revenue: $${context.parsed.y.toLocaleString()}`;
             }
           }
-        },
-        datalabels: {
-          display: false
         }
       },
       scales: {
@@ -710,8 +638,27 @@ function changeChartView(chartType, viewType) {
     container.querySelector(`[data-view="${viewType}"]`)?.classList.add('active');
   }
 
-  // Change chart type
-  chart.config.type = viewType;
+  // Handle special chart types
+  let actualChartType = viewType;
+  let fillOption = chart.config.data.datasets[0]?.fill || false;
+  
+  if (viewType === 'area') {
+    actualChartType = 'line';
+    fillOption = true;
+  }
+  
+  if (viewType === 'pie') {
+    actualChartType = 'doughnut';
+  }
+
+  // Change chart type and configuration
+  chart.config.type = actualChartType;
+  
+  // Update fill option for area charts
+  if (chart.config.data.datasets && chart.config.data.datasets[0]) {
+    chart.config.data.datasets[0].fill = fillOption;
+  }
+  
   chart.update('active');
   
   showToast(`Chart view changed to ${viewType}`, 'success');
@@ -748,8 +695,6 @@ async function loadAllChartData() {
   const chartTypes = ['users', 'courses', 'certificates', 'points', 'chatbot', 'revenue'];
   
   for (const chartType of chartTypes) {
-    showLoading(chartType);
-    await loadChartData(chartType);
     hideLoading(chartType);
   }
 }
@@ -821,15 +766,22 @@ function updateChart(chartType, data) {
       
     case 'chatbot':
       if (data.dailyUsage) {
-        chart.data.labels = data.dailyUsage.map(d => 
-          new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        );
+        chart.data.labels = data.dailyUsage.map(d => {
+          try {
+            return new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          } catch {
+            return d.date || 'N/A';
+          }
+        });
         chart.data.datasets[0].data = data.dailyUsage.map(d => d.conversationCount);
       }
       break;
       
     case 'revenue':
-      // Implement revenue chart update logic
+      if (data.revenueData) {
+        chart.data.labels = data.revenueData.map(r => r.month);
+        chart.data.datasets[0].data = data.revenueData.map(r => r.revenue);
+      }
       break;
   }
 
@@ -844,12 +796,14 @@ function toggleFilters() {
   const filterContent = document.querySelector('.filter-content');
   const filterToggle = document.querySelector('.filter-toggle i');
   
-  if (filterContent.style.display === 'none') {
-    filterContent.style.display = 'block';
-    filterToggle.style.transform = 'rotate(180deg)';
-  } else {
-    filterContent.style.display = 'none';
-    filterToggle.style.transform = 'rotate(0deg)';
+  if (filterContent && filterToggle) {
+    if (filterContent.style.display === 'none') {
+      filterContent.style.display = 'block';
+      filterToggle.style.transform = 'rotate(180deg)';
+    } else {
+      filterContent.style.display = 'none';
+      filterToggle.style.transform = 'rotate(0deg)';
+    }
   }
 }
 
@@ -877,9 +831,13 @@ async function applyFilters() {
 }
 
 function clearFilters() {
-  document.getElementById("filterYear").value = "";
-  document.getElementById("filterMonth").value = "";
-  document.getElementById("filterCategory").value = "";
+  const yearSelect = document.getElementById("filterYear");
+  const monthSelect = document.getElementById("filterMonth");
+  const categorySelect = document.getElementById("filterCategory");
+  
+  if (yearSelect) yearSelect.value = "";
+  if (monthSelect) monthSelect.value = "";
+  if (categorySelect) categorySelect.value = "";
   
   loadAllChartData();
   showToast('Filters cleared', 'info');
@@ -892,11 +850,13 @@ function clearFilters() {
 function showActivityTab(tabName) {
   // Update tab buttons
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-  document.querySelector(`[onclick="showActivityTab('${tabName}')"]`)?.classList.add('active');
+  const activeTab = document.querySelector(`[onclick="showActivityTab('${tabName}')"]`);
+  if (activeTab) activeTab.classList.add('active');
   
   // Show/hide content
   document.querySelectorAll('.activity-tab-content').forEach(content => content.style.display = 'none');
-  document.getElementById(`${tabName}-activity`).style.display = 'block';
+  const activeContent = document.getElementById(`${tabName}-activity`);
+  if (activeContent) activeContent.style.display = 'block';
 }
 
 // ==============================================
@@ -923,18 +883,6 @@ function hideLoading(chartType) {
     const loading = document.getElementById(`${chartType}ChartLoading`);
     if (loading) loading.style.display = 'none';
   }
-}
-
-function addLoadingStates() {
-  // Add loading states to all charts initially
-  document.querySelectorAll('.chart-loading').forEach(loading => {
-    loading.style.display = 'flex';
-  });
-  
-  // Hide after initialization
-  setTimeout(() => {
-    hideLoading('all');
-  }, 2000);
 }
 
 function showChartError(chartType) {
@@ -967,7 +915,11 @@ function showToast(message, type = 'info') {
   // Auto remove
   setTimeout(() => {
     toast.classList.remove('show');
-    setTimeout(() => document.body.removeChild(toast), 300);
+    setTimeout(() => {
+      if (document.body.contains(toast)) {
+        document.body.removeChild(toast);
+      }
+    }, 300);
   }, 3000);
 }
 
@@ -980,49 +932,11 @@ function getToastIcon(type) {
   }
 }
 
-function setupTooltips() {
-  // Add tooltips to action buttons
-  const tooltipElements = document.querySelectorAll('[title]');
-  tooltipElements.forEach(el => {
-    el.addEventListener('mouseenter', showTooltip);
-    el.addEventListener('mouseleave', hideTooltip);
-  });
-}
-
-function showTooltip(event) {
-  const tooltip = document.createElement('div');
-  tooltip.className = 'tooltip';
-  tooltip.textContent = event.target.getAttribute('title');
-  document.body.appendChild(tooltip);
-  
-  const rect = event.target.getBoundingClientRect();
-  tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
-  tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
-  
-  event.target.tooltip = tooltip;
-  event.target.removeAttribute('title');
-}
-
-function hideTooltip(event) {
-  if (event.target.tooltip) {
-    document.body.removeChild(event.target.tooltip);
-    event.target.setAttribute('title', event.target.tooltip.textContent);
-    event.target.tooltip = null;
-  }
-}
-
-function setupAutoRefresh() {
-  // Auto-refresh every 5 minutes
-  autoRefreshInterval = setInterval(() => {
-    if (!isLoading) {
-      loadAllChartData();
-    }
-  }, 300000);
-}
-
 function handleResize() {
   Object.values(chartInstances).forEach(chart => {
-    if (chart) chart.resize();
+    if (chart && typeof chart.resize === 'function') {
+      chart.resize();
+    }
   });
 }
 
@@ -1084,19 +998,5 @@ window.addEventListener('unhandledrejection', function(e) {
   console.error('Unhandled promise rejection:', e.reason);
   showToast('Connection error. Please check your internet.', 'error');
 });
-
-// ==============================================
-// PERFORMANCE MONITORING
-// ==============================================
-
-const performanceObserver = new PerformanceObserver((list) => {
-  for (const entry of list.getEntries()) {
-    if (entry.entryType === 'measure' && entry.name.includes('chart')) {
-      console.log(`${entry.name}: ${entry.duration.toFixed(2)}ms`);
-    }
-  }
-});
-
-performanceObserver.observe({ entryTypes: ['measure'] });
 
 console.log("Dashboard JavaScript loaded successfully");
