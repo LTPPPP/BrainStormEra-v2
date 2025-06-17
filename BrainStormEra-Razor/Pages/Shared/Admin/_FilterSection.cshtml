@@ -1,7 +1,7 @@
 @model FilterSectionViewModel
 
 <div class="filters-section">
-    <form method="get" action="@Model.ActionUrl">
+    <form method="get" action="@Model.ActionUrl" id="filterForm">
         <div class="filters-row">
             @foreach (var filter in Model.Filters)
             {
@@ -10,11 +10,11 @@
                     @if (filter.Type == FilterType.Text)
                     {
                         <input type="text" id="@filter.Name" name="@filter.Name" value="@filter.Value" 
-                               placeholder="@filter.Placeholder" />
+                               placeholder="@filter.Placeholder" class="form-control filter-input" />
                     }
                     else if (filter.Type == FilterType.Select)
                     {
-                        <select id="@filter.Name" name="@filter.Name">
+                        <select id="@filter.Name" name="@filter.Name" class="form-control filter-select">
                             @foreach (var option in filter.Options)
                             {
                                 <option value="@option.Value" selected="@(option.Value == filter.Value)">@option.Text</option>
@@ -24,15 +24,93 @@
                 </div>
             }
             <div class="filter-actions">
-                <button type="submit" class="btn-filter">
-                    <i class="fas fa-search"></i> Search
-                </button>
-                <a href="@Model.ClearUrl" class="btn-clear">
+                <button type="button" class="btn-clear" onclick="clearFilters()">
                     <i class="fas fa-times"></i> Clear
-                </a>
+                </button>
+                <div class="filter-status">
+                    <i class="fas fa-magic text-success"></i>
+                    <span class="text-success">Auto Filter Enabled</span>
+                </div>
             </div>
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('filterForm');
+    const inputs = form.querySelectorAll('.filter-input, .filter-select');
+    
+    // Store scroll position before form submission
+    let savedScrollPosition = 0;
+    
+    // Always enable auto search functionality
+    inputs.forEach(input => {
+        if (input.type === 'text') {
+            let debounceTimer;
+            input.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    // Save current scroll position
+                    savedScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+                    localStorage.setItem('filterScrollPosition', savedScrollPosition.toString());
+                    form.submit();
+                }, 500); // 500ms debounce for faster response
+            });
+        } else {
+            input.addEventListener('change', function() {
+                // Save current scroll position
+                savedScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+                localStorage.setItem('filterScrollPosition', savedScrollPosition.toString());
+                form.submit();
+            });
+        }
+    });
+    
+    // Show loading indicator during form submission
+    form.addEventListener('submit', function() {
+        const statusDiv = document.querySelector('.filter-status');
+        if (statusDiv) {
+            statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i><span class="text-primary">Filtering...</span>';
+        }
+    });
+    
+    // Restore scroll position after page load (for filter results)
+    window.addEventListener('load', function() {
+        const savedPosition = localStorage.getItem('filterScrollPosition');
+        if (savedPosition) {
+            window.scrollTo(0, parseInt(savedPosition));
+            // Clear the saved position after restoring
+            localStorage.removeItem('filterScrollPosition');
+        }
+    });
+    
+    // Also restore on DOMContentLoaded for faster restoration
+    const savedPosition = localStorage.getItem('filterScrollPosition');
+    if (savedPosition) {
+        setTimeout(() => {
+            window.scrollTo(0, parseInt(savedPosition));
+        }, 100); // Small delay to ensure content is rendered
+    }
+    
+    window.clearFilters = function() {
+        // Clear all filter inputs
+        inputs.forEach(input => {
+            if (input.type === 'text') {
+                input.value = '';
+            } else if (input.tagName === 'SELECT') {
+                input.selectedIndex = 0;
+            }
+        });
+        
+        // Save current scroll position before clearing
+        savedScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+        localStorage.setItem('filterScrollPosition', savedScrollPosition.toString());
+        
+        // Submit the form to apply cleared filters
+        form.submit();
+    };
+});
+</script>
 
  

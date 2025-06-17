@@ -63,7 +63,8 @@
 }
 
 .filters-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
     gap: 20px;
     align-items: end;
 }
@@ -192,6 +193,15 @@
     display: block;
 }
 
+.achievement-icon-image {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 10px;
+    display: block;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
 .achievement-title {
     font-size: 1.2rem;
     font-weight: 600;
@@ -222,12 +232,19 @@
 
 .achievement-stats {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 8px;
     margin-bottom: 15px;
     padding: 10px;
     background: #f8f9fa;
     border-radius: 5px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
 }
 
 
@@ -448,7 +465,7 @@
     }
     
     .filters-row {
-        flex-direction: column;
+        grid-template-columns: 1fr;
         gap: 15px;
     }
     
@@ -475,4 +492,60 @@
     .modal-actions {
         flex-direction: column;
     }
-} 
+}
+
+/* Icon Selection Styles */
+.icon-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.icon-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.icon-input-group input {
+    flex: 1;
+}
+
+.btn-upload-icon {
+    background: #17a2b8;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.2s ease;
+}
+
+.btn-upload-icon:hover {
+    background: #138496;
+}
+
+.icon-preview {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    border: 1px solid #e9ecef;
+}
+
+.icon-preview i {
+    font-size: 1.5rem;
+    color: #495057;
+}
+
+.icon-preview img {
+    border-radius: 3px;
+    object-fit: contain;
+}
+
+ 

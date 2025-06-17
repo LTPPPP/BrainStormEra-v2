@@ -11,6 +11,7 @@ namespace BusinessLogicLayer.Services
         private readonly IUserRepo _userRepo;
         private readonly ICourseRepo _courseRepo;
         private readonly IAchievementRepo _achievementRepo;
+        private readonly IAchievementIconService _achievementIconService;
         private readonly ILogger<AdminService> _logger;
 
         public AdminService(
@@ -18,12 +19,14 @@ namespace BusinessLogicLayer.Services
             IUserRepo userRepo,
             ICourseRepo courseRepo,
             IAchievementRepo achievementRepo,
+            IAchievementIconService achievementIconService,
             ILogger<AdminService> logger)
         {
             _adminRepo = adminRepo;
             _userRepo = userRepo;
             _courseRepo = courseRepo;
             _achievementRepo = achievementRepo;
+            _achievementIconService = achievementIconService;
             _logger = logger;
         }
 
@@ -198,26 +201,46 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                List<DataAccessLayer.Models.Account> users;
+                // Get all users first, then apply filters in memory for better flexibility
+                var allUsers = await _adminRepo.GetAllUsersAsync();
 
+                // Apply filters
+                var filteredUsers = allUsers.AsQueryable();
+
+                // Apply search filter
                 if (!string.IsNullOrEmpty(search))
                 {
-                    users = await _adminRepo.SearchUsersAsync(search, page, pageSize);
-                }
-                else if (!string.IsNullOrEmpty(roleFilter))
-                {
-                    users = await _adminRepo.GetUsersByRoleAsync(roleFilter, page, pageSize);
-                }
-                else
-                {
-                    users = await _adminRepo.GetAllUsersAsync(page, pageSize);
+                    filteredUsers = filteredUsers.Where(u =>
+                        (u.FullName != null && u.FullName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.Username != null && u.Username.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.UserEmail != null && u.UserEmail.Contains(search, StringComparison.OrdinalIgnoreCase)));
                 }
 
-                var totalUsers = await _adminRepo.GetTotalUsersCountAsync();
+                // Apply role filter
+                if (!string.IsNullOrEmpty(roleFilter))
+                {
+                    filteredUsers = filteredUsers.Where(u =>
+                        u.UserRole != null && u.UserRole.Equals(roleFilter, StringComparison.OrdinalIgnoreCase));
+                }
+
+                var users = filteredUsers.ToList();
+                var totalUsers = users.Count;
+
+                // Apply pagination
+                var paginatedUsers = users
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                // Calculate statistics
+                var totalAdmins = allUsers.Count(u => u.UserRole?.Equals("admin", StringComparison.OrdinalIgnoreCase) == true);
+                var totalInstructors = allUsers.Count(u => u.UserRole?.Equals("instructor", StringComparison.OrdinalIgnoreCase) == true);
+                var totalLearners = allUsers.Count(u => u.UserRole?.Equals("learner", StringComparison.OrdinalIgnoreCase) == true);
+                var bannedUsers = allUsers.Count(u => u.IsBanned == true);
 
                 return new AdminUsersViewModel
                 {
-                    Users = users.Select(u => new AdminUserViewModel
+                    Users = paginatedUsers.Select(u => new AdminUserViewModel
                     {
                         UserId = u.UserId,
                         Username = u.Username,
@@ -228,9 +251,23 @@ namespace BusinessLogicLayer.Services
                         AccountCreatedAt = u.AccountCreatedAt,
                         LastLoginDate = u.LastLogin,
                         IsBanned = u.IsBanned ?? false,
-                        IsActive = !(u.IsBanned ?? false)
+                        IsActive = !(u.IsBanned ?? false),
+                        PhoneNumber = u.PhoneNumber,
+                        UserAddress = u.UserAddress,
+                        DateOfBirth = u.DateOfBirth,
+                        Gender = u.Gender,
+                        PaymentPoint = u.PaymentPoint,
+                        BankName = u.BankName,
+                        BankAccountNumber = u.BankAccountNumber,
+                        AccountHolderName = u.AccountHolderName
                     }).ToList(),
+                    SearchQuery = search,
+                    RoleFilter = roleFilter,
                     TotalUsers = totalUsers,
+                    TotalAdmins = totalAdmins,
+                    TotalInstructors = totalInstructors,
+                    TotalLearners = totalLearners,
+                    BannedUsers = bannedUsers,
                     CurrentPage = page,
                     PageSize = pageSize,
                     TotalPages = (int)Math.Ceiling((double)totalUsers / pageSize)
@@ -244,7 +281,7 @@ namespace BusinessLogicLayer.Services
             }
         }
 
-        public async Task<AdminCoursesViewModel> GetAllCoursesAsync(string? search = null, string? categoryFilter = null, int page = 1, int pageSize = 10)
+        public async Task<AdminCoursesViewModel> GetAllCoursesAsync(string? search = null, string? categoryFilter = null, string? statusFilter = null, string? priceFilter = null, string? difficultyFilter = null, string? instructorFilter = null, string? sortBy = null, int page = 1, int pageSize = 12)
         {
             try
             {
@@ -272,6 +309,7 @@ namespace BusinessLogicLayer.Services
                         Price = c.Price,
                         CreatedAt = c.CourseCreatedAt,
                         UpdatedAt = c.CourseUpdatedAt,
+                        ApprovalStatus = c.ApprovalStatus,
                         IsApproved = c.ApprovalStatus == "Approved",
                         IsFeatured = c.IsFeatured ?? false,
                         IsActive = c.CourseStatus == 1, // Assuming 1 means active
@@ -291,6 +329,108 @@ namespace BusinessLogicLayer.Services
             {
                 _logger.LogError(ex, "Error getting all courses with search: {Search}, categoryFilter: {CategoryFilter}, page: {Page}, pageSize: {PageSize}",
                     search, categoryFilter, page, pageSize);
+                throw;
+            }
+        }
+
+        public async Task<AdminCourseDetailsViewModel?> GetCourseDetailsAsync(string courseId)
+        {
+            try
+            {
+                var course = await _adminRepo.GetCourseWithDetailsAsync(courseId);
+                if (course == null)
+                {
+                    return null;
+                }
+
+                // Calculate statistics
+                var averageRating = course.Feedbacks?.Any() == true
+                    ? course.Feedbacks.Average(f => f.StarRating ?? 0)
+                    : 0;
+
+                var totalRevenue = course.PaymentTransactions?.Where(p => p.TransactionStatus == "completed")
+                    .Sum(p => p.Amount) ?? 0;
+
+                var completionRate = 0; // Would need to calculate from enrollments progress
+
+                return new AdminCourseDetailsViewModel
+                {
+                    CourseId = course.CourseId,
+                    CourseName = course.CourseName,
+                    CourseDescription = course.CourseDescription ?? "",
+                    CoursePicture = course.CourseImage ?? "/SharedMedia/defaults/default-course.svg",
+                    Price = course.Price,
+                    DifficultyLevel = course.DifficultyLevel?.ToString(),
+                    EstimatedDuration = course.EstimatedDuration,
+                    CreatedAt = course.CourseCreatedAt,
+                    UpdatedAt = course.CourseUpdatedAt,
+                    ApprovalStatus = course.ApprovalStatus,
+                    IsApproved = course.ApprovalStatus == "Approved",
+                    IsFeatured = course.IsFeatured ?? false,
+                    IsActive = course.CourseStatus == 1,
+                    EnforceSequentialAccess = course.EnforceSequentialAccess ?? false,
+                    AllowLessonPreview = course.AllowLessonPreview ?? false,
+                    ApprovedBy = course.ApprovedBy,
+                    ApprovedAt = course.ApprovedAt,
+
+                    // Instructor information
+                    InstructorId = course.AuthorId,
+                    InstructorName = course.Author?.FullName ?? "",
+                    InstructorEmail = course.Author?.UserEmail ?? "",
+                    InstructorBio = "", // Bio property doesn't exist in Account model
+                    InstructorImage = course.Author?.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
+
+                    // Course structure
+                    Chapters = course.Chapters?.Select(ch => new CourseChapterSummary
+                    {
+                        ChapterId = ch.ChapterId,
+                        ChapterName = ch.ChapterName,
+                        ChapterOrder = ch.ChapterOrder ?? 0,
+                        LessonCount = ch.Lessons?.Count ?? 0,
+                        IsLocked = ch.IsLocked ?? false
+                    }).OrderBy(ch => ch.ChapterOrder).ToList() ?? new List<CourseChapterSummary>(),
+
+                    Categories = course.CourseCategories?.Select(cc => cc.CourseCategoryName ?? "").ToList() ?? new List<string>(),
+
+                    // Statistics
+                    EnrollmentCount = course.Enrollments?.Count ?? 0,
+                    AverageRating = (decimal)averageRating,
+                    ReviewCount = course.Feedbacks?.Count ?? 0,
+                    Revenue = totalRevenue,
+                    TotalLessons = course.Chapters?.Sum(ch => ch.Lessons?.Count ?? 0) ?? 0,
+                    TotalQuizzes = course.Quizzes?.Count ?? 0,
+                    CompletionRate = completionRate,
+
+                    // Recent reviews (limit to 5 most recent)
+                    RecentReviews = course.Feedbacks?.OrderByDescending(f => f.FeedbackCreatedAt)
+                        .Take(5)
+                        .Select(f => new CourseReviewSummary
+                        {
+                            UserId = f.UserId,
+                            UserName = f.User?.FullName ?? "Unknown User",
+                            UserImage = f.User?.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
+                            Rating = (decimal)(f.StarRating ?? 0),
+                            Comment = f.Comment ?? "",
+                            CreatedAt = f.FeedbackCreatedAt
+                        }).ToList() ?? new List<CourseReviewSummary>(),
+
+                    // Recent enrollments (limit to 5 most recent)
+                    RecentEnrollments = course.Enrollments?.OrderByDescending(e => e.EnrollmentCreatedAt)
+                        .Take(5)
+                        .Select(e => new CourseEnrollmentSummary
+                        {
+                            UserId = e.UserId,
+                            UserName = e.User?.FullName ?? "Unknown User",
+                            UserImage = e.User?.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
+                            EnrolledAt = e.EnrollmentCreatedAt,
+                            ProgressPercentage = (int)Math.Round(e.ProgressPercentage ?? 0),
+                            PaymentStatus = "Unknown" // PaymentStatus doesn't exist in Enrollment model
+                        }).ToList() ?? new List<CourseEnrollmentSummary>()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting course details for courseId: {CourseId}", courseId);
                 throw;
             }
         }
@@ -359,17 +499,20 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                return await _courseRepo.DeleteAsync(courseId);
+                // Admin cannot permanently delete courses created by instructors
+                // They can only ban courses. Only instructors can delete their own courses.
+                _logger.LogWarning("Admin attempted to delete course {CourseId}. Admins can only ban courses, not delete them permanently.", courseId);
+                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting course with courseId: {CourseId}", courseId);
+                _logger.LogError(ex, "Error in delete course operation for courseId: {CourseId}", courseId);
                 throw;
             }
         }
 
         // Achievement Management Methods
-        public async Task<AdminAchievementsViewModel> GetAllAchievementsAsync(string? search = null, string? typeFilter = null, string? pointsFilter = null, int page = 1, int pageSize = 12)
+        public async Task<AdminAchievementsViewModel> GetAllAchievementsAsync(string? search = null, string? typeFilter = null, string? pointsFilter = null, int page = 1, int pageSize = 12, string? sortBy = "date_desc")
         {
             try
             {
@@ -391,22 +534,34 @@ namespace BusinessLogicLayer.Services
                         a.AchievementType != null && a.AchievementType.Equals(typeFilter, StringComparison.OrdinalIgnoreCase));
                 }
 
-
-
                 var achievements = filteredAchievements.ToList();
                 var totalAchievements = achievements.Count;
 
+                // Apply sorting
+                var sortedAchievements = sortBy?.ToLower() switch
+                {
+                    "name_asc" => achievements.OrderBy(a => a.AchievementName),
+                    "name_desc" => achievements.OrderByDescending(a => a.AchievementName),
+                    "date_asc" => achievements.OrderBy(a => a.AchievementCreatedAt),
+                    "date_desc" => achievements.OrderByDescending(a => a.AchievementCreatedAt),
+                    "type_asc" => achievements.OrderBy(a => a.AchievementType),
+                    "type_desc" => achievements.OrderByDescending(a => a.AchievementType),
+                    "awarded_desc" => achievements.OrderByDescending(a => a.UserAchievements?.Count ?? 0),
+                    "awarded_asc" => achievements.OrderBy(a => a.UserAchievements?.Count ?? 0),
+                    _ => achievements.OrderByDescending(a => a.AchievementCreatedAt) // default to newest first
+                };
+
                 // Apply pagination
-                var paginatedAchievements = achievements
+                var paginatedAchievements = sortedAchievements
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();
 
                 // Calculate statistics
-                var courseAchievements = allAchievements.Count(a => a.AchievementType?.Equals("course", StringComparison.OrdinalIgnoreCase) == true);
-                var quizAchievements = allAchievements.Count(a => a.AchievementType?.Equals("quiz", StringComparison.OrdinalIgnoreCase) == true);
-                var specialAchievements = allAchievements.Count(a => a.AchievementType?.Equals("special", StringComparison.OrdinalIgnoreCase) == true);
-                var milestoneAchievements = allAchievements.Count(a => a.AchievementType?.Equals("milestone", StringComparison.OrdinalIgnoreCase) == true);
+                var courseAchievements = allAchievements.Count(a => a.AchievementType?.Equals("course_completion", StringComparison.OrdinalIgnoreCase) == true || a.AchievementType?.Equals("first_course", StringComparison.OrdinalIgnoreCase) == true);
+                var quizAchievements = allAchievements.Count(a => a.AchievementType?.Equals("quiz_master", StringComparison.OrdinalIgnoreCase) == true);
+                var specialAchievements = allAchievements.Count(a => a.AchievementType?.Equals("instructor", StringComparison.OrdinalIgnoreCase) == true || a.AchievementType?.Equals("student_engagement", StringComparison.OrdinalIgnoreCase) == true);
+                var milestoneAchievements = allAchievements.Count(a => a.AchievementType?.Equals("streak", StringComparison.OrdinalIgnoreCase) == true);
 
                 // Calculate total times awarded (would need user achievements data, using placeholder for now)
                 var totalAwarded = 0; // This would require joining with UserAchievement table
@@ -423,11 +578,12 @@ namespace BusinessLogicLayer.Services
 
                         AchievementCreatedAt = a.AchievementCreatedAt,
                         IsActive = true, // Add this field to Achievement model if needed
-                        TimesAwarded = 0 // This would require joining with UserAchievement table
+                        TimesAwarded = a.UserAchievements?.Count ?? 0 // Get actual count from UserAchievements
                     }).ToList(),
                     SearchQuery = search,
                     TypeFilter = typeFilter,
                     PointsFilter = pointsFilter,
+                    SortBy = sortBy,
                     CurrentPage = page,
                     PageSize = pageSize,
                     TotalPages = (int)Math.Ceiling((double)totalAchievements / pageSize),
@@ -461,7 +617,6 @@ namespace BusinessLogicLayer.Services
                     AchievementDescription = achievement.AchievementDescription ?? "",
                     AchievementIcon = achievement.AchievementIcon ?? "fas fa-trophy",
                     AchievementType = achievement.AchievementType ?? "general",
-
                     AchievementCreatedAt = achievement.AchievementCreatedAt,
                     IsActive = true,
                     TimesAwarded = achievement.UserAchievements?.Count ?? 0
@@ -474,23 +629,24 @@ namespace BusinessLogicLayer.Services
             }
         }
 
-        public async Task<bool> CreateAchievementAsync(CreateAchievementRequest request, string? adminId = null)
+        public async Task<(bool Success, string? AchievementId)> CreateAchievementAsync(CreateAchievementRequest request, string? adminId = null)
         {
             try
             {
+                var achievementId = Guid.NewGuid().ToString();
                 var achievement = new DataAccessLayer.Models.Achievement
                 {
-                    AchievementId = Guid.NewGuid().ToString(),
+                    AchievementId = achievementId,
                     AchievementName = request.AchievementName,
                     AchievementDescription = request.AchievementDescription,
                     AchievementIcon = request.AchievementIcon,
                     AchievementType = request.AchievementType,
-
                     AchievementCreatedAt = DateTime.UtcNow
                 };
 
                 var result = await _achievementRepo.CreateAchievementAsync(achievement);
-                return !string.IsNullOrEmpty(result);
+                var success = !string.IsNullOrEmpty(result);
+                return (success, success ? achievementId : null);
             }
             catch (Exception ex)
             {
@@ -511,7 +667,6 @@ namespace BusinessLogicLayer.Services
                 existingAchievement.AchievementIcon = request.AchievementIcon;
                 existingAchievement.AchievementType = request.AchievementType;
 
-
                 return await _achievementRepo.UpdateAchievementAsync(existingAchievement);
             }
             catch (Exception ex)
@@ -531,6 +686,43 @@ namespace BusinessLogicLayer.Services
             {
                 _logger.LogError(ex, "Error deleting achievement: {AchievementId}", achievementId);
                 throw;
+            }
+        }
+
+        public async Task<(bool Success, string? IconPath, string? ErrorMessage)> UploadAchievementIconAsync(Microsoft.AspNetCore.Http.IFormFile file, string achievementId, string? adminId = null)
+        {
+            try
+            {
+                // Check if achievement exists
+                var achievement = await _achievementRepo.GetByIdAsync(achievementId);
+                if (achievement == null)
+                {
+                    return (false, null, "Achievement not found.");
+                }
+
+                // Upload the icon
+                var uploadResult = await _achievementIconService.UploadAchievementIconAsync(file, achievementId);
+                if (!uploadResult.Success)
+                {
+                    return uploadResult;
+                }
+
+                // Update achievement with new icon path
+                var updateResult = await _achievementRepo.UpdateAchievementIconAsync(achievementId, uploadResult.IconPath!);
+                if (!updateResult)
+                {
+                    // Clean up uploaded file if database update fails
+                    await _achievementIconService.DeleteAchievementIconAsync(uploadResult.IconPath);
+                    return (false, null, "Failed to update achievement icon in database.");
+                }
+
+                _logger.LogInformation("Achievement icon uploaded successfully: {AchievementId} by admin {AdminId}", achievementId, adminId);
+                return (true, uploadResult.IconPath, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading achievement icon: {AchievementId}", achievementId);
+                return (false, null, "An error occurred while uploading the achievement icon.");
             }
         }
     }

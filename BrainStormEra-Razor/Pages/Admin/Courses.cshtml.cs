@@ -24,10 +24,25 @@ namespace BrainStormEra_Razor.Pages.Admin
         public string? CategoryFilter { get; set; }
 
         [BindProperty(SupportsGet = true)]
+        public string? StatusFilter { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string? PriceFilter { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string? DifficultyFilter { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string? InstructorFilter { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string? SortBy { get; set; } = "newest";
+
+        [BindProperty(SupportsGet = true)]
         public int CurrentPage { get; set; } = 1;
 
         [BindProperty(SupportsGet = true)]
-        public int PageSize { get; set; } = 10;
+        public int PageSize { get; set; } = 12;
 
         public CoursesModel(ILogger<CoursesModel> logger, IAdminService adminService)
         {
@@ -48,6 +63,11 @@ namespace BrainStormEra_Razor.Pages.Admin
                     CoursesData = await _adminService.GetAllCoursesAsync(
                         search: SearchQuery,
                         categoryFilter: CategoryFilter,
+                        statusFilter: StatusFilter,
+                        priceFilter: PriceFilter,
+                        difficultyFilter: DifficultyFilter,
+                        instructorFilter: InstructorFilter,
+                        sortBy: SortBy,
                         page: CurrentPage,
                         pageSize: PageSize
                     );
@@ -64,6 +84,31 @@ namespace BrainStormEra_Razor.Pages.Admin
             {
                 _logger.LogError(ex, "Error loading courses data for admin: {UserId}", UserId);
                 CoursesData = new AdminCoursesViewModel();
+            }
+        }
+
+        public async Task<IActionResult> OnGetCourseDetailsAsync(string courseId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(courseId))
+                {
+                    return BadRequest("Course ID is required");
+                }
+
+                var courseDetails = await _adminService.GetCourseDetailsAsync(courseId);
+
+                if (courseDetails == null)
+                {
+                    return NotFound("Course not found");
+                }
+
+                return new JsonResult(new { success = true, data = courseDetails });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting course details for course: {CourseId}", courseId);
+                return new JsonResult(new { success = false, message = "An error occurred while getting course details" });
             }
         }
 

@@ -24,6 +24,9 @@ namespace BrainStormEra_Razor.Pages.Admin
         public string? RoleFilter { get; set; }
 
         [BindProperty(SupportsGet = true)]
+        public string? StatusFilter { get; set; }
+
+        [BindProperty(SupportsGet = true)]
         public int CurrentPage { get; set; } = 1;
 
         [BindProperty(SupportsGet = true)]
@@ -51,6 +54,21 @@ namespace BrainStormEra_Razor.Pages.Admin
                         page: CurrentPage,
                         pageSize: PageSize
                     );
+
+                    // Apply status filter in frontend since backend doesn't support it yet
+                    if (!string.IsNullOrEmpty(StatusFilter))
+                    {
+                        var filteredUsers = StatusFilter.ToLower() switch
+                        {
+                            "active" => UsersData.Users.Where(u => !u.IsBanned).ToList(),
+                            "banned" => UsersData.Users.Where(u => u.IsBanned).ToList(),
+                            _ => UsersData.Users.ToList()
+                        };
+
+                        UsersData.Users = filteredUsers;
+                        UsersData.TotalUsers = filteredUsers.Count;
+                        UsersData.TotalPages = (int)Math.Ceiling((double)filteredUsers.Count / PageSize);
+                    }
                 }
                 else
                 {
@@ -96,33 +114,6 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
         }
 
-        public async Task<IActionResult> OnPostDeleteUserAsync(string userId)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return BadRequest("User ID is required");
-                }
 
-                var result = await _adminService.DeleteUserAsync(userId);
-
-                if (result)
-                {
-                    _logger.LogInformation("User deleted successfully by admin {AdminName} for user {UserId}",
-                        HttpContext.User?.Identity?.Name, userId);
-                    return new JsonResult(new { success = true, message = "User deleted successfully" });
-                }
-                else
-                {
-                    return new JsonResult(new { success = false, message = "Failed to delete user" });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting user: {UserId}", userId);
-                return new JsonResult(new { success = false, message = "An error occurred while deleting user" });
-            }
-        }
     }
 }

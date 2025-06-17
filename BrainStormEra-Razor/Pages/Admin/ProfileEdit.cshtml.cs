@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Models.ViewModels;
+using DataAccessLayer.Models;
 
 namespace BrainStormEra_Razor.Pages.Admin
 {
@@ -25,19 +26,25 @@ namespace BrainStormEra_Razor.Pages.Admin
         public string UserEmail { get; set; } = "";
 
         [BindProperty]
-        public string? Bio { get; set; }
-
-        [BindProperty]
         public string? PhoneNumber { get; set; }
 
         [BindProperty]
-        public string? Location { get; set; }
+        public string? UserAddress { get; set; }
 
         [BindProperty]
-        public string? Timezone { get; set; }
+        public DateOnly? DateOfBirth { get; set; }
 
         [BindProperty]
-        public string? PreferredLanguage { get; set; }
+        public short? Gender { get; set; }
+
+        [BindProperty]
+        public string? BankAccountNumber { get; set; }
+
+        [BindProperty]
+        public string? BankName { get; set; }
+
+        [BindProperty]
+        public string? AccountHolderName { get; set; }
 
         public ProfileEditModel(ILogger<ProfileEditModel> logger, IAdminService adminService, IUserService userService)
         {
@@ -69,11 +76,13 @@ namespace BrainStormEra_Razor.Pages.Admin
                 FullName = UserProfile.FullName ?? "";
                 Username = UserProfile.Username ?? "";
                 UserEmail = UserProfile.UserEmail ?? "";
-                Bio = UserProfile.Bio;
                 PhoneNumber = UserProfile.PhoneNumber;
-                Location = UserProfile.Location;
-                Timezone = UserProfile.Timezone;
-                PreferredLanguage = UserProfile.PreferredLanguage ?? "en";
+                UserAddress = UserProfile.UserAddress;
+                DateOfBirth = UserProfile.DateOfBirth;
+                Gender = UserProfile.Gender;
+                BankAccountNumber = UserProfile.BankAccountNumber;
+                BankName = UserProfile.BankName;
+                AccountHolderName = UserProfile.AccountHolderName;
 
                 return Page();
             }
@@ -96,10 +105,9 @@ namespace BrainStormEra_Razor.Pages.Admin
 
                 // Validate required fields
                 if (string.IsNullOrWhiteSpace(FullName) ||
-                    string.IsNullOrWhiteSpace(Username) ||
                     string.IsNullOrWhiteSpace(UserEmail))
                 {
-                    ModelState.AddModelError("", "Full Name, Username, and Email are required.");
+                    ModelState.AddModelError("", "Full Name and Email are required.");
                     await LoadUserProfile(userId);
                     return Page();
                 }
@@ -112,25 +120,28 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return Page();
                 }
 
-                // Create update request
+                // Load current profile to get the original username
+                await LoadUserProfile(userId);
+
+                // Create update request using the ViewModel from DataAccessLayer
                 var updateRequest = new UpdateProfileRequest
                 {
                     UserId = userId,
                     FullName = FullName.Trim(),
-                    Username = Username.Trim(),
+                    Username = UserProfile?.Username ?? "", // Keep existing username - cannot be changed
                     UserEmail = UserEmail.Trim(),
-                    Bio = string.IsNullOrWhiteSpace(Bio) ? null : Bio.Trim(),
                     PhoneNumber = string.IsNullOrWhiteSpace(PhoneNumber) ? null : PhoneNumber.Trim(),
-                    Location = string.IsNullOrWhiteSpace(Location) ? null : Location.Trim(),
-                    Timezone = string.IsNullOrWhiteSpace(Timezone) ? null : Timezone.Trim(),
-                    PreferredLanguage = string.IsNullOrWhiteSpace(PreferredLanguage) ? "en" : PreferredLanguage.Trim()
+                    UserAddress = string.IsNullOrWhiteSpace(UserAddress) ? null : UserAddress.Trim(),
+                    DateOfBirth = DateOfBirth,
+                    Gender = Gender,
+                    BankAccountNumber = string.IsNullOrWhiteSpace(BankAccountNumber) ? null : BankAccountNumber.Trim(),
+                    BankName = string.IsNullOrWhiteSpace(BankName) ? null : BankName.Trim(),
+                    AccountHolderName = string.IsNullOrWhiteSpace(AccountHolderName) ? null : AccountHolderName.Trim()
                 };
 
-                // Update profile (you'll need to implement this in your service layer)
+                // Update profile (placeholder for now)
                 // var result = await _userService.UpdateUserProfileAsync(updateRequest);
-
-                // For now, simulate success
-                var result = true;
+                var result = true; // Placeholder
 
                 if (result)
                 {
@@ -185,19 +196,5 @@ namespace BrainStormEra_Razor.Pages.Admin
                 return false;
             }
         }
-    }
-
-    // Helper class for profile updates
-    public class UpdateProfileRequest
-    {
-        public string UserId { get; set; } = "";
-        public string FullName { get; set; } = "";
-        public string Username { get; set; } = "";
-        public string UserEmail { get; set; } = "";
-        public string? Bio { get; set; }
-        public string? PhoneNumber { get; set; }
-        public string? Location { get; set; }
-        public string? Timezone { get; set; }
-        public string? PreferredLanguage { get; set; }
     }
 }

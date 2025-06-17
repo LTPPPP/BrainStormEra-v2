@@ -1,0 +1,374 @@
+@page "/admin/users/{userId}"
+@model BrainStormEra_Razor.Pages.Admin.UserDetailModel
+@{
+    ViewData["Title"] = "User Details";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin/components.css" asp-append-version="true" />
+    <style>
+        .user-detail-container {
+            padding: 20px;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .user-profile-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .user-header {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .user-avatar-large {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #e9ecef;
+        }
+        
+        .user-basic-info h2 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .user-basic-info .user-email {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        
+        .user-badges {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .badge-role {
+            background: #007bff;
+            color: white;
+        }
+        
+        .badge-status-active {
+            background: #28a745;
+            color: white;
+        }
+        
+        .badge-status-banned {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        
+        .info-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .info-section h5 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .info-value {
+            color: #6c757d;
+            text-align: right;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        
+        .btn-back {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-ban {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-unban {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+    </style>
+}
+
+<div class="user-detail-container">
+    <!-- Success/Error Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1><i class="fas fa-user me-2"></i>User Details</h1>
+            <p class="text-muted">View detailed information about the user</p>
+        </div>
+    </div>
+
+    @if (Model.UserDetail != null)
+    {
+        <div class="user-profile-card">
+            <!-- User Header -->
+            <div class="user-header">
+                <img src="@(!string.IsNullOrEmpty(Model.UserDetail.UserImage) ? Model.UserDetail.UserImage : "/SharedMedia/defaults/default-avatar.svg")" 
+                     alt="@Model.UserDetail.FullName" class="user-avatar-large"
+                     onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-avatar.svg';" />
+                
+                <div class="user-basic-info">
+                    <h2>@Model.UserDetail.FullName</h2>
+                    <div class="user-email">@Model.UserDetail.UserEmail</div>
+                    <div class="user-badges">
+                        <span class="badge badge-role">@Model.UserDetail.UserRole</span>
+                        <span class="badge @(Model.UserDetail.IsBanned ? "badge-status-banned" : "badge-status-active")">
+                            @(Model.UserDetail.IsBanned ? "Banned" : "Active")
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Information Grid -->
+            <div class="info-grid">
+                <!-- Personal Information -->
+                <div class="info-section">
+                    <h5><i class="fas fa-user"></i>Personal Information</h5>
+                    <div class="info-item">
+                        <span class="info-label">Full Name:</span>
+                        <span class="info-value">@Model.UserDetail.FullName</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Username:</span>
+                        <span class="info-value">@Model.UserDetail.Username</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">@Model.UserDetail.UserEmail</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Phone:</span>
+                        <span class="info-value">@(Model.UserDetail.PhoneNumber ?? "Not provided")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Address:</span>
+                        <span class="info-value">@(Model.UserDetail.UserAddress ?? "Not provided")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Date of Birth:</span>
+                        <span class="info-value">@(Model.UserDetail.DateOfBirth?.ToString("MMM dd, yyyy") ?? "Not provided")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Gender:</span>
+                        <span class="info-value">@(Model.UserDetail.Gender == 1 ? "Male" : Model.UserDetail.Gender == 2 ? "Female" : Model.UserDetail.Gender == 3 ? "Other" : "Not specified")</span>
+                    </div>
+                </div>
+
+                <!-- Account Information -->
+                <div class="info-section">
+                    <h5><i class="fas fa-cog"></i>Account Information</h5>
+                    <div class="info-item">
+                        <span class="info-label">User ID:</span>
+                        <span class="info-value">@Model.UserDetail.UserId</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Role:</span>
+                        <span class="info-value">@Model.UserDetail.UserRole</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value">@(Model.UserDetail.IsBanned ? "Banned" : "Active")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Join Date:</span>
+                        <span class="info-value">@Model.UserDetail.AccountCreatedAt.ToString("MMM dd, yyyy")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Last Login:</span>
+                        <span class="info-value">@(Model.UserDetail.LastLoginDate?.ToString("MMM dd, yyyy HH:mm") ?? "Never")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Payment Points:</span>
+                        <span class="info-value">@(Model.UserDetail.PaymentPoint?.ToString("N0") ?? "0")</span>
+                    </div>
+                </div>
+
+                <!-- Bank Information -->
+                <div class="info-section">
+                    <h5><i class="fas fa-university"></i>Bank Information</h5>
+                    <div class="info-item">
+                        <span class="info-label">Bank Name:</span>
+                        <span class="info-value">@(Model.UserDetail.BankName ?? "Not provided")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Account Holder:</span>
+                        <span class="info-value">@(Model.UserDetail.AccountHolderName ?? "Not provided")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Account Number:</span>
+                        <span class="info-value">@(Model.UserDetail.BankAccountNumber ?? "Not provided")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Bank Status:</span>
+                        <span class="info-value">
+                            @if (!string.IsNullOrEmpty(Model.UserDetail.BankName) && !string.IsNullOrEmpty(Model.UserDetail.BankAccountNumber))
+                            {
+                                <span class="badge badge-status-active">Verified</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-status-banned">Not Set</span>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="/admin/users" class="btn btn-back">
+                    <i class="fas fa-arrow-left"></i>Back to Users
+                </a>
+                
+                @if (Model.UserDetail.IsBanned)
+                {
+                    <button type="button" class="btn btn-unban" onclick="updateUserStatus('@Model.UserDetail.UserId', false)">
+                        <i class="fas fa-unlock"></i>Unban User
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-ban" onclick="updateUserStatus('@Model.UserDetail.UserId', true)">
+                        <i class="fas fa-ban"></i>Ban User
+                    </button>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            User not found or you don't have permission to view this user's details.
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function updateUserStatus(userId, isBanned) {
+            const action = isBanned ? 'ban' : 'unban';
+            if (confirm(`Are you sure you want to ${action} this user?`)) {
+                fetch('/admin/users/' + userId + '?handler=UpdateUserStatus', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({ userId: userId, isBanned: isBanned })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating user status');
+                });
+            }
+        }
+    </script>
+}
