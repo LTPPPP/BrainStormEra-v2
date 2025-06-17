@@ -493,7 +493,8 @@
                     {
                         <div class="user-item">
                             <div class="user-avatar">
-                                <img src="@user.UserImage" alt="@user.FullName" />
+                                <img src="@user.UserImage" alt="@user.FullName" 
+                                     onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-avatar.svg';" />
                             </div>
                             <div class="user-info">
                                 <h4>@user.FullName</h4>
@@ -521,7 +522,8 @@
                     {
                         <div class="course-item">
                             <div class="course-image">
-                                <img src="@course.CourseImage" alt="@course.CourseName" />
+                                <img src="@course.CoursePicture" alt="@course.CourseName" 
+                                     onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';" />
                             </div>
                             <div class="course-info">
                                 <h4>@course.CourseName</h4>
