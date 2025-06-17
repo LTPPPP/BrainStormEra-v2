@@ -12,9 +12,16 @@ namespace BrainStormEra_Razor.Pages
             _logger = logger;
         }
 
-        public void OnGet()
+        public IActionResult OnGet()
         {
+            // If user is authenticated and is admin, redirect to admin dashboard
+            if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("admin"))
+            {
+                return RedirectToPage("/Admin/Index");
+            }
 
+            // Otherwise redirect to login
+            return RedirectToPage("/Auth/Login");
         }
     }
 }

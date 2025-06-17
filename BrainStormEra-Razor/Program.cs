@@ -1,59 +1,68 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using DataAccessLayer.Data;
-using DataAccessLayer.Repositories.Interfaces;
-using DataAccessLayer.Repositories;
-using BusinessLogicLayer.Services.Interfaces;
-using BusinessLogicLayer.Services;
-using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using BusinessLogicLayer;
 
 namespace BrainStormEra_Razor
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add DbContext
+            // Add services to the container.
+            builder.Services.AddRazorPages();
+
+            // Add HttpContextAccessor
+            builder.Services.AddHttpContextAccessor();
+
+            // Add Memory Cache
+            builder.Services.AddMemoryCache();
+
+            // Add Entity Framework
             builder.Services.AddDbContext<BrainStormEraContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // Add repositories
-            builder.Services.AddScoped<IUserRepo, UserRepo>();
-            builder.Services.AddScoped<IAdminRepo, AdminRepo>();
-            builder.Services.AddScoped<IAuthRepo, AuthRepo>();
-            builder.Services.AddScoped<ICourseRepo, CourseRepo>();
-
-            // Add services
-            builder.Services.AddScoped<IUserService, UserService>();
-            builder.Services.AddScoped<IAdminService, AdminService>();
-
-            // Add authentication
+            // Add Authentication
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
                 {
-                    options.LoginPath = "/Admin/Login";
-                    options.LogoutPath = "/Admin/Logout";
-                    options.AccessDeniedPath = "/Admin/Login";
-                    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                    options.LoginPath = "/Auth/Login";
+                    options.LogoutPath = "/Auth/Logout";
+                    options.AccessDeniedPath = "/Auth/AccessDenied";
+                    options.ExpireTimeSpan = TimeSpan.FromDays(7);
                     options.SlidingExpiration = true;
                 });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("AdminOnly", policy =>
-                    policy.RequireClaim("UserRole", "admin"));
-            });
+            // Register ALL Repositories from DataAccessLayer
+            builder.Services.AddScoped(typeof(DataAccessLayer.Repositories.Interfaces.IBaseRepo<>), typeof(DataAccessLayer.Repositories.BaseRepo<>));
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAuthRepo, DataAccessLayer.Repositories.AuthRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IUserRepo, DataAccessLayer.Repositories.UserRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICourseRepo, DataAccessLayer.Repositories.CourseRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAchievementRepo, DataAccessLayer.Repositories.AchievementRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAdminRepo, DataAccessLayer.Repositories.AdminRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICertificateRepo, DataAccessLayer.Repositories.CertificateRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChapterRepo, DataAccessLayer.Repositories.ChapterRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatbotRepo, DataAccessLayer.Repositories.ChatbotRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ILessonRepo, DataAccessLayer.Repositories.LessonRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.INotificationRepo, DataAccessLayer.Repositories.NotificationRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IQuestionRepo, DataAccessLayer.Repositories.QuestionRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IQuizRepo, DataAccessLayer.Repositories.QuizRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();
 
-            // Add memory cache
-            builder.Services.AddMemoryCache();
+            // Register Service Interfaces and Implementations
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.UserService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAvatarService, BusinessLogicLayer.Services.AvatarService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
 
-            // Add services to the container.
-            builder.Services.AddRazorPages(options =>
-            {
-                options.Conventions.AuthorizeAreaFolder("Admin", "/", "AdminOnly");
-            });
+            // Register other Services from BusinessLogicLayer
+            builder.Services.AddScoped<BusinessLogicLayer.Services.UserService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.AvatarService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.MediaPathService>();
+
+            // Register ServiceImpls from BusinessLogicLayer  
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();
 
             var app = builder.Build();
 
@@ -61,66 +70,20 @@ namespace BrainStormEra_Razor
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
             app.UseHttpsRedirection();
-
-            // Configure default static files from wwwroot
             app.UseStaticFiles();
-
-            // Configure additional static files from SharedMedia folder
-            var sharedMediaPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "SharedMedia");
-            var absoluteSharedMediaPath = Path.GetFullPath(sharedMediaPath);
-
-            // Log the path for debugging
-            Console.WriteLine($"SharedMedia path: {absoluteSharedMediaPath}");
-            Console.WriteLine($"SharedMedia exists: {Directory.Exists(absoluteSharedMediaPath)}");
-
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(absoluteSharedMediaPath),
-                RequestPath = "/SharedMedia",
-                OnPrepareResponse = ctx =>
-                {
-                    // Add caching headers for better performance
-                    ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000");
-                }
-            });
 
             app.UseRouting();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
-            // Redirect root to admin login
-            app.MapGet("/", context =>
-            {
-                context.Response.Redirect("/Admin/Login");
-                return Task.CompletedTask;
-            });
-
-            // Test endpoint for debugging SharedMedia
-            app.MapGet("/debug/sharedmedia", () =>
-            {
-                var sharedMediaPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "SharedMedia");
-                var absoluteSharedMediaPath = Path.GetFullPath(sharedMediaPath);
-                return Results.Ok(new
-                {
-                    CurrentDirectory = Directory.GetCurrentDirectory(),
-                    SharedMediaPath = sharedMediaPath,
-                    AbsoluteSharedMediaPath = absoluteSharedMediaPath,
-                    Exists = Directory.Exists(absoluteSharedMediaPath),
-                    Files = Directory.Exists(absoluteSharedMediaPath)
-                        ? Directory.GetFiles(absoluteSharedMediaPath, "*", SearchOption.AllDirectories).Take(10).ToArray()
-                        : new string[0]
-                });
-            });
-
             app.MapRazorPages();
 
-            app.Run();
+            await app.RunAsync();
         }
     }
 }

@@ -1,0 +1,60 @@
+@page "/admin"
+@model BrainStormEra_Razor.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/dashboard.css" asp-append-version="true" />
+}
+
+<div class="admin-dashboard">
+    <div class="dashboard-header">
+        <h1>Admin Dashboard</h1>
+        <div class="admin-info">
+            <span>Welcome, @Model.AdminName</span>
+            <a href="/auth/logout" class="btn-logout">Logout</a>
+        </div>
+    </div>
+
+    <div class="dashboard-content">
+        <div class="info-cards">
+            <div class="info-card">
+                <h3>User ID</h3>
+                <p>@Model.UserId</p>
+            </div>
+            <div class="info-card">
+                <h3>Login Time</h3>
+                <p>@Model.LoginTime.ToString("yyyy-MM-dd HH:mm:ss")</p>
+            </div>
+            <div class="info-card">
+                <h3>Role</h3>
+                <p>Administrator</p>
+            </div>
+        </div>
+
+        <div class="dashboard-actions">
+            <h2>Quick Actions</h2>
+            <div class="action-buttons">
+                <button class="action-btn">
+                    Manage Users
+                </button>
+                <button class="action-btn">
+                    Manage Courses
+                </button>
+                <button class="action-btn">
+                    System Settings
+                </button>
+                <button class="action-btn">
+                    View Reports
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin/dashboard.js" asp-append-version="true"></script>
+}
+</style>

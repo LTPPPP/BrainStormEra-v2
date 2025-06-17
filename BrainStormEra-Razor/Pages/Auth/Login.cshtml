@@ -1,0 +1,66 @@
+@page "/auth/login"
+@model BrainStormEra_Razor.Pages.Auth.LoginModel
+@{
+    ViewData["Title"] = "Admin Login";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auth/login.css" asp-append-version="true" />
+}
+
+<div class="login-container">
+    <div class="login-box">
+        <div class="login-header">
+            <h2>Admin Login</h2>
+            <p>Please enter your admin credentials</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert error">
+                @Model.ErrorMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert success">
+                @Model.SuccessMessage
+            </div>
+        }
+
+        <form method="post" class="login-form">
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label asp-for="LoginData.Username">Username</label>
+                <input asp-for="LoginData.Username" type="text" placeholder="Enter your username" required />
+                <span asp-validation-for="LoginData.Username" class="error-text"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="LoginData.Password">Password</label>
+                <input asp-for="LoginData.Password" type="password" placeholder="Enter your password" required />
+                <span asp-validation-for="LoginData.Password" class="error-text"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-container">
+                    <input asp-for="LoginData.RememberMe" type="checkbox" />
+                    <span class="checkmark"></span>
+                    Remember me
+                </label>
+            </div>
+
+            <input asp-for="LoginData.ReturnUrl" type="hidden" />
+
+            <button type="submit" class="btn-login">Login</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/auth/login.js" asp-append-version="true"></script>
+}
