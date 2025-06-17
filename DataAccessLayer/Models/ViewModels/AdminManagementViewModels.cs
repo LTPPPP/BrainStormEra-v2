@@ -359,28 +359,27 @@ namespace DataAccessLayer.Models.ViewModels
         // Computed properties
         public string TypeBadgeClass => AchievementType.ToLower() switch
         {
-            "course" => "bg-success",
-            "quiz" => "bg-warning",
-            "special" => "bg-danger",
-            "milestone" => "bg-info",
+            "course_completion" => "bg-success",
+            "first_course" => "bg-success",
+            "quiz_master" => "bg-warning",
+            "instructor" => "bg-danger",
+            "student_engagement" => "bg-info",
+            "streak" => "bg-primary",
             _ => "bg-secondary"
         };
 
         public string TypeDisplayName => AchievementType.ToLower() switch
         {
-            "course" => "Course Completion",
-            "quiz" => "Quiz Achievement",
-            "special" => "Special Achievement",
-            "milestone" => "Milestone",
+            "course_completion" => "Course Completion",
+            "first_course" => "First Course",
+            "quiz_master" => "Quiz Master",
+            "instructor" => "Instructor Achievement",
+            "student_engagement" => "Student Engagement",
+            "streak" => "Streak Achievement",
             _ => "General"
         };
 
-        public string PointsText => PointsReward switch
-        {
-            0 => "No Points",
-            1 => "1 Point",
-            _ => $"{PointsReward} Points"
-        };
+
     }
 
     public class CreateAchievementRequest
@@ -392,7 +391,7 @@ namespace DataAccessLayer.Models.ViewModels
         [StringLength(500)]
         public string? AchievementDescription { get; set; }
 
-        [StringLength(100)]
+        [StringLength(255)]
         public string AchievementIcon { get; set; } = "fas fa-trophy";
 
         [Required]
@@ -412,7 +411,7 @@ namespace DataAccessLayer.Models.ViewModels
         [StringLength(500)]
         public string? AchievementDescription { get; set; }
 
-        [StringLength(100)]
+        [StringLength(255)]
         public string AchievementIcon { get; set; } = "fas fa-trophy";
 
         [Required]

@@ -53,12 +53,14 @@ namespace BrainStormEra_Razor
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();            // Register Service Interfaces and Implementations
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.UserService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAvatarService, BusinessLogicLayer.Services.AvatarService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementIconService, BusinessLogicLayer.Services.AchievementIconService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAdminService, BusinessLogicLayer.Services.AdminService>();
 
             // Register other Services from BusinessLogicLayer
             builder.Services.AddScoped<BusinessLogicLayer.Services.UserService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.AvatarService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.AchievementIconService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.MediaPathService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.AdminService>();
 

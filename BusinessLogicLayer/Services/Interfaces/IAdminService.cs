@@ -21,8 +21,9 @@ namespace BusinessLogicLayer.Services.Interfaces
         // Achievement Management
         Task<AdminAchievementsViewModel> GetAllAchievementsAsync(string? search = null, string? typeFilter = null, string? pointsFilter = null, int page = 1, int pageSize = 12);
         Task<AdminAchievementViewModel?> GetAchievementByIdAsync(string achievementId);
-        Task<bool> CreateAchievementAsync(CreateAchievementRequest request, string? adminId = null);
+        Task<(bool Success, string? AchievementId)> CreateAchievementAsync(CreateAchievementRequest request, string? adminId = null);
         Task<bool> UpdateAchievementAsync(UpdateAchievementRequest request, string? adminId = null);
         Task<bool> DeleteAchievementAsync(string achievementId, string? adminId = null);
+        Task<(bool Success, string? IconPath, string? ErrorMessage)> UploadAchievementIconAsync(Microsoft.AspNetCore.Http.IFormFile file, string achievementId, string? adminId = null);
     }
 }

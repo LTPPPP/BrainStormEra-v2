@@ -11,6 +11,7 @@ namespace BusinessLogicLayer.Services
         private readonly IUserRepo _userRepo;
         private readonly ICourseRepo _courseRepo;
         private readonly IAchievementRepo _achievementRepo;
+        private readonly IAchievementIconService _achievementIconService;
         private readonly ILogger<AdminService> _logger;
 
         public AdminService(
@@ -18,12 +19,14 @@ namespace BusinessLogicLayer.Services
             IUserRepo userRepo,
             ICourseRepo courseRepo,
             IAchievementRepo achievementRepo,
+            IAchievementIconService achievementIconService,
             ILogger<AdminService> logger)
         {
             _adminRepo = adminRepo;
             _userRepo = userRepo;
             _courseRepo = courseRepo;
             _achievementRepo = achievementRepo;
+            _achievementIconService = achievementIconService;
             _logger = logger;
         }
 
@@ -541,10 +544,10 @@ namespace BusinessLogicLayer.Services
                     .ToList();
 
                 // Calculate statistics
-                var courseAchievements = allAchievements.Count(a => a.AchievementType?.Equals("course", StringComparison.OrdinalIgnoreCase) == true);
-                var quizAchievements = allAchievements.Count(a => a.AchievementType?.Equals("quiz", StringComparison.OrdinalIgnoreCase) == true);
-                var specialAchievements = allAchievements.Count(a => a.AchievementType?.Equals("special", StringComparison.OrdinalIgnoreCase) == true);
-                var milestoneAchievements = allAchievements.Count(a => a.AchievementType?.Equals("milestone", StringComparison.OrdinalIgnoreCase) == true);
+                var courseAchievements = allAchievements.Count(a => a.AchievementType?.Equals("course_completion", StringComparison.OrdinalIgnoreCase) == true || a.AchievementType?.Equals("first_course", StringComparison.OrdinalIgnoreCase) == true);
+                var quizAchievements = allAchievements.Count(a => a.AchievementType?.Equals("quiz_master", StringComparison.OrdinalIgnoreCase) == true);
+                var specialAchievements = allAchievements.Count(a => a.AchievementType?.Equals("instructor", StringComparison.OrdinalIgnoreCase) == true || a.AchievementType?.Equals("student_engagement", StringComparison.OrdinalIgnoreCase) == true);
+                var milestoneAchievements = allAchievements.Count(a => a.AchievementType?.Equals("streak", StringComparison.OrdinalIgnoreCase) == true);
 
                 // Calculate total times awarded (would need user achievements data, using placeholder for now)
                 var totalAwarded = 0; // This would require joining with UserAchievement table
@@ -599,7 +602,6 @@ namespace BusinessLogicLayer.Services
                     AchievementDescription = achievement.AchievementDescription ?? "",
                     AchievementIcon = achievement.AchievementIcon ?? "fas fa-trophy",
                     AchievementType = achievement.AchievementType ?? "general",
-
                     AchievementCreatedAt = achievement.AchievementCreatedAt,
                     IsActive = true,
                     TimesAwarded = achievement.UserAchievements?.Count ?? 0
@@ -612,23 +614,24 @@ namespace BusinessLogicLayer.Services
             }
         }
 
-        public async Task<bool> CreateAchievementAsync(CreateAchievementRequest request, string? adminId = null)
+        public async Task<(bool Success, string? AchievementId)> CreateAchievementAsync(CreateAchievementRequest request, string? adminId = null)
         {
             try
             {
+                var achievementId = Guid.NewGuid().ToString();
                 var achievement = new DataAccessLayer.Models.Achievement
                 {
-                    AchievementId = Guid.NewGuid().ToString(),
+                    AchievementId = achievementId,
                     AchievementName = request.AchievementName,
                     AchievementDescription = request.AchievementDescription,
                     AchievementIcon = request.AchievementIcon,
                     AchievementType = request.AchievementType,
-
                     AchievementCreatedAt = DateTime.UtcNow
                 };
 
                 var result = await _achievementRepo.CreateAchievementAsync(achievement);
-                return !string.IsNullOrEmpty(result);
+                var success = !string.IsNullOrEmpty(result);
+                return (success, success ? achievementId : null);
             }
             catch (Exception ex)
             {
@@ -668,6 +671,43 @@ namespace BusinessLogicLayer.Services
             {
                 _logger.LogError(ex, "Error deleting achievement: {AchievementId}", achievementId);
                 throw;
+            }
+        }
+
+        public async Task<(bool Success, string? IconPath, string? ErrorMessage)> UploadAchievementIconAsync(Microsoft.AspNetCore.Http.IFormFile file, string achievementId, string? adminId = null)
+        {
+            try
+            {
+                // Check if achievement exists
+                var achievement = await _achievementRepo.GetByIdAsync(achievementId);
+                if (achievement == null)
+                {
+                    return (false, null, "Achievement not found.");
+                }
+
+                // Upload the icon
+                var uploadResult = await _achievementIconService.UploadAchievementIconAsync(file, achievementId);
+                if (!uploadResult.Success)
+                {
+                    return uploadResult;
+                }
+
+                // Update achievement with new icon path
+                var updateResult = await _achievementRepo.UpdateAchievementIconAsync(achievementId, uploadResult.IconPath!);
+                if (!updateResult)
+                {
+                    // Clean up uploaded file if database update fails
+                    await _achievementIconService.DeleteAchievementIconAsync(uploadResult.IconPath);
+                    return (false, null, "Failed to update achievement icon in database.");
+                }
+
+                _logger.LogInformation("Achievement icon uploaded successfully: {AchievementId} by admin {AdminId}", achievementId, adminId);
+                return (true, uploadResult.IconPath, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading achievement icon: {AchievementId}", achievementId);
+                return (false, null, "An error occurred while uploading the achievement icon.");
             }
         }
     }

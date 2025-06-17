@@ -74,9 +74,32 @@ namespace BrainStormEra_Razor.Pages.Admin
         {
             try
             {
+                // Set UserId from claims
+                UserId = HttpContext.User?.FindFirst("UserId")?.Value ?? "";
+                _logger.LogInformation("Create achievement request received from UserId: {UserId}, Request: {@Request}", UserId, request);
+
+                if (string.IsNullOrEmpty(UserId))
+                {
+                    _logger.LogWarning("UserId not found in claims");
+                    return new JsonResult(new { success = false, message = "User not authenticated" }) { StatusCode = 401 };
+                }
+
                 if (request == null)
                 {
+                    _logger.LogWarning("Request is null");
                     return BadRequest("Achievement data is required");
+                }
+
+                _logger.LogInformation("Request data: Name={Name}, Type={Type}, Icon={Icon}, Description={Description}",
+    request.AchievementName, request.AchievementType, request.AchievementIcon, request.AchievementDescription);
+
+                // Validate achievement type against allowed values
+                var allowedTypes = new[] { "course_completion", "quiz_master", "streak", "first_course", "instructor", "student_engagement" };
+                if (!allowedTypes.Contains(request.AchievementType?.ToLower()))
+                {
+                    _logger.LogWarning("Invalid achievement type: {Type}. Allowed types: {AllowedTypes}",
+                        request.AchievementType, string.Join(", ", allowedTypes));
+                    return new JsonResult(new { success = false, message = $"Invalid achievement type. Allowed types: {string.Join(", ", allowedTypes)}" });
                 }
 
                 if (!ModelState.IsValid)
@@ -85,16 +108,28 @@ namespace BrainStormEra_Razor.Pages.Admin
                         .SelectMany(v => v.Errors)
                         .Select(e => e.ErrorMessage)
                         .ToList();
+                    _logger.LogWarning("Model validation failed: {Errors}", string.Join(", ", errors));
+
+                    // Log detailed validation errors
+                    foreach (var modelError in ModelState)
+                    {
+                        _logger.LogWarning("Field {Field}: {Errors}", modelError.Key,
+                            string.Join(", ", modelError.Value.Errors.Select(e => e.ErrorMessage)));
+                    }
+
                     return new JsonResult(new { success = false, message = "Invalid data", errors = errors });
                 }
 
-                var result = await _adminService.CreateAchievementAsync(request, UserId);
+                // Normalize achievement type to lowercase
+                request.AchievementType = request.AchievementType?.ToLower();
 
-                if (result)
+                var (success, achievementId) = await _adminService.CreateAchievementAsync(request, UserId);
+
+                if (success)
                 {
-                    _logger.LogInformation("Achievement created successfully by admin {AdminName}: {AchievementName}",
-                        HttpContext.User?.Identity?.Name, request.AchievementName);
-                    return new JsonResult(new { success = true, message = "Achievement created successfully" });
+                    _logger.LogInformation("Achievement created successfully by admin {AdminName}: {AchievementName}, ID: {AchievementId}",
+                        HttpContext.User?.Identity?.Name, request.AchievementName, achievementId);
+                    return new JsonResult(new { success = true, message = "Achievement created successfully", achievementId = achievementId });
                 }
                 else
                 {
@@ -112,9 +147,21 @@ namespace BrainStormEra_Razor.Pages.Admin
         {
             try
             {
+                // Set UserId from claims
+                UserId = HttpContext.User?.FindFirst("UserId")?.Value ?? "";
+
                 if (request == null)
                 {
                     return BadRequest("Achievement data is required");
+                }
+
+                // Validate achievement type against allowed values
+                var allowedTypes = new[] { "course_completion", "quiz_master", "streak", "first_course", "instructor", "student_engagement" };
+                if (!allowedTypes.Contains(request.AchievementType?.ToLower()))
+                {
+                    _logger.LogWarning("Invalid achievement type: {Type}. Allowed types: {AllowedTypes}",
+                        request.AchievementType, string.Join(", ", allowedTypes));
+                    return new JsonResult(new { success = false, message = $"Invalid achievement type. Allowed types: {string.Join(", ", allowedTypes)}" });
                 }
 
                 if (!ModelState.IsValid)
@@ -125,6 +172,9 @@ namespace BrainStormEra_Razor.Pages.Admin
                         .ToList();
                     return new JsonResult(new { success = false, message = "Invalid data", errors = errors });
                 }
+
+                // Normalize achievement type to lowercase
+                request.AchievementType = request.AchievementType?.ToLower();
 
                 var result = await _adminService.UpdateAchievementAsync(request, UserId);
 
@@ -150,6 +200,9 @@ namespace BrainStormEra_Razor.Pages.Admin
         {
             try
             {
+                // Set UserId from claims
+                UserId = HttpContext.User?.FindFirst("UserId")?.Value ?? "";
+
                 if (request == null || string.IsNullOrEmpty(request.AchievementId))
                 {
                     return BadRequest("Achievement ID is required");
@@ -197,6 +250,38 @@ namespace BrainStormEra_Razor.Pages.Admin
             {
                 _logger.LogError(ex, "Error getting achievement details: {AchievementId}", achievementId);
                 return new JsonResult(new { success = false, message = "An error occurred while fetching achievement details" });
+            }
+        }
+
+        public async Task<IActionResult> OnPostUploadAchievementIconAsync(IFormFile iconFile, string achievementId)
+        {
+            try
+            {
+                // Set UserId from claims
+                UserId = HttpContext.User?.FindFirst("UserId")?.Value ?? "";
+
+                if (iconFile == null || string.IsNullOrEmpty(achievementId))
+                {
+                    return BadRequest("Icon file and achievement ID are required");
+                }
+
+                var result = await _adminService.UploadAchievementIconAsync(iconFile, achievementId, UserId);
+
+                if (result.Success)
+                {
+                    _logger.LogInformation("Achievement icon uploaded successfully by admin {AdminName}: {AchievementId}",
+                        HttpContext.User?.Identity?.Name, achievementId);
+                    return new JsonResult(new { success = true, iconPath = result.IconPath, message = "Icon uploaded successfully" });
+                }
+                else
+                {
+                    return new JsonResult(new { success = false, message = result.ErrorMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading achievement icon: {AchievementId}", achievementId);
+                return new JsonResult(new { success = false, message = "An error occurred while uploading the icon" });
             }
         }
     }
