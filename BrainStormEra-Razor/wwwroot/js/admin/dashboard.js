@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Set Chart.js defaults
   if (typeof Chart !== 'undefined') {
     Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-    Chart.defaults.font.size = 5;
+    Chart.defaults.font.size = 12;
     Chart.defaults.color = '#64748b';
   }
   
@@ -110,7 +110,7 @@ function initializeUsersChart() {
             padding: 7,
             usePointStyle: true,
             font: {
-              size: 5,
+              size: 11,
               weight: '600'
             }
           }

@@ -408,7 +408,7 @@ body {
 }
 
 .chart-title {
-  font-size: 0.625rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--gray-800);
   margin: 0 0 0.25rem 0;
@@ -423,7 +423,7 @@ body {
 
 .chart-subtitle {
   color: var(--gray-600);
-  font-size: 0.4375rem;
+  font-size: 0.75rem;
   margin: 0;
   font-weight: 500;
 }
@@ -444,7 +444,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   transition: var(--transition);
   color: var(--gray-600);
 }
@@ -467,7 +467,7 @@ body {
   border: none;
   background: transparent;
   color: var(--gray-600);
-  font-size: 0.4375rem;
+  font-size: 0.75rem;
   font-weight: 600;
   border-radius: var(--border-radius-sm);
   cursor: pointer;
@@ -528,7 +528,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   color: white;
 }
 
