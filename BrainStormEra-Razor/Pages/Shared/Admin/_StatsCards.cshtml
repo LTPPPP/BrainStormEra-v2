@@ -1,0 +1,41 @@
+@model List<StatCardViewModel>
+
+@foreach (var stat in Model)
+{
+    <div class="stat-card @stat.CssClass">
+        <div class="stat-icon">
+            @if (stat.CssClass == "users")
+            {
+                <i class="fas fa-users"></i>
+            }
+            else if (stat.CssClass == "courses")
+            {
+                <i class="fas fa-book"></i>
+            }
+            else if (stat.CssClass == "enrollments")
+            {
+                <i class="fas fa-graduation-cap"></i>
+            }
+            else if (stat.CssClass == "revenue")
+            {
+                <i class="fas fa-dollar-sign"></i>
+            }
+            else if (!string.IsNullOrEmpty(stat.Icon))
+            {
+                <i class="fas @stat.Icon"></i>
+            }
+        </div>
+        <div class="stat-content">
+            <div class="stat-number">@stat.Value</div>
+            <div class="stat-label">@stat.Label</div>
+            @if (!string.IsNullOrEmpty(stat.Change))
+            {
+                <div class="stat-change @(stat.IsPositive ? "positive" : "negative")">
+                    <i class="fas @(stat.IsPositive ? "fa-arrow-up" : "fa-arrow-down")"></i> @stat.Change
+                </div>
+            }
+        </div>
+    </div>
+}
+
+ 

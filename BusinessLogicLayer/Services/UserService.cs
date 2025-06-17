@@ -7,6 +7,7 @@ using BusinessLogicLayer.Services.Interfaces;
 using BusinessLogicLayer.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using BusinessLogicLayer.Constants;
 
 namespace BusinessLogicLayer.Services
 {
@@ -183,7 +184,7 @@ namespace BusinessLogicLayer.Services
                         Username = e.User.Username,
                         FullName = e.User.FullName ?? "",
                         Email = e.User.UserEmail,
-                        UserImage = e.User.UserImage ?? "/img/defaults/default-avatar.svg",
+                        UserImage = e.User.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
                         CourseId = e.CourseId,
                         CourseName = e.Course.CourseName,
                         EnrollmentDate = e.EnrollmentCreatedAt,
@@ -222,7 +223,7 @@ namespace BusinessLogicLayer.Services
                 {
                     CourseId = e.CourseId,
                     CourseName = e.Course.CourseName,
-                    CourseImage = e.Course.CourseImage ?? "/img/defaults/default-course.svg",
+                    CourseImage = e.Course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                     EnrollmentDate = e.EnrollmentCreatedAt,
                     LastAccessDate = e.EnrollmentUpdatedAt,
                     ProgressPercentage = e.ProgressPercentage ?? 0,
@@ -244,7 +245,7 @@ namespace BusinessLogicLayer.Services
                     FullName = user.FullName ?? "",
                     Email = user.UserEmail,
                     PhoneNumber = user.PhoneNumber,
-                    UserImage = user.UserImage ?? "/img/defaults/default-avatar.svg",
+                    UserImage = user.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
                     AccountCreatedAt = user.AccountCreatedAt,
                     Enrollments = enrollments,
                     Achievements = achievements,

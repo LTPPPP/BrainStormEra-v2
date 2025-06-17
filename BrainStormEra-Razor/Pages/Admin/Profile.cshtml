@@ -1,0 +1,176 @@
+@page "/admin/profile"
+@model BrainStormEra_Razor.Pages.Admin.ProfileModel
+@{
+    ViewData["Title"] = "My Profile";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pages/Admin/profile.css" asp-append-version="true" />
+}
+
+<div class="profile-container">
+    <!-- Success/Error Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-banner">
+            <div class="profile-info">
+                <div class="avatar-section">
+                    <img src="@(!string.IsNullOrEmpty(Model.UserProfile?.UserImage) ? Model.UserProfile.UserImage : "/SharedMedia/defaults/default-avatar.svg")" 
+                         alt="Profile Avatar" class="profile-avatar" id="profileAvatar"
+                         onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-avatar.svg';" />
+                    <button class="btn btn-sm btn-outline-primary change-avatar-btn" onclick="openAvatarModal()">
+                        <i class="fas fa-camera"></i> Change Photo
+                    </button>
+                </div>
+                <div class="profile-details">
+                    <h1 class="profile-name">@Model.UserProfile?.FullName</h1>
+                    <p class="profile-email">@Model.UserProfile?.UserEmail</p>
+                    <span class="profile-role badge bg-primary">@Model.UserProfile?.UserRole</span>
+                    <p class="profile-joined">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        Joined @Model.UserProfile?.AccountCreatedAt.ToString("MMMM yyyy")
+                    </p>
+                </div>
+            </div>
+            <div class="profile-actions">
+                <a href="/admin/profile/edit" class="btn btn-primary">
+                    <i class="fas fa-edit me-2"></i>Edit Profile
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="profile-content">
+        <div class="row">
+            <!-- Left Column - Profile Info -->
+            <div class="col-lg-4">
+                <div class="profile-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-user me-2"></i>Profile Information
+                    </h5>
+                    <div class="profile-item">
+                        <label>Full Name</label>
+                        <span>@Model.UserProfile?.FullName</span>
+                    </div>
+                    <div class="profile-item">
+                        <label>Username</label>
+                        <span>@Model.UserProfile?.Username</span>
+                    </div>
+                    <div class="profile-item">
+                        <label>Email</label>
+                        <span>@Model.UserProfile?.UserEmail</span>
+                    </div>
+                    <div class="profile-item">
+                        <label>Role</label>
+                        <span class="badge bg-primary">@Model.UserProfile?.UserRole</span>
+                    </div>
+                    <div class="profile-item">
+                        <label>Account Status</label>
+                        <span class="badge @(Model.UserProfile?.IsActive == true ? "bg-success" : "bg-danger")">
+                            @(Model.UserProfile?.IsActive == true ? "Active" : "Inactive")
+                        </span>
+                    </div>
+                </div>
+
+
+            </div>
+
+            <!-- Right Column - Quick Actions -->
+            <div class="col-lg-8">
+                <div class="profile-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                    <div class="quick-actions">
+                        <a href="/admin/users" class="quick-action-item">
+                            <div class="quick-action-icon bg-primary">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="quick-action-content">
+                                <div class="quick-action-title">Manage Users</div>
+                                <div class="quick-action-desc">View and manage user accounts</div>
+                            </div>
+                        </a>
+                        <a href="/admin/courses" class="quick-action-item">
+                            <div class="quick-action-icon bg-success">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="quick-action-content">
+                                <div class="quick-action-title">Manage Courses</div>
+                                <div class="quick-action-desc">Review and approve courses</div>
+                            </div>
+                        </a>
+                        <a href="/admin/achievements" class="quick-action-item">
+                            <div class="quick-action-icon bg-warning">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="quick-action-content">
+                                <div class="quick-action-title">Manage Achievements</div>
+                                <div class="quick-action-desc">Create and manage badges</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Avatar Modal -->
+<div id="avatarModal" class="modal fade" tabindex="-1" aria-labelledby="avatarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="avatarModalLabel">
+                    <i class="fas fa-camera me-2"></i>Change Profile Photo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="avatarForm" enctype="multipart/form-data">
+                    <div class="text-center mb-3">
+                        <img src="@(!string.IsNullOrEmpty(Model.UserProfile?.UserImage) ? Model.UserProfile.UserImage : "/SharedMedia/defaults/default-avatar.svg")" 
+                             alt="Current Avatar" class="avatar-preview" id="avatarPreview" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="avatarFile" class="form-label">Choose new photo</label>
+                        <input type="file" class="form-control" id="avatarFile" name="avatarFile" accept="image/*" onchange="previewAvatar(this)">
+                        <div class="form-text">Recommended size: 200x200px. Max file size: 2MB</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="uploadAvatar()">
+                    <i class="fas fa-upload me-2"></i>Upload Photo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/pages/Admin/profile.js" asp-append-version="true"></script>
+} 

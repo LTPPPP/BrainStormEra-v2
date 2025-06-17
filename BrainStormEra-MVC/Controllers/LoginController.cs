@@ -69,8 +69,6 @@ namespace BrainStormEra_MVC.Controllers
                     return View("~/Views/Auth/Login.cshtml", model);
                 }
 
-                _logger.LogInformation("User found: {Username}, Role: {Role}", user.Username, user.UserRole);
-
                 // Check if user is banned
                 if (user.IsBanned == true)
                 {
@@ -92,12 +90,12 @@ namespace BrainStormEra_MVC.Controllers
                 _logger.LogInformation("Password verified successfully for user: {Username}", user.Username);
 
                 // Validate user role (ensure it's one of the allowed roles)
-                var validRoles = new[] { "Admin", "Instructor", "Learner", "admin", "instructor", "learner" };
+                var validRoles = new[] { "instructor", "learner" };
                 if (!validRoles.Contains(user.UserRole, StringComparer.OrdinalIgnoreCase))
                 {
                     _logger.LogWarning("Invalid role for user: {Username}, Role: {Role}", user.Username, user.UserRole);
-                    TempData["ErrorMessage"] = "Invalid user role. Please contact system administrator.";
-                    ModelState.AddModelError(string.Empty, "Account configuration error.");
+                    TempData["ErrorMessage"] = "Invalid login attempt.";
+                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                     return View("~/Views/Auth/Login.cshtml", model);
                 }
 
@@ -465,7 +463,6 @@ namespace BrainStormEra_MVC.Controllers
             // Role-based redirect with explicit URLs for better reliability (case-insensitive)
             var redirectResult = userRole.ToLower() switch
             {
-                "admin" => RedirectToAction("AdminDashboard", "Admin"),
                 "instructor" => RedirectToAction("InstructorDashboard", "Home"),
                 "learner" => RedirectToAction("LearnerDashboard", "Home"),
                 _ => RedirectToAction("Index", "Home")

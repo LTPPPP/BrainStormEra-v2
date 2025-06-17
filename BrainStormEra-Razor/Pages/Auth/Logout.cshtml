@@ -1,0 +1,17 @@
+@page "/auth/logout"
+@model BrainStormEra_Razor.Pages.Auth.LogoutModel
+@{
+    ViewData["Title"] = "Logout";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auth/logout.css" asp-append-version="true" />
+}
+
+<div class="logout-container">
+    <div class="logout-box">
+        <h2>Logging out...</h2>
+        <p>Please wait while we sign you out.</p>
+    </div>
+</div>

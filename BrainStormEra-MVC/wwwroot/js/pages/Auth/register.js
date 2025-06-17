@@ -567,7 +567,7 @@
   function preloadImages() {
     // Preload background image
     const img = new Image();
-    img.src = "/img/login-bg.jpg";
+            img.src = "/SharedMedia/static/login-bg.jpg";
   }
 
   /**

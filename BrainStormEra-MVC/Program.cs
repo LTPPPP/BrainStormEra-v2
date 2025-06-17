@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.FileProviders;
 using BusinessLogicLayer;
 namespace BrainStormEra_MVC
 {
@@ -51,7 +52,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.INotificationRepo, DataAccessLayer.Repositories.NotificationRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAchievementRepo, DataAccessLayer.Repositories.AchievementRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICertificateRepo, DataAccessLayer.Repositories.CertificateRepo>();
-            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAdminRepo, DataAccessLayer.Repositories.AdminRepo>();
+
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatbotRepo, DataAccessLayer.Repositories.ChatbotRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();            // Register Services with SOLID principles - Now using BusinessLogicLayer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.UserService>();
@@ -93,9 +94,8 @@ namespace BrainStormEra_MVC
             // Register Recommendation Helper
             builder.Services.AddScoped<BusinessLogicLayer.Services.RecommendationHelper>();
 
-            // Register Admin Services for data access and business logic
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAdminService, BusinessLogicLayer.Services.AdminService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AdminServiceImpl>();
+            // Register Services for data access and business logic
+
 
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.EnrollmentService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementService, BusinessLogicLayer.Services.AchievementService>();
@@ -122,6 +122,9 @@ namespace BrainStormEra_MVC
             // Register SafeDelete Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.SafeDeleteServiceImpl>();
 
+            // Register Media Path Service for centralized media path management
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
+
             // Seed services
             builder.Services.AddScoped<BusinessLogicLayer.Services.StatusSeedService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.LessonTypeSeedService>();
@@ -141,7 +144,7 @@ namespace BrainStormEra_MVC
                 });            // Add Authorization
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin", "Admin"));
+
                 options.AddPolicy("InstructorOnly", policy => policy.RequireRole("instructor", "Instructor"));
                 options.AddPolicy("LearnerOnly", policy => policy.RequireRole("learner", "Learner"));
             });
@@ -234,7 +237,29 @@ namespace BrainStormEra_MVC
             app.UseResponseCaching();
 
             app.UseHttpsRedirection();
+
+            // Configure default static files from wwwroot
             app.UseStaticFiles();
+
+            // Configure additional static files from SharedMedia folder
+            var sharedMediaPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "SharedMedia");
+            var absoluteSharedMediaPath = Path.GetFullPath(sharedMediaPath);
+
+            // Log the path for debugging
+            Console.WriteLine($"SharedMedia path: {absoluteSharedMediaPath}");
+            Console.WriteLine($"SharedMedia exists: {Directory.Exists(absoluteSharedMediaPath)}");
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(absoluteSharedMediaPath),
+                RequestPath = "/SharedMedia",
+                OnPrepareResponse = ctx =>
+                {
+                    // Add caching headers for better performance
+                    ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000");
+                }
+            });
+
             app.UseRouting();
 
             // Add Session middleware before Authentication
@@ -247,7 +272,36 @@ namespace BrainStormEra_MVC
             // Configure routing
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");            // Configure SignalR Hub
+                pattern: "{controller=Home}/{action=Index}/{id?}");
+
+            // Test endpoint for debugging SharedMedia
+            app.MapGet("/debug/sharedmedia", () =>
+            {
+                var sharedMediaPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "SharedMedia");
+                var absoluteSharedMediaPath = Path.GetFullPath(sharedMediaPath);
+                return Results.Ok(new
+                {
+                    CurrentDirectory = Directory.GetCurrentDirectory(),
+                    SharedMediaPath = sharedMediaPath,
+                    AbsoluteSharedMediaPath = absoluteSharedMediaPath,
+                    Exists = Directory.Exists(absoluteSharedMediaPath),
+                    Files = Directory.Exists(absoluteSharedMediaPath)
+                        ? Directory.GetFiles(absoluteSharedMediaPath, "*", SearchOption.AllDirectories).Take(10).ToArray()
+                        : new string[0]
+                });
+            });
+
+            // Test route for SharedMedia HTML
+            app.MapGet("/test/sharedmedia", async () =>
+            {
+                var testFilePath = Path.Combine(Directory.GetCurrentDirectory(), "..", "SharedMedia", "test.html");
+                if (File.Exists(testFilePath))
+                {
+                    var content = await File.ReadAllTextAsync(testFilePath);
+                    return Results.Content(content, "text/html");
+                }
+                return Results.NotFound("Test file not found");
+            });            // Configure SignalR Hub
             app.MapHub<BusinessLogicLayer.Hubs.NotificationHub>("/notificationHub");
 
             app.Run();

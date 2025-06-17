@@ -1,0 +1,323 @@
+@page "/admin/achievements"
+@model BrainStormEra_Razor.Pages.Admin.AchievementsModel
+@{
+    ViewData["Title"] = "Achievement Management";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pages/Admin/achievement-management.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+}
+
+<div class="achievements-management">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-title">
+            <i class="fas fa-trophy icon"></i>
+            <div>
+                <h1>Achievement Management</h1>
+                <p class="text-muted">Manage and monitor system achievements</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="#" class="btn-create" onclick="openCreateModal()">
+                <i class="fas fa-plus"></i> Create Achievement
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <form method="get">
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label for="searchQuery"><i class="fas fa-search"></i> Search Achievements:</label>
+                    <input type="text" id="searchQuery" name="SearchQuery" 
+                           value="@Model.SearchQuery" 
+                           placeholder="Search by name or description..." />
+                </div>
+
+                <div class="filter-group">
+                    <label for="typeFilter"><i class="fas fa-tag"></i> Achievement Type:</label>
+                    <select id="typeFilter" name="TypeFilter">
+                        <option value="">All Types</option>
+                        <option value="course" selected="@(Model.TypeFilter == "course")">Course Completion</option>
+                        <option value="quiz" selected="@(Model.TypeFilter == "quiz")">Quiz Achievement</option>
+                        <option value="special" selected="@(Model.TypeFilter == "special")">Special Achievement</option>
+                        <option value="milestone" selected="@(Model.TypeFilter == "milestone")">Milestone</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn-filter">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    <a href="/admin/achievements" class="btn-clear">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-cards">
+        <div class="stat-card total">
+            <div class="stat-number">@Model.AchievementsData.TotalAchievements</div>
+            <div class="stat-label">Total Achievements</div>
+        </div>
+        <div class="stat-card course">
+            <div class="stat-number">@Model.AchievementsData.CourseAchievements</div>
+            <div class="stat-label">Course Achievements</div>
+        </div>
+        <div class="stat-card quiz">
+            <div class="stat-number">@Model.AchievementsData.QuizAchievements</div>
+            <div class="stat-label">Quiz Achievements</div>
+        </div>
+        <div class="stat-card special">
+            <div class="stat-number">@Model.AchievementsData.SpecialAchievements</div>
+            <div class="stat-label">Special Achievements</div>
+        </div>
+        <div class="stat-card awarded">
+            <div class="stat-number">@Model.AchievementsData.TotalAwarded</div>
+            <div class="stat-label">Times Awarded</div>
+        </div>
+    </div>
+
+    <!-- Achievements Grid -->
+    @if (Model.AchievementsData.Achievements.Any())
+    {
+        <div class="achievements-grid">
+            @foreach (var achievement in Model.AchievementsData.Achievements)
+            {
+                <div class="achievement-card">
+                    <div class="achievement-header">
+                        <span class="achievement-type">@achievement.AchievementType?.ToUpper()</span>
+                        <i class="@(!string.IsNullOrEmpty(achievement.AchievementIcon) ? achievement.AchievementIcon : "fas fa-trophy") achievement-icon"></i>
+                        <h3 class="achievement-title">@achievement.AchievementName</h3>
+                    </div>
+                    
+                    <div class="achievement-content">
+                        <p class="achievement-description">
+                            @(!string.IsNullOrEmpty(achievement.AchievementDescription) ? achievement.AchievementDescription : "No description available")
+                        </p>
+                        
+                        <div class="achievement-stats">
+                            <div class="created-date">
+                                Created: @achievement.AchievementCreatedAt.ToString("MMM dd, yyyy")
+                            </div>
+                        </div>
+                        
+                        <div class="achievement-actions">
+                            <a href="#" class="btn-action btn-view" onclick="viewAchievement('@achievement.AchievementId')">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a href="#" class="btn-action btn-edit" onclick="editAchievement('@achievement.AchievementId')">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <button class="btn-action btn-delete" onclick="confirmDelete('@achievement.AchievementId', '@achievement.AchievementName')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.AchievementsData.TotalPages > 1)
+        {
+            <div class="pagination-container">
+                <div class="pagination">
+                    @if (Model.AchievementsData.HasPreviousPage)
+                    {
+                        <a href="?currentPage=@(Model.CurrentPage - 1)&searchQuery=@Model.SearchQuery&typeFilter=@Model.TypeFilter">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="disabled">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </span>
+                    }
+
+                    @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.AchievementsData.TotalPages, Model.CurrentPage + 2); i++)
+                    {
+                        if (i == Model.CurrentPage)
+                        {
+                            <span class="current">@i</span>
+                        }
+                        else
+                        {
+                            <a href="?currentPage=@i&searchQuery=@Model.SearchQuery&typeFilter=@Model.TypeFilter">@i</a>
+                        }
+                    }
+
+                    @if (Model.AchievementsData.HasNextPage)
+                    {
+                        <a href="?currentPage=@(Model.CurrentPage + 1)&searchQuery=@Model.SearchQuery&typeFilter=@Model.TypeFilter">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="disabled">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </span>
+                    }
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="no-achievements">
+            <i class="fas fa-trophy icon"></i>
+            <h3>No Achievements Found</h3>
+            <p>No achievements match your current filters. Try adjusting your search criteria or create a new achievement.</p>
+            <a href="#" class="btn-create" onclick="openCreateModal()">
+                <i class="fas fa-plus"></i> Create First Achievement
+            </a>
+        </div>
+    }
+</div>
+
+<!-- Create Achievement Modal -->
+<div id="createModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus" style="color: #28a745;"></i> Create New Achievement</h3>
+        </div>
+        <form id="createAchievementForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="createName">Achievement Name *</label>
+                    <input type="text" id="createName" name="AchievementName" required maxlength="100" 
+                           placeholder="Enter achievement name">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="createDescription">Description</label>
+                    <textarea id="createDescription" name="AchievementDescription" rows="3" maxlength="500"
+                              placeholder="Enter achievement description"></textarea>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="createType">Achievement Type *</label>
+                    <select id="createType" name="AchievementType" required>
+                        <option value="">Select Type</option>
+                        <option value="course">Course Completion</option>
+                        <option value="quiz">Quiz Achievement</option>
+                        <option value="special">Special Achievement</option>
+                        <option value="milestone">Milestone</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="createIcon">Icon (FontAwesome class)</label>
+                    <input type="text" id="createIcon" name="AchievementIcon" value="fas fa-trophy" 
+                           placeholder="e.g., fas fa-trophy, fas fa-star, fas fa-medal">
+                    <small class="text-muted">Preview: <i id="createIconPreview" class="fas fa-trophy"></i></small>
+                </div>
+            </div>
+        </form>
+        <div class="modal-actions">
+            <button type="button" class="btn-confirm" onclick="createAchievement()">
+                <i class="fas fa-save"></i> Create Achievement
+            </button>
+            <button type="button" class="btn-cancel" onclick="closeCreateModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Achievement Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit" style="color: #007bff;"></i> Edit Achievement</h3>
+        </div>
+        <form id="editAchievementForm">
+            <input type="hidden" id="editId" name="AchievementId">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editName">Achievement Name *</label>
+                    <input type="text" id="editName" name="AchievementName" required maxlength="100" 
+                           placeholder="Enter achievement name">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editDescription">Description</label>
+                    <textarea id="editDescription" name="AchievementDescription" rows="3" maxlength="500"
+                              placeholder="Enter achievement description"></textarea>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editType">Achievement Type *</label>
+                    <select id="editType" name="AchievementType" required>
+                        <option value="">Select Type</option>
+                        <option value="course">Course Completion</option>
+                        <option value="quiz">Quiz Achievement</option>
+                        <option value="special">Special Achievement</option>
+                        <option value="milestone">Milestone</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editIcon">Icon (FontAwesome class)</label>
+                    <input type="text" id="editIcon" name="AchievementIcon" value="fas fa-trophy" 
+                           placeholder="e.g., fas fa-trophy, fas fa-star, fas fa-medal">
+                    <small class="text-muted">Preview: <i id="editIconPreview" class="fas fa-trophy"></i></small>
+                </div>
+            </div>
+        </form>
+        <div class="modal-actions">
+            <button type="button" class="btn-confirm" onclick="updateAchievement()">
+                <i class="fas fa-save"></i> Update Achievement
+            </button>
+            <button type="button" class="btn-cancel" onclick="closeEditModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> Confirm Deletion</h3>
+            <p id="deleteMessage">Are you sure you want to delete this achievement?</p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-confirm" onclick="deleteAchievement()">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+            <button class="btn-cancel" onclick="closeDeleteModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/pages/Admin/achievement-management.js" asp-append-version="true"></script>
+} 

@@ -25,6 +25,7 @@ namespace BusinessLogicLayer.Services.Implementations
         private readonly ILogger<AuthServiceImpl> _logger;
         private readonly BrainStormEraContext _context;
         private readonly IAvatarService _avatarService;
+        private readonly IMediaPathService _mediaPathService;
         // Cache for OTP codes (in a production environment, use a more robust solution like Redis)
         private static Dictionary<string, (string otp, DateTime expiry)> _otpCache = new();
 
@@ -32,12 +33,14 @@ namespace BusinessLogicLayer.Services.Implementations
             IUserService userService,
             ILogger<AuthServiceImpl> logger,
             BrainStormEraContext context,
-            IAvatarService avatarService)
+            IAvatarService avatarService,
+            IMediaPathService mediaPathService)
         {
             _userService = userService;
             _logger = logger;
             _context = context;
             _avatarService = avatarService;
+            _mediaPathService = mediaPathService;
         }
 
         #region Login Operations        /// <summary>
@@ -98,8 +101,6 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                _logger.LogInformation("User found: {Username}, Role: {Role}", user.Username, user.UserRole);
-
                 // Check if user is banned
                 if (user.IsBanned == true)
                 {
@@ -124,15 +125,29 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                _logger.LogInformation("Password verified successfully for user: {Username}", user.Username);                // Validate user role (ensure it's one of the allowed roles)
-                var validRoles = new[] { "admin", "instructor", "learner" };
+                _logger.LogInformation("Password verified successfully for user: {Username}", user.Username);
+
+                // Block admin role from logging in
+                if (string.Equals(user.UserRole, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Admin login attempt blocked for user: {Username}", user.Username);
+                    return new LoginResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Invalid login attempt.",
+                        ViewModel = model
+                    };
+                }
+
+                // Validate user role (ensure it's one of the allowed roles)
+                var validRoles = new[] { "instructor", "learner" };
                 if (!validRoles.Contains(user.UserRole, StringComparer.OrdinalIgnoreCase))
                 {
                     _logger.LogWarning("Invalid role for user: {Username}, Role: {Role}", user.Username, user.UserRole);
                     return new LoginResult
                     {
                         Success = false,
-                        ErrorMessage = "Invalid user role. Please contact system administrator.",
+                        ErrorMessage = "Invalid login attempt.",
                         ViewModel = model
                     };
                 }
@@ -939,24 +954,31 @@ namespace BusinessLogicLayer.Services.Implementations
                 string? warningMessage = null;
                 if (model.ProfileImage != null && model.ProfileImage.Length > 0)
                 {
+                    _logger.LogInformation("Starting avatar upload for user {UserId}", userId);
+
                     // Delete old avatar before uploading new one
                     if (!string.IsNullOrEmpty(user.UserImage))
                     {
+                        _logger.LogInformation("Deleting old avatar: {OldAvatar}", user.UserImage);
                         await _avatarService.DeleteAvatarAsync(user.UserImage);
                     }
 
                     var uploadResult = await _avatarService.UploadAvatarAsync(model.ProfileImage, userId);
                     if (uploadResult.Success)
                     {
+                        _logger.LogInformation("Avatar upload successful. Setting UserImage to: {ImagePath}", uploadResult.ImagePath);
                         user.UserImage = uploadResult.ImagePath;
                     }
                     else
                     {
+                        _logger.LogError("Avatar upload failed: {Error}", uploadResult.ErrorMessage);
                         warningMessage = uploadResult.ErrorMessage ?? "Failed to upload profile image.";
                     }
                 }
 
-                await _context.SaveChangesAsync();
+                _logger.LogInformation("Saving changes to database for user {UserId}", userId);
+                var saveResult = await _context.SaveChangesAsync();
+                _logger.LogInformation("Database save completed. Rows affected: {RowsAffected}", saveResult);
 
                 return new EditProfileResult
                 {
@@ -1064,7 +1086,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var imagePath = Path.Combine("wwwroot", "img", "profiles", user.UserImage);
+                var imagePath = Path.Combine(_mediaPathService.GetPhysicalPath("avatars"), user.UserImage);
                 var contentType = _avatarService.GetImageContentType(user.UserImage);
                 var imageBytes = await System.IO.File.ReadAllBytesAsync(imagePath);
 
@@ -1162,7 +1184,6 @@ namespace BusinessLogicLayer.Services.Implementations
             // Role-based redirect (case-insensitive)
             return userRole.ToLower() switch
             {
-                "admin" => "/Admin/AdminDashboard",
                 "instructor" => "/Home/InstructorDashboard",
                 "learner" => "/Home/LearnerDashboard",
                 _ => "/Home/Index"

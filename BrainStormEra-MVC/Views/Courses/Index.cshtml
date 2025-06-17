@@ -12,7 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewData["Title"] - BrainStormEra</title>
     <meta name="description" content="BrainStormEra - Discover amazing courses and expand your knowledge">
-    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="icon" type="image/x-icon" href="~/SharedMedia/logo/logowithoutbackground.png" sizes="48x48">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -271,7 +271,7 @@
                             <div class="course-card" data-course-id="@course.CourseId">
                                 <div class="course-image">
                                     <img src="@course.CoursePicture" alt="@course.CourseName" loading="lazy" 
-                                         onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
+                                         onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
                                     @if (course.Price > 0)
                                     {
                                         <div class="course-price">$@course.Price.ToString("N0")</div>
@@ -280,6 +280,7 @@
                                     {
                                         <div class="course-price free">Free</div>
                                     }
+
                                 </div>
                                 <div class="course-details">
                                     <div class="course-categories">
@@ -361,10 +362,49 @@
                                         }
                                         else
                                         {
-                                            <a href="@Url.Action("Details", "Course", new { id = course.CourseId })" 
-                                               class="btn btn-sm btn-outline-primary" title="Learn More">
-                                                <i class="fas fa-info-circle"></i> Learn More
-                                            </a>
+                                            @* Show status for everyone, not just instructor *@
+                                            @if (course.ApprovalStatus?.ToLower() == "pending")
+                                            {
+                                                <span class="btn btn-sm btn-warning" title="Course Status">
+                                                    <i class="fas fa-clock"></i> Pending
+                                                </span>
+                                            }
+                                            else if (course.ApprovalStatus?.ToLower() == "denied" || course.ApprovalStatus?.ToLower() == "rejected")
+                                            {
+                                                <span class="btn btn-sm btn-danger" title="Course Status">
+                                                    <i class="fas fa-times-circle"></i> Rejected
+                                                </span>
+                                            }
+                                            else if (course.CourseStatus == 4)
+                                            {
+                                                <span class="btn btn-sm btn-secondary" title="Course Status">
+                                                    <i class="fas fa-trash"></i> Deleted
+                                                </span>
+                                            }
+                                            else if (course.ApprovalStatus?.ToLower() == "draft")
+                                            {
+                                                <span class="btn btn-sm btn-info" title="Course Status">
+                                                    <i class="fas fa-edit"></i> Draft
+                                                </span>
+                                            }
+                                            else if (course.ApprovalStatus?.ToLower() == "approved")
+                                            {
+                                                <span class="btn btn-sm btn-success" title="Course Status">
+                                                    <i class="fas fa-check-circle"></i> Approved
+                                                </span>
+                                            }
+                                            else if (string.IsNullOrEmpty(course.ApprovalStatus))
+                                            {
+                                                <span class="btn btn-sm btn-outline-info" title="Course Status">
+                                                    <i class="fas fa-edit"></i> Draft
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="btn btn-sm btn-outline-secondary" title="Course Status">
+                                                    <i class="fas fa-question-circle"></i> @(course.ApprovalStatus ?? "Unknown")
+                                                </span>
+                                            }
                                         }
                                     </div>
                                 </div>

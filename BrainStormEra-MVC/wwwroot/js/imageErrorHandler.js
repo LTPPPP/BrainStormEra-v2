@@ -4,10 +4,19 @@
  */
 document.addEventListener("DOMContentLoaded", function () {
   // Set default images for different contexts
-  const defaultProfileImage = "/img/defaults/default-avatar.svg";
-  const defaultCourseImage = "/img/defaults/default-course.svg";
-  const defaultAchievementImage = "/img/defaults/default-achievement.svg";
-  const defaultLogo = "/img/defaults/default-logo.svg";
+  const defaultProfileImage = "/SharedMedia/defaults/default-avatar.svg";
+const defaultCourseImage = "/SharedMedia/defaults/default-course.svg";
+const defaultAchievementImage = "/SharedMedia/defaults/default-achievement.svg";
+const defaultLogo = "/SharedMedia/defaults/default-logo.svg";
+
+  // SharedMedia constants for uploaded content
+  const SHARED_MEDIA_PATHS = {
+    avatars: "/SharedMedia/avatars/",
+    courses: "/SharedMedia/courses/",
+    documents: "/SharedMedia/documents/",
+    uploads: "/SharedMedia/uploads/",
+    images: "/SharedMedia/images/"
+  };
 
   // Preload default images to ensure they're available
   const defaultImages = [

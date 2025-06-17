@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Constants;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -12,14 +13,16 @@ namespace BusinessLogicLayer.Services
     {
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ILogger<AvatarService> _logger;
-        private const string AvatarDirectory = "img/profiles";
+        private readonly IMediaPathService _mediaPathService;
+        private const string MediaCategory = MediaConstants.Categories.Avatars;
         private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
         private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
 
-        public AvatarService(IWebHostEnvironment webHostEnvironment, ILogger<AvatarService> logger)
+        public AvatarService(IWebHostEnvironment webHostEnvironment, ILogger<AvatarService> logger, IMediaPathService mediaPathService)
         {
             _webHostEnvironment = webHostEnvironment;
             _logger = logger;
+            _mediaPathService = mediaPathService;
         }
 
         public async Task<(bool Success, string? ImagePath, string? ErrorMessage)> UploadAvatarAsync(IFormFile file, string userId)
@@ -46,11 +49,8 @@ namespace BusinessLogicLayer.Services
                 }
 
                 // Create upload directory if it doesn't exist
-                var uploadDir = Path.Combine(_webHostEnvironment.WebRootPath, AvatarDirectory);
-                if (!Directory.Exists(uploadDir))
-                {
-                    Directory.CreateDirectory(uploadDir);
-                }
+                _mediaPathService.EnsureDirectoryExists(MediaCategory);
+                var uploadDir = _mediaPathService.GetPhysicalPath(MediaCategory);
 
                 // Generate unique filename
                 var fileName = $"{userId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
@@ -78,7 +78,7 @@ namespace BusinessLogicLayer.Services
                 if (string.IsNullOrEmpty(imageFileName))
                     return Task.FromResult(true);
 
-                var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, AvatarDirectory, imageFileName);
+                var imagePath = Path.Combine(_mediaPathService.GetPhysicalPath(MediaCategory), imageFileName);
                 if (File.Exists(imagePath))
                 {
                     File.Delete(imagePath);
@@ -99,7 +99,7 @@ namespace BusinessLogicLayer.Services
             if (string.IsNullOrEmpty(imageFileName))
                 return "/Profile/GetAvatar"; // Return default avatar URL
 
-            return $"/{AvatarDirectory}/{imageFileName}";
+            return _mediaPathService.GetWebUrl(MediaCategory, imageFileName);
         }
 
         public bool AvatarExists(string? imageFileName)
@@ -107,7 +107,7 @@ namespace BusinessLogicLayer.Services
             if (string.IsNullOrEmpty(imageFileName))
                 return false;
 
-            var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, AvatarDirectory, imageFileName);
+            var imagePath = Path.Combine(_mediaPathService.GetPhysicalPath(MediaCategory), imageFileName);
             return File.Exists(imagePath);
         }
 

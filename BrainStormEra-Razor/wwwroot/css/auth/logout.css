@@ -1,0 +1,26 @@
+.logout-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  background-color: #f5f5f5;
+}
+
+.logout-box {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  text-align: center;
+  max-width: 400px;
+}
+
+.logout-box h2 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.logout-box p {
+  color: #666;
+  margin: 0;
+}

@@ -81,10 +81,7 @@ namespace BrainStormEra_MVC.Controllers
         /// <summary>
         /// Check if the current user is authenticated
         /// </summary>
-        protected bool IsAuthenticated => User?.Identity?.IsAuthenticated ?? false;        /// <summary>
-                                                                                           /// Check if the current user is an admin
-                                                                                           /// </summary>
-        protected bool IsAdmin => IsInRole("admin");
+        protected bool IsAuthenticated => User?.Identity?.IsAuthenticated ?? false;
 
         /// <summary>
         /// Check if the current user is an instructor

@@ -346,13 +346,13 @@ class CourseSearchManager {
                     <div class="course-image">
                         <img src="${course.coursePicture}" alt="${
           course.courseName
-        }" loading="lazy" onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
+        }" loading="lazy" onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
                         ${
                           course.price > 0
                             ? `<div class="course-price">$${course.price.toLocaleString()}</div>`
                             : `<div class="course-price free">Free</div>`
                         }
-                        ${this.generateStatusBadge(course)}
+
                     </div>
                     <div class="course-details">
                         <div class="course-categories">
@@ -399,19 +399,7 @@ class CourseSearchManager {
       .join("");
   }
 
-  generateStatusBadge(course) {
-    // Only show status badges for instructors/admins viewing special status courses
-    if (course.approvalStatus === "Pending") {
-      return '<div class="status-badge pending"><i class="fas fa-clock"></i> Pending</div>';
-    } else if (course.approvalStatus === "Denied") {
-      return '<div class="status-badge denied"><i class="fas fa-times-circle"></i> Denied</div>';
-    } else if (course.courseStatus === 4) { // Archived/Deleted
-      return '<div class="status-badge deleted"><i class="fas fa-trash"></i> Deleted</div>';
-    } else if (course.approvalStatus === "draft") {
-      return '<div class="status-badge draft"><i class="fas fa-edit"></i> Draft</div>';
-    }
-    return ""; // No badge for approved courses
-  }
+
 
   generateCourseActionButtons(course) {
     // Check if user is authenticated and is a learner
@@ -430,12 +418,23 @@ class CourseSearchManager {
         `;
       }
     } else {
-      return `
-        <a href="/Course/Details/${course.courseId}" 
-           class="btn btn-sm btn-outline-primary" title="Learn More">
-          <i class="fas fa-info-circle"></i> Learn More
-        </a>
-      `;
+      // Show status for everyone, not just admin/instructor
+      const status = course.approvalStatus?.toLowerCase();
+      if (status === "pending") {
+        return `<span class="btn btn-sm btn-warning" title="Course Status"><i class="fas fa-clock"></i> Pending</span>`;
+      } else if (status === "denied" || status === "rejected") {
+        return `<span class="btn btn-sm btn-danger" title="Course Status"><i class="fas fa-times-circle"></i> Rejected</span>`;
+      } else if (course.courseStatus === 4) {
+        return `<span class="btn btn-sm btn-secondary" title="Course Status"><i class="fas fa-trash"></i> Deleted</span>`;
+      } else if (status === "draft") {
+        return `<span class="btn btn-sm btn-info" title="Course Status"><i class="fas fa-edit"></i> Draft</span>`;
+      } else if (status === "approved") {
+        return `<span class="btn btn-sm btn-success" title="Course Status"><i class="fas fa-check-circle"></i> Approved</span>`;
+      } else if (!course.approvalStatus) {
+        return `<span class="btn btn-sm btn-outline-info" title="Course Status"><i class="fas fa-edit"></i> Draft</span>`;
+      } else {
+        return `<span class="btn btn-sm btn-outline-secondary" title="Course Status"><i class="fas fa-question-circle"></i> ${course.approvalStatus || 'Unknown'}</span>`;
+      }
     }
   }
 

@@ -6,6 +6,7 @@ using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using BusinessLogicLayer.Constants;
 
 namespace BusinessLogicLayer.Services
 {
@@ -47,7 +48,7 @@ namespace BusinessLogicLayer.Services
                 {
                     CourseId = c.CourseId,
                     CourseName = c.CourseName,
-                    CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                    CoursePicture = c.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                     Description = c.CourseDescription,
                     Price = c.Price,
                     CreatedBy = c.Author.FullName ?? c.Author.Username,
@@ -104,11 +105,11 @@ namespace BusinessLogicLayer.Services
                     CourseId = course.CourseId,
                     CourseName = course.CourseName,
                     CourseDescription = course.CourseDescription ?? "",
-                    CourseImage = course.CourseImage ?? "/img/defaults/default-course.svg",
+                    CourseImage = course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                     Price = course.Price,
                     AuthorId = course.AuthorId,
                     AuthorName = course.Author.FullName ?? course.Author.Username,
-                    AuthorImage = course.Author.UserImage ?? "/img/defaults/default-avatar.svg",
+                    AuthorImage = course.Author.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
                     EstimatedDuration = course.EstimatedDuration ?? 0,
                     DifficultyLevel = GetDifficultyLevelText(course.DifficultyLevel),
                     Categories = course.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
@@ -181,7 +182,7 @@ namespace BusinessLogicLayer.Services
                     {
                         ReviewId = f.FeedbackId,
                         UserName = f.User.FullName ?? f.User.Username,
-                        UserImage = f.User.UserImage ?? "/img/defaults/default-avatar.svg",
+                        UserImage = f.User.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
                         StarRating = f.StarRating ?? 0,
                         ReviewComment = f.Comment ?? "",
                         ReviewDate = f.FeedbackCreatedAt,
@@ -208,11 +209,11 @@ namespace BusinessLogicLayer.Services
                     CourseId = course.CourseId,
                     CourseName = course.CourseName,
                     CourseDescription = course.CourseDescription ?? "",
-                    CourseImage = course.CourseImage ?? "/img/defaults/default-course.svg",
+                    CourseImage = course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                     Price = course.Price,
                     AuthorId = course.AuthorId,
                     AuthorName = course.Author.FullName ?? course.Author.Username,
-                    AuthorImage = course.Author.UserImage ?? "/img/defaults/default-avatar.svg",
+                    AuthorImage = course.Author.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
                     EstimatedDuration = course.EstimatedDuration ?? 0,
                     DifficultyLevel = GetDifficultyLevelText(course.DifficultyLevel),
                     Categories = course.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
@@ -285,7 +286,7 @@ namespace BusinessLogicLayer.Services
                     {
                         ReviewId = f.FeedbackId,
                         UserName = f.User.FullName ?? f.User.Username,
-                        UserImage = f.User.UserImage ?? "/img/defaults/default-avatar.svg",
+                        UserImage = f.User.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
                         StarRating = f.StarRating ?? 0,
                         ReviewComment = f.Comment ?? "",
                         ReviewDate = f.FeedbackCreatedAt,
@@ -343,7 +344,7 @@ namespace BusinessLogicLayer.Services
                     {
                         CourseId = c.CourseId,
                         CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                        CoursePicture = c.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                         Description = c.CourseDescription,
                         Price = c.Price,
                         CreatedBy = c.Author.FullName ?? c.Author.Username,
@@ -479,7 +480,7 @@ namespace BusinessLogicLayer.Services
                     {
                         CourseId = c.CourseId,
                         CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                        CoursePicture = c.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                         Description = c.CourseDescription,
                         Price = c.Price,
                         CreatedBy = c.Author.FullName ?? c.Author.Username,
@@ -651,7 +652,7 @@ namespace BusinessLogicLayer.Services
                     ApprovalStatus = "draft", // Course is in draft mode, not yet submitted for approval
                     CourseCreatedAt = DateTime.UtcNow,
                     CourseUpdatedAt = DateTime.UtcNow,
-                    CourseImage = "/img/defaults/default-course.svg" // Default image, will be updated if file is uploaded
+                    CourseImage = MediaConstants.Defaults.DefaultCoursePath // Default image, will be updated if file is uploaded
                 };
 
                 _context.Courses.Add(course);
@@ -969,7 +970,7 @@ namespace BusinessLogicLayer.Services
                     {
                         CourseId = c.CourseId,
                         CourseName = c.CourseName,
-                        CoursePicture = c.CourseImage ?? "/img/defaults/default-course.svg",
+                        CoursePicture = c.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                         Description = c.CourseDescription,
                         Price = c.Price,
                         CreatedBy = c.Author.FullName ?? c.Author.Username,

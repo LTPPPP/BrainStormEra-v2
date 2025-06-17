@@ -3,6 +3,7 @@ using DataAccessLayer.Repositories.Interfaces;
 using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
+using BusinessLogicLayer.Constants;
 
 namespace BusinessLogicLayer.Services
 {
@@ -39,7 +40,7 @@ namespace BusinessLogicLayer.Services
                 {
                     CourseId = e.CourseId,
                     CourseName = e.Course.CourseName,
-                    CourseImage = e.Course.CourseImage ?? "/img/defaults/default-course.svg",
+                    CourseImage = e.Course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                     AuthorName = e.Course.Author.FullName ?? e.Course.Author.Username,
                     CompletedDate = e.CertificateIssuedDate!.Value.ToDateTime(TimeOnly.MinValue),
                     EnrollmentDate = e.EnrollmentCreatedAt,
@@ -75,7 +76,7 @@ namespace BusinessLogicLayer.Services
                     CourseId = certificateData.CourseId,
                     CourseName = certificateData.Course.CourseName,
                     CourseDescription = certificateData.Course.CourseDescription ?? "",
-                    CourseImage = certificateData.Course.CourseImage ?? "/img/defaults/default-course.svg",
+                    CourseImage = certificateData.Course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                     LearnerName = certificateData.User.FullName ?? certificateData.User.Username,
                     LearnerEmail = certificateData.User.UserEmail,
                     InstructorName = certificateData.Course.Author.FullName ?? certificateData.Course.Author.Username,
@@ -154,7 +155,7 @@ namespace BusinessLogicLayer.Services
                 {
                     CourseId = e.CourseId,
                     CourseName = e.Course.CourseName,
-                    CourseImage = e.Course.CourseImage ?? "/img/defaults/default-course.svg",
+                    CourseImage = e.Course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
                     AuthorName = e.Course.Author.FullName ?? e.Course.Author.Username,
                     CompletedDate = e.CertificateIssuedDate!.Value.ToDateTime(TimeOnly.MinValue),
                     EnrollmentDate = e.EnrollmentCreatedAt,

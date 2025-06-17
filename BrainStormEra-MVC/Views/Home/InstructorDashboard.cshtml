@@ -10,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewData["Title"] - BrainStormEra</title>
-    <link rel="icon" type="image/x-icon" href="~/img/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="icon" type="image/x-icon" href="~/SharedMedia/logo/logowithoutbackground.png" sizes="48x48">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" href="~/css/layouts/base.css">
@@ -157,7 +157,7 @@
                                             <div class="course-card">
                                                 <div class="course-image">
                                                     <img src="@course.CoursePicture" alt="@course.CourseName"
-                                                        onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
+                                                        onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
                                                     @if (course.Price > 0)
                                                     {
                                                         <div class="course-price">$@course.Price</div>
@@ -166,10 +166,40 @@
                                                     {
                                                         <div class="course-price free">Free</div>
                                                     }
+
                                                 </div>
                                                 <div class="course-details">
                                                     <h3 class="course-title">@course.CourseName</h3>
                                                     <p class="course-students">@course.EnrollmentCount enrolled</p>
+                                                    @* Status display for instructor *@
+                                                    @if (course.ApprovalStatus?.ToLower() == "pending")
+                                                    {
+                                                        <p class="course-status text-warning"><i class="fas fa-clock"></i> Status: Pending</p>
+                                                    }
+                                                    else if (course.ApprovalStatus?.ToLower() == "denied" || course.ApprovalStatus?.ToLower() == "rejected")
+                                                    {
+                                                        <p class="course-status text-danger"><i class="fas fa-times-circle"></i> Status: Rejected</p>
+                                                    }
+                                                    else if (course.CourseStatus == 4)
+                                                    {
+                                                        <p class="course-status text-secondary"><i class="fas fa-trash"></i> Status: Deleted</p>
+                                                    }
+                                                    else if (course.ApprovalStatus?.ToLower() == "draft")
+                                                    {
+                                                        <p class="course-status text-info"><i class="fas fa-edit"></i> Status: Draft</p>
+                                                    }
+                                                    else if (course.ApprovalStatus?.ToLower() == "approved")
+                                                    {
+                                                        <p class="course-status text-success"><i class="fas fa-check-circle"></i> Status: Approved</p>
+                                                    }
+                                                    else if (string.IsNullOrEmpty(course.ApprovalStatus))
+                                                    {
+                                                        <p class="course-status text-info"><i class="fas fa-edit"></i> Status: Draft</p>
+                                                    }
+                                                    else
+                                                    {
+                                                        <p class="course-status text-muted"><i class="fas fa-question-circle"></i> Status: @(course.ApprovalStatus ?? "Unknown")</p>
+                                                    }
                                                     <div class="course-actions">
                                                         <a href="@Url.Action("Details", "Course", new { id = course.CourseId })"
                                                             class="btn btn-sm btn-outline-info" title="View Course Details">
@@ -198,8 +228,8 @@
                             else
                             {
                                 <div class="empty-state">
-                                    <img src="/img/empty-courses.svg" alt="No courses" class="empty-state-img"
-                                        onerror="this.onerror=null; this.src='/img/defaults/default-course.svg';">
+                                    <img src="/SharedMedia/static/empty-courses.svg" alt="No courses" class="empty-state-img"
+                                        onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
                                     <h3>No courses yet</h3>
                                     <p>Start creating your first course to share your knowledge with students!</p>
                                     <a href="@Url.Action("CreateCourse", "Course")" class="btn btn-primary">Create

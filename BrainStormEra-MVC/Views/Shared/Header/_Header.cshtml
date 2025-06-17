@@ -8,8 +8,8 @@
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
             <a class="navbar-brand" href="@Url.Action("Index", "Home")">
-                <img src="~/img/logo/logowithoutbackground.png" alt="BrainStormEra Logo" class="logo_img"
-                    onerror="this.onerror=null; this.src='/img/defaults/default-logo.svg';">
+                <img src="~/SharedMedia/logo/logowithoutbackground.png" alt="BrainStormEra Logo" class="logo_img"
+                    onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-logo.svg';">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,27 +20,16 @@
                     <li class="nav-item">
                         <a class="nav-link" href="@Url.Action("Index", "Home")">DASHBOARD</a>
                     </li>
-                    @if (User.Identity?.IsAuthenticated != true || (!User.IsInRole("admin") && !User.IsInRole("Admin")))
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link" href="@Url.Action("Index", "Course")">COURSE</a>
-                        </li>
-                    }
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Index", "Course")">COURSE</a>
+                    </li>
                     @if (User.Identity?.IsAuthenticated == true && User.IsInRole("instructor"))
                     {
                         <li class="nav-item">
                             <a class="nav-link" href="@Url.Action("Index", "User")">USER</a>
                         </li>
                     }
-                    @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("admin") || User.IsInRole("Admin")))
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link" href="@Url.Action("ManageUsers", "Admin")">MANAGE USERS</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="@Url.Action("ManageCourses", "Admin")">MANAGE COURSES</a>
-                        </li>
-                    }
+
                     @if (User.Identity?.IsAuthenticated == true && User.IsInRole("learner"))
                     {
                         <li class="nav-item">
@@ -74,8 +63,7 @@
                             <li class="dropdown-header">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span>Notifications</span>
-                                    @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("admin") ||
-                                                                        User.IsInRole("instructor")))
+                                    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("instructor"))
                                         {
                                             <a href="@Url.Action("Create", "Notification")" class="btn-create-notification"
                                                 title="Create New Notification">
@@ -101,7 +89,7 @@
                                 aria-expanded="false">
                                 <img src="@Url.Action("GetAvatar", "Auth", new { userId = User.FindFirst("UserId")?.Value })"
                                     alt="User Avatar"
-                                    onerror="this.onerror=null; this.src='/img/defaults/default-avatar.svg';">
+                                    onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-avatar.svg';">
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li class="dropdown-header">

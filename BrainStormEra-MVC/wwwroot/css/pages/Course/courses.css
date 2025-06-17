@@ -2341,6 +2341,12 @@
   border: 1px solid rgba(13, 110, 253, 0.3);
 }
 
+.status-badge.approved {
+  background: rgba(40, 167, 69, 0.95);
+  color: white;
+  border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
 /* Hover effects */
 .course-card:hover .status-badge {
   transform: scale(1.05);

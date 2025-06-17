@@ -241,7 +241,7 @@
   function preloadImages() {
     // Preload background image if it exists
     const bgImage = new Image();
-    bgImage.src = "/img/login-bg.jpg";
+            bgImage.src = "/SharedMedia/static/login-bg.jpg";
   }
 
   /**
