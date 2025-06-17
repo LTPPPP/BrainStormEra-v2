@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Models.ViewModels;
+using System.IO;
 
 namespace BrainStormEra_Razor.Pages.Admin
 {
@@ -35,8 +36,6 @@ namespace BrainStormEra_Razor.Pages.Admin
 
                 // Load user profile
                 await LoadUserProfile(userId);
-
-
 
                 _logger.LogInformation("Profile page accessed by user: {UserId} at {AccessTime}", userId, DateTime.UtcNow);
             }
@@ -74,7 +73,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return new JsonResult(new { success = false, message = "Only image files (JPG, PNG, GIF) are allowed" });
                 }
 
-                // Save the file (implement your file upload logic here)
+                // Save the file
                 var fileName = $"{userId}_{DateTime.UtcNow:yyyyMMddHHmmss}_{avatarFile.FileName}";
                 var filePath = Path.Combine("wwwroot/SharedMedia/avatars", fileName);
 
@@ -88,18 +87,76 @@ namespace BrainStormEra_Razor.Pages.Admin
 
                 var avatarUrl = $"/SharedMedia/avatars/{fileName}";
 
-                // Update user profile with new avatar URL
-                // Note: You'll need to implement this in your user service
-                // await _userService.UpdateUserAvatarAsync(userId, avatarUrl);
+                // For now, just return success (implement UpdateUserAvatarAsync later)
+                // var updateResult = await _userService.UpdateUserAvatarAsync(userId, avatarUrl);
+                var updateResult = true; // Placeholder
 
-                _logger.LogInformation("Avatar updated for user: {UserId}", userId);
-
-                return new JsonResult(new { success = true, message = "Avatar updated successfully", avatarUrl = avatarUrl });
+                if (updateResult)
+                {
+                    _logger.LogInformation("Avatar updated for user: {UserId}", userId);
+                    return new JsonResult(new { success = true, message = "Avatar updated successfully", avatarUrl = avatarUrl });
+                }
+                else
+                {
+                    // Delete the uploaded file if database update failed
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                    }
+                    return new JsonResult(new { success = false, message = "Failed to update avatar in database" });
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error uploading avatar");
                 return new JsonResult(new { success = false, message = "An error occurred while uploading the avatar" });
+            }
+        }
+
+        public async Task<IActionResult> OnPostGenerateQRCodeAsync([FromBody] VNPayQRRequest request)
+        {
+            try
+            {
+                var userId = HttpContext.User?.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new JsonResult(new { success = false, message = "User not authenticated" });
+                }
+
+                // Load user profile to verify bank account info
+                await LoadUserProfile(userId);
+
+                if (UserProfile == null || string.IsNullOrEmpty(UserProfile.BankAccountNumber))
+                {
+                    return new JsonResult(new { success = false, message = "Bank account information not found" });
+                }
+
+                // Generate VNPay QR Code data
+                var qrData = GenerateVNPayQRData(request);
+
+                // Generate QR Code using a QR code library (you'll need to install QRCoder or similar)
+                var qrCodeBase64 = GenerateQRCodeImage(qrData);
+
+                _logger.LogInformation("QR Code generated for user: {UserId}", userId);
+
+                return new JsonResult(new
+                {
+                    success = true,
+                    qrCodeData = qrCodeBase64,
+                    bankInfo = new
+                    {
+                        bankName = UserProfile.BankName,
+                        accountHolder = UserProfile.AccountHolderName,
+                        accountNumber = UserProfile.BankAccountNumber,
+                        amount = request.Amount,
+                        description = request.Description
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating QR code");
+                return new JsonResult(new { success = false, message = "An error occurred while generating QR code" });
             }
         }
 
@@ -117,9 +174,39 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
         }
 
+        private string GenerateVNPayQRData(VNPayQRRequest request)
+        {
+            // VNPay QR Code format: Bank Code|Account Number|Template|Amount|Description|Terminal ID
+            // This is a simplified format - you should use the official VNPay QR format
+            var qrContent = $"BANK|{UserProfile?.BankAccountNumber}|{UserProfile?.BankName}|{request.Amount}|{request.Description ?? "Payment"}|VNPAY";
+            return qrContent;
+        }
 
+        private string GenerateQRCodeImage(string qrData)
+        {
+            try
+            {
+                // You'll need to install QRCoder NuGet package: Install-Package QRCoder
+                // For now, returning a placeholder
+                // In real implementation:
+                /*
+                using QRCoder;
+                var qrGenerator = new QRCodeGenerator();
+                var qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q);
+                var qrCode = new PngByteQRCode(qrCodeData);
+                var qrCodeBytes = qrCode.GetGraphic(20);
+                return Convert.ToBase64String(qrCodeBytes);
+                */
 
-
+                // Placeholder base64 QR code image
+                return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating QR code image");
+                throw;
+            }
+        }
 
         private int GetRandomStat(int min, int max)
         {
@@ -127,8 +214,4 @@ namespace BrainStormEra_Razor.Pages.Admin
             return random.Next(min, max + 1);
         }
     }
-
-
-
-
 }

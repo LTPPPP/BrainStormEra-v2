@@ -43,9 +43,20 @@ namespace DataAccessLayer.Models.ViewModels
         public int CreatedCoursesCount { get; set; }
         public decimal TotalSpent { get; set; }
 
-        // Profile additional fields
+        // Profile additional fields from Account model
         public string? Bio { get; set; }
         public string? PhoneNumber { get; set; }
+        public string? UserAddress { get; set; }
+        public DateOnly? DateOfBirth { get; set; }
+        public short? Gender { get; set; }
+        public decimal? PaymentPoint { get; set; }
+
+        // Bank account information
+        public string? BankAccountNumber { get; set; }
+        public string? BankName { get; set; }
+        public string? AccountHolderName { get; set; }
+
+        // Additional profile fields
         public string? Location { get; set; }
         public string? Timezone { get; set; }
         public string? PreferredLanguage { get; set; }
@@ -59,6 +70,19 @@ namespace DataAccessLayer.Models.ViewModels
             "learner" => "bg-info",
             _ => "bg-secondary"
         };
+
+        public string GenderText => Gender switch
+        {
+            1 => "Male",
+            2 => "Female",
+            3 => "Other",
+            _ => "Not specified"
+        };
+
+        public string PaymentPointText => PaymentPoint?.ToString("N0") ?? "0";
+        public string BankAccountMasked => !string.IsNullOrEmpty(BankAccountNumber) && BankAccountNumber.Length > 4
+            ? $"****{BankAccountNumber.Substring(BankAccountNumber.Length - 4)}"
+            : "Not set";
     }
 
     public class AdminCoursesViewModel
@@ -279,5 +303,79 @@ namespace DataAccessLayer.Models.ViewModels
         public required string AchievementType { get; set; }
 
         public bool IsActive { get; set; } = true;
+    }
+
+    // Profile Management ViewModels
+    public class UpdateProfileRequest
+    {
+        [Required]
+        public required string UserId { get; set; }
+
+        [Required]
+        [StringLength(100)]
+        public required string FullName { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public required string Username { get; set; }
+
+        [Required]
+        [EmailAddress]
+        [StringLength(100)]
+        public required string UserEmail { get; set; }
+
+        [StringLength(500)]
+        public string? Bio { get; set; }
+
+        [Phone]
+        [StringLength(20)]
+        public string? PhoneNumber { get; set; }
+
+        [StringLength(200)]
+        public string? UserAddress { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateOnly? DateOfBirth { get; set; }
+
+        [Range(1, 3)]
+        public short? Gender { get; set; }
+
+        // Bank account information
+        [StringLength(50)]
+        public string? BankAccountNumber { get; set; }
+
+        [StringLength(100)]
+        public string? BankName { get; set; }
+
+        [StringLength(100)]
+        public string? AccountHolderName { get; set; }
+
+        // Additional fields
+        [StringLength(100)]
+        public string? Location { get; set; }
+
+        [StringLength(50)]
+        public string? Timezone { get; set; }
+
+        [StringLength(10)]
+        public string? PreferredLanguage { get; set; }
+    }
+
+    public class VNPayQRRequest
+    {
+        [Required]
+        public required string BankAccountNumber { get; set; }
+
+        [Required]
+        public required string BankName { get; set; }
+
+        [Required]
+        public required string AccountHolderName { get; set; }
+
+        [Range(1000, 50000000)]
+        public decimal Amount { get; set; } = 10000; // Default 10,000 VND
+
+        [StringLength(200)]
+        public string? Description { get; set; }
     }
 }

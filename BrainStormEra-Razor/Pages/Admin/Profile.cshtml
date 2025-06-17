@@ -83,6 +83,22 @@
                         <span>@Model.UserProfile?.UserEmail</span>
                     </div>
                     <div class="profile-item">
+                        <label>Phone</label>
+                        <span>@(!string.IsNullOrEmpty(Model.UserProfile?.PhoneNumber) ? Model.UserProfile.PhoneNumber : "Not set")</span>
+                    </div>
+                    <div class="profile-item">
+                        <label>Date of Birth</label>
+                        <span>@(Model.UserProfile?.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Not set")</span>
+                    </div>
+                    <div class="profile-item">
+                        <label>Gender</label>
+                        <span>@Model.UserProfile?.GenderText</span>
+                    </div>
+                    <div class="profile-item">
+                        <label>Address</label>
+                        <span>@(!string.IsNullOrEmpty(Model.UserProfile?.UserAddress) ? Model.UserProfile.UserAddress : "Not set")</span>
+                    </div>
+                    <div class="profile-item">
                         <label>Role</label>
                         <span class="badge bg-primary">@Model.UserProfile?.UserRole</span>
                     </div>
@@ -92,6 +108,45 @@
                             @(Model.UserProfile?.IsActive == true ? "Active" : "Inactive")
                         </span>
                     </div>
+                    <div class="profile-item">
+                        <label>Payment Points</label>
+                        <span class="badge bg-warning">@Model.UserProfile?.PaymentPointText VND</span>
+                    </div>
+                </div>
+
+                <div class="profile-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-university me-2"></i>Bank Account Information
+                    </h5>
+                    @if (!string.IsNullOrEmpty(Model.UserProfile?.BankAccountNumber))
+                    {
+                        <div class="profile-item">
+                            <label>Bank Name</label>
+                            <span>@Model.UserProfile.BankName</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>Account Holder</label>
+                            <span>@Model.UserProfile.AccountHolderName</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>Account Number</label>
+                            <span>@Model.UserProfile.BankAccountMasked</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>VNPay QR Code</label>
+                            <button type="button" class="btn btn-sm btn-success" onclick="generateQRCode()">
+                                <i class="fas fa-qrcode me-1"></i>Generate QR Code
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-3">
+                            <i class="fas fa-university fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No bank account information set</p>
+                            <small class="text-muted">Add your bank details to enable payment features</small>
+                        </div>
+                    }
                 </div>
 
 
@@ -165,6 +220,59 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="uploadAvatar()">
                     <i class="fas fa-upload me-2"></i>Upload Photo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VNPay QR Code Modal -->
+<div id="qrCodeModal" class="modal fade" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qrCodeModalLabel">
+                    <i class="fas fa-qrcode me-2"></i>VNPay QR Code
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="qr-code-container text-center">
+                            <div id="qrCodeDisplay" class="mb-3">
+                                <!-- QR Code will be generated here -->
+                            </div>
+                            <div class="qr-info">
+                                <h6>Bank Information</h6>
+                                <p><strong>Bank:</strong> <span id="qrBankName">@Model.UserProfile?.BankName</span></p>
+                                <p><strong>Account:</strong> <span id="qrAccountHolder">@Model.UserProfile?.AccountHolderName</span></p>
+                                <p><strong>Number:</strong> <span id="qrAccountNumber">@Model.UserProfile?.BankAccountNumber</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="qr-settings">
+                            <h6>QR Code Settings</h6>
+                            <div class="mb-3">
+                                <label for="qrAmount" class="form-label">Amount (VND)</label>
+                                <input type="number" class="form-control" id="qrAmount" value="10000" min="1000" max="50000000">
+                            </div>
+                            <div class="mb-3">
+                                <label for="qrDescription" class="form-label">Description</label>
+                                <input type="text" class="form-control" id="qrDescription" placeholder="Payment description" maxlength="200">
+                            </div>
+                            <button type="button" class="btn btn-primary w-100" onclick="refreshQRCode()">
+                                <i class="fas fa-sync-alt me-1"></i>Update QR Code
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="downloadQRCode()">
+                    <i class="fas fa-download me-2"></i>Download QR Code
                 </button>
             </div>
         </div>

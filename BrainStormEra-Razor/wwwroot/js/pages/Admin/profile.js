@@ -305,7 +305,157 @@ document.addEventListener('hidden.bs.modal', function (e) {
     }
 });
 
+// VNPay QR Code functionality
+async function generateQRCode() {
+    try {
+        const modal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+        modal.show();
+        
+        // Generate initial QR code
+        await refreshQRCode();
+    } catch (error) {
+        console.error('Error opening QR modal:', error);
+        showToast('Failed to open QR code modal', 'error');
+    }
+}
+
+async function refreshQRCode() {
+    try {
+        const amount = document.getElementById('qrAmount').value || 10000;
+        const description = document.getElementById('qrDescription').value || 'Payment';
+        
+        const bankName = document.getElementById('qrBankName').textContent;
+        const accountHolder = document.getElementById('qrAccountHolder').textContent;
+        const accountNumber = document.getElementById('qrAccountNumber').textContent;
+        
+        if (!bankName || !accountHolder || !accountNumber) {
+            showToast('Bank account information is incomplete', 'error');
+            return;
+        }
+        
+        const requestData = {
+            BankAccountNumber: accountNumber,
+            BankName: bankName,
+            AccountHolderName: accountHolder,
+            Amount: parseFloat(amount),
+            Description: description
+        };
+        
+        const response = await fetch('/admin/profile?handler=GenerateQRCode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': getAntiForgeryToken()
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Display QR code (for now, show a placeholder)
+            const qrDisplay = document.getElementById('qrCodeDisplay');
+            qrDisplay.innerHTML = `
+                <div class="qr-placeholder">
+                    <i class="fas fa-qrcode fa-5x text-primary mb-3"></i>
+                    <p class="text-muted">QR Code Generated</p>
+                    <small class="text-muted">Amount: ${amount.toLocaleString()} VND</small>
+                </div>
+            `;
+            
+            showToast('QR Code generated successfully', 'success');
+        } else {
+            showToast(result.message || 'Failed to generate QR code', 'error');
+        }
+    } catch (error) {
+        console.error('Error generating QR code:', error);
+        showToast('Failed to generate QR code', 'error');
+    }
+}
+
+async function downloadQRCode() {
+    try {
+        // In a real implementation, you would download the actual QR code image
+        showToast('QR Code download feature coming soon', 'info');
+    } catch (error) {
+        console.error('Error downloading QR code:', error);
+        showToast('Failed to download QR code', 'error');
+    }
+}
+
+// Enhanced avatar upload with better error handling
+async function uploadAvatar() {
+    const fileInput = document.getElementById('avatarFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showToast('Please select a file', 'error');
+        return;
+    }
+    
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('File size must be less than 2MB', 'error');
+        return;
+    }
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+        showToast('Only image files (JPG, PNG, GIF) are allowed', 'error');
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('avatarFile', file);
+        
+        // Show loading state
+        const uploadBtn = document.querySelector('[onclick="uploadAvatar()"]');
+        const originalText = uploadBtn.innerHTML;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+        uploadBtn.disabled = true;
+        
+        const response = await fetch('/admin/profile?handler=UploadAvatar', {
+            method: 'POST',
+            headers: {
+                'RequestVerificationToken': getAntiForgeryToken()
+            },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update avatar images
+            const avatarImages = document.querySelectorAll('#profileAvatar, #avatarPreview, #previewAvatar');
+            avatarImages.forEach(img => {
+                if (img) img.src = result.avatarUrl;
+            });
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('avatarModal'));
+            modal.hide();
+            
+            showToast('Avatar updated successfully', 'success');
+        } else {
+            showToast(result.message || 'Failed to upload avatar', 'error');
+        }
+    } catch (error) {
+        console.error('Error uploading avatar:', error);
+        showToast('Failed to upload avatar', 'error');
+    } finally {
+        // Reset button
+        const uploadBtn = document.querySelector('[onclick="uploadAvatar()"]');
+        uploadBtn.innerHTML = originalText;
+        uploadBtn.disabled = false;
+    }
+}
+
 // Export functions for global access
 window.openAvatarModal = openAvatarModal;
 window.previewAvatar = previewAvatar;
-window.uploadAvatar = uploadAvatar; 
+window.uploadAvatar = uploadAvatar;
+window.generateQRCode = generateQRCode;
+window.refreshQRCode = refreshQRCode;
+window.downloadQRCode = downloadQRCode; 

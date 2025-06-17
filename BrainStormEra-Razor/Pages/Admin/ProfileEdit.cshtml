@@ -1,1 +1,252 @@
- 
+@page "/admin/profile/edit"
+@model BrainStormEra_Razor.Pages.Admin.ProfileEditModel
+@{
+    ViewData["Title"] = "Edit Profile";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pages/Admin/profile.css" asp-append-version="true" />
+}
+
+<div class="profile-edit-container">
+    <!-- Success/Error Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2><i class="fas fa-user-edit me-2"></i>Edit Profile</h2>
+                <p class="text-muted">Update your personal information and settings</p>
+            </div>
+            <a href="/admin/profile" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Profile
+            </a>
+        </div>
+    </div>
+
+    <form method="post" asp-page-handler="UpdateProfile" class="profile-edit-form">
+        <div class="row">
+            <!-- Left Column - Basic Information -->
+            <div class="col-lg-8">
+                <div class="profile-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-user me-2"></i>Basic Information
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="FullName" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                <input asp-for="FullName" class="form-control" required maxlength="100">
+                                <span asp-validation-for="FullName" class="text-danger"></span>
+                            </div>
+                        </div>
+                                                 <div class="col-md-6">
+                             <div class="mb-3">
+                                 <label asp-for="Username" class="form-label">Username</label>
+                                 <input asp-for="Username" class="form-control" readonly disabled>
+                                 <div class="form-text">Username cannot be changed</div>
+                             </div>
+                         </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="UserEmail" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input asp-for="UserEmail" type="email" class="form-control" required maxlength="100">
+                                <span asp-validation-for="UserEmail" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
+                                <input asp-for="PhoneNumber" type="tel" class="form-control" maxlength="20">
+                                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="DateOfBirth" class="form-label">Date of Birth</label>
+                                <input asp-for="DateOfBirth" type="date" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Gender" class="form-label">Gender</label>
+                                <select asp-for="Gender" class="form-select">
+                                    <option value="">Select Gender</option>
+                                    <option value="1">Male</option>
+                                    <option value="2">Female</option>
+                                    <option value="3">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="UserAddress" class="form-label">Address</label>
+                        <textarea asp-for="UserAddress" class="form-control" rows="2" maxlength="200"></textarea>
+                    </div>
+
+                </div>
+
+                <!-- Bank Account Information -->
+                <div class="profile-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-university me-2"></i>Bank Account Information
+                    </h5>
+                    <p class="text-muted">Add your bank account details to enable payment features</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="BankName" class="form-label">Bank Name</label>
+                                <select asp-for="BankName" class="form-select">
+                                    <option value="">Select Bank</option>
+                                    <option value="Vietcombank">Vietcombank</option>
+                                    <option value="VietinBank">VietinBank</option>
+                                    <option value="BIDV">BIDV</option>
+                                    <option value="Agribank">Agribank</option>
+                                    <option value="Techcombank">Techcombank</option>
+                                    <option value="MBBank">MBBank</option>
+                                    <option value="VPBank">VPBank</option>
+                                    <option value="TPBank">TPBank</option>
+                                    <option value="Sacombank">Sacombank</option>
+                                    <option value="ACB">ACB</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="AccountHolderName" class="form-label">Account Holder Name</label>
+                                <input asp-for="AccountHolderName" class="form-control" maxlength="100" placeholder="Full name as on bank account">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="BankAccountNumber" class="form-label">Account Number</label>
+                        <input asp-for="BankAccountNumber" class="form-control" maxlength="50" placeholder="Enter your bank account number">
+                        <div class="form-text">This will be used for payment processing via VNPay</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Preview & Settings -->
+            <div class="col-lg-4">
+                <div class="profile-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-eye me-2"></i>Profile Preview
+                    </h5>
+                    <div class="profile-preview">
+                        <div class="text-center mb-3">
+                            <img src="@(!string.IsNullOrEmpty(Model.UserProfile?.UserImage) ? Model.UserProfile.UserImage : "/SharedMedia/defaults/default-avatar.svg")" 
+                                 alt="Profile Avatar" class="preview-avatar" id="previewAvatar" />
+                        </div>
+                        <div class="preview-info">
+                            <h6 id="previewName">@(Model.UserProfile?.FullName ?? "Full Name")</h6>
+                            <p class="text-muted" id="previewEmail">@(Model.UserProfile?.UserEmail ?? "Email")</p>
+                            <p class="text-muted" id="previewRole">@(Model.UserProfile?.UserRole ?? "Role")</p>
+                            
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div class="profile-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle me-2"></i>Profile Tips
+                    </h5>
+                                         <ul class="profile-tips">
+                         <li>Complete your profile to build trust with learners</li>
+                         <li>Add a professional photo for better recognition</li>
+                         <li>Verify your bank account for payment processing</li>
+                         <li>Update your contact information regularly</li>
+                         <li>Ensure all required fields are filled correctly</li>
+                     </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <div class="d-flex justify-content-between">
+                <a href="/admin/profile" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </a>
+                <div>
+                    <button type="button" class="btn btn-outline-primary me-2" onclick="resetForm()">
+                        <i class="fas fa-undo me-2"></i>Reset
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/js/pages/Admin/profile.js" asp-append-version="true"></script>
+    <script>
+                 // Real-time preview updates
+         document.addEventListener('DOMContentLoaded', function() {
+             const form = document.querySelector('.profile-edit-form');
+             const previewName = document.getElementById('previewName');
+             const previewEmail = document.getElementById('previewEmail');
+             
+             // Update preview on input change
+             form.addEventListener('input', function(e) {
+                 switch(e.target.name) {
+                     case 'FullName':
+                         previewName.textContent = e.target.value || 'Full Name';
+                         break;
+                     case 'UserEmail':
+                         previewEmail.textContent = e.target.value || 'Email';
+                         break;
+                 }
+             });
+            
+            // Form validation
+            form.addEventListener('submit', function(e) {
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            });
+        });
+        
+        function resetForm() {
+            if (confirm('Are you sure you want to reset all changes?')) {
+                location.reload();
+            }
+        }
+    </script>
+} 
