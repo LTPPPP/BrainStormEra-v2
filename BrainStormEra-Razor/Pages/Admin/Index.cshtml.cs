@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc;
 using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Models.ViewModels;
+using BusinessLogicLayer.Constants;
 
 namespace BrainStormEra_Razor.Pages.Admin
 {
@@ -52,16 +53,25 @@ namespace BrainStormEra_Razor.Pages.Admin
                     LoginTime = DateTime.UtcNow;
                 }
 
+                // Initialize DashboardData with default values
+                DashboardData.AdminName = AdminName ?? "Admin";
+                DashboardData.AdminImage = string.IsNullOrEmpty(User.FindFirst("Avatar")?.Value)
+                    ? MediaConstants.Defaults.DefaultAvatarPath
+                    : User.FindFirst("Avatar")?.Value ?? MediaConstants.Defaults.DefaultAvatarPath;
+
                 // Load dashboard data with error handling
                 if (!string.IsNullOrEmpty(UserId))
                 {
                     DashboardData = await _adminService.GetAdminDashboardAsync(UserId);
+                    // Ensure the admin name and image are still set after loading from service
+                    DashboardData.AdminName = AdminName ?? "Admin";
+                    DashboardData.AdminImage = string.IsNullOrEmpty(User.FindFirst("Avatar")?.Value)
+                        ? MediaConstants.Defaults.DefaultAvatarPath
+                        : User.FindFirst("Avatar")?.Value ?? MediaConstants.Defaults.DefaultAvatarPath;
                 }
                 else
                 {
                     _logger.LogWarning("User ID not found in claims");
-                    // Initialize with default data
-                    DashboardData.AdminName = AdminName;
                 }
 
                 _logger.LogInformation("Admin dashboard accessed by: {AdminName} at {AccessTime}", AdminName, DateTime.UtcNow);
@@ -71,6 +81,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 _logger.LogError(ex, "Error loading dashboard data for user: {UserId}", UserId);
                 // Initialize with default data on error
                 DashboardData.AdminName = AdminName ?? "Admin";
+                DashboardData.AdminImage = MediaConstants.Defaults.DefaultAvatarPath;
                 // Consider adding error message to view
             }
         }

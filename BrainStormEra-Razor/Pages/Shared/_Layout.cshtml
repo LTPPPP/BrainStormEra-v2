@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - BrainStormEra Admin</title>
+    <link rel="icon" type="image/x-icon" href="/SharedMedia/logo/logowithoutbackground.png" sizes="48x48">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/BrainStormEra_Razor.styles.css" asp-append-version="true" />
@@ -15,7 +16,12 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
-                <a class="navbar-brand" href="/">BrainStormEra Admin</a>
+                <a class="navbar-brand" href="/">
+                    <img src="/SharedMedia/logo/logowithoutbackground.png" alt="BrainStormEra Logo" 
+                         style="height: 32px; margin-right: 8px;" 
+                         onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-logo.svg';" />
+                    BrainStormEra Admin
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                     aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>

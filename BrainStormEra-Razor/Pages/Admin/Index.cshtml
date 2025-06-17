@@ -20,7 +20,8 @@
         <div class="header-right">
             <div class="admin-info">
                 <div class="admin-avatar">
-                    <img src="@Model.DashboardData.AdminImage" alt="Admin Avatar" />
+                    <img src="@Model.DashboardData.AdminImage" alt="Admin Avatar" 
+                         onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-avatar.svg';" />
                 </div>
                 <div class="admin-details">
                     <span class="admin-name">Welcome, @Model.AdminName</span>

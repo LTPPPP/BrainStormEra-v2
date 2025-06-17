@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using DataAccessLayer.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using BusinessLogicLayer;
+using BusinessLogicLayer.Constants;
 
 namespace BrainStormEra_Razor
 {
@@ -76,12 +77,48 @@ namespace BrainStormEra_Razor
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
+            // Configure additional static files from SharedMedia folder
+            var sharedMediaPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "SharedMedia");
+            var absoluteSharedMediaPath = Path.GetFullPath(sharedMediaPath);
+
+            if (Directory.Exists(absoluteSharedMediaPath))
+            {
+                app.UseStaticFiles(new StaticFileOptions
+                {
+                    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(absoluteSharedMediaPath),
+                    RequestPath = "/SharedMedia",
+                    ServeUnknownFileTypes = true
+                });
+                Console.WriteLine($"SharedMedia configured at: {absoluteSharedMediaPath}");
+            }
+            else
+            {
+                Console.WriteLine($"Warning: SharedMedia directory not found at: {absoluteSharedMediaPath}");
+            }
+
             app.UseRouting();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapRazorPages();
+
+            // Debug endpoint for SharedMedia
+            app.MapGet("/debug/sharedmedia", () =>
+            {
+                var sharedMediaPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "SharedMedia");
+                var absoluteSharedMediaPath = Path.GetFullPath(sharedMediaPath);
+
+                return new
+                {
+                    SharedMediaPath = sharedMediaPath,
+                    AbsoluteSharedMediaPath = absoluteSharedMediaPath,
+                    Exists = Directory.Exists(absoluteSharedMediaPath),
+                    Files = Directory.Exists(absoluteSharedMediaPath)
+                        ? Directory.GetFiles(absoluteSharedMediaPath, "*", SearchOption.AllDirectories).Take(10).ToArray()
+                        : Array.Empty<string>()
+                };
+            });
 
             await app.RunAsync();
         }
