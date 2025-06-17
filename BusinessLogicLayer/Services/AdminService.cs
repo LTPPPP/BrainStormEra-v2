@@ -512,7 +512,7 @@ namespace BusinessLogicLayer.Services
         }
 
         // Achievement Management Methods
-        public async Task<AdminAchievementsViewModel> GetAllAchievementsAsync(string? search = null, string? typeFilter = null, string? pointsFilter = null, int page = 1, int pageSize = 12)
+        public async Task<AdminAchievementsViewModel> GetAllAchievementsAsync(string? search = null, string? typeFilter = null, string? pointsFilter = null, int page = 1, int pageSize = 12, string? sortBy = "date_desc")
         {
             try
             {
@@ -537,8 +537,22 @@ namespace BusinessLogicLayer.Services
                 var achievements = filteredAchievements.ToList();
                 var totalAchievements = achievements.Count;
 
+                // Apply sorting
+                var sortedAchievements = sortBy?.ToLower() switch
+                {
+                    "name_asc" => achievements.OrderBy(a => a.AchievementName),
+                    "name_desc" => achievements.OrderByDescending(a => a.AchievementName),
+                    "date_asc" => achievements.OrderBy(a => a.AchievementCreatedAt),
+                    "date_desc" => achievements.OrderByDescending(a => a.AchievementCreatedAt),
+                    "type_asc" => achievements.OrderBy(a => a.AchievementType),
+                    "type_desc" => achievements.OrderByDescending(a => a.AchievementType),
+                    "awarded_desc" => achievements.OrderByDescending(a => a.UserAchievements?.Count ?? 0),
+                    "awarded_asc" => achievements.OrderBy(a => a.UserAchievements?.Count ?? 0),
+                    _ => achievements.OrderByDescending(a => a.AchievementCreatedAt) // default to newest first
+                };
+
                 // Apply pagination
-                var paginatedAchievements = achievements
+                var paginatedAchievements = sortedAchievements
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();
@@ -564,11 +578,12 @@ namespace BusinessLogicLayer.Services
 
                         AchievementCreatedAt = a.AchievementCreatedAt,
                         IsActive = true, // Add this field to Achievement model if needed
-                        TimesAwarded = 0 // This would require joining with UserAchievement table
+                        TimesAwarded = a.UserAchievements?.Count ?? 0 // Get actual count from UserAchievements
                     }).ToList(),
                     SearchQuery = search,
                     TypeFilter = typeFilter,
                     PointsFilter = pointsFilter,
+                    SortBy = sortBy,
                     CurrentPage = page,
                     PageSize = pageSize,
                     TotalPages = (int)Math.Ceiling((double)totalAchievements / pageSize),

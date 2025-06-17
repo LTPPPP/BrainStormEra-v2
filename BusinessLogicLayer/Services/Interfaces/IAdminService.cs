@@ -19,7 +19,7 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<bool> DeleteCourseAsync(string courseId);
 
         // Achievement Management
-        Task<AdminAchievementsViewModel> GetAllAchievementsAsync(string? search = null, string? typeFilter = null, string? pointsFilter = null, int page = 1, int pageSize = 12);
+        Task<AdminAchievementsViewModel> GetAllAchievementsAsync(string? search = null, string? typeFilter = null, string? pointsFilter = null, int page = 1, int pageSize = 12, string? sortBy = "date_desc");
         Task<AdminAchievementViewModel?> GetAchievementByIdAsync(string achievementId);
         Task<(bool Success, string? AchievementId)> CreateAchievementAsync(CreateAchievementRequest request, string? adminId = null);
         Task<bool> UpdateAchievementAsync(UpdateAchievementRequest request, string? adminId = null);

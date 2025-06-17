@@ -44,10 +44,24 @@
                     <label for="typeFilter"><i class="fas fa-tag"></i> Achievement Type:</label>
                     <select id="typeFilter" name="TypeFilter">
                         <option value="">All Types</option>
-                        <option value="course" selected="@(Model.TypeFilter == "course")">Course Completion</option>
-                        <option value="quiz" selected="@(Model.TypeFilter == "quiz")">Quiz Achievement</option>
-                        <option value="special" selected="@(Model.TypeFilter == "special")">Special Achievement</option>
-                        <option value="milestone" selected="@(Model.TypeFilter == "milestone")">Milestone</option>
+                        <option value="course_completion" selected="@(Model.TypeFilter == "course_completion")">Course Completion</option>
+                        <option value="first_course" selected="@(Model.TypeFilter == "first_course")">First Course</option>
+                        <option value="quiz_master" selected="@(Model.TypeFilter == "quiz_master")">Quiz Master</option>
+                        <option value="streak" selected="@(Model.TypeFilter == "streak")">Streak Achievement</option>
+                        <option value="instructor" selected="@(Model.TypeFilter == "instructor")">Instructor Achievement</option>
+                        <option value="student_engagement" selected="@(Model.TypeFilter == "student_engagement")">Student Engagement</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="sortBy"><i class="fas fa-sort"></i> Sort By:</label>
+                    <select id="sortBy" name="SortBy">
+                        <option value="name_asc" selected="@(Model.SortBy == "name_asc")">Name (A-Z)</option>
+                        <option value="name_desc" selected="@(Model.SortBy == "name_desc")">Name (Z-A)</option>
+                        <option value="date_desc" selected="@(Model.SortBy == "date_desc")">Newest First</option>
+                        <option value="date_asc" selected="@(Model.SortBy == "date_asc")">Oldest First</option>
+                        <option value="type_asc" selected="@(Model.SortBy == "type_asc")">Type (A-Z)</option>
+                        <option value="awarded_desc" selected="@(Model.SortBy == "awarded_desc")">Most Awarded</option>
                     </select>
                 </div>
 
@@ -144,7 +158,7 @@
                 <div class="pagination">
                     @if (Model.AchievementsData.HasPreviousPage)
                     {
-                        <a href="?currentPage=@(Model.CurrentPage - 1)&searchQuery=@Model.SearchQuery&typeFilter=@Model.TypeFilter">
+                        <a href="?currentPage=@(Model.CurrentPage - 1)&searchQuery=@Model.SearchQuery&typeFilter=@Model.TypeFilter&sortBy=@Model.SortBy">
                             <i class="fas fa-chevron-left"></i> Previous
                         </a>
                     }
@@ -163,13 +177,13 @@
                         }
                         else
                         {
-                            <a href="?currentPage=@i&searchQuery=@Model.SearchQuery&typeFilter=@Model.TypeFilter">@i</a>
+                            <a href="?currentPage=@i&searchQuery=@Model.SearchQuery&typeFilter=@Model.TypeFilter&sortBy=@Model.SortBy">@i</a>
                         }
                     }
 
                     @if (Model.AchievementsData.HasNextPage)
                     {
-                        <a href="?currentPage=@(Model.CurrentPage + 1)&searchQuery=@Model.SearchQuery&typeFilter=@Model.TypeFilter">
+                        <a href="?currentPage=@(Model.CurrentPage + 1)&searchQuery=@Model.SearchQuery&typeFilter=@Model.TypeFilter&sortBy=@Model.SortBy">
                             Next <i class="fas fa-chevron-right"></i>
                         </a>
                     }

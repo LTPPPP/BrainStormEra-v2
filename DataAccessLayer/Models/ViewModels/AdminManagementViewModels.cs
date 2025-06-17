@@ -323,6 +323,7 @@ namespace DataAccessLayer.Models.ViewModels
         public string? SearchQuery { get; set; }
         public string? TypeFilter { get; set; }
         public string? PointsFilter { get; set; }
+        public string? SortBy { get; set; } = "date_desc";
         public int CurrentPage { get; set; } = 1;
         public int TotalPages { get; set; }
         public int TotalAchievements { get; set; }

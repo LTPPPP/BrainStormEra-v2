@@ -23,7 +23,8 @@ namespace BrainStormEra_Razor.Pages.Admin
         [BindProperty(SupportsGet = true)]
         public string? TypeFilter { get; set; }
 
-
+        [BindProperty(SupportsGet = true)]
+        public string? SortBy { get; set; } = "date_desc";
 
         [BindProperty(SupportsGet = true)]
         public int CurrentPage { get; set; } = 1;
@@ -48,12 +49,13 @@ namespace BrainStormEra_Razor.Pages.Admin
                 if (!string.IsNullOrEmpty(UserId))
                 {
                     AchievementsData = await _adminService.GetAllAchievementsAsync(
-                        search: SearchQuery,
-                        typeFilter: TypeFilter,
-                        pointsFilter: null,
-                        page: CurrentPage,
-                        pageSize: PageSize
-                    );
+    search: SearchQuery,
+    typeFilter: TypeFilter,
+    pointsFilter: null,
+    page: CurrentPage,
+    pageSize: PageSize,
+    sortBy: SortBy
+);
                 }
                 else
                 {
