@@ -102,153 +102,91 @@
 
     <!-- Main Content -->
     <div class="container main-content">
-        <!-- Filters Section -->
-        <div class="filters-section">
-            <div class="row align-items-center mb-3">
-                <div class="col-lg-6">
-                    <!-- Separate Search Bars -->
-                    <div class="search-form">
-                        <!-- Course Search -->
-                        <div class="search-wrapper mb-2">
-                            <input type="text" id="courseSearchInput" class="form-control search-input" 
-                                   placeholder="Search by course name, description, instructor..." value="@Model.CurrentSearch">
-                            <button type="button" id="clearCourseSearch" class="clear-search-btn" style="display: none;">
-                                <i class="fas fa-times"></i>
-                            </button>
-                            <button type="button" id="courseSearchBtn" class="search-btn">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                        <!-- Category Search -->
-                        <div class="search-wrapper">
-                            <input type="text" id="categorySearchInput" class="form-control search-input" 
-                                   placeholder="Search by category name..." value="">
-                            <button type="button" id="clearCategorySearch" class="clear-search-btn" style="display: none;">
-                                <i class="fas fa-times"></i>
-                            </button>
-                            <button type="button" id="categorySearchBtn" class="search-btn">
-                                <i class="fas fa-tags"></i>
-                            </button>
+        <!-- Simple Filters Section -->
+        <div class="simple-filters-section">
+            <div class="container-fluid">
+                <!-- Search Bar -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="search-container">
+                            <div class="input-group">
+                                <input type="text" id="courseSearchInput" class="form-control" 
+                                       placeholder="Search courses..." value="@Model.CurrentSearch">
+                                <button class="btn btn-outline-secondary" type="button" id="courseSearchBtn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3">
-                    <!-- Sort Options -->
-                    <div class="sort-section">
-                        <div class="sort-wrapper">
-                            <label for="sortSelect" class="sort-label">
-                                <i class="fas fa-sort-amount-down"></i>
-                                Sort by
-                            </label>
-                            <select id="sortSelect" class="form-select custom-select">
-                                <option value="newest">Newest First</option>
-                                <option value="name_asc">Name A-Z</option>
-                                <option value="name_desc">Name Z-A</option>
-                                <option value="price_asc">Price Low to High</option>
-                                <option value="price_desc">Price High to Low</option>
-                                <option value="popular">Most Popular</option>
-                                <option value="rating">Highest Rated</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3">
-                    <div class="results-info">
-                        <span class="results-count" id="resultsCount">@Model.TotalCourses courses found</span>
-                        <div class="filter-controls">
-                            <button class="btn filter-control-btn" type="button" data-bs-toggle="collapse" 
-                                    data-bs-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
-                                <i class="fas fa-filter"></i>
-                                <span>Advanced Filters</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Advanced Filters (Collapsible) -->
-            <div class="collapse" id="advancedFilters">
-                <div class="advanced-filters-card mb-3">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <!-- Category Filter -->
-                            <div class="filter-group">
-                                <label class="filter-label">
-                                    <i class="fas fa-tags"></i> Category
-                                </label>
-                                <div class="category-filter">
-                                    <select id="categoryFilter" class="form-select">
-                                        <option value="">All Categories</option>
-                                        @foreach (var category in Model.Categories)
-                                        {
-                                            <option value="@category.CategoryName" selected="@(Model.SelectedCategory == category.CategoryName)">
-                                                @category.CategoryName (@category.CourseCount)
-                                            </option>
-                                        }
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <!-- Price Range Filter -->
-                            <div class="filter-group">
-                                <label class="filter-label">
-                                    <i class="fas fa-dollar-sign"></i> Price Range
-                                </label>
-                                <div class="price-filter">
-                                    <select id="priceFilter" class="form-select">
-                                        <option value="">All Prices</option>
-                                        <option value="free">Free</option>
-                                        <option value="0-50">$0 - $50</option>
-                                        <option value="50-100">$50 - $100</option>
-                                        <option value="100-200">$100 - $200</option>
-                                        <option value="200+">$200+</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <!-- Difficulty Level Filter -->
-                            <div class="filter-group">
-                                <label class="filter-label">
-                                    <i class="fas fa-chart-line"></i> Difficulty Level
-                                </label>
-                                <div class="difficulty-filter">
-                                    <select id="difficultyFilter" class="form-select">
-                                        <option value="">All Levels</option>
-                                        <option value="beginner">Beginner</option>
-                                        <option value="intermediate">Intermediate</option>
-                                        <option value="advanced">Advanced</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <!-- Duration Filter -->
-                            <div class="filter-group">
-                                <label class="filter-label">
-                                    <i class="fas fa-clock"></i> Course Duration
-                                </label>
-                                <div class="duration-filter">
-                                    <select id="durationFilter" class="form-select">
-                                        <option value="">Any Duration</option>
-                                        <option value="short">Short (< 2 hours)</option>
-                                        <option value="medium">Medium (2-10 hours)</option>
-                                        <option value="long">Long (10+ hours)</option>
-                                    </select>
-                                </div>
-                            </div>
+                <!-- Filter Row -->
+                <div class="row align-items-center mb-3">
+                    <div class="col-md-3">
+                        <label for="categoryFilter" class="form-label mb-1">Category</label>
+                        <select id="categoryFilter" class="form-select form-select-sm">
+                            <option value="">All Categories</option>
+                            @foreach (var category in Model.Categories)
+                            {
+                                <option value="@category.CategoryName" selected="@(Model.SelectedCategory == category.CategoryName)">
+                                    @category.CategoryName
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="priceFilter" class="form-label mb-1">Price</label>
+                        <select id="priceFilter" class="form-select form-select-sm">
+                            <option value="">All Prices</option>
+                            <option value="free">Free</option>
+                            <option value="0-50">$0 - $50</option>
+                            <option value="50-100">$50 - $100</option>
+                            <option value="100-200">$100 - $200</option>
+                            <option value="200+">$200+</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="difficultyFilter" class="form-label mb-1">Level</label>
+                        <select id="difficultyFilter" class="form-select form-select-sm">
+                            <option value="">All Levels</option>
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="sortSelect" class="form-label mb-1">Sort By</label>
+                        <select id="sortSelect" class="form-select form-select-sm">
+                            <option value="newest">Newest First</option>
+                            <option value="name_asc">Name A-Z</option>
+                            <option value="name_desc">Name Z-A</option>
+                            <option value="price_asc">Price Low to High</option>
+                            <option value="price_desc">Price High to Low</option>
+                            <option value="popular">Most Popular</option>
+                            <option value="rating">Highest Rated</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label mb-1">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                            <button id="clearAllFilters" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Filter Actions -->
-            <div class="filter-actions-only">
-                <button id="clearAllFilters" class="btn filter-control-btn clear-filters-btn">
-                    <i class="fas fa-times"></i>
-                    <span>Clear All Filters</span>
-                </button>
+                <!-- Results Info -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="results-summary">
+                            <span class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                <span id="resultsCount">@Model.TotalCourses courses found</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
