@@ -1,13 +1,27 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using BusinessLogicLayer.Services.Interfaces;
 
 namespace BrainStormEra_MVC.Controllers
 {
     /// <summary>
     /// Base controller to provide common functionality for accessing user information from authentication cookies
+    /// and URL hash handling
     /// </summary>
     public class BaseController : Controller
     {
+        protected readonly IUrlHashService? _urlHashService;
+
+        public BaseController()
+        {
+            // Default constructor for controllers that don't need URL hash
+        }
+
+        public BaseController(IUrlHashService urlHashService)
+        {
+            _urlHashService = urlHashService;
+        }
+
         /// <summary>
         /// Get the current logged-in user's ID from claims
         /// </summary>
@@ -123,6 +137,100 @@ namespace BrainStormEra_MVC.Controllers
         {
             return CurrentUserFullName ?? CurrentUsername ?? "Unknown User";
         }
+
+        #region URL Hash Helper Methods
+
+        /// <summary>
+        /// Decode hash ID from URL parameter to real ID
+        /// </summary>
+        /// <param name="hashId">Hash ID from URL</param>
+        /// <returns>Real ID</returns>
+        protected string DecodeHashId(string hashId)
+        {
+            if (_urlHashService == null || string.IsNullOrEmpty(hashId))
+                return hashId;
+
+            return _urlHashService.GetRealId(hashId);
+        }
+
+        /// <summary>
+        /// Encode real ID to hash for use in URL
+        /// </summary>
+        /// <param name="realId">Real ID</param>
+        /// <returns>Hash ID</returns>
+        protected string EncodeToHash(string realId)
+        {
+            if (_urlHashService == null || string.IsNullOrEmpty(realId))
+                return realId;
+
+            return _urlHashService.GetHash(realId);
+        }
+
+        /// <summary>
+        /// Encode multiple IDs to hash
+        /// </summary>
+        /// <param name="realIds">List of real IDs</param>
+        /// <returns>Dictionary mapping real ID to hash</returns>
+        protected Dictionary<string, string> EncodeIdsToHashes(IEnumerable<string> realIds)
+        {
+            if (_urlHashService == null)
+                return realIds.ToDictionary(id => id, id => id);
+
+            return _urlHashService.EncodeIds(realIds);
+        }
+
+        /// <summary>
+        /// Redirect to action with hash ID
+        /// </summary>
+        /// <param name="actionName">Action name</param>
+        /// <param name="realId">Real ID</param>
+        /// <returns>RedirectToActionResult</returns>
+        protected RedirectToActionResult RedirectToActionWithHash(string actionName, string realId)
+        {
+            var hashId = EncodeToHash(realId);
+            return RedirectToAction(actionName, new { id = hashId });
+        }
+
+        /// <summary>
+        /// Redirect to action with hash ID and controller
+        /// </summary>
+        /// <param name="actionName">Action name</param>
+        /// <param name="controllerName">Controller name</param>
+        /// <param name="realId">Real ID</param>
+        /// <returns>RedirectToActionResult</returns>
+        protected RedirectToActionResult RedirectToActionWithHash(string actionName, string controllerName, string realId)
+        {
+            var hashId = EncodeToHash(realId);
+            return RedirectToAction(actionName, controllerName, new { id = hashId });
+        }
+
+        /// <summary>
+        /// Redirect to action with hash ID and route values
+        /// </summary>
+        /// <param name="actionName">Action name</param>
+        /// <param name="controllerName">Controller name</param>
+        /// <param name="realId">Real ID</param>
+        /// <param name="routeValues">Other route values</param>
+        /// <returns>RedirectToActionResult</returns>
+        protected RedirectToActionResult RedirectToActionWithHash(string actionName, string controllerName, string realId, object routeValues)
+        {
+            var hashId = EncodeToHash(realId);
+            var routes = new Dictionary<string, object> { ["id"] = hashId };
+
+            // Merge with other route values
+            if (routeValues != null)
+            {
+                var properties = routeValues.GetType().GetProperties();
+                foreach (var prop in properties)
+                {
+                    routes[prop.Name] = prop.GetValue(routeValues) ?? "";
+                }
+            }
+
+            return RedirectToAction(actionName, controllerName, routes);
+        }
+
+        #endregion
     }
 }
 

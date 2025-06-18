@@ -125,6 +125,9 @@ namespace BrainStormEra_MVC
             // Register Media Path Service for centralized media path management
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
 
+            // Register URL Hash Service for secure URL handling
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUrlHashService, BusinessLogicLayer.Services.UrlHashServiceImproved>();
+
             // Seed services
             builder.Services.AddScoped<BusinessLogicLayer.Services.StatusSeedService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.LessonTypeSeedService>();

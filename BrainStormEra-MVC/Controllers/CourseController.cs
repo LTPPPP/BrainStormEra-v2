@@ -14,7 +14,8 @@ namespace BrainStormEra_MVC.Controllers
 
         public CourseController(
             CourseServiceImpl courseServiceImpl,
-            ILogger<CourseController> logger)
+            ILogger<CourseController> logger,
+            IUrlHashService urlHashService) : base(urlHashService)
         {
             _courseServiceImpl = courseServiceImpl;
             _logger = logger;
@@ -36,7 +37,15 @@ namespace BrainStormEra_MVC.Controllers
         [RequireAuthentication("You need to login to view course details. Please login to continue.")]
         public async Task<IActionResult> Details(string id, string? tab = null)
         {
-            var result = await _courseServiceImpl.GetCourseDetailsAsync(User, id, tab);
+            // Decode hash ID to real ID
+            var realId = DecodeHashId(id);
+
+            if (string.IsNullOrEmpty(realId))
+            {
+                return NotFound();
+            }
+
+            var result = await _courseServiceImpl.GetCourseDetailsAsync(User, realId, tab);
 
             if (!result.Success)
             {
@@ -46,6 +55,7 @@ namespace BrainStormEra_MVC.Controllers
             ViewBag.IsAuthor = result.IsAuthor;
             ViewBag.CurrentUserId = result.CurrentUserId;
             ViewBag.ActiveTab = result.ActiveTab;
+            ViewBag.CourseHashId = id; // Pass hash ID to view
 
             return View("~/Views/Courses/Details.cshtml", result.ViewModel);
         }
@@ -62,15 +72,18 @@ namespace BrainStormEra_MVC.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            // Redirect to Details action with courseId
-            return RedirectToAction("Details", new { id = courseId });
+            // Redirect to Details action with hash courseId
+            return RedirectToActionWithHash("Details", courseId);
         }
 
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> Enroll(string courseId)
         {
-            var result = await _courseServiceImpl.EnrollInCourseAsync(User, courseId);
+            // Decode hash ID to real ID if needed
+            var realCourseId = DecodeHashId(courseId);
+
+            var result = await _courseServiceImpl.EnrollInCourseAsync(User, realCourseId);
             return Json(new { success = result.Success, message = result.Message });
         }
 
@@ -171,7 +184,15 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "instructor")]
         public async Task<IActionResult> EditCourse(string id)
         {
-            var result = await _courseServiceImpl.GetCourseForEditAsync(User, id);
+            // Decode hash ID to real ID
+            var realId = DecodeHashId(id);
+
+            if (string.IsNullOrEmpty(realId))
+            {
+                return NotFound();
+            }
+
+            var result = await _courseServiceImpl.GetCourseForEditAsync(User, realId);
 
             if (!result.Success)
             {
@@ -180,6 +201,7 @@ namespace BrainStormEra_MVC.Controllers
             }
 
             ViewBag.CourseId = result.CourseId;
+            ViewBag.CourseHashId = id; // Pass hash ID to view
             return View("~/Views/Courses/EditCourse.cshtml", result.ViewModel);
         }
 
@@ -188,16 +210,25 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditCourse(string id, CreateCourseViewModel model)
         {
+            // Decode hash ID to real ID
+            var realId = DecodeHashId(id);
+
+            if (string.IsNullOrEmpty(realId))
+            {
+                return NotFound();
+            }
+
             if (!ModelState.IsValid)
             {
                 var viewModelResult = await _courseServiceImpl.GetCreateCourseViewModelAsync();
                 model.AvailableCategories = viewModelResult.ViewModel?.AvailableCategories ?? new List<CourseCategoryViewModel>();
                 TempData["ErrorMessage"] = "Please correct the errors below and try again.";
-                ViewBag.CourseId = id;
+                ViewBag.CourseId = realId;
+                ViewBag.CourseHashId = id;
                 return View("~/Views/Courses/EditCourse.cshtml", model);
             }
 
-            var result = await _courseServiceImpl.UpdateCourseAsync(User, id, model);
+            var result = await _courseServiceImpl.UpdateCourseAsync(User, realId, model);
 
             if (!result.Success)
             {
@@ -228,7 +259,15 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteCourse(string id)
         {
-            var result = await _courseServiceImpl.DeleteCourseAsync(User, id);
+            // Decode hash ID to real ID
+            var realId = DecodeHashId(id);
+
+            if (string.IsNullOrEmpty(realId))
+            {
+                return Json(new { success = false, message = "Invalid course ID" });
+            }
+
+            var result = await _courseServiceImpl.DeleteCourseAsync(User, realId);
             return Json(new { success = result.Success, message = result.Message });
         }
 
@@ -253,7 +292,10 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RequestCourseApproval(string courseId)
         {
-            var result = await _courseServiceImpl.RequestCourseApprovalAsync(User, courseId);
+            // Decode hash ID to real ID if needed
+            var realCourseId = DecodeHashId(courseId);
+
+            var result = await _courseServiceImpl.RequestCourseApprovalAsync(User, realCourseId);
             return Json(new { success = result.Success, message = result.Message });
         }
 

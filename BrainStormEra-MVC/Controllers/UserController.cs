@@ -8,12 +8,12 @@ using BrainStormEra_MVC.Filters;
 namespace BrainStormEra_MVC.Controllers
 {
     [Authorize(Roles = "Instructor,instructor")]
-    public class UserController : Controller
+    public class UserController : BaseController
     {
         private readonly IUserService _userService;
         private readonly ILogger<UserController> _logger;
 
-        public UserController(IUserService userService, ILogger<UserController> logger)
+        public UserController(IUserService userService, ILogger<UserController> logger, IUrlHashService urlHashService) : base(urlHashService)
         {
             _userService = userService;
             _logger = logger;
@@ -56,16 +56,23 @@ namespace BrainStormEra_MVC.Controllers
             try
             {
                 var instructorId = GetCurrentUserId();
-                if (string.IsNullOrEmpty(instructorId) || string.IsNullOrEmpty(userId))
+
+                // Decode hash ID to real ID
+                var realUserId = DecodeHashId(userId);
+
+                if (string.IsNullOrEmpty(instructorId) || string.IsNullOrEmpty(realUserId))
                 {
                     return NotFound();
                 }
 
-                var userDetail = await _userService.GetUserDetailForInstructorAsync(instructorId, userId);
+                var userDetail = await _userService.GetUserDetailForInstructorAsync(instructorId, realUserId);
                 if (userDetail == null)
                 {
                     return NotFound();
                 }
+
+                // Pass hash ID to view
+                ViewBag.UserHashId = userId;
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
@@ -89,12 +96,17 @@ namespace BrainStormEra_MVC.Controllers
             try
             {
                 var instructorId = GetCurrentUserId();
-                if (string.IsNullOrEmpty(instructorId) || string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(courseId))
+
+                // Decode hash IDs to real IDs
+                var realUserId = DecodeHashId(userId);
+                var realCourseId = DecodeHashId(courseId);
+
+                if (string.IsNullOrEmpty(instructorId) || string.IsNullOrEmpty(realUserId) || string.IsNullOrEmpty(realCourseId))
                 {
                     return Json(new { success = false, message = "Invalid parameters" });
                 }
 
-                var result = await _userService.UpdateUserEnrollmentStatusAsync(instructorId, userId, courseId, status);
+                var result = await _userService.UpdateUserEnrollmentStatusAsync(instructorId, realUserId, realCourseId, status);
 
                 if (result)
                 {
