@@ -54,7 +54,8 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICertificateRepo, DataAccessLayer.Repositories.CertificateRepo>();
 
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatbotRepo, DataAccessLayer.Repositories.ChatbotRepo>();
-            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();            // Register Services with SOLID principles - Now using BusinessLogicLayer
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();
+            // Register Services with SOLID principles - Now using BusinessLogicLayer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.UserService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseService, BusinessLogicLayer.Services.CourseService>();
 
@@ -87,7 +88,8 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.NotificationServiceImpl>();
 
             // Register Auth Service Implementation for business logic layer
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();            // Register Home Services for data access and business logic
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();
+            // Register Home Services for data access and business logic
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IHomeService, BusinessLogicLayer.Services.HomeService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.HomeServiceImpl>();
 
