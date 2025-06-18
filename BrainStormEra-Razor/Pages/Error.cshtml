@@ -1,26 +1,87 @@
-@page
-@model ErrorModel
+@model BrainStormEra_MVC.Models.ErrorViewModel
 @{
     ViewData["Title"] = "Error";
+    Layout = null;
+    var statusCode = Context.Response.StatusCode;
+    string errorMessage = "An error occurred while processing your request.";
+
+    if (ViewData["ErrorMessage"] != null)
+    {
+        errorMessage = ViewData["ErrorMessage"]?.ToString() ?? "An error occurred while processing your request.";
+    }
+    else if (Model?.RequestId != null)
+    {
+        errorMessage = $"Request ID: {Model.RequestId}";
+    }
+
+    if (statusCode == 404)
+    {
+        errorMessage = ViewData["ErrorMessage"]?.ToString() ?? "The page you're looking for doesn't exist.";
+    }
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<!DOCTYPE html>
+<html lang="en">
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@(statusCode != 0 ? statusCode.ToString() : "Error") - BrainStormEra</title>
+    <link rel="icon" type="image/x-icon" href="~/SharedMedia/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/pages/Error/error.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to the <strong>Development</strong> environment displays detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+<body>
+    <div class="container">
+        <div class="error">
+            <h1>@(statusCode != 0 ? statusCode.ToString() : "Error")</h1>
+            <p>@errorMessage</p>
+            <div class="error-buttons">
+                <a href="/" class="back-button"><i class="bi bi-house-door"></i> Home</a>
+                <a href="javascript:history.back()" class="back-button secondary"><i class="bi bi-arrow-left"></i> Go
+                    Back</a>
+            </div>
+        </div>
+        <div class="animation">
+            <div class="cube">
+                <div class="face front"></div>
+                <div class="face back"></div>
+                <div class="face left"></div>
+                <div class="face right"></div>
+                <div class="face top"></div>
+                <div class="face bottom"></div>
+            </div>
+        </div>
+        <div class="particles" id="particles"></div>
+    </div>
+    <script>
+        // Create random particles
+        document.addEventListener('DOMContentLoaded', function () {
+            const container = document.getElementById('particles');
+            const particleCount = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+
+                // Random size
+                const size = Math.random() * 5 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+
+                // Random position
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+
+                // Random animation delay
+                particle.style.animationDelay = `${Math.random() * 15}s`;
+
+                container.appendChild(particle);
+            }
+        });
+    </script>
+</body>
+
+</html>
