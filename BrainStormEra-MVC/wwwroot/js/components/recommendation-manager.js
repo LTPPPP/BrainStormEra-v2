@@ -22,16 +22,14 @@ class RecommendationManager {
         stats.stats.featuredCourses === 0 &&
         stats.stats.totalActiveCourses > 0
       ) {
-        console.log(
-          "No featured courses found, initializing recommendations..."
-        );
+
         await this.initialize();
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error("Error checking recommendation initialization:", error);
+
       return false;
     }
   }
@@ -80,10 +78,7 @@ class RecommendationManager {
       const result = await response.json();
 
       if (result.success) {
-        console.log(
-          "Recommendations initialized successfully:",
-          result.message
-        );
+
         this.initialized = true;
 
         // Refresh the page to show updated recommendations
@@ -91,12 +86,12 @@ class RecommendationManager {
           window.location.reload();
         }
       } else {
-        console.warn("Failed to initialize recommendations:", result.message);
+
       }
 
       return result;
     } catch (error) {
-      console.error("Error initializing recommendations:", error);
+
       return { success: false, message: error.message };
     }
   }
@@ -131,9 +126,7 @@ class RecommendationManager {
         "info"
       );
     } else {
-      console.log(
-        `Recommendation system ready: ${featuredCourses} featured courses available`
-      );
+
     }
   }
 
@@ -184,7 +177,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const emptyState = recommendedCoursesSection?.querySelector(".empty-state");
 
     if (emptyState) {
-      console.log("Empty recommendations detected, checking initialization...");
+
       const initialized =
         await window.recommendationManager.initializeIfNeeded();
 

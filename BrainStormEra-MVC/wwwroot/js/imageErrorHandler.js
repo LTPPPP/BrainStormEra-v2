@@ -5,9 +5,9 @@
 document.addEventListener("DOMContentLoaded", function () {
   // Set default images for different contexts
   const defaultProfileImage = "/SharedMedia/defaults/default-avatar.svg";
-const defaultCourseImage = "/SharedMedia/defaults/default-course.svg";
-const defaultAchievementImage = "/SharedMedia/defaults/default-achievement.svg";
-const defaultLogo = "/SharedMedia/defaults/default-logo.svg";
+  const defaultCourseImage = "/SharedMedia/defaults/default-course.svg";
+  const defaultAchievementImage = "/SharedMedia/defaults/default-achievement.svg";
+  const defaultLogo = "/SharedMedia/defaults/default-logo.svg";
 
   // SharedMedia constants for uploaded content
   const SHARED_MEDIA_PATHS = {
@@ -29,6 +29,7 @@ const defaultLogo = "/SharedMedia/defaults/default-logo.svg";
     const img = new Image();
     img.src = imageSrc;
   });
+  
   // Function to handle image error
   function handleImageError(img) {
     const imgSrc = img.src || "";
@@ -47,7 +48,9 @@ const defaultLogo = "/SharedMedia/defaults/default-logo.svg";
     const container = img.closest(".image-container") || img.parentElement;
     if (container) {
       container.classList.add("error");
-    } // Suppress console error for image loading (optional - remove comment to see errors)
+    }
+    
+    // Suppress console error for image loading (optional - remove comment to see errors)
     // console.warn(`Image failed to load: ${imgSrc}`);
 
     // Select appropriate default image based on context
@@ -58,13 +61,17 @@ const defaultLogo = "/SharedMedia/defaults/default-logo.svg";
       imgSrc.toLowerCase().includes("avatar") ||
       imgSrc.toLowerCase().includes("profile") ||
       imgClasses.includes("avatar") ||
-      imgClasses.includes("profile")
+      imgClasses.includes("profile") ||
+      imgClasses.includes("author-avatar") ||
+      imgClasses.includes("profile-image")
     ) {
       defaultImage = defaultProfileImage;
     } else if (
       imgAlt.toLowerCase().includes("course") ||
       imgSrc.toLowerCase().includes("course") ||
       imgClasses.includes("course") ||
+      imgClasses.includes("course-img") ||
+      imgClasses.includes("course-image") ||
       img.closest(".course-card") ||
       img.closest(".course-image")
     ) {
@@ -85,6 +92,7 @@ const defaultLogo = "/SharedMedia/defaults/default-logo.svg";
 
     // Set the default image
     img.src = defaultImage;
+    
     // Add subtle styling to indicate this is a fallback image
     img.style.opacity = "0.9";
     img.style.filter = "grayscale(10%)";
@@ -99,6 +107,7 @@ const defaultLogo = "/SharedMedia/defaults/default-logo.svg";
       }
     }, 100);
   }
+  
   // Add error handler to all images
   document.querySelectorAll("img").forEach((img) => {
     // Skip if already has error handler

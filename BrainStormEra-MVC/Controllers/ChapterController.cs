@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using BusinessLogicLayer.Services.Implementations;
+using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Models.ViewModels;
 
 namespace BrainStormEra_MVC.Controllers
@@ -12,7 +13,8 @@ namespace BrainStormEra_MVC.Controllers
 
         public ChapterController(
             ChapterServiceImpl chapterServiceImpl,
-            ILogger<ChapterController> logger)
+            ILogger<ChapterController> logger,
+            IUrlHashService urlHashService) : base(urlHashService)
         {
             _chapterServiceImpl = chapterServiceImpl;
             _logger = logger;
@@ -21,7 +23,9 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "instructor")]
         public async Task<IActionResult> CreateChapter(string courseId)
         {
-            var result = await _chapterServiceImpl.GetCreateChapterViewModelAsync(User, courseId);
+            // Decode hash ID to real ID
+            var realCourseId = DecodeHashId(courseId);
+            var result = await _chapterServiceImpl.GetCreateChapterViewModelAsync(User, realCourseId);
 
             if (!result.Success)
             {
@@ -71,7 +75,10 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteChapter(string id, string courseId)
         {
-            var result = await _chapterServiceImpl.DeleteChapterAsync(User, id, courseId);
+            // Decode hash IDs to real IDs
+            var realId = DecodeHashId(id);
+            var realCourseId = DecodeHashId(courseId);
+            var result = await _chapterServiceImpl.DeleteChapterAsync(User, realId, realCourseId);
 
             if (result.Success)
             {
@@ -83,13 +90,15 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["ErrorMessage"] = result.Message;
             }
 
-            return RedirectToAction("Details", "Course", new { id = courseId });
+            return RedirectToActionWithHash("Details", "Course", courseId);
         }
         [HttpGet]
         [Authorize(Roles = "instructor")]
         public async Task<IActionResult> EditChapter(string id)
         {
-            var result = await _chapterServiceImpl.GetChapterForEditAsync(User, id);
+            // Decode hash ID to real ID
+            var realId = DecodeHashId(id);
+            var result = await _chapterServiceImpl.GetChapterForEditAsync(User, realId);
 
             if (!result.Success)
             {
@@ -104,7 +113,9 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditChapter(string id, CreateChapterViewModel model)
         {
-            var result = await _chapterServiceImpl.UpdateChapterAsync(User, id, model);
+            // Decode hash ID to real ID
+            var realId = DecodeHashId(id);
+            var result = await _chapterServiceImpl.UpdateChapterAsync(User, realId, model);
 
             if (result.Success)
             {

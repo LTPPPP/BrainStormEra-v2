@@ -8,3 +8,13 @@ obj/
 # Settings
 appsettings.json
 appsettings.Development.json
+
+# Logs
+logs/
+
+# Files
+*.mdf
+*.ldf
+*.txt
+*.pdf
+*.mp3

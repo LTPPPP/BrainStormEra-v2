@@ -3,16 +3,14 @@ class CourseSearchManager {
   constructor() {
     this.currentFilters = {
       courseSearch: "",
-      categorySearch: "",
+      category: "",
       sortBy: "newest",
       price: "",
       difficulty: "",
-      duration: "",
       page: 1,
     };
 
     this.courseSearchTimeout = null;
-    this.categorySearchTimeout = null;
     this.isLoading = false;
 
     this.init();
@@ -28,7 +26,6 @@ class CourseSearchManager {
     const courseSearchInput = document.getElementById("courseSearchInput");
     if (courseSearchInput) {
       courseSearchInput.addEventListener("input", (e) => {
-        this.showClearButton("course", e.target.value);
         this.debounceCourseSearch(e.target.value);
       });
 
@@ -45,46 +42,6 @@ class CourseSearchManager {
     if (courseSearchBtn) {
       courseSearchBtn.addEventListener("click", () => {
         this.performSearch();
-      });
-    }
-
-    // Clear course search button
-    const clearCourseSearch = document.getElementById("clearCourseSearch");
-    if (clearCourseSearch) {
-      clearCourseSearch.addEventListener("click", () => {
-        this.clearCourseSearch();
-      });
-    }
-
-    // Category search input with debounce
-    const categorySearchInput = document.getElementById("categorySearchInput");
-    if (categorySearchInput) {
-      categorySearchInput.addEventListener("input", (e) => {
-        this.showClearButton("category", e.target.value);
-        this.debounceCategorySearch(e.target.value);
-      });
-
-      categorySearchInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          this.performSearch();
-        }
-      });
-    }
-
-    // Category search button
-    const categorySearchBtn = document.getElementById("categorySearchBtn");
-    if (categorySearchBtn) {
-      categorySearchBtn.addEventListener("click", () => {
-        this.performSearch();
-      });
-    }
-
-    // Clear category search button
-    const clearCategorySearch = document.getElementById("clearCategorySearch");
-    if (clearCategorySearch) {
-      clearCategorySearch.addEventListener("click", () => {
-        this.clearCategorySearch();
       });
     }
 
@@ -108,7 +65,7 @@ class CourseSearchManager {
       });
     }
 
-    // Advanced filters
+    // Price filter
     const priceFilter = document.getElementById("priceFilter");
     if (priceFilter) {
       priceFilter.addEventListener("change", (e) => {
@@ -118,19 +75,11 @@ class CourseSearchManager {
       });
     }
 
+    // Difficulty filter
     const difficultyFilter = document.getElementById("difficultyFilter");
     if (difficultyFilter) {
       difficultyFilter.addEventListener("change", (e) => {
         this.currentFilters.difficulty = e.target.value;
-        this.currentFilters.page = 1;
-        this.performSearch();
-      });
-    }
-
-    const durationFilter = document.getElementById("durationFilter");
-    if (durationFilter) {
-      durationFilter.addEventListener("change", (e) => {
-        this.currentFilters.duration = e.target.value;
         this.currentFilters.page = 1;
         this.performSearch();
       });
@@ -174,29 +123,21 @@ class CourseSearchManager {
   initializeFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     this.currentFilters.courseSearch = urlParams.get("courseSearch") || "";
-    this.currentFilters.categorySearch = urlParams.get("categorySearch") || "";
+    this.currentFilters.category = urlParams.get("category") || "";
     this.currentFilters.sortBy = urlParams.get("sortBy") || "newest";
     this.currentFilters.price = urlParams.get("price") || "";
     this.currentFilters.difficulty = urlParams.get("difficulty") || "";
-    this.currentFilters.duration = urlParams.get("duration") || "";
     this.currentFilters.page = parseInt(urlParams.get("page")) || 1;
 
     // Update UI
     const courseSearchInput = document.getElementById("courseSearchInput");
     if (courseSearchInput) {
       courseSearchInput.value = this.currentFilters.courseSearch;
-      this.showClearButton("course", this.currentFilters.courseSearch);
-    }
-
-    const categorySearchInput = document.getElementById("categorySearchInput");
-    if (categorySearchInput) {
-      categorySearchInput.value = this.currentFilters.categorySearch;
-      this.showClearButton("category", this.currentFilters.categorySearch);
     }
 
     const categoryFilter = document.getElementById("categoryFilter");
     if (categoryFilter) {
-      categoryFilter.value = "";
+      categoryFilter.value = this.currentFilters.category;
     }
 
     const sortSelect = document.getElementById("sortSelect");
@@ -220,7 +161,7 @@ class CourseSearchManager {
     }
 
     // Log initial filter state for debugging
-    console.log("Initial filters from URL:", this.currentFilters);
+    
   }
 
   debounceCourseSearch(searchTerm) {
@@ -228,17 +169,6 @@ class CourseSearchManager {
     this.courseSearchTimeout = setTimeout(() => {
       if (searchTerm.length >= 2 || searchTerm.length === 0) {
         this.currentFilters.courseSearch = searchTerm;
-        this.currentFilters.page = 1;
-        this.performSearch();
-      }
-    }, 500);
-  }
-
-  debounceCategorySearch(searchTerm) {
-    clearTimeout(this.categorySearchTimeout);
-    this.categorySearchTimeout = setTimeout(() => {
-      if (searchTerm.length >= 2 || searchTerm.length === 0) {
-        this.currentFilters.categorySearch = searchTerm;
         this.currentFilters.page = 1;
         this.performSearch();
       }
@@ -253,21 +183,15 @@ class CourseSearchManager {
       this.currentFilters.courseSearch = courseSearchInput.value.trim();
     }
 
-    const categorySearchInput = document.getElementById("categorySearchInput");
-    if (categorySearchInput) {
-      this.currentFilters.categorySearch = categorySearchInput.value.trim();
-    }
-
     this.showLoading();
     this.updateURL();
 
     const params = new URLSearchParams({
       courseSearch: this.currentFilters.courseSearch,
-      categorySearch: this.currentFilters.categorySearch,
+      category: this.currentFilters.category,
       sortBy: this.currentFilters.sortBy,
       price: this.currentFilters.price,
       difficulty: this.currentFilters.difficulty,
-      duration: this.currentFilters.duration,
       page: this.currentFilters.page,
       pageSize: 12,
     });
@@ -280,7 +204,7 @@ class CourseSearchManager {
     }
 
     // Log the search request for debugging
-    console.log("Search parameters:", Object.fromEntries(params.entries()));
+    
 
     fetch(`/Course/SearchCourses?${params.toString()}`, {
       method: "GET",
@@ -582,41 +506,14 @@ class CourseSearchManager {
     }
   }
 
-  clearCourseSearch() {
-    const courseSearchInput = document.getElementById("courseSearchInput");
-    if (courseSearchInput) {
-      courseSearchInput.value = "";
-      courseSearchInput.focus();
-    }
-
-    this.currentFilters.courseSearch = "";
-    this.currentFilters.page = 1;
-    this.showClearButton("course", "");
-    this.performSearch();
-  }
-
-  clearCategorySearch() {
-    const categorySearchInput = document.getElementById("categorySearchInput");
-    if (categorySearchInput) {
-      categorySearchInput.value = "";
-      categorySearchInput.focus();
-    }
-
-    this.currentFilters.categorySearch = "";
-    this.currentFilters.page = 1;
-    this.showClearButton("category", "");
-    this.performSearch();
-  }
-
   clearAllFilters() {
     // Reset all filters
     this.currentFilters = {
       courseSearch: "",
-      categorySearch: "",
+      category: "",
       sortBy: "newest",
       price: "",
       difficulty: "",
-      duration: "",
       page: 1,
     };
 
@@ -624,11 +521,6 @@ class CourseSearchManager {
     const courseSearchInput = document.getElementById("courseSearchInput");
     if (courseSearchInput) {
       courseSearchInput.value = "";
-    }
-
-    const categorySearchInput = document.getElementById("categorySearchInput");
-    if (categorySearchInput) {
-      categorySearchInput.value = "";
     }
 
     const categoryFilter = document.getElementById("categoryFilter");
@@ -651,28 +543,10 @@ class CourseSearchManager {
       difficultyFilter.value = "";
     }
 
-    const durationFilter = document.getElementById("durationFilter");
-    if (durationFilter) {
-      durationFilter.value = "";
-    }
-
-    this.showClearButton("");
     this.performSearch();
   }
 
-  showClearButton(searchType, searchValue) {
-    if (searchType === "course") {
-      const clearBtn = document.getElementById("clearCourseSearch");
-      if (clearBtn) {
-        clearBtn.style.display = searchValue ? "block" : "none";
-      }
-    } else if (searchType === "category") {
-      const clearBtn = document.getElementById("clearCategorySearch");
-      if (clearBtn) {
-        clearBtn.style.display = searchValue ? "block" : "none";
-      }
-    }
-  }
+
 
   showLoading() {
     this.isLoading = true;
@@ -716,8 +590,8 @@ class CourseSearchManager {
       params.set("courseSearch", this.currentFilters.courseSearch);
     }
 
-    if (this.currentFilters.categorySearch) {
-      params.set("categorySearch", this.currentFilters.categorySearch);
+    if (this.currentFilters.category) {
+      params.set("category", this.currentFilters.category);
     }
 
     if (this.currentFilters.sortBy !== "newest") {
@@ -730,10 +604,6 @@ class CourseSearchManager {
 
     if (this.currentFilters.difficulty) {
       params.set("difficulty", this.currentFilters.difficulty);
-    }
-
-    if (this.currentFilters.duration) {
-      params.set("duration", this.currentFilters.duration);
     }
 
     if (this.currentFilters.page > 1) {

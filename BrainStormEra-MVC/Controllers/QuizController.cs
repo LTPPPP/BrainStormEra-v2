@@ -11,11 +11,12 @@ using BrainStormEra_MVC.Filters;
 namespace BrainStormEra_MVC.Controllers
 {
     [Authorize]
-    public class QuizController : Controller
+    public class QuizController : BaseController
     {
         private readonly QuizServiceImpl _quizServiceImpl;
 
-        public QuizController(QuizServiceImpl quizServiceImpl)
+        public QuizController(QuizServiceImpl quizServiceImpl, IUrlHashService urlHashService)
+            : base(urlHashService)
         {
             _quizServiceImpl = quizServiceImpl;
         }
@@ -23,7 +24,9 @@ namespace BrainStormEra_MVC.Controllers
         // GET: Quiz/Create
         public async Task<IActionResult> Create(string chapterId)
         {
-            var result = await _quizServiceImpl.GetCreateQuizAsync(User, chapterId);
+            // Decode hash ID to real ID
+            var realChapterId = DecodeHashId(chapterId);
+            var result = await _quizServiceImpl.GetCreateQuizAsync(User, realChapterId);
 
             if (!result.Success)
             {
@@ -86,13 +89,15 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["SuccessMessage"] = result.SuccessMessage;
             }
 
-            return RedirectToAction(result.RedirectAction, new { id = result.QuizId });
+            return RedirectToActionWithHash(result.RedirectAction, result.QuizId);
         }
 
         // GET: Quiz/Edit/5
         public async Task<IActionResult> Edit(string id)
         {
-            var result = await _quizServiceImpl.GetEditQuizAsync(User, id);
+            // Decode hash ID to real ID
+            var realId = DecodeHashId(id);
+            var result = await _quizServiceImpl.GetEditQuizAsync(User, realId);
 
             if (!result.Success)
             {
@@ -155,7 +160,7 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["SuccessMessage"] = result.SuccessMessage;
             }
 
-            return RedirectToAction(result.RedirectAction, new { id = result.QuizId });
+            return RedirectToActionWithHash(result.RedirectAction, result.QuizId);
         }
 
         // POST: Quiz/Delete/5
@@ -163,7 +168,9 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(string id)
         {
-            var result = await _quizServiceImpl.DeleteQuizAsync(User, id);
+            // Decode hash ID to real ID
+            var realId = DecodeHashId(id);
+            var result = await _quizServiceImpl.DeleteQuizAsync(User, realId);
 
             if (!result.Success)
             {
@@ -187,12 +194,15 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["SuccessMessage"] = result.SuccessMessage;
             }
 
-            return Redirect($"/Course/Details/{result.CourseId}#curriculum");
+            var hashCourseId = EncodeToHash(result.CourseId);
+            return Redirect($"/Course/Details/{hashCourseId}#curriculum");
         }        // GET: Quiz/Details/5
         [RequireAuthentication("You need to login to view quiz details. Please login to continue.")]
         public async Task<IActionResult> Details(string id)
         {
-            var result = await _quizServiceImpl.GetQuizDetailsAsync(User, id);
+            // Decode hash ID to real ID
+            var realId = DecodeHashId(id);
+            var result = await _quizServiceImpl.GetQuizDetailsAsync(User, realId);
 
             if (!result.Success)
             {
@@ -221,7 +231,9 @@ namespace BrainStormEra_MVC.Controllers
         // GET: Quiz/Preview/5
         public async Task<IActionResult> Preview(string id)
         {
-            var result = await _quizServiceImpl.GetQuizPreviewAsync(User, id);
+            // Decode hash ID to real ID
+            var realId = DecodeHashId(id);
+            var result = await _quizServiceImpl.GetQuizPreviewAsync(User, realId);
 
             if (!result.Success)
             {

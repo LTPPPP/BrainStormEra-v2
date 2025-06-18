@@ -54,7 +54,8 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICertificateRepo, DataAccessLayer.Repositories.CertificateRepo>();
 
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatbotRepo, DataAccessLayer.Repositories.ChatbotRepo>();
-            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();            // Register Services with SOLID principles - Now using BusinessLogicLayer
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();
+            // Register Services with SOLID principles - Now using BusinessLogicLayer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.UserService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseService, BusinessLogicLayer.Services.CourseService>();
 
@@ -87,7 +88,8 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.NotificationServiceImpl>();
 
             // Register Auth Service Implementation for business logic layer
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();            // Register Home Services for data access and business logic
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();
+            // Register Home Services for data access and business logic
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IHomeService, BusinessLogicLayer.Services.HomeService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.HomeServiceImpl>();
 
@@ -95,6 +97,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.RecommendationHelper>();
 
             // Register Services for data access and business logic
+
 
 
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.EnrollmentService>();
@@ -124,6 +127,12 @@ namespace BrainStormEra_MVC
 
             // Register Media Path Service for centralized media path management
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
+
+            // Register URL Hash Service for secure URL handling
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUrlHashService, BusinessLogicLayer.Services.UrlHashServiceImproved>();
+
+            // Register Query Hash Service for smart ID/hash handling in queries
+            builder.Services.AddScoped<BusinessLogicLayer.Services.QueryHashService>();
 
             // Seed services
             builder.Services.AddScoped<BusinessLogicLayer.Services.StatusSeedService>();
@@ -210,10 +219,10 @@ namespace BrainStormEra_MVC
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Database connection test failed, but continue running
-                Console.WriteLine($"Database connection failed: {ex.Message}");
+
             }
 
             // Configure the HTTP request pipeline.
@@ -246,8 +255,7 @@ namespace BrainStormEra_MVC
             var absoluteSharedMediaPath = Path.GetFullPath(sharedMediaPath);
 
             // Log the path for debugging
-            Console.WriteLine($"SharedMedia path: {absoluteSharedMediaPath}");
-            Console.WriteLine($"SharedMedia exists: {Directory.Exists(absoluteSharedMediaPath)}");
+
 
             app.UseStaticFiles(new StaticFileOptions
             {

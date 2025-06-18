@@ -204,7 +204,16 @@
                                                         }
                                                     }
                                                 </div>
-                                                <span class="rating-count">(@Model.TotalReviews reviews)</span>
+                                                <span class="rating-count">(@Model.TotalReviews)
+                                                    @if(Model.TotalReviews == 1)
+                                                    {
+                                                        <span>review</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>reviews</span>
+                                                    }
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -240,11 +249,6 @@
                                     <div class="meta-item">
                                         <i class="fas fa-calendar-alt"></i>
                                         <span>Last updated @Model.CourseUpdatedAt.ToString("MMM yyyy")</span>
-                                    </div>
-
-                                    <div class="meta-item">
-                                        <i class="fas fa-globe"></i>
-                                        <span>English</span>
                                     </div>
                                 </div>
                             </div>
@@ -324,7 +328,7 @@
                                         </div>
                                         <h3 class="instructor-notification-title">You are the instructor of this course</h3>
                                         <div class="instructor-notification-actions">
-                                            <a href="@Url.Action("EditCourse", "Course", new { id = Model.CourseId })" class="instructor-action-btn">
+                                            <a href="@Url.ActionWithHash("EditCourse", "Course", Model.CourseId)" class="instructor-action-btn">
                                                 <i class="fas fa-edit"></i>Edit Course
                                             </a>
                                                                         @if (string.IsNullOrEmpty(Model.ApprovalStatus) || Model.ApprovalStatus.ToLower() == "rejected" || Model.ApprovalStatus.ToLower() == "draft")
@@ -354,27 +358,32 @@
                                     <button class="btn btn-success btn-lg w-100 mb-3" disabled>
                                         <i class="fas fa-check-circle me-2"></i>Enrolled
                                     </button>
-                                    <a href="#" class="btn btn-outline-primary btn-lg w-100">Continue Learning</a>
+                                    <button class="btn btn-outline-secondary btn-lg w-100" disabled>Take Course (Under Development)</button>
                                 }
                                 else
                                 {
-                                    <form asp-controller="Course" asp-action="Enroll" method="post" class="enrollment-form">
-                                        <input type="hidden" name="courseId" value="@Model.CourseId" />
-                                        <button type="submit" class="btn btn-primary btn-lg w-100 mb-3 enroll-btn">
-                                            @if (Model.Price == 0)
-                                            {
-                                                <i class="fas fa-plus me-2"></i>
-
-                                                <span>Enroll for Free</span>
-                                            }
-                                            else
-                                            {
-                                                <i class="fas fa-shopping-cart me-2"></i>
-
-                                                <span>Enroll Now</span>
-                                            }
-                                        </button>
-                                    </form>
+                                    <button id="enrollBtn" class="btn btn-primary btn-lg w-100 mb-3 enroll-btn" onclick="enrollInCourse()">
+                                        @if (Model.Price == 0)
+                                        {
+                                            <i class="fas fa-plus me-2"></i>
+                                            <span>Enroll for Free</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-shopping-cart me-2"></i>
+                                            <span>Enroll Now</span>
+                                        }
+                                    </button>
+                                    
+                                    <!-- Take Course Button (hidden initially) -->
+                                    <button id="takeCourseBtn" class="btn btn-secondary btn-lg w-100 mb-3" style="display: none;" disabled>
+                                        <i class="fas fa-play me-2"></i>Take Course (Under Development)
+                                    </button>
+                                    
+                                    <!-- Continue Course Button (hidden initially) -->
+                                    <button id="continueCourseBtn" class="btn btn-outline-secondary btn-lg w-100" style="display: none;" disabled>
+                                        <i class="fas fa-play-circle me-2"></i>Continue Learning (Under Development)
+                                    </button>
                                 }                                
                                 <div class="course-includes">
                                     <h6>This course includes:</h6>
@@ -391,8 +400,6 @@
                                         {
                                             <li><i class="fas fa-question-circle"></i> @Model.Chapters.SelectMany(c => c.Lessons).Count(l => l.LessonType == "Quiz") quizzes</li>
                                         }
-                                        <li><i class="fas fa-mobile-alt"></i> Mobile and TV access</li>
-                                        <li><i class="fas fa-infinity"></i> Full lifetime access</li>
                                         <li><i class="fas fa-certificate"></i> Certificate of completion</li>
                                         @if (Model.EstimatedDuration > 0)
                                         {
@@ -497,7 +504,7 @@
                                             @if (ViewBag.IsAuthor == true)
                                             {
                                                 <div>
-                                                    <a href="@Url.Action("CreateChapter", "Chapter", new { courseId = Model.CourseId })" 
+                                                    <a href="@Url.Action("CreateChapter", "Chapter", new { courseId = Html.EncodeId(Model.CourseId) })" 
                                                        class="btn btn-primary">
                                                         <i class="fas fa-plus me-2"></i>Create Chapter
                                                     </a>
@@ -606,11 +613,11 @@
                                                             if (!hasQuiz)
                                                             {
                                                                 <div class="lesson-actions mt-3 text-center" style="justify-content: center;">
-                                                                    <a href="@Url.Action("SelectLessonType", "Lesson", new { chapterId = chapter.ChapterId })" 
+                                                                    <a href="@Url.Action("SelectLessonType", "Lesson", new { chapterId = Html.EncodeId(chapter.ChapterId) })" 
                                                                        class="btn btn-sm btn-outline-primary me-2">
                                                                         <i class="fas fa-plus me-2"></i>Create Lesson
                                                                     </a>
-                                                                    <a href="@Url.Action("CreateQuiz", "Quiz", new { chapterId = chapter.ChapterId })" 
+                                                                    <a href="@Url.Action("CreateQuiz", "Quiz", new { chapterId = Html.EncodeId(chapter.ChapterId) })" 
                                                                        class="btn btn-sm btn-outline-success">
                                                                         <i class="fas fa-question-circle me-2"></i>Create Quiz
                                                                     </a>
@@ -1227,6 +1234,63 @@
                 });
             }
         });
+        
+        // Initialize course player functionality for enrollment
+        document.addEventListener('DOMContentLoaded', function() {
+            const courseHashId = '@Html.EncodeId(Model.CourseId)';
+            
+            console.log('Course Details page initializing with courseId:', courseHashId);
+            
+            if (courseHashId && courseHashId !== '' && courseHashId !== 'undefined') {
+                // Check enrollment status on page load
+                checkEnrollmentStatus();
+            } else {
+                console.error('Invalid course ID - cannot initialize enrollment functionality:', courseHashId);
+            }
+        });
+        
+        // Check enrollment status function for course details page - DISABLED
+        function checkEnrollmentStatus() {
+            // Learning functionality has been removed
+            console.log('Learning functionality is under development');
+            return;
+        }
+        
+        // Update enrollment UI for course details page
+        function updateEnrollmentUI(enrollmentData) {
+            const enrollBtn = document.getElementById('enrollBtn');
+            const takeBtn = document.getElementById('takeCourseBtn');
+            const continueBtn = document.getElementById('continueCourseBtn');
+            
+            if (enrollmentData.isEnrolled) {
+                if (enrollBtn) enrollBtn.style.display = 'none';
+                if (takeBtn) takeBtn.style.display = 'inline-block';
+                if (continueBtn) continueBtn.style.display = 'inline-block';
+            } else if (enrollmentData.canEnroll) {
+                if (enrollBtn) {
+                    enrollBtn.style.display = 'inline-block';
+                    enrollBtn.disabled = false;
+                }
+                if (takeBtn) takeBtn.style.display = 'none';
+                if (continueBtn) continueBtn.style.display = 'none';
+            } else {
+                if (enrollBtn) {
+                    enrollBtn.disabled = true;
+                    enrollBtn.innerHTML = '<i class="fas fa-lock"></i> Not Available';
+                }
+            }
+        }
+        
+        // Enroll in course function for course details page - DISABLED
+        function enrollInCourse() {
+            // Learning functionality has been removed
+            if (window.showToast) {
+                window.showToast('info', 'Learning functionality is under development');
+            } else {
+                alert('Learning functionality is under development');
+            }
+            return;
+        }
     </script>
 
     <!-- Enrollment Success Modal -->

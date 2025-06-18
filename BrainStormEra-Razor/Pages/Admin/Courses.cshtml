@@ -190,8 +190,7 @@
                         <div class="course-price">@course.PriceText</div>
                         <div class="course-actions">
                             <button type="button" class="btn-action btn-details" 
-                                    data-course-id="@course.CourseId"
-                                    onclick="showCourseDetails('@course.CourseId')">
+                                    data-course-id="@Html.EncodeId(course.CourseId)">
                                 <i class="fas fa-eye"></i> Details
                             </button>
                             
@@ -199,30 +198,26 @@
                             {
                                 case "pending":
                                     <button type="button" class="btn-action btn-approve" 
-                                            data-course-id="@course.CourseId"
-                                            data-course-name="@course.CourseName"
-                                            onclick="updateCourseStatus('@course.CourseId', true)">
+                                            data-course-id="@Html.EncodeId(course.CourseId)"
+                                            data-course-name="@course.CourseName">
                                         <i class="fas fa-check"></i> Approve
                                     </button>
                                     <button type="button" class="btn-action btn-reject" 
-                                            data-course-id="@course.CourseId"
-                                            data-course-name="@course.CourseName"
-                                            onclick="updateCourseStatus('@course.CourseId', false)">
+                                            data-course-id="@Html.EncodeId(course.CourseId)"
+                                            data-course-name="@course.CourseName">
                                         <i class="fas fa-times"></i> Reject
                                     </button>
                                     <button type="button" class="btn-action btn-ban" 
-                                            data-course-id="@course.CourseId"
-                                            data-course-name="@course.CourseName"
-                                            onclick="banCourse('@course.CourseId', '@course.CourseName')">
+                                            data-course-id="@Html.EncodeId(course.CourseId)"
+                                            data-course-name="@course.CourseName">
                                         <i class="fas fa-ban"></i> Ban
                                     </button>
                                     break;
                                     
                                 case "approved":
                                     <button type="button" class="btn-action btn-ban" 
-                                            data-course-id="@course.CourseId"
-                                            data-course-name="@course.CourseName"
-                                            onclick="banCourse('@course.CourseId', '@course.CourseName')">
+                                            data-course-id="@Html.EncodeId(course.CourseId)"
+                                            data-course-name="@course.CourseName">
                                         <i class="fas fa-ban"></i> Ban
                                     </button>
                                     <span class="btn-action btn-details disabled approved-indicator">
@@ -232,15 +227,13 @@
                                     
                                 case "rejected":
                                     <button type="button" class="btn-action btn-approve" 
-                                            data-course-id="@course.CourseId"
-                                            data-course-name="@course.CourseName"
-                                            onclick="updateCourseStatus('@course.CourseId', true)">
+                                            data-course-id="@Html.EncodeId(course.CourseId)"
+                                            data-course-name="@course.CourseName">
                                         <i class="fas fa-check"></i> Approve
                                     </button>
                                     <button type="button" class="btn-action btn-ban" 
-                                            data-course-id="@course.CourseId"
-                                            data-course-name="@course.CourseName"
-                                            onclick="banCourse('@course.CourseId', '@course.CourseName')">
+                                            data-course-id="@Html.EncodeId(course.CourseId)"
+                                            data-course-name="@course.CourseName">
                                         <i class="fas fa-ban"></i> Ban
                                     </button>
                                     break;

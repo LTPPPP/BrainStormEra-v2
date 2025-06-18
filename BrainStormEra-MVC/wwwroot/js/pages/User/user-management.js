@@ -851,18 +851,14 @@ class UserManagement {
 
   // Debug method to check avatar cache state
   debugAvatarCache() {
-    console.log("Avatar Cache Contents:", this.avatarCache);
+    
     document.querySelectorAll(".user-details").forEach((userDetail) => {
       const userId = userDetail
         .closest("tr")
         .querySelector(".btn-edit-user, .btn-change-status")?.dataset.userId;
       const avatarImg = userDetail.querySelector(".user-avatar img");
       if (userId && avatarImg) {
-        console.log(
-          `User ${userId}: Current src = ${avatarImg.src}, Cached = ${
-            this.avatarCache.get(userId) || "None"
-          }`
-        );
+        // Debug info removed
       }
     });
   }

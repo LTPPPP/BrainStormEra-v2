@@ -11,6 +11,7 @@ namespace BrainStormEra_Razor.Pages.Admin
     {
         private readonly ILogger<UsersModel> _logger;
         private readonly IAdminService _adminService;
+        private readonly IUrlHashService _urlHashService;
 
         public string? AdminName { get; set; }
         public string? UserId { get; set; }
@@ -32,10 +33,11 @@ namespace BrainStormEra_Razor.Pages.Admin
         [BindProperty(SupportsGet = true)]
         public int PageSize { get; set; } = 10;
 
-        public UsersModel(ILogger<UsersModel> logger, IAdminService adminService)
+        public UsersModel(ILogger<UsersModel> logger, IAdminService adminService, IUrlHashService urlHashService)
         {
             _logger = logger;
             _adminService = adminService;
+            _urlHashService = urlHashService;
         }
 
         public async Task OnGetAsync()
@@ -87,6 +89,7 @@ namespace BrainStormEra_Razor.Pages.Admin
 
         public async Task<IActionResult> OnPostUpdateUserStatusAsync(string userId, bool isBanned)
         {
+            var realUserId = string.Empty;
             try
             {
                 if (string.IsNullOrEmpty(userId))
@@ -94,12 +97,14 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return BadRequest("User ID is required");
                 }
 
-                var result = await _adminService.UpdateUserStatusAsync(userId, isBanned);
+                // Decode hash ID to real ID
+                realUserId = _urlHashService.GetRealId(userId);
+                var result = await _adminService.UpdateUserStatusAsync(realUserId, isBanned);
 
                 if (result)
                 {
                     _logger.LogInformation("User status updated successfully by admin {AdminName} for user {UserId}",
-                        HttpContext.User?.Identity?.Name, userId);
+                        HttpContext.User?.Identity?.Name, realUserId);
                     return new JsonResult(new { success = true, message = "User status updated successfully" });
                 }
                 else
@@ -109,7 +114,7 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating user status for user: {UserId}", userId);
+                _logger.LogError(ex, "Error updating user status for user: {UserId}", realUserId);
                 return new JsonResult(new { success = false, message = "An error occurred while updating user status" });
             }
         }

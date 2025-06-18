@@ -329,7 +329,7 @@ class NotificationIndex {
     connection
       .start()
       .then(() => {
-        console.log("SignalR Connected for notifications");
+
       })
       .catch((err) => {
         console.error("SignalR Connection Error:", err);
@@ -412,7 +412,7 @@ class NotificationIndex {
       showToast(message, type);
     } else {
       // Fallback to console log
-      console.log(`${type.toUpperCase()}: ${message}`);
+  
     }
   }
 }
