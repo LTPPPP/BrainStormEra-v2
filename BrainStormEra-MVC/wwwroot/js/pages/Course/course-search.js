@@ -161,7 +161,7 @@ class CourseSearchManager {
     }
 
     // Log initial filter state for debugging
-    console.log("Initial filters from URL:", this.currentFilters);
+    
   }
 
   debounceCourseSearch(searchTerm) {
@@ -204,7 +204,7 @@ class CourseSearchManager {
     }
 
     // Log the search request for debugging
-    console.log("Search parameters:", Object.fromEntries(params.entries()));
+    
 
     fetch(`/Course/SearchCourses?${params.toString()}`, {
       method: "GET",

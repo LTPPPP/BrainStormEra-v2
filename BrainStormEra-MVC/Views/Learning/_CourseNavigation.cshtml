@@ -18,7 +18,7 @@
         @foreach (var chapter in Model.Chapters.OrderBy(c => c.ChapterOrder))
         {
             <div class="nav-chapter @(chapter.IsCompleted ? "completed" : "") @(chapter.IsLocked ? "locked" : "")">
-                <div class="chapter-header" onclick="toggleNavChapter('@chapter.ChapterId')">
+                <div class="chapter-header" onclick="toggleNavChapter('@chapter.ChapterId')" data-chapter-id="@chapter.ChapterId">
                     <div class="chapter-info">
                         <div class="chapter-icon">
                             @if (chapter.IsLocked)
@@ -60,7 +60,7 @@
                             }
                             else
                             {
-                                <a href="@Url.ActionWithHash("Lesson", "Learning", lesson.LessonId)" class="lesson-link">
+                                <a href="@Url.ActionWithHash("Lesson", "Learning", lesson.LessonId)" class="lesson-link" data-lesson-id="@lesson.LessonId">
                                     <div class="lesson-content">
                                         <div class="lesson-icon">
                                             @if (lesson.IsCompleted)

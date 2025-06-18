@@ -167,4 +167,24 @@
 
 @section Scripts {
     <script src="~/js/pages/Learning/course-player.js"></script>
+    
+    <script>
+        // Initialize course player when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const courseHashId = '@(ViewBag.CourseHashId ?? "")';
+            
+            console.log('Course page initializing with courseId:', courseHashId);
+            
+            if (courseHashId && courseHashId !== '' && courseHashId !== 'undefined') {
+                if (typeof initializeCoursePlayer === 'function') {
+                    console.log('Initializing course player...');
+                    initializeCoursePlayer(courseHashId);
+                } else {
+                    console.error('initializeCoursePlayer function not found');
+                }
+            } else {
+                console.error('Invalid course ID - cannot initialize course player:', courseHashId);
+            }
+        });
+    </script>
 } 

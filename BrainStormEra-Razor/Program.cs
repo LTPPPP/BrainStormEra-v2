@@ -94,11 +94,11 @@ namespace BrainStormEra_Razor
                     RequestPath = "/SharedMedia",
                     ServeUnknownFileTypes = true
                 });
-                Console.WriteLine($"SharedMedia configured at: {absoluteSharedMediaPath}");
+
             }
             else
             {
-                Console.WriteLine($"Warning: SharedMedia directory not found at: {absoluteSharedMediaPath}");
+
             }
 
             app.UseRouting();

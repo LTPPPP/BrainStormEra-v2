@@ -7,114 +7,187 @@ let startTime = Date.now();
 let lastProgressUpdate = Date.now();
 
 // Initialize lesson viewer
-function initializeLessonViewer(lessonHashId, courseHashId) {
-    lessonId = lessonHashId;
+function initializeLessonViewer(lessonId, courseHashId) {
+    if (!lessonId || !courseHashId || lessonId === 'undefined' || courseHashId === 'undefined') {
+        return;
+    }
+    
+    currentLessonId = lessonId;
     courseId = courseHashId;
     
+    
+    
     // Start time tracking
+    startTimeTracking();
+    
+    // Load course navigation
+    loadCourseNavigation();
+    
+    // Set up keyboard shortcuts
+    setupKeyboardShortcuts();
+}
+
+// Start time tracking for the lesson
+function startTimeTracking() {
+    if (!currentLessonId || currentLessonId === 'undefined') return;
+    
     startTime = Date.now();
-    lastProgressUpdate = Date.now();
     
-    // Set up auto-save progress every 30 seconds
-    setInterval(updateLessonProgress, 30000);
-    
-    // Save progress when leaving page
-    window.addEventListener('beforeunload', function() {
-        updateLessonProgress();
-    });
-    
-    // Load course navigation when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        loadCourseNavigation();
-    });
+    // Auto-save progress every 30 seconds
+    timeTrackingInterval = setInterval(() => {
+        updateLessonProgress(false); // false = not completed
+    }, 30000);
 }
 
 // Update lesson progress
-function updateLessonProgress() {
+function updateLessonProgress(isCompleted = false) {
+    if (!currentLessonId || currentLessonId === 'undefined') return;
+    
     const currentTime = Date.now();
-    const timeSpent = Math.floor((currentTime - lastProgressUpdate) / 1000);
+    const timeSpent = Math.floor((currentTime - lastProgressUpdate) / 1000); // in seconds
+    lastProgressUpdate = currentTime;
     
-    if (timeSpent > 5) { // Only update if at least 5 seconds passed
-        fetch('/Learning/UpdateTimeSpent', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `lessonId=${lessonId}&seconds=${timeSpent}`
-        }).catch(error => {
-            console.error('Error updating lesson progress:', error);
-        });
-        
-        lastProgressUpdate = currentTime;
-    }
-}
-
-// Mark lesson as complete
-function markLessonComplete() {
-    const markCompleteBtn = document.getElementById('markCompleteBtn');
+    const data = {
+        lessonId: currentLessonId,
+        timeSpent: timeSpent,
+        isCompleted: isCompleted
+    };
     
-    fetch('/Learning/CompleteLesson', {
+    fetch('/Learning/UpdateProgress', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
         },
-        body: `lessonId=${lessonId}`
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Progress updated successfully
+    })
+    .catch(error => {
+        
+    });
+}
+
+// Mark lesson as completed
+function markLessonComplete() {
+    if (!currentLessonId || currentLessonId === 'undefined') {
+        return;
+    }
+    
+    fetch('/Learning/MarkComplete', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+        },
+        body: JSON.stringify({ lessonId: currentLessonId })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            markCompleteBtn.innerHTML = '<i class="fas fa-check"></i> Completed';
-            markCompleteBtn.disabled = true;
-            
-            const progressFill = document.getElementById('progressFill');
-            const progressPercentage = document.getElementById('progressPercentage');
-            
-            if (progressFill) progressFill.style.width = '100%';
-            if (progressPercentage) progressPercentage.textContent = '100%';
-            
-            if (window.showToast) {
-                window.showToast('success', 'Lesson completed successfully!');
+            // Show success message
+            if (typeof showToast === 'function') {
+                showToast('Lesson completed successfully!', 'success');
             }
             
-            // Reload navigation to reflect completion
-            setTimeout(loadCourseNavigation, 1000);
+            // Refresh navigation to show updated progress
+            loadCourseNavigation();
         }
     })
     .catch(error => {
-        console.error('Error marking lesson complete:', error);
-        if (window.showToast) {
-            window.showToast('error', 'Failed to mark lesson as complete. Please try again.');
-        }
+        
     });
 }
 
 // Load course navigation
 function loadCourseNavigation() {
-    const navigationContainer = document.getElementById('courseNavigationContainer');
-    if (!navigationContainer) return;
+    const navigationContainer = document.getElementById('course-navigation');
     
-    fetch(`/Learning/GetCourseNavigation?courseId=${courseId}`)
+    if (!navigationContainer) {
+        return;
+    }
+    
+    if (!courseId || courseId === 'undefined') {
+        return;
+    }
+    
+    // Show loading state
+    navigationContainer.innerHTML = '<div class="loading-navigation"><i class="fas fa-spinner fa-spin"></i> Loading course navigation...</div>';
+    
+    // Get course ID from the page
+    let apiUrl = `/Learning/GetCourseNavigation/${courseId}`;
+    
+    
+    
+    fetch(apiUrl)
         .then(response => {
+            
+            
             if (!response.ok) {
-                throw new Error('Failed to load navigation');
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             return response.text();
         })
         .then(html => {
+            
+            
+            if (!html || html.trim() === '') {
+                throw new Error('Empty response received');
+            }
+            
             navigationContainer.innerHTML = html;
             
-            // Auto-expand current lesson's chapter after loading
+            // Restore expanded chapter states
             setTimeout(() => {
-                expandCurrentLessonChapter();
+                restoreChapterStates();
+                initializeNavigation();
             }, 100);
+            
+            
         })
         .catch(error => {
-            console.error('Error loading course navigation:', error);
-            navigationContainer.innerHTML = 
-                '<div style="padding: 20px; text-align: center; color: #dc2626;">' +
-                '<i class="fas fa-exclamation-triangle"></i> Failed to load navigation' +
-                '</div>';
+            navigationContainer.innerHTML = `
+                <div class="navigation-error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Failed to load course navigation</p>
+                    <button onclick="loadCourseNavigation()" class="btn btn-sm btn-primary">
+                        <i class="fas fa-redo"></i> Retry
+                    </button>
+                </div>`;
         });
+}
+
+// Initialize navigation functionality
+function initializeNavigation() {
+    // Add click handlers for chapters
+    document.querySelectorAll('.chapter-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const chapterId = this.getAttribute('data-chapter');
+            if (chapterId) {
+                toggleNavChapter(chapterId);
+            }
+        });
+    });
+}
+
+// Toggle chapter in navigation (fallback function)
+function toggleNavChapter(chapterId) {
+    const chapterContent = document.getElementById(`chapter-${chapterId}`);
+    const expandIcon = document.querySelector(`[data-chapter="${chapterId}"] .expand-icon`);
+    
+    if (chapterContent) {
+        const isExpanded = chapterContent.style.display !== 'none';
+        
+        chapterContent.style.display = isExpanded ? 'none' : 'block';
+        
+        if (expandIcon) {
+            expandIcon.textContent = isExpanded ? '+' : '−';
+        }
+    }
+    
+    
 }
 
 // Auto-expand current lesson's chapter

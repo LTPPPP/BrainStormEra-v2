@@ -322,11 +322,42 @@
     <script>
         // Initialize lesson viewer with data from server
         document.addEventListener('DOMContentLoaded', function() {
-            const lessonId = '@ViewBag.LessonHashId';
-            const courseId = '@ViewBag.CourseHashId';
+            // Get ViewBag values with null checks
+            const lessonHashId = '@(ViewBag.LessonHashId ?? "")';
+            const courseHashId = '@(ViewBag.CourseHashId ?? "")';
             
-            if (typeof initializeLessonViewer === 'function') {
-                initializeLessonViewer(lessonId, courseId);
+            console.log('ViewBag values received:', { 
+                lessonHashId: lessonHashId, 
+                courseHashId: courseHashId,
+                lessonHashIdType: typeof lessonHashId,
+                courseHashIdType: typeof courseHashId
+            });
+            
+            // Validate that IDs are not null/undefined/empty before initializing
+            if (lessonHashId && courseHashId && 
+                lessonHashId !== '' && courseHashId !== '' &&
+                lessonHashId !== 'undefined' && courseHashId !== 'undefined') {
+                
+                if (typeof initializeLessonViewer === 'function') {
+                    console.log('Initializing lesson viewer...');
+                    initializeLessonViewer(lessonHashId, courseHashId);
+                } else {
+                    console.error('initializeLessonViewer function not found');
+                }
+            } else {
+                console.error('Invalid ViewBag values - cannot initialize lesson viewer:', { 
+                    lessonHashId, 
+                    courseHashId,
+                    lessonEmpty: lessonHashId === '',
+                    courseEmpty: courseHashId === '',
+                    lessonUndefined: lessonHashId === 'undefined',
+                    courseUndefined: courseHashId === 'undefined'
+                });
+                
+                // Show user-friendly error
+                if (window.showToast) {
+                    window.showToast('error', 'Unable to load lesson. Please refresh the page.');
+                }
             }
         });
     </script>

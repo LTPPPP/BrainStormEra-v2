@@ -362,23 +362,30 @@
                                 }
                                 else
                                 {
-                                    <form asp-controller="Course" asp-action="Enroll" method="post" class="enrollment-form">
-                                        <input type="hidden" name="courseId" value="@Model.CourseId" />
-                                        <button type="submit" class="btn btn-primary btn-lg w-100 mb-3 enroll-btn">
-                                            @if (Model.Price == 0)
-                                            {
-                                                <i class="fas fa-plus me-2"></i>
-
-                                                <span>Enroll for Free</span>
-                                            }
-                                            else
-                                            {
-                                                <i class="fas fa-shopping-cart me-2"></i>
-
-                                                <span>Enroll Now</span>
-                                            }
-                                        </button>
-                                    </form>
+                                    <button id="enrollBtn" class="btn btn-primary btn-lg w-100 mb-3 enroll-btn" onclick="enrollInCourse()">
+                                        @if (Model.Price == 0)
+                                        {
+                                            <i class="fas fa-plus me-2"></i>
+                                            <span>Enroll for Free</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-shopping-cart me-2"></i>
+                                            <span>Enroll Now</span>
+                                        }
+                                    </button>
+                                    
+                                    <!-- Take Course Button (hidden initially) -->
+                                    <a id="takeCourseBtn" href="@Url.ActionWithHash("Course", "Learning", Model.CourseId)" 
+                                       class="btn btn-success btn-lg w-100 mb-3" style="display: none;">
+                                        <i class="fas fa-play me-2"></i>Take Course
+                                    </a>
+                                    
+                                    <!-- Continue Course Button (hidden initially) -->
+                                    <a id="continueCourseBtn" href="@Url.ActionWithHash("Continue", "Learning", Model.CourseId)" 
+                                       class="btn btn-outline-success btn-lg w-100" style="display: none;">
+                                        <i class="fas fa-play-circle me-2"></i>Continue Learning
+                                    </a>
                                 }                                
                                 <div class="course-includes">
                                     <h6>This course includes:</h6>
@@ -1229,6 +1236,129 @@
                 });
             }
         });
+        
+        // Initialize course player functionality for enrollment
+        document.addEventListener('DOMContentLoaded', function() {
+            const courseHashId = '@Html.EncodeId(Model.CourseId)';
+            
+            console.log('Course Details page initializing with courseId:', courseHashId);
+            
+            if (courseHashId && courseHashId !== '' && courseHashId !== 'undefined') {
+                // Check enrollment status on page load
+                checkEnrollmentStatus();
+            } else {
+                console.error('Invalid course ID - cannot initialize enrollment functionality:', courseHashId);
+            }
+        });
+        
+        // Check enrollment status function for course details page
+        function checkEnrollmentStatus() {
+            const courseHashId = '@Html.EncodeId(Model.CourseId)';
+            if (!courseHashId) return;
+            
+            fetch(`/Learning/CheckEnrollment?courseId=${encodeURIComponent(courseHashId)}`)
+                .then(response => response.json())
+                .then(data => {
+                    updateEnrollmentUI(data);
+                })
+                .catch(error => {
+                    console.error('Error checking enrollment status:', error);
+                });
+        }
+        
+        // Update enrollment UI for course details page
+        function updateEnrollmentUI(enrollmentData) {
+            const enrollBtn = document.getElementById('enrollBtn');
+            const takeBtn = document.getElementById('takeCourseBtn');
+            const continueBtn = document.getElementById('continueCourseBtn');
+            
+            if (enrollmentData.isEnrolled) {
+                if (enrollBtn) enrollBtn.style.display = 'none';
+                if (takeBtn) takeBtn.style.display = 'inline-block';
+                if (continueBtn) continueBtn.style.display = 'inline-block';
+            } else if (enrollmentData.canEnroll) {
+                if (enrollBtn) {
+                    enrollBtn.style.display = 'inline-block';
+                    enrollBtn.disabled = false;
+                }
+                if (takeBtn) takeBtn.style.display = 'none';
+                if (continueBtn) continueBtn.style.display = 'none';
+            } else {
+                if (enrollBtn) {
+                    enrollBtn.disabled = true;
+                    enrollBtn.innerHTML = '<i class="fas fa-lock"></i> Not Available';
+                }
+            }
+        }
+        
+        // Enroll in course function for course details page
+        function enrollInCourse() {
+            const courseHashId = '@Html.EncodeId(Model.CourseId)';
+            if (!courseHashId) {
+                console.error('No course ID available for enrollment');
+                return;
+            }
+            
+            const enrollBtn = document.getElementById('enrollBtn');
+            if (enrollBtn) {
+                enrollBtn.disabled = true;
+                enrollBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enrolling...';
+            }
+            
+            fetch('/Learning/Enroll', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `courseId=${encodeURIComponent(courseHashId)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (window.showToast) {
+                        window.showToast('success', data.message);
+                    }
+                    
+                    // Update enrollment status
+                    checkEnrollmentStatus();
+                    
+                    // Redirect to course if provided
+                    if (data.redirectUrl) {
+                        setTimeout(() => {
+                            window.location.href = data.redirectUrl;
+                        }, 1000);
+                    }
+                } else {
+                    if (window.showToast) {
+                        window.showToast('error', data.message);
+                    }
+                    
+                    // Reset button state
+                    if (enrollBtn) {
+                        enrollBtn.disabled = false;
+                        const isFreeCourse = @(Model.Price == 0 ? "true" : "false");
+                        enrollBtn.innerHTML = isFreeCourse ? 
+                            '<i class="fas fa-plus me-2"></i><span>Enroll for Free</span>' : 
+                            '<i class="fas fa-shopping-cart me-2"></i><span>Enroll Now</span>';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error enrolling in course:', error);
+                if (window.showToast) {
+                    window.showToast('error', 'An error occurred while enrolling. Please try again.');
+                }
+                
+                // Reset button state
+                if (enrollBtn) {
+                    enrollBtn.disabled = false;
+                    const isFreeCourse = @(Model.Price == 0 ? "true" : "false");
+                    enrollBtn.innerHTML = isFreeCourse ? 
+                        '<i class="fas fa-plus me-2"></i><span>Enroll for Free</span>' : 
+                        '<i class="fas fa-shopping-cart me-2"></i><span>Enroll Now</span>';
+                }
+            });
+        }
     </script>
 
     <!-- Enrollment Success Modal -->

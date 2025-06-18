@@ -220,7 +220,7 @@ namespace BrainStormEra_MVC
             catch (Exception ex)
             {
                 // Database connection test failed, but continue running
-                Console.WriteLine($"Database connection failed: {ex.Message}");
+
             }
 
             // Configure the HTTP request pipeline.
@@ -253,8 +253,7 @@ namespace BrainStormEra_MVC
             var absoluteSharedMediaPath = Path.GetFullPath(sharedMediaPath);
 
             // Log the path for debugging
-            Console.WriteLine($"SharedMedia path: {absoluteSharedMediaPath}");
-            Console.WriteLine($"SharedMedia exists: {Directory.Exists(absoluteSharedMediaPath)}");
+
 
             app.UseStaticFiles(new StaticFileOptions
             {
