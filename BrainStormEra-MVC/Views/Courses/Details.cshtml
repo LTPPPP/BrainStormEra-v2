@@ -358,7 +358,7 @@
                                     <button class="btn btn-success btn-lg w-100 mb-3" disabled>
                                         <i class="fas fa-check-circle me-2"></i>Enrolled
                                     </button>
-                                    <a href="@Url.ActionWithHash("Course", "Learning", Model.CourseId)" class="btn btn-outline-primary btn-lg w-100">Take Course</a>
+                                    <button class="btn btn-outline-secondary btn-lg w-100" disabled>Take Course (Under Development)</button>
                                 }
                                 else
                                 {
@@ -376,16 +376,14 @@
                                     </button>
                                     
                                     <!-- Take Course Button (hidden initially) -->
-                                    <a id="takeCourseBtn" href="@Url.ActionWithHash("Course", "Learning", Model.CourseId)" 
-                                       class="btn btn-success btn-lg w-100 mb-3" style="display: none;">
-                                        <i class="fas fa-play me-2"></i>Take Course
-                                    </a>
+                                    <button id="takeCourseBtn" class="btn btn-secondary btn-lg w-100 mb-3" style="display: none;" disabled>
+                                        <i class="fas fa-play me-2"></i>Take Course (Under Development)
+                                    </button>
                                     
                                     <!-- Continue Course Button (hidden initially) -->
-                                    <a id="continueCourseBtn" href="@Url.ActionWithHash("Continue", "Learning", Model.CourseId)" 
-                                       class="btn btn-outline-success btn-lg w-100" style="display: none;">
-                                        <i class="fas fa-play-circle me-2"></i>Continue Learning
-                                    </a>
+                                    <button id="continueCourseBtn" class="btn btn-outline-secondary btn-lg w-100" style="display: none;" disabled>
+                                        <i class="fas fa-play-circle me-2"></i>Continue Learning (Under Development)
+                                    </button>
                                 }                                
                                 <div class="course-includes">
                                     <h6>This course includes:</h6>
@@ -1251,19 +1249,11 @@
             }
         });
         
-        // Check enrollment status function for course details page
+        // Check enrollment status function for course details page - DISABLED
         function checkEnrollmentStatus() {
-            const courseHashId = '@Html.EncodeId(Model.CourseId)';
-            if (!courseHashId) return;
-            
-            fetch(`/Learning/CheckEnrollment?courseId=${encodeURIComponent(courseHashId)}`)
-                .then(response => response.json())
-                .then(data => {
-                    updateEnrollmentUI(data);
-                })
-                .catch(error => {
-                    console.error('Error checking enrollment status:', error);
-                });
+            // Learning functionality has been removed
+            console.log('Learning functionality is under development');
+            return;
         }
         
         // Update enrollment UI for course details page
@@ -1291,73 +1281,15 @@
             }
         }
         
-        // Enroll in course function for course details page
+        // Enroll in course function for course details page - DISABLED
         function enrollInCourse() {
-            const courseHashId = '@Html.EncodeId(Model.CourseId)';
-            if (!courseHashId) {
-                console.error('No course ID available for enrollment');
-                return;
+            // Learning functionality has been removed
+            if (window.showToast) {
+                window.showToast('info', 'Learning functionality is under development');
+            } else {
+                alert('Learning functionality is under development');
             }
-            
-            const enrollBtn = document.getElementById('enrollBtn');
-            if (enrollBtn) {
-                enrollBtn.disabled = true;
-                enrollBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enrolling...';
-            }
-            
-            fetch('/Learning/Enroll', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `courseId=${encodeURIComponent(courseHashId)}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (window.showToast) {
-                        window.showToast('success', data.message);
-                    }
-                    
-                    // Update enrollment status
-                    checkEnrollmentStatus();
-                    
-                    // Redirect to course if provided
-                    if (data.redirectUrl) {
-                        setTimeout(() => {
-                            window.location.href = data.redirectUrl;
-                        }, 1000);
-                    }
-                } else {
-                    if (window.showToast) {
-                        window.showToast('error', data.message);
-                    }
-                    
-                    // Reset button state
-                    if (enrollBtn) {
-                        enrollBtn.disabled = false;
-                        const isFreeCourse = @(Model.Price == 0 ? "true" : "false");
-                        enrollBtn.innerHTML = isFreeCourse ? 
-                            '<i class="fas fa-plus me-2"></i><span>Enroll for Free</span>' : 
-                            '<i class="fas fa-shopping-cart me-2"></i><span>Enroll Now</span>';
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error enrolling in course:', error);
-                if (window.showToast) {
-                    window.showToast('error', 'An error occurred while enrolling. Please try again.');
-                }
-                
-                // Reset button state
-                if (enrollBtn) {
-                    enrollBtn.disabled = false;
-                    const isFreeCourse = @(Model.Price == 0 ? "true" : "false");
-                    enrollBtn.innerHTML = isFreeCourse ? 
-                        '<i class="fas fa-plus me-2"></i><span>Enroll for Free</span>' : 
-                        '<i class="fas fa-shopping-cart me-2"></i><span>Enroll Now</span>';
-                }
-            });
+            return;
         }
     </script>
 

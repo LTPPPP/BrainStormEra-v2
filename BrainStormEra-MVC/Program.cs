@@ -98,8 +98,7 @@ namespace BrainStormEra_MVC
 
             // Register Services for data access and business logic
 
-            // Register Learning Service for course learning functionality
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ILearningService, BusinessLogicLayer.Services.Implementations.LearningServiceImpl>();
+
 
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.EnrollmentService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementService, BusinessLogicLayer.Services.AchievementService>();
