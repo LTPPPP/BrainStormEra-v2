@@ -204,7 +204,16 @@
                                                         }
                                                     }
                                                 </div>
-                                                <span class="rating-count">(@Model.TotalReviews reviews)</span>
+                                                <span class="rating-count">(@Model.TotalReviews)
+                                                    @if(Model.TotalReviews == 1)
+                                                    {
+                                                        <span>review</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>reviews</span>
+                                                    }
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -240,11 +249,6 @@
                                     <div class="meta-item">
                                         <i class="fas fa-calendar-alt"></i>
                                         <span>Last updated @Model.CourseUpdatedAt.ToString("MMM yyyy")</span>
-                                    </div>
-
-                                    <div class="meta-item">
-                                        <i class="fas fa-globe"></i>
-                                        <span>English</span>
                                     </div>
                                 </div>
                             </div>
@@ -354,7 +358,7 @@
                                     <button class="btn btn-success btn-lg w-100 mb-3" disabled>
                                         <i class="fas fa-check-circle me-2"></i>Enrolled
                                     </button>
-                                    <a href="#" class="btn btn-outline-primary btn-lg w-100">Continue Learning</a>
+                                    <a href="@Url.ActionWithHash("Course", "Learning", Model.CourseId)" class="btn btn-outline-primary btn-lg w-100">Take Course</a>
                                 }
                                 else
                                 {
@@ -391,8 +395,6 @@
                                         {
                                             <li><i class="fas fa-question-circle"></i> @Model.Chapters.SelectMany(c => c.Lessons).Count(l => l.LessonType == "Quiz") quizzes</li>
                                         }
-                                        <li><i class="fas fa-mobile-alt"></i> Mobile and TV access</li>
-                                        <li><i class="fas fa-infinity"></i> Full lifetime access</li>
                                         <li><i class="fas fa-certificate"></i> Certificate of completion</li>
                                         @if (Model.EstimatedDuration > 0)
                                         {
