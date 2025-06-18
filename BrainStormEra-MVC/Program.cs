@@ -217,7 +217,7 @@ namespace BrainStormEra_MVC
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Database connection test failed, but continue running
 

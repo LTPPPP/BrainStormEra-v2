@@ -255,7 +255,7 @@ namespace BusinessLogicLayer.Services
 
                     return true;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
 
                     await transaction.RollbackAsync();
@@ -378,7 +378,7 @@ namespace BusinessLogicLayer.Services
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
                 return false;
