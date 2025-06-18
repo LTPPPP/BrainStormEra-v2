@@ -9,18 +9,34 @@ namespace BusinessLogicLayer.Services
     {
         private readonly string _secretKey;
         private readonly string _salt;
+        private readonly byte[] _derivedKey;
 
         public UrlHashServiceImproved(IConfiguration configuration)
         {
             _secretKey = configuration["UrlHashSettings:SecretKey"] ?? "BrainStormEra-DefaultSecretKey-2024";
             _salt = configuration["UrlHashSettings:Salt"] ?? "BrainStorm-Salt-2024";
+
+            // Derive a proper 32-byte key using PBKDF2
+            _derivedKey = DeriveKey(_secretKey, _salt);
         }
 
         /// <summary>
-        /// Create hash from real ID using reversible algorithm
+        /// Derive a secure key using PBKDF2
         /// </summary>
-        /// <param name="realId">Real ID to hash</param>
-        /// <returns>Hash string for use in URL</returns>
+        private byte[] DeriveKey(string password, string salt)
+        {
+            byte[] saltBytes = Encoding.UTF8.GetBytes(salt);
+            using (var pbkdf2 = new Rfc2898DeriveBytes(password, saltBytes, 10000, HashAlgorithmName.SHA256))
+            {
+                return pbkdf2.GetBytes(32); // AES-256 key length
+            }
+        }
+
+        /// <summary>
+        /// Create encrypted hash from real ID using AES encryption
+        /// </summary>
+        /// <param name="realId">Real ID to encrypt</param>
+        /// <returns>Encrypted string for use in URL</returns>
         public string EncodeId(string realId)
         {
             if (string.IsNullOrEmpty(realId))
@@ -28,25 +44,25 @@ namespace BusinessLogicLayer.Services
 
             try
             {
-                // Create key from secret key and salt
-                byte[] key = Encoding.UTF8.GetBytes(_secretKey + _salt);
-                byte[] iv = new byte[16]; // Fixed IV to enable decryption
-
-                // Use AES to encrypt ID
                 using (Aes aes = Aes.Create())
                 {
-                    aes.Key = key.Take(32).ToArray(); // AES-256 needs 32 bytes
-                    aes.IV = iv;
+                    aes.Key = _derivedKey;
                     aes.Mode = CipherMode.CBC;
                     aes.Padding = PaddingMode.PKCS7;
+                    aes.GenerateIV(); // Generate random IV for each encryption
 
                     using (ICryptoTransform encryptor = aes.CreateEncryptor())
                     {
                         byte[] plainBytes = Encoding.UTF8.GetBytes(realId);
                         byte[] cipherBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
 
+                        // Combine IV and cipher for storage
+                        byte[] result = new byte[aes.IV.Length + cipherBytes.Length];
+                        Array.Copy(aes.IV, 0, result, 0, aes.IV.Length);
+                        Array.Copy(cipherBytes, 0, result, aes.IV.Length, cipherBytes.Length);
+
                         // Convert to URL-safe string
-                        string base64 = Convert.ToBase64String(cipherBytes)
+                        string base64 = Convert.ToBase64String(result)
                             .Replace("+", "-")
                             .Replace("/", "_")
                             .Replace("=", "");
@@ -56,17 +72,18 @@ namespace BusinessLogicLayer.Services
                     }
                 }
             }
-            catch
+            catch (Exception)
             {
-                // Fallback to simple hash if error occurs
+                // Log the error in real applications
+                // For now, fallback to simple hash
                 return CreateSimpleHash(realId);
             }
         }
 
         /// <summary>
-        /// Decode hash back to real ID
+        /// Decode encrypted hash back to real ID
         /// </summary>
-        /// <param name="hash">Hash string from URL</param>
+        /// <param name="hash">Encrypted string from URL</param>
         /// <returns>Real ID</returns>
         public string DecodeId(string hash)
         {
@@ -87,16 +104,19 @@ namespace BusinessLogicLayer.Services
                 // Restore original base64 characters
                 base64 = base64.Replace("-", "+").Replace("_", "/");
 
-                byte[] cipherBytes = Convert.FromBase64String(base64);
+                byte[] combinedBytes = Convert.FromBase64String(base64);
 
-                // Create key from secret key and salt
-                byte[] key = Encoding.UTF8.GetBytes(_secretKey + _salt);
-                byte[] iv = new byte[16]; // Fixed IV
+                // Extract IV and cipher
+                byte[] iv = new byte[16]; // AES block size
+                byte[] cipherBytes = new byte[combinedBytes.Length - 16];
+
+                Array.Copy(combinedBytes, 0, iv, 0, 16);
+                Array.Copy(combinedBytes, 16, cipherBytes, 0, cipherBytes.Length);
 
                 // Use AES to decrypt
                 using (Aes aes = Aes.Create())
                 {
-                    aes.Key = key.Take(32).ToArray(); // AES-256 needs 32 bytes
+                    aes.Key = _derivedKey;
                     aes.IV = iv;
                     aes.Mode = CipherMode.CBC;
                     aes.Padding = PaddingMode.PKCS7;
@@ -108,15 +128,16 @@ namespace BusinessLogicLayer.Services
                     }
                 }
             }
-            catch
+            catch (Exception)
             {
+                // Log the error in real applications
                 // Cannot decode
                 return string.Empty;
             }
         }
 
         /// <summary>
-        /// Create simple hash as fallback
+        /// Create simple hash as fallback (only used in case of encryption errors)
         /// </summary>
         private string CreateSimpleHash(string realId)
         {
@@ -131,12 +152,12 @@ namespace BusinessLogicLayer.Services
 
                 // Take first 12 characters
                 string shortHash = fullHash.Substring(0, 12);
-                return $"s{shortHash}"; // 's' prefix for simple hash
+                return $"s{shortHash}"; // 's' prefix for simple hash (not reversible)
             }
         }
 
         /// <summary>
-        /// Create hash for multiple IDs at once
+        /// Encrypt multiple IDs at once
         /// </summary>
         public Dictionary<string, string> EncodeIds(IEnumerable<string> realIds)
         {
@@ -151,7 +172,7 @@ namespace BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Decode multiple hashes at once
+        /// Decrypt multiple hashes at once
         /// </summary>
         public Dictionary<string, string> DecodeIds(IEnumerable<string> hashes)
         {
@@ -170,27 +191,28 @@ namespace BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// No cache needed in this version
+        /// No cache needed in this version as encryption/decryption is stateless
         /// </summary>
         public void ClearCache()
         {
-            // No cache to clear
+            // No cache to clear in AES-based implementation
         }
 
         /// <summary>
-        /// Check if string is a hash or not
+        /// Check if string is an encrypted hash or not
         /// </summary>
         public bool IsHash(string value)
         {
             if (string.IsNullOrEmpty(value))
                 return false;
 
-            // Hash starts with 'h' or 's' and has minimum length
+            // Encrypted hash starts with 'h' and has minimum length
+            // Simple hash (fallback) starts with 's'
             return (value.StartsWith("h") || value.StartsWith("s")) && value.Length > 5;
         }
 
         /// <summary>
-        /// Get real ID from hash or return itself if already an ID
+        /// Get real ID from encrypted hash or return itself if already an ID
         /// </summary>
         public string GetRealId(string hashOrId)
         {
@@ -206,7 +228,7 @@ namespace BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Get hash from real ID or return itself if already a hash
+        /// Get encrypted hash from real ID or return itself if already a hash
         /// </summary>
         public string GetHash(string idOrHash)
         {
@@ -219,6 +241,42 @@ namespace BusinessLogicLayer.Services
             }
 
             return EncodeId(idOrHash);
+        }
+
+        /// <summary>
+        /// Validate if a hash can be properly decrypted (useful for testing)
+        /// </summary>
+        public bool ValidateHash(string hash)
+        {
+            if (!IsHash(hash))
+                return false;
+
+            try
+            {
+                var decoded = DecodeId(hash);
+                return !string.IsNullOrEmpty(decoded);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Get encryption method used for a hash
+        /// </summary>
+        public string GetEncryptionMethod(string hash)
+        {
+            if (string.IsNullOrEmpty(hash))
+                return "None";
+
+            if (hash.StartsWith("h"))
+                return "AES-256-CBC";
+
+            if (hash.StartsWith("s"))
+                return "SHA256 (Fallback)";
+
+            return "Plain ID";
         }
     }
 }

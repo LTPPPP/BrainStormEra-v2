@@ -55,5 +55,19 @@ namespace BusinessLogicLayer.Services.Interfaces
         /// <param name="idOrHash">Real ID or hash</param>
         /// <returns>Hash</returns>
         string GetHash(string idOrHash);
+
+        /// <summary>
+        /// Validate if a hash can be properly decrypted
+        /// </summary>
+        /// <param name="hash">Hash to validate</param>
+        /// <returns>True if hash can be decrypted</returns>
+        bool ValidateHash(string hash);
+
+        /// <summary>
+        /// Get encryption method used for a hash
+        /// </summary>
+        /// <param name="hash">Hash to check</param>
+        /// <returns>Encryption method name</returns>
+        string GetEncryptionMethod(string hash);
     }
 }

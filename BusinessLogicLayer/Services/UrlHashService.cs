@@ -171,5 +171,35 @@ namespace BusinessLogicLayer.Services
 
             return EncodeId(idOrHash);
         }
+
+        /// <summary>
+        /// Validate if a hash can be properly decoded (for cache-based implementation)
+        /// </summary>
+        /// <param name="hash">Hash to validate</param>
+        /// <returns>True if hash exists in cache</returns>
+        public bool ValidateHash(string hash)
+        {
+            if (string.IsNullOrEmpty(hash) || !IsHash(hash))
+                return false;
+
+            // In cache-based implementation, check if hash exists in cache
+            return _hashToIdCache.ContainsKey(hash);
+        }
+
+        /// <summary>
+        /// Get encryption method used for a hash (SHA256-based implementation)
+        /// </summary>
+        /// <param name="hash">Hash to check</param>
+        /// <returns>Encryption method name</returns>
+        public string GetEncryptionMethod(string hash)
+        {
+            if (string.IsNullOrEmpty(hash))
+                return "None";
+
+            if (hash.StartsWith("h"))
+                return "SHA256 (Cache-based)";
+
+            return "Plain ID";
+        }
     }
 }

@@ -131,6 +131,9 @@ namespace BrainStormEra_MVC
             // Register URL Hash Service for secure URL handling
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUrlHashService, BusinessLogicLayer.Services.UrlHashServiceImproved>();
 
+            // Register Query Hash Service for smart ID/hash handling in queries
+            builder.Services.AddScoped<BusinessLogicLayer.Services.QueryHashService>();
+
             // Seed services
             builder.Services.AddScoped<BusinessLogicLayer.Services.StatusSeedService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.LessonTypeSeedService>();
