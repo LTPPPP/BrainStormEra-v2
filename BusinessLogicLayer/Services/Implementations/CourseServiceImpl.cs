@@ -731,6 +731,129 @@ namespace BusinessLogicLayer.Services.Implementations
         }
 
         #endregion
+
+        #region Learn Management Operations
+
+        /// <summary>
+        /// Get course learning data with chapters and lessons organized by type
+        /// </summary>
+        public async Task<LearnManagementResult> GetLearnManagementDataAsync(ClaimsPrincipal user, string courseId)
+        {
+            try
+            {
+                var userId = user.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new LearnManagementResult
+                    {
+                        Success = false,
+                        ErrorMessage = "User not authenticated"
+                    };
+                }
+
+                // Check if user is enrolled in the course
+                var isEnrolled = await _courseService.IsUserEnrolledAsync(userId, courseId);
+                if (!isEnrolled)
+                {
+                    return new LearnManagementResult
+                    {
+                        Success = false,
+                        ErrorMessage = "You must be enrolled in this course to access learning content"
+                    };
+                }
+
+                // Get course basic info first
+                var course = await _courseService.GetCourseByIdAsync(courseId);
+                if (course == null)
+                {
+                    return new LearnManagementResult
+                    {
+                        Success = false,
+                        IsNotFound = true
+                    };
+                }
+
+                // Get all chapters for this course
+                var chapters = await _courseService.GetChaptersByCourseIdAsync(courseId);
+
+                var chapterViewModels = new List<LearnChapterViewModel>();
+
+                foreach (var chapter in chapters.OrderBy(c => c.ChapterOrder))
+                {
+                    // Get all lessons for each chapter
+                    var lessons = await _courseService.GetLessonsByChapterIdAsync(chapter.ChapterId);
+
+                    var lessonViewModels = lessons.OrderBy(l => l.LessonOrder)
+                        .Select(l => new LearnLessonViewModel
+                        {
+                            LessonId = l.LessonId,
+                            LessonName = l.LessonName,
+                            LessonDescription = l.LessonDescription ?? "",
+                            LessonOrder = l.LessonOrder,
+                            LessonType = l.LessonType?.LessonTypeName ?? "Content",
+                            LessonTypeIcon = GetLessonTypeIcon(l.LessonType?.LessonTypeName),
+                            IsLocked = l.IsLocked ?? false,
+                            IsMandatory = l.IsMandatory ?? true,
+                            EstimatedDuration = l.MinTimeSpent ?? 0,
+                            IsCompleted = false, // For demo purposes
+                            ProgressPercentage = 0 // For demo purposes
+                        }).ToList();
+
+                    chapterViewModels.Add(new LearnChapterViewModel
+                    {
+                        ChapterId = chapter.ChapterId,
+                        ChapterName = chapter.ChapterName,
+                        ChapterDescription = chapter.ChapterDescription ?? "",
+                        ChapterOrder = chapter.ChapterOrder ?? 0,
+                        IsLocked = chapter.IsLocked ?? false,
+                        Lessons = lessonViewModels
+                    });
+                }
+
+                var viewModel = new LearnManagementViewModel
+                {
+                    CourseId = course.CourseId,
+                    CourseName = course.CourseName,
+                    CourseDescription = course.CourseDescription ?? "",
+                    CourseImage = course.CourseImage ?? "/SharedMedia/defaults/default-course.png",
+                    AuthorName = course.Author?.FullName ?? "Unknown Author",
+                    IsEnrolled = true,
+                    ProgressPercentage = 0, // For now, set to 0
+                    Chapters = chapterViewModels
+                };
+
+                return new LearnManagementResult
+                {
+                    Success = true,
+                    ViewModel = viewModel
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while loading learn management data for course {CourseId}", courseId);
+                return new LearnManagementResult
+                {
+                    Success = false,
+                    ErrorMessage = "An error occurred while loading the learning content."
+                };
+            }
+        }
+
+        private string GetLessonTypeIcon(string? lessonType)
+        {
+            return lessonType?.ToLower() switch
+            {
+                "video" => "fas fa-play-circle",
+                "text" => "fas fa-file-text",
+                "interactive" => "fas fa-gamepad",
+                "quiz" => "fas fa-question-circle",
+                "assignment" => "fas fa-tasks",
+                "document" => "fas fa-file-pdf",
+                _ => "fas fa-book"
+            };
+        }
+
+        #endregion
     }
 
     #region Result Classes

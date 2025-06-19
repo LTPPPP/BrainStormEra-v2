@@ -1006,6 +1006,57 @@ namespace BusinessLogicLayer.Services
                 return new CourseListViewModel();
             }
         }
+
+        public async Task<Course?> GetCourseByIdAsync(string courseId)
+        {
+            try
+            {
+                return await _context.Courses
+                    .Include(c => c.Author)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.CourseId == courseId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting course by ID: {CourseId}", courseId);
+                return null;
+            }
+        }
+
+        public async Task<List<Chapter>> GetChaptersByCourseIdAsync(string courseId)
+        {
+            try
+            {
+                return await _context.Chapters
+                    .Where(c => c.CourseId == courseId)
+                    .OrderBy(c => c.ChapterOrder)
+                    .AsNoTracking()
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting chapters for course: {CourseId}", courseId);
+                return new List<Chapter>();
+            }
+        }
+
+        public async Task<List<Lesson>> GetLessonsByChapterIdAsync(string chapterId)
+        {
+            try
+            {
+                return await _context.Lessons
+                    .Include(l => l.LessonType)
+                    .Where(l => l.ChapterId == chapterId)
+                    .OrderBy(l => l.LessonOrder)
+                    .AsNoTracking()
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting lessons for chapter: {ChapterId}", chapterId);
+                return new List<Lesson>();
+            }
+        }
     }
 }
 

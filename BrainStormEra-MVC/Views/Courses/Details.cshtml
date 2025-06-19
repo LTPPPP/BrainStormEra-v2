@@ -358,7 +358,9 @@
                                     <button class="btn btn-success btn-lg w-100 mb-3" disabled>
                                         <i class="fas fa-check-circle me-2"></i>Enrolled
                                     </button>
-                                    <button class="btn btn-outline-secondary btn-lg w-100" disabled>Take Course (Under Development)</button>
+                                    <a href="@Url.ActionWithHash("Learn", "Course", Model.CourseId)" class="btn btn-primary btn-lg w-100">
+                                        <i class="fas fa-play me-2"></i>Take Course
+                                    </a>
                                 }
                                 else
                                 {
@@ -376,14 +378,16 @@
                                     </button>
                                     
                                     <!-- Take Course Button (hidden initially) -->
-                                    <button id="takeCourseBtn" class="btn btn-secondary btn-lg w-100 mb-3" style="display: none;" disabled>
-                                        <i class="fas fa-play me-2"></i>Take Course (Under Development)
-                                    </button>
+                                    <a id="takeCourseBtn" href="@Url.ActionWithHash("Learn", "Course", Model.CourseId)" 
+                                       class="btn btn-primary btn-lg w-100 mb-3" style="display: none;">
+                                        <i class="fas fa-play me-2"></i>Take Course
+                                    </a>
                                     
                                     <!-- Continue Course Button (hidden initially) -->
-                                    <button id="continueCourseBtn" class="btn btn-outline-secondary btn-lg w-100" style="display: none;" disabled>
-                                        <i class="fas fa-play-circle me-2"></i>Continue Learning (Under Development)
-                                    </button>
+                                    <a id="continueCourseBtn" href="@Url.ActionWithHash("Learn", "Course", Model.CourseId)"
+                                       class="btn btn-outline-primary btn-lg w-100" style="display: none;">
+                                        <i class="fas fa-play-circle me-2"></i>Continue Learning
+                                    </a>
                                 }                                
                                 <div class="course-includes">
                                     <h6>This course includes:</h6>

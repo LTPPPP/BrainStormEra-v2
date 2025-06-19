@@ -10,49 +10,51 @@ namespace BusinessLogicLayer.Services
         private readonly string _secretKey;
         private readonly string _salt;
         private readonly byte[] _derivedKey;
+        private readonly int _keySizeBytes;
 
         public UrlHashServiceImproved(IConfiguration configuration)
         {
             _secretKey = configuration["UrlHashSettings:SecretKey"] ?? "BrainStormEra-DefaultSecretKey-2024";
             _salt = configuration["UrlHashSettings:Salt"] ?? "BrainStorm-Salt-2024";
+            _keySizeBytes = configuration.GetValue<int>("UrlHashSettings:KeySizeBytes", 32); // Default to AES-256 key size
 
             // Check if fixed AES key is provided
             var fixedKey = configuration["UrlHashSettings:FixedAESKey"];
             if (!string.IsNullOrEmpty(fixedKey))
             {
-                // Use fixed key directly (convert to 32 bytes)
+                // Use fixed key directly (convert to desired key size)
                 _derivedKey = ConvertFixedKeyToBytes(fixedKey);
             }
             else
             {
-                // Derive a proper 32-byte key using PBKDF2
+                // Derive a proper key using PBKDF2
                 _derivedKey = DeriveKey(_secretKey, _salt);
             }
         }
 
         /// <summary>
-        /// Convert fixed key string to 32-byte array for AES-256
+        /// Convert fixed key string to specified byte array size
         /// </summary>
         private byte[] ConvertFixedKeyToBytes(string fixedKey)
         {
-            // Convert the fixed key to bytes and ensure it's exactly 32 bytes
+            // Convert the fixed key to bytes and ensure it's exactly the desired key size
             byte[] keyBytes = Encoding.UTF8.GetBytes(fixedKey);
 
-            if (keyBytes.Length == 32)
+            if (keyBytes.Length == _keySizeBytes)
             {
                 return keyBytes;
             }
-            else if (keyBytes.Length > 32)
+            else if (keyBytes.Length > _keySizeBytes)
             {
-                // Truncate to 32 bytes
-                byte[] truncated = new byte[32];
-                Array.Copy(keyBytes, 0, truncated, 0, 32);
+                // Truncate to the required key size
+                byte[] truncated = new byte[_keySizeBytes];
+                Array.Copy(keyBytes, 0, truncated, 0, _keySizeBytes);
                 return truncated;
             }
             else
             {
-                // Pad with zeros to reach 32 bytes
-                byte[] padded = new byte[32];
+                // Pad with zeros to reach the required key size
+                byte[] padded = new byte[_keySizeBytes];
                 Array.Copy(keyBytes, 0, padded, 0, keyBytes.Length);
                 return padded;
             }
@@ -66,7 +68,7 @@ namespace BusinessLogicLayer.Services
             byte[] saltBytes = Encoding.UTF8.GetBytes(salt);
             using (var pbkdf2 = new Rfc2898DeriveBytes(password, saltBytes, 10000, HashAlgorithmName.SHA256))
             {
-                return pbkdf2.GetBytes(32); // AES-256 key length
+                return pbkdf2.GetBytes(_keySizeBytes); // Use configured key size
             }
         }
 
