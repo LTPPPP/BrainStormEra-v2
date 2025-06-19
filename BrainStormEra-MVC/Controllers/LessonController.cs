@@ -354,6 +354,13 @@ namespace BrainStormEra_MVC.Controllers
                 return Unauthorized();
             }
 
+            // Check if the ID is already a hash, if not, redirect to hashed version
+            if (!_urlHashService.IsHash(id))
+            {
+                var hashedId = _urlHashService.GetHash(id);
+                return RedirectToAction("Learn", new { id = hashedId });
+            }
+
             // Decode hash ID to real ID
             var realId = DecodeHashId(id);
             if (string.IsNullOrEmpty(realId))

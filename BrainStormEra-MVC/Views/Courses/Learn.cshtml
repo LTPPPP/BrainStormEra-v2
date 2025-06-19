@@ -198,7 +198,7 @@
 <script>
     function startLesson(lessonHashId) {
         // Redirect to lesson learning page with already encoded hash ID
-        window.location.href = '@Url.Action("Learn", "Lesson")?id=' + encodeURIComponent(lessonHashId);
+        window.location.href = '@Url.Action("Learn", "Lesson")' + '?id=' + encodeURIComponent(lessonHashId);
     }
 
     function handleImageError(img) {
