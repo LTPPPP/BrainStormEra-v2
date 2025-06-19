@@ -16,8 +16,46 @@ namespace BusinessLogicLayer.Services
             _secretKey = configuration["UrlHashSettings:SecretKey"] ?? "BrainStormEra-DefaultSecretKey-2024";
             _salt = configuration["UrlHashSettings:Salt"] ?? "BrainStorm-Salt-2024";
 
-            // Derive a proper 32-byte key using PBKDF2
-            _derivedKey = DeriveKey(_secretKey, _salt);
+            // Check if fixed AES key is provided
+            var fixedKey = configuration["UrlHashSettings:FixedAESKey"];
+            if (!string.IsNullOrEmpty(fixedKey))
+            {
+                // Use fixed key directly (convert to 32 bytes)
+                _derivedKey = ConvertFixedKeyToBytes(fixedKey);
+            }
+            else
+            {
+                // Derive a proper 32-byte key using PBKDF2
+                _derivedKey = DeriveKey(_secretKey, _salt);
+            }
+        }
+
+        /// <summary>
+        /// Convert fixed key string to 32-byte array for AES-256
+        /// </summary>
+        private byte[] ConvertFixedKeyToBytes(string fixedKey)
+        {
+            // Convert the fixed key to bytes and ensure it's exactly 32 bytes
+            byte[] keyBytes = Encoding.UTF8.GetBytes(fixedKey);
+
+            if (keyBytes.Length == 32)
+            {
+                return keyBytes;
+            }
+            else if (keyBytes.Length > 32)
+            {
+                // Truncate to 32 bytes
+                byte[] truncated = new byte[32];
+                Array.Copy(keyBytes, 0, truncated, 0, 32);
+                return truncated;
+            }
+            else
+            {
+                // Pad with zeros to reach 32 bytes
+                byte[] padded = new byte[32];
+                Array.Copy(keyBytes, 0, padded, 0, keyBytes.Length);
+                return padded;
+            }
         }
 
         /// <summary>
