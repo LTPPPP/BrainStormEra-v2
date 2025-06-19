@@ -316,6 +316,36 @@ namespace BrainStormEra_MVC.Controllers
             }
         }
 
+        [RequireAuthentication("You need to login to access learning content. Please login to continue.")]
+        public async Task<IActionResult> Learn(string id)
+        {
+            // Decode hash ID to real ID
+            var realId = DecodeHashId(id);
+
+            if (string.IsNullOrEmpty(realId))
+            {
+                return NotFound();
+            }
+
+            var result = await _courseServiceImpl.GetLearnManagementDataAsync(User, realId);
+
+            if (!result.Success)
+            {
+                if (result.IsNotFound)
+                {
+                    return NotFound();
+                }
+
+                TempData["ErrorMessage"] = result.ErrorMessage;
+                return RedirectToAction("Index", "Course");
+            }
+
+            // Add UrlHashService to ViewBag for encoding lesson IDs
+            ViewBag.UrlHashService = _urlHashService;
+
+            return View("~/Views/Courses/Learn.cshtml", result.ViewModel);
+        }
+
     }
 }
 

@@ -4,6 +4,7 @@ using BusinessLogicLayer.Services.Implementations;
 using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BrainStormEra_MVC.Filters;
 
 namespace BrainStormEra_MVC.Controllers
 {
@@ -341,6 +342,56 @@ namespace BrainStormEra_MVC.Controllers
             }
 
             return RedirectToAction(result.RedirectAction, result.RedirectController, result.RedirectValues);
+        }
+
+        // New Learn action for displaying lesson content
+        [RequireAuthentication("You need to login to access lesson content. Please login to continue.")]
+        public async Task<IActionResult> Learn(string id)
+        {
+            var userId = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // Check if the ID is already a hash, if not, redirect to hashed version
+            if (!_urlHashService.IsHash(id))
+            {
+                var hashedId = _urlHashService.GetHash(id);
+                return RedirectToAction("Learn", new { id = hashedId });
+            }
+
+            // Decode hash ID to real ID
+            var realId = DecodeHashId(id);
+            if (string.IsNullOrEmpty(realId))
+            {
+                return NotFound();
+            }
+
+            var result = await _lessonServiceImpl.GetLessonLearningDataAsync(realId, userId);
+
+            if (!result.Success)
+            {
+                if (result.IsNotFound)
+                {
+                    return NotFound();
+                }
+                if (result.IsUnauthorized)
+                {
+                    TempData["ErrorMessage"] = result.ErrorMessage;
+                    return RedirectToAction("Index", "Course");
+                }
+
+                TempData["ErrorMessage"] = result.ErrorMessage;
+                return RedirectToAction("Index", "Course");
+            }
+
+            // Pass additional data for sidebar
+            ViewBag.UrlHashService = _urlHashService;
+            ViewBag.Chapters = result.ViewModel?.Chapters;
+            ViewBag.CourseDescription = result.ViewModel?.CourseDescription;
+
+            return View(result.ViewModel);
         }
     }
 }

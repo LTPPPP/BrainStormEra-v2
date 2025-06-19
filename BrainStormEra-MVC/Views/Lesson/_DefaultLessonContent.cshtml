@@ -1,0 +1,39 @@
+@model DataAccessLayer.Models.ViewModels.LessonLearningViewModel
+
+<div class="default-lesson-content">
+    <div class="content-wrapper">
+        <div class="content-header">
+            <h4><i class="@Model.LessonTypeIcon"></i> @Model.LessonType</h4>
+            <p>General lesson content</p>
+        </div>
+        
+        <div class="content-body">
+            @if (!string.IsNullOrEmpty(Model.LessonContent))
+            {
+                @Html.Raw(Model.LessonContent)
+            }
+            else
+            {
+                <div class="empty-content">
+                    <div class="empty-icon">
+                        <i class="fas fa-file-alt fa-3x"></i>
+                    </div>
+                    <h5>No Content Available</h5>
+                    <p>This lesson doesn't have any content yet. Please check back later or contact your instructor.</p>
+                </div>
+            }
+        </div>
+        
+        @if (!string.IsNullOrEmpty(Model.LessonContent))
+        {
+            <div class="content-tools">
+                <button class="btn btn-outline-secondary btn-sm" onclick="printContent()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="shareContent()">
+                    <i class="fas fa-share"></i> Share
+                </button>
+            </div>
+        }
+    </div>
+</div> 

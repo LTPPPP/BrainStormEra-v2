@@ -913,17 +913,71 @@ namespace BusinessLogicLayer.Services.Implementations
 
         private async Task ReloadViewModelDataAsync(CreateLessonViewModel model)
         {
-            var chapter = await _lessonService.GetChapterByIdAsync(model.ChapterId);
-            if (chapter != null)
+            try
             {
-                model.ChapterName = chapter.ChapterName;
-                model.CourseName = chapter.Course.CourseName;
-                model.CourseId = chapter.CourseId;
-                model.ChapterOrder = chapter.ChapterOrder ?? 1;
-            }
+                // Reload lesson types
+                model.LessonTypes = await _lessonService.GetLessonTypesAsync();
 
-            model.LessonTypes = await _lessonService.GetLessonTypesAsync();
-            model.ExistingLessons = (await _lessonService.GetLessonsInChapterAsync(model.ChapterId)).ToList();
+                // Reload existing lessons
+                if (!string.IsNullOrEmpty(model.ChapterId))
+                {
+                    var lessons = await _lessonService.GetLessonsInChapterAsync(model.ChapterId);
+                    model.ExistingLessons = lessons.ToList();
+                }
+
+                // Get chapter details for display
+                if (!string.IsNullOrEmpty(model.ChapterId))
+                {
+                    var chapter = await _lessonService.GetChapterByIdAsync(model.ChapterId);
+                    if (chapter != null)
+                    {
+                        model.ChapterName = chapter.ChapterName;
+                        model.CourseName = chapter.Course.CourseName;
+                        model.ChapterOrder = chapter.ChapterOrder ?? 1;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reloading view model data for chapter {ChapterId}", model?.ChapterId);
+            }
+        }
+
+        // New method for lesson learning
+        public async Task<LessonLearningResult> GetLessonLearningDataAsync(string lessonId, string userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(lessonId))
+                {
+                    return new LessonLearningResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Lesson ID is required"
+                    };
+                }
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new LessonLearningResult
+                    {
+                        Success = false,
+                        IsUnauthorized = true,
+                        ErrorMessage = "User authentication required"
+                    };
+                }
+
+                return await _lessonService.GetLessonLearningDataAsync(lessonId, userId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting lesson learning data for lesson {LessonId}, user {UserId}", lessonId, userId);
+                return new LessonLearningResult
+                {
+                    Success = false,
+                    ErrorMessage = "An error occurred while loading the lesson"
+                };
+            }
         }
     }
 }

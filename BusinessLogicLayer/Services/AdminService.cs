@@ -495,14 +495,14 @@ namespace BusinessLogicLayer.Services
             }
         }
 
-        public async Task<bool> DeleteCourseAsync(string courseId)
+        public Task<bool> DeleteCourseAsync(string courseId)
         {
             try
             {
                 // Admin cannot permanently delete courses created by instructors
                 // They can only ban courses. Only instructors can delete their own courses.
                 _logger.LogWarning("Admin attempted to delete course {CourseId}. Admins can only ban courses, not delete them permanently.", courseId);
-                return false;
+                return Task.FromResult(false);
             }
             catch (Exception ex)
             {

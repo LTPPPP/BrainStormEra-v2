@@ -1,0 +1,207 @@
+@model DataAccessLayer.Models.ViewModels.LearnManagementViewModel
+@{
+    ViewData["Title"] = "Learn - " + Model.CourseName;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/pages/Course/learn-management.css" />
+
+<div class="learn-management-container">
+    <!-- Course Header -->
+    <div class="course-header">
+        <div class="course-info">
+            <div class="course-image">
+                <img src="@Model.CourseImage" alt="@Model.CourseName" onerror="handleImageError(this)">
+            </div>
+            <div class="course-details">
+                <h1 class="course-title">@Model.CourseName</h1>
+                <p class="course-description">@Model.CourseDescription</p>
+                <p class="course-author">by @Model.AuthorName</p>
+                <div class="progress-info">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: @Model.ProgressPercentage%"></div>
+                    </div>
+                    <span class="progress-text">@Model.ProgressPercentage% Complete</span>
+                </div>
+                <div class="course-stats">
+                    <div class="stat">
+                        <i class="fas fa-list"></i>
+                        <span>@Model.TotalChapters Chapters</span>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-play-circle"></i>
+                        <span>@Model.TotalLessons Lessons</span>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-check-circle"></i>
+                        <span>@Model.CompletedLessons Completed</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Content -->
+    <div class="course-content">
+        @if (Model.Chapters.Any())
+        {
+            <div class="accordion" id="courseChaptersAccordion">
+                @foreach (var chapter in Model.Chapters)
+                {
+                    <div class="accordion-item chapter-accordion @(chapter.IsLocked ? "locked" : "")">
+                        <h2 class="accordion-header" id="chapter-@chapter.ChapterOrder">
+                            <button class="accordion-button @(chapter.ChapterOrder != 1 ? "collapsed" : "")" 
+                                    type="button" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#collapse-chapter-@chapter.ChapterOrder" 
+                                    aria-expanded="@(chapter.ChapterOrder == 1 ? "true" : "false")" 
+                                    aria-controls="collapse-chapter-@chapter.ChapterOrder"
+                                    @(chapter.IsLocked ? "disabled" : "")>
+                                <div class="chapter-header-content">
+                                    <div class="chapter-title-section">
+                                        <span class="chapter-number">Chapter @chapter.ChapterOrder</span>
+                                        <h3 class="chapter-title">@chapter.ChapterName</h3>
+                                        @if (chapter.IsLocked)
+                                        {
+                                            <i class="fas fa-lock chapter-lock ms-2"></i>
+                                        }
+                                        else if (chapter.IsCompleted)
+                                        {
+                                            <i class="fas fa-check-circle chapter-completed ms-2"></i>
+                                        }
+                                    </div>
+                                    <div class="chapter-stats">
+                                        <span class="lesson-count">@chapter.Lessons.Count lessons</span>
+                                        <div class="chapter-progress-mini">
+                                            <div class="progress-bar-mini">
+                                                <div class="progress-fill-mini" style="width: @chapter.CompletionPercentage%"></div>
+                                            </div>
+                                            <span class="progress-text-mini">@chapter.CompletionPercentage%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="collapse-chapter-@chapter.ChapterOrder" 
+                             class="accordion-collapse collapse @(chapter.ChapterOrder == 1 ? "show" : "")" 
+                             aria-labelledby="chapter-@chapter.ChapterOrder" 
+                             data-bs-parent="#courseChaptersAccordion">
+                            <div class="accordion-body">
+                                @if (!string.IsNullOrEmpty(chapter.ChapterDescription))
+                                {
+                                    <div class="chapter-description-section">
+                                        <p class="chapter-description">@chapter.ChapterDescription</p>
+                                    </div>
+                                }
+
+                                @if (chapter.Lessons.Any())
+                                {
+                                    <div class="lessons-list">
+                                        @foreach (var lesson in chapter.Lessons)
+                                        {
+                                            <div class="lesson-item @(lesson.IsLocked ? "locked" : "") @(lesson.IsCompleted ? "completed" : "")">
+                                                <div class="lesson-content">
+                                                    <div class="lesson-icon">
+                                                        <i class="@lesson.LessonTypeIcon"></i>
+                                                    </div>
+                                                    <div class="lesson-info">
+                                                        <div class="lesson-header">
+                                                            <h4 class="lesson-title">
+                                                                @lesson.LessonName
+                                                                @if (lesson.IsMandatory)
+                                                                {
+                                                                    <span class="mandatory-badge">Required</span>
+                                                                }
+                                                            </h4>
+                                                            <div class="lesson-meta">
+                                                                <span class="lesson-type">@lesson.LessonType</span>
+                                                                @if (lesson.EstimatedDuration > 0)
+                                                                {
+                                                                    <span class="lesson-duration">
+                                                                        <i class="fas fa-clock"></i>
+                                                                        @lesson.EstimatedDuration min
+                                                                    </span>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(lesson.LessonDescription))
+                                                        {
+                                                            <p class="lesson-description">@lesson.LessonDescription</p>
+                                                        }
+                                                        @if (lesson.ProgressPercentage > 0)
+                                                        {
+                                                            <div class="lesson-progress">
+                                                                <div class="progress-bar mini">
+                                                                    <div class="progress-fill" style="width: @lesson.ProgressPercentage%"></div>
+                                                                </div>
+                                                                <span class="progress-text">@lesson.ProgressPercentage%</span>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    <div class="lesson-actions">
+                                                        @if (lesson.IsLocked)
+                                                        {
+                                                            <button class="btn btn-locked" disabled>
+                                                                <i class="fas fa-lock"></i>
+                                                                Locked
+                                                            </button>
+                                                        }
+                                                        else if (lesson.IsCompleted)
+                                                        {
+                                                            <button class="btn btn-completed">
+                                                                <i class="fas fa-check"></i>
+                                                                Completed
+                                                            </button>
+                                                            <button class="btn btn-review" onclick="startLesson('@(ViewBag.UrlHashService?.EncodeId(lesson.LessonId.ToString()) ?? lesson.LessonId.ToString())')">
+                                                                <i class="fas fa-redo"></i>
+                                                                Review
+                                                            </button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button class="btn btn-start" onclick="startLesson('@(ViewBag.UrlHashService?.EncodeId(lesson.LessonId.ToString()) ?? lesson.LessonId.ToString())')">
+                                                                <i class="fas fa-play"></i>
+                                                                Start
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="no-lessons">
+                                        <p>No lessons available in this chapter yet.</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="no-content">
+                <div class="no-content-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <h3>No Content Available</h3>
+                <p>This course doesn't have any chapters or lessons yet. Please check back later.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+    function startLesson(lessonHashId) {
+        // Redirect to lesson learning page with already encoded hash ID
+        window.location.href = '@Url.Action("Learn", "Lesson")' + '?id=' + encodeURIComponent(lessonHashId);
+    }
+
+    function handleImageError(img) {
+        img.src = '/SharedMedia/defaults/default-course.png';
+    }
+</script> 

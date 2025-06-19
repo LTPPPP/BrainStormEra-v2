@@ -1,0 +1,97 @@
+/* Video Lesson Styles */
+.video-lesson-content .video-container {
+    margin-bottom: 1rem;
+}
+
+.video-wrapper {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    height: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.video-wrapper iframe,
+.video-wrapper video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+}
+
+.video-error {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 2px dashed #dee2e6;
+}
+
+.video-error .error-icon {
+    color: #dc3545;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.video-error h4 {
+    color: #495057;
+    margin-bottom: 1rem;
+}
+
+.video-error p {
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.video-error .raw-content {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+    margin-top: 1rem;
+    word-break: break-all;
+    font-family: monospace;
+    font-size: 0.875rem;
+}
+
+.video-controls {
+    margin-top: 1rem;
+}
+
+.playback-controls {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.playback-controls .btn {
+    min-width: 60px;
+    font-weight: 600;
+}
+
+/* Responsive Design for Video */
+@media (max-width: 768px) {
+    .playback-controls {
+        gap: 0.25rem;
+    }
+    
+    .playback-controls .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        min-width: 50px;
+    }
+}
+
+@media (max-width: 576px) {
+    .video-error {
+        padding: 2rem 1rem;
+    }
+    
+    .video-error .error-icon {
+        font-size: 2rem;
+    }
+} 

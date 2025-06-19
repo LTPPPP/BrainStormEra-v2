@@ -24,7 +24,6 @@ namespace BusinessLogicLayer.Services
                 var existingStatuses = await _context.Statuses.CountAsync();
                 if (existingStatuses > 0)
                 {
-                    _logger.LogInformation("Statuses already exist in database: {Count}", existingStatuses);
                     return;
                 }
 

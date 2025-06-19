@@ -1,0 +1,138 @@
+/* Text Lesson Styles */
+.text-lesson-content .text-content-wrapper {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.text-content-wrapper.dark-mode {
+    background: #2c3e50;
+    color: #ecf0f1;
+}
+
+.text-content-wrapper.dark-mode .content-body {
+    background: #2c3e50;
+    color: #ecf0f1;
+}
+
+.text-content-wrapper.dark-mode .reading-tools {
+    background: #34495e;
+    border-color: #495057;
+}
+
+.content-body {
+    padding: 2rem;
+    line-height: 1.8;
+    font-size: 16px;
+    background: white;
+    min-height: 400px;
+}
+
+.content-body h1, .content-body h2, .content-body h3,
+.content-body h4, .content-body h5, .content-body h6 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+.text-content-wrapper.dark-mode .content-body h1,
+.text-content-wrapper.dark-mode .content-body h2,
+.text-content-wrapper.dark-mode .content-body h3,
+.text-content-wrapper.dark-mode .content-body h4,
+.text-content-wrapper.dark-mode .content-body h5,
+.text-content-wrapper.dark-mode .content-body h6 {
+    color: #ecf0f1;
+}
+
+.content-body p {
+    margin-bottom: 1rem;
+}
+
+.content-body ul, .content-body ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+.content-body blockquote {
+    border-left: 4px solid #667eea;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.text-content-wrapper.dark-mode .content-body blockquote {
+    background: #495057;
+    border-color: #667eea;
+}
+
+.reading-tools {
+    background: #f8f9fa;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #dee2e6;
+}
+
+.font-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.font-controls label {
+    margin-right: 0.5rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.reading-mode .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Responsive Design for Text */
+@media (max-width: 768px) {
+    .content-body {
+        padding: 1rem;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    
+    .reading-tools {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .font-controls {
+        justify-content: center;
+    }
+    
+    .content-body h1, .content-body h2, .content-body h3,
+    .content-body h4, .content-body h5, .content-body h6 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .content-body {
+        padding: 0.75rem;
+    }
+    
+    .font-controls .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .reading-mode .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+    }
+} 

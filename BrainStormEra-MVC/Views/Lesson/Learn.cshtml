@@ -1,0 +1,233 @@
+@model DataAccessLayer.Models.ViewModels.LessonLearningViewModel
+@{
+    ViewData["Title"] = Model.LessonName + " - " + Model.CourseName;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/pages/Lesson/lesson-learning.css" />
+<link rel="stylesheet" href="~/css/pages/Lesson/video-lesson.css" />
+<link rel="stylesheet" href="~/css/pages/Lesson/text-lesson.css" />
+<link rel="stylesheet" href="~/css/pages/Lesson/interactive-lesson.css" />
+<link rel="stylesheet" href="~/css/pages/Lesson/quiz-lesson.css" />
+<link rel="stylesheet" href="~/css/pages/Lesson/default-lesson.css" />
+
+<div class="lesson-learning-container">
+    <!-- Header -->
+    <div class="lesson-header">
+        <div class="container">
+            <div class="lesson-title-section">
+                <div>
+                    <h1 class="lesson-title">@Model.LessonName</h1>
+                    <div class="breadcrumb-section">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item">
+                                    <a href="@Url.Action("Index", "Home")">Home</a>
+                                </li>
+                                <li class="breadcrumb-item">
+                                    <a href="@Url.Action("Learn", "Course", new { id = ViewBag.UrlHashService?.EncodeId(Model.CourseId) })">
+                                        @Model.CourseName
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item active" aria-current="page">
+                                    @Model.LessonName
+                                </li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="lesson-main-layout">
+        <!-- Sidebar -->
+        <div class="lesson-sidebar">
+            <div class="sidebar-header">
+                <div class="course-info">
+                    <h4>@Model.CourseName</h4>
+                    <p>@ViewBag.CourseDescription</p>
+                </div>
+                <div class="course-progress">
+                    <div class="progress-info">
+                        <span class="progress-text">Course Progress</span>
+                        <span class="progress-percentage">@(Model.CurrentProgress ?? 0)%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: @(Model.CurrentProgress ?? 0)%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chapter-list">
+                @if(ViewBag.Chapters != null)
+                {
+                    @foreach(var chapter in ViewBag.Chapters)
+                    {
+                        <div class="chapter-item">
+                            <button class="chapter-header" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#chapter-@chapter.ChapterId" aria-expanded="@(chapter.ChapterId == Model.ChapterId ? "true" : "false")">
+                                <div class="chapter-info">
+                                    <h5>Chapter @chapter.ChapterNumber: @chapter.ChapterName</h5>
+                                    <div class="chapter-meta">@chapter.Lessons.Count lessons</div>
+                                </div>
+                                <div class="chapter-progress">
+                                    <div class="mini-progress">
+                                        <div class="mini-progress-bar" style="width: @chapter.CompletionPercentage%"></div>
+                                    </div>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </button>
+                            <div class="collapse @(chapter.ChapterId == Model.ChapterId ? "show" : "")" id="chapter-@chapter.ChapterId">
+                                <div class="chapter-lessons">
+                                    @foreach(var lesson in chapter.Lessons)
+                                    {
+                                        <div class="lesson-item @(lesson.LessonId == Model.LessonId ? "current" : "") @(lesson.IsCompleted ? "completed" : "")" 
+                                             onclick="location.href='@Url.Action("Learn", "Lesson", new { id = ViewBag.UrlHashService?.EncodeId(lesson.LessonId) })'">
+                                            <div class="lesson-icon">
+                                                @if(lesson.IsCompleted)
+                                                {
+                                                    <i class="fas fa-check"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="@lesson.LessonTypeIcon"></i>
+                                                }
+                                            </div>
+                                            <div class="lesson-info">
+                                                <h6>@lesson.LessonName</h6>
+                                                <div class="lesson-meta">@lesson.LessonType • @(lesson.EstimatedDuration > 0 ? lesson.EstimatedDuration + " min" : "No duration")</div>
+                                            </div>
+                                            <div class="lesson-status">
+                                                @if(lesson.IsCompleted)
+                                                {
+                                                    <span>Complete</span>
+                                                }
+                                                else if(lesson.LessonId == Model.LessonId)
+                                                {
+                                                    <span>Current</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>Start</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="lesson-content-area">
+            <div class="lesson-content-header">
+                <h2 class="lesson-content-title">@Model.LessonName</h2>
+                <div class="lesson-content-meta">
+                    <span class="lesson-type-badge @Model.LessonType.ToLower().Replace(" ", "")">
+                        <i class="@Model.LessonTypeIcon"></i>
+                        @Model.LessonType
+                    </span>
+                    @if (Model.EstimatedDuration > 0)
+                    {
+                        <span class="lesson-duration-badge">
+                            <i class="fas fa-clock"></i>
+                            @Model.EstimatedDuration min
+                        </span>
+                    }
+                    @if (Model.IsMandatory)
+                    {
+                        <span class="lesson-type-badge" style="background: #fff3cd; color: #856404;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            Mandatory
+                        </span>
+                    }
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.LessonDescription))
+            {
+                <div class="lesson-description" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid #667eea;">
+                    <p style="margin: 0; color: #495057;">@Model.LessonDescription</p>
+                </div>
+            }
+
+            <div class="main-content" data-lesson-type="@Model.LessonType" data-course-id="@ViewBag.UrlHashService?.EncodeId(Model.CourseId)">
+                @switch (Model.LessonType.ToLower())
+                {
+                    case "video":
+                        @await Html.PartialAsync("_VideoLessonContent", Model)
+                        break;
+                    case "text lesson":
+                        @await Html.PartialAsync("_TextLessonContent", Model)
+                        break;
+                    case "interactive lesson":
+                        @await Html.PartialAsync("_InteractiveLessonContent", Model)
+                        break;
+                    case "quiz":
+                        @await Html.PartialAsync("_QuizLessonContent", Model)
+                        break;
+                    default:
+                        @await Html.PartialAsync("_DefaultLessonContent", Model)
+                        break;
+                }
+            </div>
+
+            <div class="lesson-actions">
+                <div class="navigation-buttons">
+                    @if (!string.IsNullOrEmpty(Model.PreviousLessonId))
+                    {
+                        <a href="@Url.Action("Learn", "Lesson", new { id = ViewBag.UrlHashService?.EncodeId(Model.PreviousLessonId) })" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    }
+                    else
+                    {
+                        <div></div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.NextLessonId))
+                    {
+                        <a href="@Url.Action("Learn", "Lesson", new { id = ViewBag.UrlHashService?.EncodeId(Model.NextLessonId) })" 
+                           class="btn btn-primary">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <div></div>
+                    }
+                </div>
+
+                <div class="action-buttons">
+                    @if (!Model.IsCompleted)
+                    {
+                        <button type="button" class="btn btn-success" onclick="markAsComplete()">
+                            <i class="fas fa-check-circle"></i> Mark as Complete
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-outline-success" disabled>
+                            <i class="fas fa-check-circle"></i> Completed
+                        </button>
+                    }
+                    <button type="button" class="btn btn-outline-secondary" onclick="backToChapter()">
+                        <i class="fas fa-arrow-left"></i> Back to Course
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/pages/lesson/lesson-learning.js"></script>
+<script src="~/js/pages/lesson/video-lesson.js"></script>
+<script src="~/js/pages/lesson/text-lesson.js"></script>
+<script src="~/js/pages/lesson/interactive-lesson.js"></script>
+<script src="~/js/pages/lesson/default-lesson.js"></script> 

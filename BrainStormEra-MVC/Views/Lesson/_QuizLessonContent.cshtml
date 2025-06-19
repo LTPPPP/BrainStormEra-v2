@@ -1,0 +1,61 @@
+@model DataAccessLayer.Models.ViewModels.LessonLearningViewModel
+
+<div class="quiz-lesson-content">
+    @if (Model.HasQuiz && !string.IsNullOrEmpty(Model.QuizId))
+    {
+        <div class="quiz-wrapper">
+            <div class="quiz-header">
+                <div class="quiz-info">
+                    <h4><i class="fas fa-question-circle"></i> Quiz Lesson</h4>
+                    <p>Test your knowledge with this interactive quiz.</p>
+                    @if (Model.MinQuizScore.HasValue && Model.RequiresQuizPass == true)
+                    {
+                        <div class="quiz-requirements">
+                            <div class="requirement-item">
+                                <i class="fas fa-target"></i>
+                                <span>Minimum Score Required: @Model.MinQuizScore%</span>
+                            </div>
+                            <div class="requirement-item">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>You must pass this quiz to proceed</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="quiz-actions">
+                    <a href="@Url.Action("Details", "Quiz", new { id = ViewBag.UrlHashService?.EncodeId(Model.QuizId) })" 
+                       class="btn btn-primary">
+                        <i class="fas fa-play"></i>
+                        Start Quiz
+                    </a>
+                </div>
+            </div>
+            
+            <div class="quiz-description">
+                @Html.Raw(Model.LessonContent)
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="quiz-placeholder">
+            <div class="placeholder-content">
+                <div class="placeholder-icon">
+                    <i class="fas fa-question-circle fa-4x"></i>
+                </div>
+                <h4>Quiz Coming Soon</h4>
+                <p>This lesson is designed to include a quiz, but it hasn't been set up yet.</p>
+                
+                @if (!string.IsNullOrEmpty(Model.LessonContent))
+                {
+                    <div class="lesson-content-preview">
+                        <h5>Lesson Content:</h5>
+                        <div class="content-body">
+                            @Html.Raw(Model.LessonContent)
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div> 

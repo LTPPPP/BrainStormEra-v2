@@ -23,7 +23,6 @@ namespace BusinessLogicLayer.Services
                 // Check if lesson types already exist
                 if (await _context.LessonTypes.AnyAsync())
                 {
-                    _logger.LogInformation("Lesson types already exist in database");
                     return;
                 }
 

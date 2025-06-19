@@ -1,0 +1,120 @@
+@model DataAccessLayer.Models.ViewModels.LessonLearningViewModel
+
+<div class="video-lesson-content">
+    <div class="video-container">
+        @{
+            var videoUrl = Model.LessonContent;
+            var defaultVideoUrl = "https://www.youtube.com/embed/ScMzIvxBSi4"; // Educational sample video
+            // Extract video URL from JSON if needed
+            if (videoUrl.StartsWith("{") && videoUrl.Contains("videoUrl"))
+            {
+                try
+                {
+                    var contentObj = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(videoUrl);
+                    if (contentObj != null && contentObj.ContainsKey("videoUrl"))
+                    {
+                        videoUrl = contentObj["videoUrl"]?.ToString() ?? videoUrl;
+                    }
+                }
+                catch
+                {
+                    // If parsing fails, use original content
+                }
+            }
+        }
+
+        @if (videoUrl.Contains("youtube.com") || videoUrl.Contains("youtu.be"))
+        {
+            var videoId = "";
+            if (videoUrl.Contains("youtube.com/watch?v="))
+            {
+                videoId = videoUrl.Split("v=")[1].Split("&")[0];
+            }
+            else if (videoUrl.Contains("youtu.be/"))
+            {
+                videoId = videoUrl.Split("youtu.be/")[1].Split("?")[0];
+            }
+            var embedUrl = $"https://www.youtube.com/embed/{videoId}";
+            
+            <div class="video-wrapper">
+                <iframe 
+                    src="@embedUrl" 
+                    title="@Model.LessonName"
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowfullscreen
+                    onload="this.style.display='block'; document.querySelector('.default-video-fallback')?.remove();"
+                    onerror="showDefaultVideo(this, '@defaultVideoUrl');">
+                </iframe>
+            </div>
+        }
+        else if (videoUrl.Contains("vimeo.com"))
+        {
+            var videoId = videoUrl.Split("/").Last();
+            var embedUrl = $"https://player.vimeo.com/video/{videoId}";
+            
+            <div class="video-wrapper">
+                <iframe 
+                    src="@embedUrl" 
+                    title="@Model.LessonName"
+                    frameborder="0" 
+                    allow="autoplay; fullscreen; picture-in-picture" 
+                    allowfullscreen
+                    onload="this.style.display='block'; document.querySelector('.default-video-fallback')?.remove();"
+                    onerror="showDefaultVideo(this, '@defaultVideoUrl');">
+                </iframe>
+            </div>
+        }
+        else if (videoUrl.EndsWith(".mp4") || videoUrl.EndsWith(".webm") || videoUrl.EndsWith(".ogg"))
+        {
+            <div class="video-wrapper">
+                <video controls preload="metadata" onerror="showDefaultVideo(this, '@defaultVideoUrl');">
+                    <source src="@videoUrl" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        }
+        else
+        {
+            <!-- Show default video when original fails -->
+            <div class="default-video-container">
+                <div class="video-wrapper">
+                    <iframe 
+                        src="@defaultVideoUrl" 
+                        title="Default Educational Content"
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <div class="alert alert-warning mt-3" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Original video unavailable.</strong> 
+                    The video format is not supported or the URL is invalid. Showing default educational content instead.
+                    @if (!string.IsNullOrEmpty(videoUrl))
+                    {
+                        <details class="mt-2">
+                            <summary class="btn btn-link p-0">Show original URL</summary>
+                            <div class="mt-2">
+                                <code>@videoUrl</code>
+                            </div>
+                        </details>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="video-controls">
+        <div class="playback-controls">
+            <button class="btn btn-sm btn-outline-secondary" onclick="adjustPlaybackSpeed(0.5)">0.5x</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="adjustPlaybackSpeed(0.75)">0.75x</button>
+            <button class="btn btn-sm btn-primary" onclick="adjustPlaybackSpeed(1)">1x</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="adjustPlaybackSpeed(1.25)">1.25x</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="adjustPlaybackSpeed(1.5)">1.5x</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="adjustPlaybackSpeed(2)">2x</button>
+        </div>
+    </div>
+</div>
+
+ 
