@@ -4,6 +4,7 @@ using DataAccessLayer.Data;
 using DataAccessLayer.Models;
 using DataAccessLayer.Repositories.Interfaces;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Text;
@@ -60,12 +61,22 @@ namespace BusinessLogicLayer.Services
                     return cachedResponse;
                 }
 
-                var apiKey = _configuration["GeminiApiKey"];
-                var apiUrl = _configuration["GeminiApiUrl"];
+                var apiKey = EnvironmentHelper.GetChatbotApiKey();
+                var apiUrl = EnvironmentHelper.GetChatbotApiUrl();
+
+                // Fallback to configuration if environment variables are not set
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    apiKey = _configuration["ChatbotApiKey"];
+                }
+                if (string.IsNullOrEmpty(apiUrl))
+                {
+                    apiUrl = _configuration["ChatbotApiUrl"];
+                }
 
                 if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiUrl))
                 {
-                    throw new InvalidOperationException("Gemini API configuration is missing");
+                    throw new InvalidOperationException("Chatbot API configuration is missing");
                 }
 
                 // Get user context to personalize responses
@@ -118,7 +129,7 @@ namespace BusinessLogicLayer.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var responseJson = await response.Content.ReadAsStringAsync();
-                    var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseJson); var botResponse = geminiResponse?.candidates?.FirstOrDefault()?.content?.parts?.FirstOrDefault()?.text
+                    var chatbotResponse = JsonSerializer.Deserialize<ChatbotResponse>(responseJson); var botResponse = chatbotResponse?.candidates?.FirstOrDefault()?.content?.parts?.FirstOrDefault()?.text
                         ?? "Sorry, I cannot process your question at this time. Please try again later.";
 
                     // Cache common educational responses for 1 hour
@@ -142,7 +153,7 @@ namespace BusinessLogicLayer.Services
                 }
                 else
                 {
-                    _logger.LogError($"Gemini API error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+                    _logger.LogError($"Chatbot API error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
                     return "Sorry, an error occurred while processing your question. Please try again later.";
                 }
             }
@@ -265,8 +276,8 @@ namespace BusinessLogicLayer.Services
         }
     }
 
-    // DTOs for Gemini API response
-    public class GeminiResponse
+    // DTOs for Chatbot API response
+    public class ChatbotResponse
     {
         public List<Candidate>? candidates { get; set; }
     }
