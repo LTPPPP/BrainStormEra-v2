@@ -23,6 +23,7 @@ namespace DataAccessLayer.Models.ViewModels
         public string ChapterName { get; set; } = string.Empty;
         public string ChapterDescription { get; set; } = string.Empty;
         public int ChapterOrder { get; set; }
+        public int ChapterNumber => ChapterOrder;
         public bool IsLocked { get; set; }
         public List<LearnLessonViewModel> Lessons { get; set; } = new List<LearnLessonViewModel>();
         public bool IsCompleted => Lessons.All(l => l.IsCompleted);
@@ -50,5 +51,56 @@ namespace DataAccessLayer.Models.ViewModels
         public bool IsNotFound { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
         public LearnManagementViewModel? ViewModel { get; set; }
+    }
+
+    // ViewModel for individual lesson learning
+    public class LessonLearningViewModel
+    {
+        public string LessonId { get; set; } = string.Empty;
+        public string LessonName { get; set; } = string.Empty;
+        public string LessonDescription { get; set; } = string.Empty;
+        public string LessonContent { get; set; } = string.Empty;
+        public string LessonType { get; set; } = string.Empty;
+        public int LessonTypeId { get; set; }
+        public string LessonTypeIcon { get; set; } = string.Empty;
+        public int EstimatedDuration { get; set; }
+
+        // Course & Chapter info
+        public string CourseId { get; set; } = string.Empty;
+        public string CourseName { get; set; } = string.Empty;
+        public string CourseDescription { get; set; } = string.Empty;
+        public string ChapterId { get; set; } = string.Empty;
+        public string ChapterName { get; set; } = string.Empty;
+        public int ChapterNumber { get; set; }
+
+        // Navigation
+        public string? PreviousLessonId { get; set; }
+        public string? NextLessonId { get; set; }
+        public string? PreviousLessonName { get; set; }
+        public string? NextLessonName { get; set; }
+
+        // Progress tracking
+        public decimal? CurrentProgress { get; set; }
+        public bool IsCompleted { get; set; }
+        public bool IsMandatory { get; set; }
+
+        // Quiz specific (if lesson type is quiz)
+        public bool HasQuiz { get; set; }
+        public string? QuizId { get; set; }
+        public decimal? MinQuizScore { get; set; }
+        public bool? RequiresQuizPass { get; set; }
+
+        // Sidebar data for course navigation
+        public List<LearnChapterViewModel> Chapters { get; set; } = new List<LearnChapterViewModel>();
+        public decimal ProgressPercentage => CurrentProgress ?? 0;
+    }
+
+    public class LessonLearningResult
+    {
+        public bool Success { get; set; }
+        public bool IsNotFound { get; set; }
+        public bool IsUnauthorized { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
+        public LessonLearningViewModel? ViewModel { get; set; }
     }
 }

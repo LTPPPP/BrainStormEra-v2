@@ -340,49 +340,207 @@ namespace BusinessLogicLayer.Services
             {
                 var lesson = await _context.Lessons
                     .Include(l => l.Chapter)
-                        .ThenInclude(c => c.Course)
-                    .Include(l => l.UserProgresses)
-                    .Include(l => l.Quizzes)
-                        .ThenInclude(q => q.QuizAttempts)
-                    .FirstOrDefaultAsync(l => l.LessonId == lessonId && l.Chapter.Course.AuthorId == authorId);
+                    .ThenInclude(c => c.Course)
+                    .Where(l => l.LessonId == lessonId && l.Chapter.Course.AuthorId == authorId)
+                    .FirstOrDefaultAsync();
 
                 if (lesson == null)
-                {
                     return false;
-                }
 
-                // Check if lesson has user progress or quiz attempts
-                var hasUserProgress = lesson.UserProgresses.Any();
-                var hasQuizAttempts = lesson.Quizzes.Any(q => q.QuizAttempts.Any());
-                var isDependency = await _context.Lessons.AnyAsync(l => l.UnlockAfterLessonId == lessonId);
-
-                if (hasUserProgress || hasQuizAttempts || isDependency)
+                // Use execution strategy for transaction
+                var strategy = _context.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync(async () =>
                 {
-                    // Soft delete - set status to Archived
-                    lesson.LessonStatus = 4; // Archived
-                    lesson.LessonUpdatedAt = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
+                    using var transaction = await _context.Database.BeginTransactionAsync();
+                    try
+                    {
+                        // Get chapter and order of lesson to be deleted
+                        var chapterId = lesson.ChapterId;
+                        var deletedOrder = lesson.LessonOrder;
 
-                    // Log the operation
+                        // Remove the lesson
+                        _context.Lessons.Remove(lesson);
 
-                }
-                else
-                {
-                    // Hard delete - remove completely as there's no user data to preserve
-                    _context.Lessons.Remove(lesson);
-                    await _context.SaveChangesAsync();
+                        // Update order of subsequent lessons
+                        var subsequentLessons = await _context.Lessons
+                            .Where(l => l.ChapterId == chapterId && l.LessonOrder > deletedOrder)
+                            .ToListAsync();
 
-                    // Log the operation
+                        foreach (var subsequentLesson in subsequentLessons)
+                        {
+                            subsequentLesson.LessonOrder--;
+                            subsequentLesson.LessonUpdatedAt = DateTime.Now;
+                        }
 
-                }
+                        await _context.SaveChangesAsync();
+                        await transaction.CommitAsync();
 
-                return true;
+                        return true;
+                    }
+                    catch (Exception)
+                    {
+                        await transaction.RollbackAsync();
+                        return false;
+                    }
+                });
             }
             catch (Exception)
             {
-
                 return false;
             }
+        }
+
+        public async Task<LessonLearningResult> GetLessonLearningDataAsync(string lessonId, string userId)
+        {
+            try
+            {
+                // Get lesson with related data
+                var lesson = await _context.Lessons
+                    .Include(l => l.Chapter)
+                        .ThenInclude(c => c.Course)
+                            .ThenInclude(course => course.Enrollments.Where(e => e.UserId == userId))
+                    .Include(l => l.LessonType)
+                    .Include(l => l.Quizzes)
+                    .Include(l => l.UserProgresses.Where(up => up.UserId == userId))
+                    .FirstOrDefaultAsync(l => l.LessonId == lessonId);
+
+                if (lesson == null)
+                {
+                    return new LessonLearningResult
+                    {
+                        Success = false,
+                        IsNotFound = true,
+                        ErrorMessage = "Lesson not found"
+                    };
+                }
+
+                // Check if user is enrolled in the course
+                var enrollment = lesson.Chapter.Course.Enrollments.FirstOrDefault();
+                if (enrollment == null)
+                {
+                    return new LessonLearningResult
+                    {
+                        Success = false,
+                        IsUnauthorized = true,
+                        ErrorMessage = "You are not enrolled in this course"
+                    };
+                }
+
+                // Get navigation lessons (previous and next)
+                var allLessonsInChapter = await _context.Lessons
+                    .Where(l => l.ChapterId == lesson.ChapterId)
+                    .OrderBy(l => l.LessonOrder)
+                    .Select(l => new { l.LessonId, l.LessonName, l.LessonOrder })
+                    .ToListAsync();
+
+                var currentLessonIndex = allLessonsInChapter.FindIndex(l => l.LessonId == lessonId);
+                var previousLesson = currentLessonIndex > 0 ? allLessonsInChapter[currentLessonIndex - 1] : null;
+                var nextLesson = currentLessonIndex < allLessonsInChapter.Count - 1 ? allLessonsInChapter[currentLessonIndex + 1] : null;
+
+                // Get user progress
+                var userProgress = lesson.UserProgresses.FirstOrDefault();
+
+                // Get lesson type icon
+                string lessonTypeIcon = GetLessonTypeIcon(lesson.LessonType?.LessonTypeName ?? "");
+
+                // Check if lesson has quiz
+                var hasQuiz = lesson.Quizzes.Any();
+                var quiz = lesson.Quizzes.FirstOrDefault();
+
+                // Get all chapters with lessons for sidebar
+                var chapters = await _context.Chapters
+                    .Where(c => c.CourseId == lesson.Chapter.CourseId)
+                    .Include(c => c.Lessons)
+                        .ThenInclude(l => l.LessonType)
+                    .Include(c => c.Lessons)
+                        .ThenInclude(l => l.UserProgresses.Where(up => up.UserId == userId))
+                    .OrderBy(c => c.ChapterOrder)
+                    .ToListAsync();
+
+                var chaptersViewModel = chapters.Select(c => new LearnChapterViewModel
+                {
+                    ChapterId = c.ChapterId,
+                    ChapterName = c.ChapterName,
+                    ChapterDescription = c.ChapterDescription ?? "",
+                    ChapterOrder = c.ChapterOrder ?? 1,
+                    Lessons = c.Lessons.OrderBy(l => l.LessonOrder).Select(l => new LearnLessonViewModel
+                    {
+                        LessonId = l.LessonId,
+                        LessonName = l.LessonName,
+                        LessonDescription = l.LessonDescription ?? "",
+                        LessonOrder = l.LessonOrder,
+                        LessonType = l.LessonType?.LessonTypeName ?? "",
+                        LessonTypeIcon = GetLessonTypeIcon(l.LessonType?.LessonTypeName ?? ""),
+                        EstimatedDuration = l.MinTimeSpent ?? 0,
+                        IsCompleted = l.UserProgresses.Any(up => up.IsCompleted == true),
+                        IsMandatory = l.IsMandatory ?? false,
+                        ProgressPercentage = l.UserProgresses.FirstOrDefault()?.ProgressPercentage ?? 0
+                    }).ToList()
+                }).ToList();
+
+                var viewModel = new LessonLearningViewModel
+                {
+                    LessonId = lesson.LessonId,
+                    LessonName = lesson.LessonName,
+                    LessonDescription = lesson.LessonDescription ?? "",
+                    LessonContent = lesson.LessonContent,
+                    LessonType = lesson.LessonType?.LessonTypeName ?? "",
+                    LessonTypeId = lesson.LessonTypeId ?? 0,
+                    LessonTypeIcon = lessonTypeIcon,
+                    EstimatedDuration = lesson.MinTimeSpent ?? 0,
+
+                    CourseId = lesson.Chapter.CourseId,
+                    CourseName = lesson.Chapter.Course.CourseName,
+                    CourseDescription = lesson.Chapter.Course.CourseDescription ?? "",
+                    ChapterId = lesson.ChapterId,
+                    ChapterName = lesson.Chapter.ChapterName,
+                    ChapterNumber = lesson.Chapter.ChapterOrder ?? 1,
+
+                    PreviousLessonId = previousLesson?.LessonId,
+                    NextLessonId = nextLesson?.LessonId,
+                    PreviousLessonName = previousLesson?.LessonName,
+                    NextLessonName = nextLesson?.LessonName,
+
+                    CurrentProgress = userProgress?.ProgressPercentage,
+                    IsCompleted = userProgress?.IsCompleted ?? false,
+                    IsMandatory = lesson.IsMandatory ?? false,
+
+                    HasQuiz = hasQuiz,
+                    QuizId = quiz?.QuizId,
+                    MinQuizScore = lesson.MinQuizScore,
+                    RequiresQuizPass = lesson.RequiresQuizPass,
+
+                    // Sidebar data
+                    Chapters = chaptersViewModel
+                };
+
+                return new LessonLearningResult
+                {
+                    Success = true,
+                    ViewModel = viewModel
+                };
+            }
+            catch (Exception ex)
+            {
+                return new LessonLearningResult
+                {
+                    Success = false,
+                    ErrorMessage = "An error occurred while loading the lesson"
+                };
+            }
+        }
+
+        private string GetLessonTypeIcon(string lessonTypeName)
+        {
+            return lessonTypeName.ToLower() switch
+            {
+                "video" => "fas fa-play-circle",
+                "text lesson" => "fas fa-file-text",
+                "interactive lesson" => "fas fa-mouse-pointer",
+                "quiz" => "fas fa-question-circle",
+                "document" => "fas fa-file-pdf",
+                _ => "fas fa-file-alt"
+            };
         }
     }
 }

@@ -1,0 +1,24 @@
+@model DataAccessLayer.Models.ViewModels.LessonLearningViewModel
+
+<div class="text-lesson-content">
+    <div class="text-content-wrapper">
+        <div class="content-body">
+            @Html.Raw(Model.LessonContent)
+        </div>
+    </div>
+    
+    <div class="reading-tools">
+        <div class="font-controls">
+            <label>Font Size:</label>
+            <button class="btn btn-sm btn-outline-secondary" onclick="adjustFontSize(-2)">A-</button>
+            <button class="btn btn-sm btn-primary" onclick="resetFontSize()">A</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="adjustFontSize(2)">A+</button>
+        </div>
+        
+        <div class="reading-mode">
+            <button class="btn btn-sm btn-outline-secondary" onclick="toggleDarkMode()">
+                <i class="fas fa-moon"></i> Dark Mode
+            </button>
+        </div>
+    </div>
+</div> 

@@ -340,6 +340,9 @@ namespace BrainStormEra_MVC.Controllers
                 return RedirectToAction("Index", "Course");
             }
 
+            // Add UrlHashService to ViewBag for encoding lesson IDs
+            ViewBag.UrlHashService = _urlHashService;
+
             return View("~/Views/Courses/Learn.cshtml", result.ViewModel);
         }
 

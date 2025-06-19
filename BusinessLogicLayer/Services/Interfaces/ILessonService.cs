@@ -19,6 +19,7 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<bool> UpdateLessonAsync(string lessonId, CreateLessonViewModel model, string authorId);
         Task<bool> IsDuplicateLessonNameForEditAsync(string lessonName, string chapterId, string currentLessonId);
         Task<bool> DeleteLessonAsync(string lessonId, string authorId);
+        Task<LessonLearningResult> GetLessonLearningDataAsync(string lessonId, string userId);
     }
 }
 

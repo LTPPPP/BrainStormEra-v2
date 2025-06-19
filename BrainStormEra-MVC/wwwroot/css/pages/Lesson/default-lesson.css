@@ -1,0 +1,152 @@
+/* Default Lesson Styles */
+.default-lesson-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.content-wrapper {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.content-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.content-header h4 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.content-header h4 i {
+    color: #667eea;
+}
+
+.content-header p {
+    color: #6c757d;
+    margin: 0;
+}
+
+.content-body {
+    line-height: 1.6;
+    color: #495057;
+    margin-bottom: 2rem;
+    min-height: 200px;
+}
+
+.content-body h1, .content-body h2, .content-body h3,
+.content-body h4, .content-body h5, .content-body h6 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+.content-body p {
+    margin-bottom: 1rem;
+}
+
+.content-body ul, .content-body ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+.content-body blockquote {
+    border-left: 4px solid #667eea;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.empty-content {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #6c757d;
+}
+
+.empty-icon {
+    margin-bottom: 1rem;
+    color: #6c757d;
+}
+
+.empty-content h5 {
+    color: #495057;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.empty-content p {
+    margin-bottom: 0;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.content-tools {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.content-tools .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+/* Responsive Design for Default */
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: 1rem;
+    }
+    
+    .content-tools {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .content-tools .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .content-body h1, .content-body h2, .content-body h3,
+    .content-body h4, .content-body h5, .content-body h6 {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .empty-content {
+        padding: 2rem 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .content-wrapper {
+        padding: 0.75rem;
+    }
+    
+    .content-header {
+        margin-bottom: 1.5rem;
+    }
+    
+    .content-body {
+        margin-bottom: 1.5rem;
+    }
+    
+    .empty-icon i {
+        font-size: 2rem;
+    }
+} 

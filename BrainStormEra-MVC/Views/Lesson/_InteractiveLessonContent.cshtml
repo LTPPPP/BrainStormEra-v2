@@ -1,0 +1,75 @@
+@model DataAccessLayer.Models.ViewModels.LessonLearningViewModel
+
+<div class="interactive-lesson-content">
+    <div class="interactive-wrapper">
+        @if (Model.LessonContent.Contains(".pdf"))
+        {
+            <div class="document-viewer">
+                <div class="document-header">
+                    <h4><i class="fas fa-file-pdf"></i> Document Lesson</h4>
+                    <a href="@Model.LessonContent" target="_blank" class="btn btn-primary btn-sm">
+                        <i class="fas fa-download"></i> Download PDF
+                    </a>
+                </div>
+                <div class="pdf-embed">
+                    <embed src="@Model.LessonContent" type="application/pdf" width="100%" height="600px" />
+                </div>
+            </div>
+        }
+        else if (Model.LessonContent.Contains(".doc") || Model.LessonContent.Contains(".docx"))
+        {
+            <div class="document-viewer">
+                <div class="document-header">
+                    <h4><i class="fas fa-file-word"></i> Document Lesson</h4>
+                    <a href="@Model.LessonContent" target="_blank" class="btn btn-primary btn-sm">
+                        <i class="fas fa-download"></i> Download Document
+                    </a>
+                </div>
+                <div class="document-preview">
+                    <p>This is a Word document. Click the download button above to view the full content.</p>
+                    <div class="document-placeholder">
+                        <i class="fas fa-file-word fa-4x"></i>
+                        <p>Word Document</p>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (Model.LessonContent.Contains(".ppt") || Model.LessonContent.Contains(".pptx"))
+        {
+            <div class="document-viewer">
+                <div class="document-header">
+                    <h4><i class="fas fa-file-powerpoint"></i> Presentation Lesson</h4>
+                    <a href="@Model.LessonContent" target="_blank" class="btn btn-primary btn-sm">
+                        <i class="fas fa-download"></i> Download Presentation
+                    </a>
+                </div>
+                <div class="document-preview">
+                    <p>This is a PowerPoint presentation. Click the download button above to view the full content.</p>
+                    <div class="document-placeholder">
+                        <i class="fas fa-file-powerpoint fa-4x"></i>
+                        <p>PowerPoint Presentation</p>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="interactive-content">
+                <div class="content-header">
+                    <h4><i class="fas fa-mouse-pointer"></i> Interactive Content</h4>
+                </div>
+                <div class="content-body">
+                    @Html.Raw(Model.LessonContent)
+                </div>
+                <div class="interaction-tools">
+                    <button class="btn btn-outline-primary" onclick="toggleFullscreen()">
+                        <i class="fas fa-expand"></i> Fullscreen
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="resetInteraction()">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div> 
