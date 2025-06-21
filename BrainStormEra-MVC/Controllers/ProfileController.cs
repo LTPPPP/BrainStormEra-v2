@@ -2,6 +2,7 @@ using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace BrainStormEra_MVC.Controllers
 {
@@ -209,6 +210,75 @@ namespace BrainStormEra_MVC.Controllers
             {
                 _logger.LogError(ex, "Error deleting avatar for user: {UserId}", CurrentUserId);
                 return Json(new { success = false, message = "An error occurred while deleting avatar" });
+            }
+        }
+
+        [HttpGet]
+        public IActionResult VietQRGenerator()
+        {
+            var model = new VietQRViewModel();
+
+            // Pre-fill with user's bank info if available
+            var userId = CurrentUserId;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var userResult = _authServiceImpl.GetProfileViewModelAsync(userId, CurrentUserRole ?? "").Result;
+                if (userResult.Success && userResult.ViewModel != null)
+                {
+                    model.AccountNumber = userResult.ViewModel.BankAccountNumber ?? "";
+                    model.AccountName = userResult.ViewModel.AccountHolderName ?? userResult.ViewModel.FullName;
+                }
+            }
+
+            return PartialView("_VietQRGenerator", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult GenerateVietQR(VietQRViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return PartialView("_VietQRGenerator", model);
+            }
+
+            try
+            {
+                // Build VietQR URL
+                var baseUrl = "https://img.vietqr.io/image";
+                var url = $"{baseUrl}/{model.BankId}-{model.AccountNumber}-{model.Template}.png";
+
+                var queryParams = new List<string>();
+
+                if (model.Amount.HasValue && model.Amount > 0)
+                {
+                    queryParams.Add($"amount={model.Amount}");
+                }
+
+                if (!string.IsNullOrEmpty(model.Description))
+                {
+                    queryParams.Add($"addInfo={Uri.EscapeDataString(model.Description)}");
+                }
+
+                if (!string.IsNullOrEmpty(model.AccountName))
+                {
+                    queryParams.Add($"accountName={Uri.EscapeDataString(model.AccountName)}");
+                }
+
+                if (queryParams.Any())
+                {
+                    url += "?" + string.Join("&", queryParams);
+                }
+
+                model.GeneratedQRUrl = url;
+
+                return PartialView("_VietQRGenerator", model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating VietQR for user: {UserId}", CurrentUserId);
+                ModelState.AddModelError("", "An error occurred while generating the QR code.");
+                return PartialView("_VietQRGenerator", model);
             }
         }
     }

@@ -1,0 +1,200 @@
+@model DataAccessLayer.Models.ViewModels.VietQRViewModel
+
+<div class="vietqr-generator">
+    <div class="vietqr-header">
+        <h4><i class="fas fa-qrcode"></i> Tạo mã QR VietQR</h4>
+        <p class="text-muted">Tạo mã QR để nhận thanh toán qua VietQR</p>
+    </div>
+
+    <form id="vietqr-form" class="vietqr-form">
+        <div class="form-group">
+            <label for="bankId">Ngân hàng <span class="text-danger">*</span></label>
+            <select id="bankId" name="BankId" class="form-control" required>
+                <option value="">-- Chọn ngân hàng --</option>
+                <option value="vietinbank">VietinBank (970415)</option>
+                <option value="vietcombank">Vietcombank (970436)</option>
+                <option value="bidv">BIDV (970418)</option>
+                <option value="agribank">Agribank (970405)</option>
+                <option value="techcombank">Techcombank (970407)</option>
+                <option value="mbbank">MB Bank (970422)</option>
+                <option value="acb">ACB (970416)</option>
+                <option value="vpbank">VPBank (970432)</option>
+                <option value="tpbank">TPBank (970423)</option>
+                <option value="sacombank">Sacombank (970403)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="accountNo">Số tài khoản <span class="text-danger">*</span></label>
+            <input type="text" id="accountNo" name="AccountNo" class="form-control" 
+                   placeholder="Nhập số tài khoản" maxlength="19" required>
+            <small class="form-text text-muted">Tối đa 19 ký tự</small>
+        </div>
+
+        <div class="form-group">
+            <label for="accountName">Tên tài khoản</label>
+            <input type="text" id="accountName" name="AccountName" class="form-control" 
+                   placeholder="Tên người thụ hưởng">
+        </div>
+
+        <div class="form-group">
+            <label for="template">Template</label>
+            <select id="template" name="Template" class="form-control">
+                <option value="compact2">Compact 2 (540x640) - Đầy đủ thông tin</option>
+                <option value="compact">Compact (540x540) - QR + Logo</option>
+                <option value="qr_only">QR Only (480x480) - Chỉ QR</option>
+                <option value="print">Print (600x776) - In ấn</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="amount">Số tiền (VNĐ)</label>
+            <input type="number" id="amount" name="Amount" class="form-control" 
+                   placeholder="0" min="0" max="9999999999999">
+            <small class="form-text text-muted">Tối đa 13 chữ số. Để trống nếu không cố định số tiền</small>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Nội dung chuyển khoản</label>
+            <input type="text" id="description" name="Description" class="form-control" 
+                   placeholder="Nội dung thanh toán" maxlength="50">
+            <small class="form-text text-muted">Tối đa 50 ký tự, không chứa ký tự đặc biệt</small>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" id="generateQR" class="btn btn-primary">
+                <i class="fas fa-magic"></i> Tạo mã QR
+            </button>
+            <button type="button" id="clearForm" class="btn btn-secondary">
+                <i class="fas fa-eraser"></i> Xóa form
+            </button>
+        </div>
+    </form>
+
+    <div id="qr-result" class="qr-result" style="display: none;">
+        <div class="qr-preview">
+            <h5>Mã QR VietQR của bạn:</h5>
+            <div class="qr-image-container">
+                <img id="qr-image" src="" alt="VietQR Code" class="qr-image">
+            </div>
+            <div class="qr-info">
+                <p><strong>URL:</strong> <span id="qr-url"></span></p>
+                <div class="qr-actions">
+                    <button type="button" id="copyUrl" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-copy"></i> Copy URL
+                    </button>
+                    <button type="button" id="downloadQR" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-download"></i> Tải xuống
+                    </button>
+                    <button type="button" id="shareQR" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-share"></i> Chia sẻ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('vietqr-form');
+    const generateBtn = document.getElementById('generateQR');
+    const clearBtn = document.getElementById('clearForm');
+    const resultDiv = document.getElementById('qr-result');
+    const qrImage = document.getElementById('qr-image');
+    const qrUrl = document.getElementById('qr-url');
+    const copyBtn = document.getElementById('copyUrl');
+    const downloadBtn = document.getElementById('downloadQR');
+    const shareBtn = document.getElementById('shareQR');
+
+    // Generate QR Code
+    generateBtn.addEventListener('click', function() {
+        const bankId = document.getElementById('bankId').value;
+        const accountNo = document.getElementById('accountNo').value;
+        const template = document.getElementById('template').value;
+        const amount = document.getElementById('amount').value;
+        const description = document.getElementById('description').value;
+        const accountName = document.getElementById('accountName').value;
+
+        if (!bankId || !accountNo) {
+            alert('Vui lòng nhập đầy đủ thông tin ngân hàng và số tài khoản!');
+            return;
+        }
+
+        // Build VietQR URL
+        let url = `https://img.vietqr.io/image/${bankId}-${accountNo}-${template}.png`;
+        
+        const params = new URLSearchParams();
+        if (amount) params.append('amount', amount);
+        if (description) params.append('addInfo', description);
+        if (accountName) params.append('accountName', accountName);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+
+        // Display QR
+        qrImage.src = url;
+        qrUrl.textContent = url;
+        resultDiv.style.display = 'block';
+        
+        // Scroll to result
+        resultDiv.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Clear form
+    clearBtn.addEventListener('click', function() {
+        form.reset();
+        resultDiv.style.display = 'none';
+    });
+
+    // Copy URL
+    copyBtn.addEventListener('click', function() {
+        navigator.clipboard.writeText(qrUrl.textContent).then(function() {
+            copyBtn.innerHTML = '<i class="fas fa-check"></i> Đã copy!';
+            setTimeout(() => {
+                copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy URL';
+            }, 2000);
+        });
+    });
+
+    // Download QR
+    downloadBtn.addEventListener('click', function() {
+        const link = document.createElement('a');
+        link.href = qrImage.src;
+        link.download = `vietqr-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    // Share QR
+    shareBtn.addEventListener('click', function() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Mã QR VietQR',
+                text: 'Mã QR thanh toán VietQR',
+                url: qrUrl.textContent
+            });
+        } else {
+            // Fallback: copy to clipboard
+            navigator.clipboard.writeText(qrUrl.textContent);
+            alert('Đã copy URL vào clipboard!');
+        }
+    });
+
+    // Auto-generate on form change (optional)
+    const autoFields = ['bankId', 'accountNo'];
+    autoFields.forEach(fieldId => {
+        document.getElementById(fieldId).addEventListener('change', function() {
+            if (document.getElementById('bankId').value && 
+                document.getElementById('accountNo').value) {
+                // Auto-generate after 1 second delay
+                setTimeout(() => {
+                    generateBtn.click();
+                }, 1000);
+            }
+        });
+    });
+});
+</script>

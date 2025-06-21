@@ -137,11 +137,9 @@
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
   margin-bottom: 30px;
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .profile-card:hover {
-  transform: translateY(-2px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
@@ -209,7 +207,6 @@
 }
 
 .stat-item:hover {
-  transform: translateX(5px);
   background: rgba(255, 255, 255, 0.8);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
@@ -233,7 +230,6 @@
 }
 
 .stat-icon:hover {
-  transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
@@ -463,7 +459,6 @@
   position: absolute;
   right: 12px;
   top: 50%;
-  transform: translateY(-50%);
   background: none;
   border: none;
   color: #6c757d;
@@ -585,17 +580,6 @@
   animation: fadeIn 0.5s ease-in;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .slide-up {
   animation: slideUp 0.3s ease-out;
 }
@@ -611,30 +595,6 @@
   }
 }
 
-/* Animation styles */
-.profile-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
 .profile-card:hover {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-}
-
-.stat-item {
-  transition: transform 0.3s ease;
-}
-
-.animated {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-@keyframes fadeInUp {
-  0% {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
