@@ -117,7 +117,6 @@
   position: absolute;
   left: 0.75rem;
   top: 50%;
-  transform: translateY(-50%);
   color: #6c757d;
   z-index: 3;
 }
@@ -169,22 +168,6 @@
 .form-control.is-valid {
   border-color: #28a745;
   box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
-}
-
-/* Section Toggle Animation */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.lesson-type-section.show {
-  animation: fadeInUp 0.3s ease forwards;
 }
 
 /* Responsive Design */

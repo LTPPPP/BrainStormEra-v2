@@ -54,7 +54,6 @@
 
 .page-header:hover {
   box-shadow: var(--notification-shadow-hover);
-  transform: translateY(-2px);
 }
 
 .page-title {
@@ -121,7 +120,6 @@
 }
 
 .stats-card:hover {
-  transform: translateY(-5px) scale(1.02);
   box-shadow: 0 12px 40px rgba(102, 126, 234, 0.3);
 }
 
@@ -155,7 +153,6 @@
 
 .card:hover {
   box-shadow: var(--notification-shadow-hover);
-  transform: translateY(-2px);
 }
 
 .card-header {
@@ -228,7 +225,6 @@
 }
 
 .btn-outline-primary:hover {
-  transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
 }
 
@@ -239,7 +235,6 @@
 }
 
 .btn-outline-secondary:hover {
-  transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
 }
 
@@ -441,7 +436,6 @@
 }
 
 #loadMore:hover {
-  transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
 }
 

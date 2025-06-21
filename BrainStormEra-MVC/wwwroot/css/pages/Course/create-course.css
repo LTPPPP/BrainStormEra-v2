@@ -76,7 +76,6 @@ body {
   position: absolute;
   left: 0;
   top: 50%;
-  transform: translateY(-50%);
   width: 6px;
   height: 100%;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -114,7 +113,6 @@ body {
   border-color: #667eea;
   box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
   background: white;
-  transform: translateY(-2px);
 }
 
 .form-control::placeholder {
@@ -197,7 +195,6 @@ body {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15),
     0 8px 32px rgba(102, 126, 234, 0.2);
   opacity: 0;
-  transform: translateY(-10px) scale(0.95);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -205,7 +202,6 @@ body {
 
 .category-suggestions.show {
   opacity: 1;
-  transform: translateY(0) scale(1);
 }
 
 /* Additional smooth animations for suggestion items */
@@ -528,7 +524,6 @@ body {
   position: absolute;
   right: 15px;
   top: 50%;
-  transform: translateY(-50%);
   color: #667eea;
   animation: spin 1s linear infinite;
   display: none;
@@ -594,7 +589,6 @@ body {
 
 .difficulty-label:hover {
   border-color: #667eea;
-  transform: translateY(-5px);
   box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
 }
 
@@ -606,7 +600,6 @@ body {
   border-color: #667eea;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  transform: translateY(-5px);
   box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
 }
 
@@ -668,7 +661,6 @@ body {
     rgba(255, 255, 255, 1) 0%,
     rgba(248, 250, 252, 1) 100%
   );
-  transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.12);
 }
 

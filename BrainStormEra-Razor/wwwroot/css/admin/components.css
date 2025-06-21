@@ -22,7 +22,6 @@
 
 .back-btn:hover {
   background: var(--gray-600);
-  transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
   color: white;
   text-decoration: none;
@@ -33,7 +32,7 @@
   background: white;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 30px;
 }
 
@@ -123,19 +122,52 @@
   display: inline-block;
 }
 
-.badge-primary { background: #e3f2fd; color: #1976d2; }
-.badge-success { background: #e8f5e8; color: #2e7d32; }
-.badge-warning { background: #fff8e1; color: #f57c00; }
-.badge-danger { background: #ffebee; color: #d32f2f; }
-.badge-info { background: #e1f5fe; color: #0288d1; }
-.badge-secondary { background: #f5f5f5; color: #616161; }
+.badge-primary {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+.badge-success {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+.badge-warning {
+  background: #fff8e1;
+  color: #f57c00;
+}
+.badge-danger {
+  background: #ffebee;
+  color: #d32f2f;
+}
+.badge-info {
+  background: #e1f5fe;
+  color: #0288d1;
+}
+.badge-secondary {
+  background: #f5f5f5;
+  color: #616161;
+}
 
 /* Role Badge Specific Colors */
-.badge.bg-danger { background: #ffebee !important; color: #d32f2f !important; }
-.badge.bg-warning { background: #fff8e1 !important; color: #f57c00 !important; }
-.badge.bg-info { background: #e1f5fe !important; color: #0288d1 !important; }
-.badge.bg-success { background: #e8f5e8 !important; color: #2e7d32 !important; }
-.badge.bg-secondary { background: #f5f5f5 !important; color: #616161 !important; }
+.badge.bg-danger {
+  background: #ffebee !important;
+  color: #d32f2f !important;
+}
+.badge.bg-warning {
+  background: #fff8e1 !important;
+  color: #f57c00 !important;
+}
+.badge.bg-info {
+  background: #e1f5fe !important;
+  color: #0288d1 !important;
+}
+.badge.bg-success {
+  background: #e8f5e8 !important;
+  color: #2e7d32 !important;
+}
+.badge.bg-secondary {
+  background: #f5f5f5 !important;
+  color: #616161 !important;
+}
 
 /* Action Buttons */
 .action-buttons {
@@ -159,31 +191,72 @@
 }
 
 .btn-action:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   text-decoration: none;
 }
 
-.btn-approve { background: #28a745; color: white; }
-.btn-approve:hover { background: #218838; color: white; }
+.btn-approve {
+  background: #28a745;
+  color: white;
+}
+.btn-approve:hover {
+  background: #218838;
+  color: white;
+}
 
-.btn-reject { background: #ffc107; color: #212529; }
-.btn-reject:hover { background: #e0a800; color: #212529; }
+.btn-reject {
+  background: #ffc107;
+  color: #212529;
+}
+.btn-reject:hover {
+  background: #e0a800;
+  color: #212529;
+}
 
-.btn-ban { background: #dc3545; color: white; }
-.btn-ban:hover { background: #c82333; color: white; }
+.btn-ban {
+  background: #dc3545;
+  color: white;
+}
+.btn-ban:hover {
+  background: #c82333;
+  color: white;
+}
 
-.btn-unban { background: #28a745; color: white; }
-.btn-unban:hover { background: #218838; color: white; }
+.btn-unban {
+  background: #28a745;
+  color: white;
+}
+.btn-unban:hover {
+  background: #218838;
+  color: white;
+}
 
-.btn-delete { background: #6c757d; color: white; }
-.btn-delete:hover { background: #5a6268; color: white; }
+.btn-delete {
+  background: #6c757d;
+  color: white;
+}
+.btn-delete:hover {
+  background: #5a6268;
+  color: white;
+}
 
-.btn-edit { background: #17a2b8; color: white; }
-.btn-edit:hover { background: #138496; color: white; }
+.btn-edit {
+  background: #17a2b8;
+  color: white;
+}
+.btn-edit:hover {
+  background: #138496;
+  color: white;
+}
 
-.btn-view { background: #007bff; color: white; }
-.btn-view:hover { background: #0056b3; color: white; }
+.btn-view {
+  background: #007bff;
+  color: white;
+}
+.btn-view:hover {
+  background: #0056b3;
+  color: white;
+}
 
 /* Empty State */
 .empty-state {
@@ -220,13 +293,12 @@
   background: white;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .item-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .item-card-image {
@@ -346,24 +418,24 @@
   .items-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .action-buttons {
     flex-direction: column;
   }
-  
+
   .btn-action {
     justify-content: center;
   }
-  
+
   .item-card-stats {
     flex-direction: column;
     gap: 5px;
   }
-  
+
   .table-responsive {
     font-size: 0.9rem;
   }
-  
+
   .data-table th,
   .data-table td {
     padding: 10px 8px;
@@ -376,11 +448,11 @@
     align-items: flex-start;
     gap: 15px;
   }
-  
+
   .filters-row {
     flex-direction: column;
   }
-  
+
   .filter-actions {
     width: 100%;
     justify-content: center;
@@ -410,4 +482,4 @@
 
 .filter-status .text-primary {
   color: #007bff !important;
-} 
+}

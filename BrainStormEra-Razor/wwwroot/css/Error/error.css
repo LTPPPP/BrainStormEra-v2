@@ -32,7 +32,6 @@ html {
   margin: 0;
   color: var(--error-color);
   text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  animation: float 6s ease-in-out infinite;
 }
 
 .error p {
@@ -68,7 +67,6 @@ html {
 
 .back-button:hover {
   background-color: #2980b9;
-  transform: translateY(-3px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
 }
 
