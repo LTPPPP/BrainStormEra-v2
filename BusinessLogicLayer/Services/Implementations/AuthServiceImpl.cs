@@ -1190,6 +1190,25 @@ namespace BusinessLogicLayer.Services.Implementations
             };
         }
 
+        /// <summary>
+        /// Get user information by userId
+        /// </summary>
+        public async Task<Account?> GetUserInfoAsync(string userId)
+        {
+            try
+            {
+                var user = await _context.Accounts
+                    .FirstOrDefaultAsync(u => u.UserId == userId);
+
+                return user;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user info for userId: {UserId}", userId);
+                return null;
+            }
+        }
+
         #endregion
     }
 

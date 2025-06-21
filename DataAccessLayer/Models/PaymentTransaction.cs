@@ -13,8 +13,6 @@ public partial class PaymentTransaction
 
     public string UserId { get; set; } = null!;
 
-    public string CourseId { get; set; } = null!;
-
     public decimal Amount { get; set; }
 
     public int? PaymentMethodId { get; set; }
@@ -48,8 +46,6 @@ public partial class PaymentTransaction
     public DateTime TransactionCreatedAt { get; set; }
 
     public DateTime TransactionUpdatedAt { get; set; }
-
-    public virtual Course Course { get; set; } = null!;
 
     public virtual PaymentMethod? PaymentMethod { get; set; }
 

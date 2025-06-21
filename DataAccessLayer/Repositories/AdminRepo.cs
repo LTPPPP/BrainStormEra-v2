@@ -857,7 +857,6 @@ namespace DataAccessLayer.Repositories
             {
                 return await _context.PaymentTransactions
                     .Include(pt => pt.User)
-                    .Include(pt => pt.Course)
                     .OrderByDescending(pt => pt.TransactionCreatedAt)
                     .Take(count)
                     .ToListAsync();
@@ -875,7 +874,6 @@ namespace DataAccessLayer.Repositories
             {
                 return await _context.PaymentTransactions
                     .Include(pt => pt.User)
-                    .Include(pt => pt.Course)
                     .OrderByDescending(pt => pt.TransactionCreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -894,7 +892,6 @@ namespace DataAccessLayer.Repositories
             {
                 return await _context.PaymentTransactions
                     .Include(pt => pt.User)
-                    .Include(pt => pt.Course)
                     .Where(pt => pt.TransactionStatus == status)
                     .OrderByDescending(pt => pt.TransactionCreatedAt)
                     .Skip((page - 1) * pageSize)
@@ -914,7 +911,6 @@ namespace DataAccessLayer.Repositories
             {
                 return await _context.PaymentTransactions
                     .Include(pt => pt.User)
-                    .Include(pt => pt.Course)
                     .Include(pt => pt.Recipient)
                     .FirstOrDefaultAsync(pt => pt.TransactionId == transactionId);
             }
@@ -972,7 +968,6 @@ namespace DataAccessLayer.Repositories
             {
                 return await _context.PaymentTransactions
                     .Include(pt => pt.User)
-                    .Include(pt => pt.Course)
                     .Where(pt => pt.TransactionStatus == "Refunded")
                     .OrderByDescending(pt => pt.TransactionUpdatedAt)
                     .Skip((page - 1) * pageSize)
@@ -1076,7 +1071,7 @@ namespace DataAccessLayer.Repositories
             {
                 var feedbackStats = await _context.ChatbotConversations
                     .Where(c => c.FeedbackRating.HasValue)
-                    .GroupBy(c => c.FeedbackRating.Value)
+                    .GroupBy(c => c.FeedbackRating!.Value)
                     .Select(g => new FeedbackRatingStats
                     {
                         Rating = g.Key,

@@ -520,7 +520,7 @@ namespace BusinessLogicLayer.Services
                     ViewModel = viewModel
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return new LessonLearningResult
                 {

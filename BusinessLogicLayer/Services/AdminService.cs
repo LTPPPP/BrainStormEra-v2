@@ -348,8 +348,8 @@ namespace BusinessLogicLayer.Services
                     ? course.Feedbacks.Average(f => f.StarRating ?? 0)
                     : 0;
 
-                var totalRevenue = course.PaymentTransactions?.Where(p => p.TransactionStatus == "completed")
-                    .Sum(p => p.Amount) ?? 0;
+                // Calculate revenue (would need to be calculated separately from payment transactions)
+                var totalRevenue = 0m; // Placeholder - would need to query payment transactions separately
 
                 var completionRate = 0; // Would need to calculate from enrollments progress
 

@@ -1025,10 +1025,6 @@ public partial class BrainStormEraContext : DbContext
             entity.Property(e => e.Amount)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("amount");
-            entity.Property(e => e.CourseId)
-                .HasMaxLength(36)
-                .IsUnicode(false)
-                .HasColumnName("course_id");
             entity.Property(e => e.CurrencyCode)
                 .HasMaxLength(3)
                 .IsUnicode(false)
@@ -1099,11 +1095,6 @@ public partial class BrainStormEraContext : DbContext
                 .HasMaxLength(36)
                 .IsUnicode(false)
                 .HasColumnName("user_id");
-
-            entity.HasOne(d => d.Course).WithMany(p => p.PaymentTransactions)
-                .HasForeignKey(d => d.CourseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__payment_t__cours__3587F3E0");
 
             entity.HasOne(d => d.PaymentMethod).WithMany(p => p.PaymentTransactions)
                 .HasForeignKey(d => d.PaymentMethodId)

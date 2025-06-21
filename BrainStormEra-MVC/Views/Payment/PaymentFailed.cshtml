@@ -1,0 +1,125 @@
+@{
+    ViewData["Title"] = "Thanh toan that bai";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="Payment Failed - Your payment could not be processed">
+    <link rel="icon" type="image/x-icon" href="~/SharedMedia/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/components/payment.css">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+    <!-- Chatbot CSS -->
+    <link rel="stylesheet" href="~/css/components/chatbot.css">
+
+    @* User authentication meta tags for JavaScript access *@
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <meta name="user-id" content="@User.FindFirst("UserId")?.Value" />
+        <meta name="user-role" content="@User.FindFirst("UserRole")?.Value" />
+        <meta name="user-name" content="@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)" />
+    }
+</head>
+
+<body>
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Main Content -->
+    <div class="container main-content mt-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card payment-result-card">
+                    <div class="card-header payment-failed-header text-center">
+                        <div class="payment-result-icon">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <h2 class="mb-0">Payment Failed!</h2>
+                    </div>
+                    <div class="card-body text-center p-5">
+                        <div class="mb-4">
+                            <h4 class="text-danger">@ViewBag.Message</h4>
+                        </div>
+
+                        <div class="alert alert-payment alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Don't worry!</strong> The transaction has been cancelled and no money has been
+                            deducted from your account.
+                        </div>
+
+                        <div class="mb-4">
+                            <h6>Common reasons for payment failure:</h6>
+                            <ul class="text-start list-unstyled">
+                                <li><i class="fas fa-times-circle text-muted me-2"></i>Transaction cancelled during
+                                    payment process</li>
+                                <li><i class="fas fa-credit-card text-muted me-2"></i>Incorrect card information</li>
+                                <li><i class="fas fa-wallet text-muted me-2"></i>Insufficient account balance</li>
+                                <li><i class="fas fa-ban text-muted me-2"></i>Bank declined the transaction</li>
+                                <li><i class="fas fa-clock text-muted me-2"></i>Payment timeout</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <a href="@Url.Action("TopUp", "Payment")" class="btn btn-primary btn-lg">
+                                <i class="fas fa-redo me-2"></i>
+                                Try Again
+                            </a>
+                            <a href="@Url.Action("Index", "Payment")" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-history me-2"></i>
+                                Payment History
+                            </a>
+                            <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-home me-2"></i>
+                                Go to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <!-- Include Chatbot for authenticated users -->
+    @await Html.PartialAsync("~/Views/Shared/_Chatbot.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/components/toast-notifications.js"></script>
+    <script src="~/js/components/header.js"></script>
+    <script src="~/js/payment-test.js"></script>
+</body>
+
+</html>
+
+                       
+                               

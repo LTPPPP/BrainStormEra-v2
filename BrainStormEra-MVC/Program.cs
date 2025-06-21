@@ -134,6 +134,9 @@ namespace BrainStormEra_MVC
             // Register Query Hash Service for smart ID/hash handling in queries
             builder.Services.AddScoped<BusinessLogicLayer.Services.QueryHashService>();
 
+            // Register Payment Service
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPaymentService, BusinessLogicLayer.Services.Implementations.PaymentService>();
+
             // Seed services
             builder.Services.AddScoped<BusinessLogicLayer.Services.StatusSeedService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.LessonTypeSeedService>();
