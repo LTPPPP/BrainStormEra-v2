@@ -1,7 +1,7 @@
 @page "/admin"
 @model BrainStormEra_Razor.Pages.Admin.IndexModel
 @{
-    ViewData["Title"] = "Admin Dashboard";
+    ViewData["Title"] = "Admin Dashboard - BrainStormEra";
     Layout = "~/Pages/Shared/_Layout.cshtml";
 }
 
@@ -9,345 +9,519 @@
     <link rel="stylesheet" href="~/css/admin/dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin/components.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 }
 
-<div class="admin-dashboard">
-    <!-- Dashboard Header -->
-    @{
-        var headerModel = new AdminHeaderViewModel
-        {
-            Title = "Admin Dashboard",
-            Subtitle = "Comprehensive analytics and system overview",
-            Icon = "fa-chart-line",
-            AdminName = Model.AdminName ?? "Admin",
-            AdminImage = Model.DashboardData.AdminImage,
-            LoginTime = Model.LoginTime,
-            ShowQuickLinks = true,
-            ShowRefresh = true,
-            ShowExport = true,
-            ShowBackButton = false
-        };
-    }
-    @await Html.PartialAsync("Admin/_AdminHeader", headerModel)
-
-
-
-    <!-- Charts Grid -->
-    <div class="charts-grid">
-        <!-- User Analytics Chart -->
-        <div class="chart-container users-chart" data-chart="users">
-            <div class="chart-header">
-                <div class="chart-title-section">
-                    <h3 class="chart-title">
-                        <i class="fas fa-users chart-icon"></i>
-                        User Analytics
-                    </h3>
-                    <p class="chart-subtitle">User distribution and growth trends</p>
-                </div>
-                <div class="chart-actions">
-                    <button class="chart-action-btn" onclick="refreshChart('users')" title="Refresh">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button class="chart-action-btn" onclick="exportChart('users')" title="Export">
-                        <i class="fas fa-download"></i>
-                    </button>
-                    <div class="chart-view-toggle">
-                        <button class="view-btn active" data-view="pie" onclick="changeChartView('users', 'pie')">Pie</button>
-                        <button class="view-btn" data-view="bar" onclick="changeChartView('users', 'bar')">Bar</button>
-                    </div>
+<div class="admin-dashboard-container">
+    <!-- Top Banner & Welcome Section -->
+    <div class="dashboard-hero">
+        <div class="hero-background"></div>
+        <div class="hero-content">
+            <div class="welcome-section">
+                <div class="welcome-text">
+                    <h1 class="hero-title">
+                        <i class="fas fa-chart-line"></i>
+                        Admin Dashboard
+                    </h1>
+                    <p class="hero-subtitle">Comprehensive analytics and system overview</p>
                 </div>
             </div>
-            <div class="chart-stats">
-                <div class="stat-item learners">
-                    <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@Model.DashboardData.TotalLearners</p>
-                        <p class="stat-label">Learners</p>
+            <div class="dashboard-actions">
+                <button class="action-btn primary" onclick="refreshDashboard()" title="Refresh Dashboard">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Refresh</span> 
+                </button>
+                <button class="action-btn secondary" onclick="exportData()" title="Export Data">
+                    <i class="fas fa-download"></i>
+                    <span>Export</span>
+                </button>
+                <div class="quick-stats">
+                    <div class="stat-badge">
+                        <span class="stat-value">@Model.DashboardData.TotalLearners</span>
+                        <span class="stat-label">Users</span>
                     </div>
-                </div>
-                <div class="stat-item instructors">
-                    <div class="stat-icon"><i class="fas fa-chalkboard-teacher"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@Model.DashboardData.TotalInstructors</p>
-                        <p class="stat-label">Instructors</p>
+                    <div class="stat-badge">
+                        <span class="stat-value">@Model.DashboardData.ApprovedCourses</span>
+                        <span class="stat-label">Courses</span>
                     </div>
-                </div>
-                <div class="stat-item admins">
-                    <div class="stat-icon"><i class="fas fa-user-shield"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@Model.DashboardData.TotalAdmins</p>
-                        <p class="stat-label">Admins</p>
-                    </div>
-                </div>
-            </div>
-            <div class="chart-wrapper">
-                <canvas id="usersChart" class="chart-canvas"></canvas>
-                <div class="chart-loading" id="usersChartLoading">
-                    <div class="loading-spinner"></div>
-                    <p>Loading chart data...</p>
                 </div>
             </div>
         </div>
-
-        <!-- Course Analytics Chart -->
-        <div class="chart-container courses-chart" data-chart="courses">
-            <div class="chart-header">
-                <div class="chart-title-section">
-                    <h3 class="chart-title">
-                        <i class="fas fa-book chart-icon"></i>
-                        Course Analytics
-                    </h3>
-                    <p class="chart-subtitle">Course status distribution and enrollment trends</p>
-                </div>
-                <div class="chart-actions">
-                    <button class="chart-action-btn" onclick="refreshChart('courses')" title="Refresh">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button class="chart-action-btn" onclick="exportChart('courses')" title="Export">
-                        <i class="fas fa-download"></i>
-                    </button>
-                    <div class="chart-view-toggle">
-                        <button class="view-btn active" data-view="bar" onclick="changeChartView('courses', 'bar')">Bar</button>
-                        <button class="view-btn" data-view="line" onclick="changeChartView('courses', 'line')">Line</button>
-                    </div>
+    </div>
+    
+    <!-- Main Stats Cards -->
+    <div class="stats-overview">
+        <div class="stats-card users-card">
+            <div class="card-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="card-content">
+                <h3 class="stat-number">@(Model.DashboardData.TotalLearners + Model.DashboardData.TotalInstructors + Model.DashboardData.TotalAdmins)</h3>
+                <p class="stat-title">Total Users</p>
+                <div class="stat-breakdown">
+                    <span class="breakdown-item">
+                        <i class="fas fa-user-graduate"></i>
+                        @Model.DashboardData.TotalLearners Learners
+                    </span>
+                    <span class="breakdown-item">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        @Model.DashboardData.TotalInstructors Instructors
+                    </span>
                 </div>
             </div>
-            <div class="chart-stats">
-                <div class="stat-item approved">
-                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@Model.DashboardData.ApprovedCourses</p>
-                        <p class="stat-label">Approved</p>
-                    </div>
-                </div>
-                <div class="stat-item pending">
-                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@Model.DashboardData.PendingCourses</p>
-                        <p class="stat-label">Pending</p>
-                    </div>
-                </div>
-                <div class="stat-item rejected">
-                    <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@Model.DashboardData.RejectedCourses</p>
-                        <p class="stat-label">Rejected</p>
-                    </div>
-                </div>
-            </div>
-            <div class="chart-wrapper">
-                <canvas id="coursesChart" class="chart-canvas"></canvas>
-                <div class="chart-loading" id="coursesChartLoading">
-                    <div class="loading-spinner"></div>
-                    <p>Loading chart data...</p>
-                </div>
+            <div class="card-trend positive">
+                <i class="fas fa-arrow-up"></i>
+                <span>12% increase</span>
             </div>
         </div>
-
-        <!-- Certificate Analytics Chart -->
-        <div class="chart-container certificates-chart" data-chart="certificates">
-            <div class="chart-header">
-                <div class="chart-title-section">
-                    <h3 class="chart-title">
-                        <i class="fas fa-certificate chart-icon"></i>
-                        Certificate Analytics
-                    </h3>
-                    <p class="chart-subtitle">Certificate issuance trends and completion rates</p>
-                </div>
-                <div class="chart-actions">
-                    <button class="chart-action-btn" onclick="refreshChart('certificates')" title="Refresh">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button class="chart-action-btn" onclick="exportChart('certificates')" title="Export">
-                        <i class="fas fa-download"></i>
-                    </button>
-                    <div class="chart-view-toggle">
-                        <button class="view-btn active" data-view="line" onclick="changeChartView('certificates', 'line')">Line</button>
-                        <button class="view-btn" data-view="area" onclick="changeChartView('certificates', 'area')">Area</button>
-                    </div>
+                        
+        <div class="stats-card courses-card">
+            <div class="card-icon">
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="card-content">
+                <h3 class="stat-number">@(Model.DashboardData.ApprovedCourses + Model.DashboardData.PendingCourses)</h3>
+                <p class="stat-title">Total Courses</p>
+                <div class="stat-breakdown">
+                    <span class="breakdown-item approved">
+                        <i class="fas fa-check-circle"></i>
+                        @Model.DashboardData.ApprovedCourses Approved
+                    </span>
+                    <span class="breakdown-item pending">
+                        <i class="fas fa-clock"></i>
+                        @Model.DashboardData.PendingCourses Pending
+                    </span>
                 </div>
             </div>
-            <div class="chart-stats">
-                <div class="stat-item total">
-                    <div class="stat-icon"><i class="fas fa-certificate"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@Model.DashboardData.TotalCertificates</p>
-                        <p class="stat-label">Total Certificates</p>
-                    </div>
-                </div>
-                <div class="stat-item valid">
-                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@Model.DashboardData.ValidCertificates</p>
-                        <p class="stat-label">Valid</p>
-                    </div>
-                </div>
-                <div class="stat-item expired">
-                    <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@Model.DashboardData.ExpiredCertificates</p>
-                        <p class="stat-label">Expired</p>
-                    </div>
-                </div>
-            </div>
-            <div class="chart-wrapper">
-                <canvas id="certificatesChart" class="chart-canvas"></canvas>
-                <div class="chart-loading" id="certificatesChartLoading">
-                    <div class="loading-spinner"></div>
-                    <p>Loading chart data...</p>
-                </div>
+            <div class="card-trend positive">
+                <i class="fas fa-arrow-up"></i>
+                <span>8% increase</span>
             </div>
         </div>
-
-        <!-- Points Analytics Chart -->
-        <div class="chart-container points-chart" data-chart="points">
-            <div class="chart-header">
-                <div class="chart-title-section">
-                    <h3 class="chart-title">
-                        <i class="fas fa-star chart-icon"></i>
-                        Points Analytics
-                    </h3>
-                    <p class="chart-subtitle">Point distribution and earning trends</p>
-                </div>
-                <div class="chart-actions">
-                    <button class="chart-action-btn" onclick="refreshChart('points')" title="Refresh">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button class="chart-action-btn" onclick="exportChart('points')" title="Export">
-                        <i class="fas fa-download"></i>
-                    </button>
-                    <div class="chart-view-toggle">
-                        <button class="view-btn active" data-view="bar" onclick="changeChartView('points', 'bar')">Bar</button>
-                        <button class="view-btn" data-view="doughnut" onclick="changeChartView('points', 'doughnut')">Donut</button>
-                    </div>
+                                
+        <div class="stats-card certificates-card">
+            <div class="card-icon">
+                <i class="fas fa-certificate"></i>
+            </div>
+            <div class="card-content">
+                <h3 class="stat-number">@Model.DashboardData.TotalCertificates</h3>
+                <p class="stat-title">Certificates Issued</p>
+                <div class="stat-breakdown">
+                    <span class="breakdown-item valid">
+                        <i class="fas fa-check-circle"></i>
+                        @Model.DashboardData.ValidCertificates Valid
+                    </span>
+                    <span class="breakdown-item expired">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        @Model.DashboardData.ExpiredCertificates Expired
+                    </span>
                 </div>
             </div>
-            <div class="chart-stats">
-                <div class="stat-item total-points">
-                    <div class="stat-icon"><i class="fas fa-star"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@Model.DashboardData.TotalPointsInSystem.ToString("N0")</p>
-                        <p class="stat-label">Total Points</p>
-                    </div>
-                </div>
-                <div class="stat-item avg-points">
-                    <div class="stat-icon"><i class="fas fa-chart-bar"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@Model.DashboardData.AverageUserPoints.ToString("N0")</p>
-                        <p class="stat-label">Average Points</p>
-                    </div>
-                </div>
-            </div>
-            <div class="chart-wrapper">
-                <canvas id="pointsChart" class="chart-canvas"></canvas>
-                <div class="chart-loading" id="pointsChartLoading">
-                    <div class="loading-spinner"></div>
-                    <p>Loading chart data...</p>
-                </div>
+            <div class="card-trend positive">
+                <i class="fas fa-arrow-up"></i>
+                <span>15% increase</span>
             </div>
         </div>
-
-        <!-- Chatbot Analytics Chart -->
-        <div class="chart-container chatbot-chart" data-chart="chatbot">
-            <div class="chart-header">
-                <div class="chart-title-section">
-                    <h3 class="chart-title">
-                        <i class="fas fa-robot chart-icon"></i>
-                        Chatbot Analytics
-                    </h3>
-                    <p class="chart-subtitle">Usage patterns and engagement metrics</p>
-                </div>
-                <div class="chart-actions">
-                    <button class="chart-action-btn" onclick="refreshChart('chatbot')" title="Refresh">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button class="chart-action-btn" onclick="exportChart('chatbot')" title="Export">
-                        <i class="fas fa-download"></i>
-                    </button>
-                    <div class="chart-view-toggle">
-                        <button class="view-btn active" data-view="line" onclick="changeChartView('chatbot', 'line')">Line</button>
-                        <button class="view-btn" data-view="bar" onclick="changeChartView('chatbot', 'bar')">Bar</button>
-                    </div>
+                                     
+        <div class="stats-card revenue-card">
+            <div class="card-icon">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="card-content">
+                <h3 class="stat-number">$@Model.DashboardData.TotalRevenue.ToString("N0")</h3>
+                <p class="stat-title">Total Revenue</p>
+                <div class="stat-breakdown">
+                    <span class="breakdown-item">
+                        <i class="fas fa-star"></i>
+                        @Model.DashboardData.TotalPointsInSystem.ToString("N0") Points
+                    </span>
                 </div>
             </div>
-            <div class="chart-stats">
-                <div class="stat-item conversations">
-                    <div class="stat-icon"><i class="fas fa-comments"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@(Model.DashboardData.ChatbotStatistics.ContainsKey("TotalConversations") ? 
-                                                    Model.DashboardData.ChatbotStatistics["TotalConversations"] : 0)</p>
-                        <p class="stat-label">Conversations</p>
-                    </div>
-                </div>
-                <div class="stat-item messages">
-                    <div class="stat-icon"><i class="fas fa-envelope"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@(Model.DashboardData.ChatbotStatistics.ContainsKey("TotalMessages") ? 
-                                                    Model.DashboardData.ChatbotStatistics["TotalMessages"] : 0)</p>
-                        <p class="stat-label">Messages</p>
-                    </div>
-                </div>
-                <div class="stat-item satisfaction">
-                    <div class="stat-icon"><i class="fas fa-thumbs-up"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">@(Model.DashboardData.ChatbotStatistics.ContainsKey("SatisfactionRate") ? 
-                                                    Model.DashboardData.ChatbotStatistics["SatisfactionRate"] : "N/A")</p>
-                        <p class="stat-label">Satisfaction</p>
-                    </div>
-                </div>
-            </div>
-            <div class="chart-wrapper">
-                <canvas id="chatbotChart" class="chart-canvas"></canvas>
-                <div class="chart-loading" id="chatbotChartLoading">
-                    <div class="loading-spinner"></div>
-                    <p>Loading chart data...</p>
-                </div>
+            <div class="card-trend positive">
+                <i class="fas fa-arrow-up"></i>
+                <span>22% increase</span>
             </div>
         </div>
+    </div>
+                                   
+    <!-- Analytics Charts Section -->
+    <div class="analytics-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-chart-bar"></i>
+                Analytics Overview
+            </h2>
+            <p class="section-subtitle">Detailed insights and performance metrics</p>
+        </div>
+                                    
+        <div class="charts-grid">
+            <!-- User Analytics Chart -->
+            <div class="chart-card" data-chart="users">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <h3 class="chart-title">
+                            <i class="fas fa-users"></i>
+                            User Analytics
+                        </h3>
+                        <p class="chart-description">User distribution and growth trends</p>
+                    </div>
+                    <div class="chart-controls">
+                        <div class="view-selector">
+                            <button class="view-btn active" data-view="pie" onclick="changeChartView('users', 'pie')">
+                                <i class="fas fa-chart-pie"></i>
+                            </button>
+                            <button class="view-btn" data-view="bar" onclick="changeChartView('users', 'bar')">
+                                <i class="fas fa-chart-bar"></i>
+                            </button>
+                        </div>
+                        <div class="chart-actions">
+                            <button class="chart-action" onclick="refreshChart('users')" title="Refresh">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="chart-action" onclick="exportChart('users')" title="Export">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div class="chart-stats-mini">
+                        <div class="mini-stat learners">
+                            <div class="mini-stat-icon"><i class="fas fa-user-graduate"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@Model.DashboardData.TotalLearners</span>
+                                <span class="mini-stat-label">Learners</span>
+                            </div>
+                        </div>
+                        <div class="mini-stat instructors">
+                            <div class="mini-stat-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@Model.DashboardData.TotalInstructors</span>
+                                <span class="mini-stat-label">Instructors</span>
+                            </div>
+                        </div>
+                        <div class="mini-stat admins">
+                            <div class="mini-stat-icon"><i class="fas fa-user-shield"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@Model.DashboardData.TotalAdmins</span>
+                                <span class="mini-stat-label">Admins</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="usersChart" class="chart-canvas"></canvas>
+                        <div class="chart-loading" id="usersChartLoading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading chart data...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <!-- Revenue Analytics Chart -->
-        <div class="chart-container revenue-chart" data-chart="revenue">
-            <div class="chart-header">
-                <div class="chart-title-section">
-                    <h3 class="chart-title">
-                        <i class="fas fa-dollar-sign chart-icon"></i>
-                        Revenue Analytics
-                    </h3>
-                    <p class="chart-subtitle">Revenue trends and financial performance</p>
+            <!-- Course Analytics Chart -->
+            <div class="chart-card" data-chart="courses">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <h3 class="chart-title">
+                            <i class="fas fa-book"></i>
+                            Course Analytics
+                        </h3>
+                        <p class="chart-description">Course status and enrollment trends</p>
+                    </div>
+                    <div class="chart-controls">
+                        <div class="view-selector">
+                            <button class="view-btn active" data-view="bar" onclick="changeChartView('courses', 'bar')">
+                                <i class="fas fa-chart-bar"></i>
+                            </button>
+                            <button class="view-btn" data-view="line" onclick="changeChartView('courses', 'line')">
+                                <i class="fas fa-chart-line"></i>
+                            </button>
+                        </div>
+                        <div class="chart-actions">
+                            <button class="chart-action" onclick="refreshChart('courses')" title="Refresh">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="chart-action" onclick="exportChart('courses')" title="Export">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="chart-actions">
-                    <button class="chart-action-btn" onclick="refreshChart('revenue')" title="Refresh">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button class="chart-action-btn" onclick="exportChart('revenue')" title="Export">
-                        <i class="fas fa-download"></i>
-                    </button>
-                    <div class="chart-view-toggle">
-                        <button class="view-btn active" data-view="line" onclick="changeChartView('revenue', 'line')">Line</button>
-                        <button class="view-btn" data-view="bar" onclick="changeChartView('revenue', 'bar')">Bar</button>
+                <div class="chart-body">
+                    <div class="chart-stats-mini">
+                        <div class="mini-stat approved">
+                            <div class="mini-stat-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@Model.DashboardData.ApprovedCourses</span>
+                                <span class="mini-stat-label">Approved</span>
+                            </div>
+                        </div>
+                        <div class="mini-stat pending">
+                            <div class="mini-stat-icon"><i class="fas fa-clock"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@Model.DashboardData.PendingCourses</span>
+                                <span class="mini-stat-label">Pending</span>
+                            </div>
+                        </div>
+                        <div class="mini-stat rejected">
+                            <div class="mini-stat-icon"><i class="fas fa-times-circle"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@Model.DashboardData.RejectedCourses</span>
+                                <span class="mini-stat-label">Rejected</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="coursesChart" class="chart-canvas"></canvas>
+                        <div class="chart-loading" id="coursesChartLoading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading chart data...</p>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="chart-stats">
-                <div class="stat-item total-revenue">
-                    <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
-                    <div class="stat-details">
-                        <p class="stat-value">$@Model.DashboardData.TotalRevenue.ToString("N0")</p>
-                        <p class="stat-label">Total Revenue</p>
+
+            <!-- Certificate Analytics Chart -->
+            <div class="chart-card" data-chart="certificates">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <h3 class="chart-title">
+                            <i class="fas fa-certificate"></i>
+                            Certificate Analytics
+                        </h3>
+                        <p class="chart-description">Certificate issuance and completion rates</p>
+                    </div>
+                    <div class="chart-controls">
+                        <div class="view-selector">
+                            <button class="view-btn active" data-view="line" onclick="changeChartView('certificates', 'line')">
+                                <i class="fas fa-chart-line"></i>
+                            </button>
+                            <button class="view-btn" data-view="area" onclick="changeChartView('certificates', 'area')">
+                                <i class="fas fa-chart-area"></i>
+                            </button>
+                        </div>
+                        <div class="chart-actions">
+                            <button class="chart-action" onclick="refreshChart('certificates')" title="Refresh">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="chart-action" onclick="exportChart('certificates')" title="Export">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div class="chart-stats-mini">
+                        <div class="mini-stat total">
+                            <div class="mini-stat-icon"><i class="fas fa-certificate"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@Model.DashboardData.TotalCertificates</span>
+                                <span class="mini-stat-label">Total</span>
+                            </div>
+                        </div>
+                        <div class="mini-stat valid">
+                            <div class="mini-stat-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@Model.DashboardData.ValidCertificates</span>
+                                <span class="mini-stat-label">Valid</span>
+                            </div>
+                        </div>
+                        <div class="mini-stat expired">
+                            <div class="mini-stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@Model.DashboardData.ExpiredCertificates</span>
+                                <span class="mini-stat-label">Expired</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="certificatesChart" class="chart-canvas"></canvas>
+                        <div class="chart-loading" id="certificatesChartLoading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading chart data...</p>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="chart-wrapper">
-                <canvas id="revenueChart" class="chart-canvas"></canvas>
-                <div class="chart-loading" id="revenueChartLoading">
-                    <div class="loading-spinner"></div>
-                    <p>Loading chart data...</p>
+
+            <!-- Revenue Analytics Chart -->
+            <div class="chart-card" data-chart="revenue">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <h3 class="chart-title">
+                            <i class="fas fa-dollar-sign"></i>
+                            Revenue Analytics
+                        </h3>
+                        <p class="chart-description">Financial performance and trends</p>
+                    </div>
+                    <div class="chart-controls">
+                        <div class="view-selector">
+                            <button class="view-btn active" data-view="line" onclick="changeChartView('revenue', 'line')">
+                                <i class="fas fa-chart-line"></i>
+                            </button>
+                            <button class="view-btn" data-view="bar" onclick="changeChartView('revenue', 'bar')">
+                                <i class="fas fa-chart-bar"></i>
+                            </button>
+                        </div>
+                        <div class="chart-actions">
+                            <button class="chart-action" onclick="refreshChart('revenue')" title="Refresh">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="chart-action" onclick="exportChart('revenue')" title="Export">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div class="chart-stats-mini">
+                        <div class="mini-stat revenue">
+                            <div class="mini-stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">$@Model.DashboardData.TotalRevenue.ToString("N0")</span>
+                                <span class="mini-stat-label">Total Revenue</span>
+                            </div>
+                        </div>
+                        <div class="mini-stat points">
+                            <div class="mini-stat-icon"><i class="fas fa-star"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@Model.DashboardData.TotalPointsInSystem.ToString("N0")</span>
+                                <span class="mini-stat-label">Points</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="revenueChart" class="chart-canvas"></canvas>
+                        <div class="chart-loading" id="revenueChartLoading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading chart data...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chatbot Analytics Chart -->
+            <div class="chart-card" data-chart="chatbot">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <h3 class="chart-title">
+                            <i class="fas fa-robot"></i>
+                            Chatbot Analytics
+                        </h3>
+                        <p class="chart-description">Usage patterns and engagement metrics</p>
+                    </div>
+                    <div class="chart-controls">
+                        <div class="view-selector">
+                            <button class="view-btn active" data-view="line" onclick="changeChartView('chatbot', 'line')">
+                                <i class="fas fa-chart-line"></i>
+                            </button>
+                            <button class="view-btn" data-view="bar" onclick="changeChartView('chatbot', 'bar')">
+                                <i class="fas fa-chart-bar"></i>
+                            </button>
+                        </div>
+                        <div class="chart-actions">
+                            <button class="chart-action" onclick="refreshChart('chatbot')" title="Refresh">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="chart-action" onclick="exportChart('chatbot')" title="Export">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div class="chart-stats-mini">
+                        <div class="mini-stat conversations">
+                            <div class="mini-stat-icon"><i class="fas fa-comments"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@(Model.DashboardData.ChatbotStatistics.ContainsKey("TotalConversations") ? Model.DashboardData.ChatbotStatistics["TotalConversations"] : 0)</span>
+                                <span class="mini-stat-label">Conversations</span>
+                            </div>
+                        </div>
+                        <div class="mini-stat messages">
+                            <div class="mini-stat-icon"><i class="fas fa-envelope"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@(Model.DashboardData.ChatbotStatistics.ContainsKey("TotalMessages") ? Model.DashboardData.ChatbotStatistics["TotalMessages"] : 0)</span>
+                                <span class="mini-stat-label">Messages</span>
+                            </div>
+                        </div>
+                        <div class="mini-stat satisfaction">
+                            <div class="mini-stat-icon"><i class="fas fa-thumbs-up"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@(Model.DashboardData.ChatbotStatistics.ContainsKey("SatisfactionRate") ? Model.DashboardData.ChatbotStatistics["SatisfactionRate"] : "N/A")</span>
+                                <span class="mini-stat-label">Satisfaction</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chatbotChart" class="chart-canvas"></canvas>
+                        <div class="chart-loading" id="chatbotChartLoading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading chart data...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Points Analytics Chart -->
+            <div class="chart-card" data-chart="points">
+                <div class="chart-header">
+                    <div class="chart-title-area">
+                        <h3 class="chart-title">
+                            <i class="fas fa-star"></i>
+                            Points Analytics
+                        </h3>
+                        <p class="chart-description">Point distribution and earning trends</p>
+                    </div>
+                    <div class="chart-controls">
+                        <div class="view-selector">
+                            <button class="view-btn active" data-view="bar" onclick="changeChartView('points', 'bar')">
+                                <i class="fas fa-chart-bar"></i>
+                            </button>
+                            <button class="view-btn" data-view="doughnut" onclick="changeChartView('points', 'doughnut')">
+                                <i class="fas fa-chart-pie"></i>
+                            </button>
+                        </div>
+                        <div class="chart-actions">
+                            <button class="chart-action" onclick="refreshChart('points')" title="Refresh">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="chart-action" onclick="exportChart('points')" title="Export">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div class="chart-stats-mini">
+                        <div class="mini-stat total-points">
+                            <div class="mini-stat-icon"><i class="fas fa-star"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@Model.DashboardData.TotalPointsInSystem.ToString("N0")</span>
+                                <span class="mini-stat-label">Total Points</span>
+                            </div>
+                        </div>
+                        <div class="mini-stat avg-points">
+                            <div class="mini-stat-icon"><i class="fas fa-chart-bar"></i></div>
+                            <div class="mini-stat-info">
+                                <span class="mini-stat-value">@Model.DashboardData.AverageUserPoints.ToString("N0")</span>
+                                <span class="mini-stat-label">Avg Points</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="pointsChart" class="chart-canvas"></canvas>
+                        <div class="chart-loading" id="pointsChartLoading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading chart data...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
+   
 @section Scripts {
     <!-- Chart.js with plugins -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
@@ -357,14 +531,11 @@
         window.dashboardData = @Html.Raw(Json.Serialize(Model.DashboardData));
         window.userId = '@Model.UserId';
         
-        // Chart.js configuration
+        // Chart.js global configuration
         Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
         Chart.defaults.font.size = 12;
         Chart.defaults.color = '#64748b';
     </script>
-    
-    <!-- Shared Admin Functions -->
-    <script src="~/js/admin/shared-functions.js" asp-append-version="true"></script>
     
     <!-- Dashboard JavaScript -->
     <script src="~/js/admin/dashboard.js" asp-append-version="true"></script>
