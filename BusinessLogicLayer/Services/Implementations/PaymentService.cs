@@ -13,15 +13,18 @@ namespace BusinessLogicLayer.Services.Implementations
         private readonly BrainStormEraContext _context;
         private readonly IConfiguration _configuration;
 
-        // VNPAY Test Configuration
-        private readonly string _vnp_TmnCode = "2QXUI4J4"; // Test Merchant Code
-        private readonly string _vnp_HashSecret = "OHVTVTPZNEJ6X6FUVXTZCRJNPUBOMVTZ"; // Test Hash Secret
-        private readonly string _vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"; // Test URL
-
-        public PaymentService(BrainStormEraContext context, IConfiguration configuration)
+        // VNPAY Configuration from appsettings
+        private readonly string _vnp_TmnCode;
+        private readonly string _vnp_HashSecret;
+        private readonly string _vnp_Url; public PaymentService(BrainStormEraContext context, IConfiguration configuration)
         {
             _context = context;
             _configuration = configuration;
+
+            // Load VNPAY configuration from environment variables
+            _vnp_TmnCode = Environment.GetEnvironmentVariable("VNPAY_TMN_CODE") ?? "2QXUI4J4";
+            _vnp_HashSecret = Environment.GetEnvironmentVariable("VNPAY_HASH_SECRET") ?? "OHVTVTPZNEJ6X6FUVXTZCRJNPUBOMVTZ";
+            _vnp_Url = Environment.GetEnvironmentVariable("VNPAY_BASE_URL") ?? "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
         }
         public async Task<string> CreatePaymentUrlAsync(string userId, string courseId, decimal amount, string returnUrl)
         {
