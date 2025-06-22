@@ -12,6 +12,7 @@
   font-weight: 700;
   margin-bottom: 0.5rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0 2rem;
 }
 
 .page-header.payment-page .page-subtitle {
@@ -69,6 +70,7 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   transition: all 0.3s ease;
+  padding-bottom: 5rem;
 }
 
 .modern-card:hover {
@@ -78,20 +80,6 @@
 
 .bg-gradient-primary {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-}
-.payment-points {
-  padding: 8px 12px;
-  background: linear-gradient(135deg, #ffc107, #ff9800);
-  border-radius: 20px;
-  color: #fff;
-  font-weight: 600;
-  box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
-  transition: all 0.3s ease;
-}
-
-.payment-points:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4);
 }
 
 .points-container {
@@ -337,11 +325,6 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .payment-points {
-    padding: 6px 10px;
-    font-size: 12px;
-  }
-
   .points-value {
     font-size: 12px;
   }
