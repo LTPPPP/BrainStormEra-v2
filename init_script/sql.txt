@@ -404,10 +404,10 @@ CREATE TABLE notification (
 
 CREATE TABLE conversation (
     conversation_id VARCHAR(36) PRIMARY KEY,
-    conversation_name NVARCHAR(255), -- Tên cuộc trò chuyện (có thể null cho chat 1-1)
+    conversation_name NVARCHAR(255), -- Conversation name (can be null for 1-1 chat)
     conversation_type VARCHAR(20) DEFAULT 'private' CHECK (conversation_type IN ('private', 'group', 'course_discussion')),
     created_by VARCHAR(36) NOT NULL,
-    course_id VARCHAR(36), -- Liên kết với khóa học (nếu là thảo luận khóa học)
+    course_id VARCHAR(36), -- Link to course (if course discussion)
     is_active BIT DEFAULT 1,
     last_message_id VARCHAR(36),
     last_message_at DATETIME,
@@ -418,25 +418,25 @@ CREATE TABLE conversation (
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE SET NULL ON UPDATE NO ACTION
 );
 
--- Bảng lưu trữ các cuộc trò chuyện giữa người dùng
+-- Table to store conversations between users
 CREATE TABLE message_entity (
     message_id VARCHAR(36) PRIMARY KEY,
     sender_id VARCHAR(36) NOT NULL,
     receiver_id VARCHAR(36) NOT NULL,
-    conversation_id VARCHAR(36) NOT NULL, -- ID để nhóm các tin nhắn trong cùng 1 cuộc trò chuyện
+    conversation_id VARCHAR(36) NOT NULL, -- ID to group messages in the same conversation
     message_content NVARCHAR(MAX) NOT NULL,
     message_type VARCHAR(20) DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'file', 'link', 'system')),
-    attachment_url NVARCHAR(MAX), -- URL của file đính kèm (nếu có)
-    attachment_name NVARCHAR(255), -- Tên file đính kèm
-    attachment_size BIGINT, -- Kích thước file (bytes)
+    attachment_url NVARCHAR(MAX), -- URL of attached file (if any)
+    attachment_name NVARCHAR(255), -- Attached file name
+    attachment_size BIGINT, -- File size (bytes)
     is_read BIT DEFAULT 0,
     read_at DATETIME,
     is_deleted_by_sender BIT DEFAULT 0,
     is_deleted_by_receiver BIT DEFAULT 0,
-    reply_to_message_id VARCHAR(36), -- ID tin nhắn được reply (nếu có)
+    reply_to_message_id VARCHAR(36), -- ID of message being replied to (if any)
     is_edited BIT DEFAULT 0,
     edited_at DATETIME,
-    original_content NVARCHAR(MAX), -- Nội dung gốc trước khi chỉnh sửa
+    original_content NVARCHAR(MAX), -- Original content before editing
     message_created_at DATETIME NOT NULL DEFAULT GETDATE(),
     message_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
     

@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Handle delete avatar button
   if (deleteAvatarBtn) {
     deleteAvatarBtn.addEventListener("click", function () {
-      if (confirm("Bạn có chắc chắn muốn xóa avatar không?")) {
+      if (confirm("Are you sure you want to delete your avatar?")) {
         deleteAvatar();
       }
     });
@@ -141,20 +141,17 @@ document.addEventListener("DOMContentLoaded", function () {
         if (selectedDate > today) {
           isValid = false;
           dobField.classList.add("is-invalid");
-          showNotification(
-            "Ngày sinh không thể là ngày trong tương lai",
-            "warning"
-          );
+          showNotification("Birth date cannot be in the future", "warning");
         } else if (selectedDate < minDate) {
           isValid = false;
           dobField.classList.add("is-invalid");
-          showNotification("Ngày sinh không hợp lệ", "warning");
+          showNotification("Invalid birth date", "warning");
         }
       }
 
       if (!isValid) {
         e.preventDefault();
-        showNotification("Vui lòng kiểm tra lại thông tin đã nhập", "danger");
+        showNotification("Please check the information you entered", "danger");
       }
     });
   }
@@ -291,7 +288,7 @@ function saveToLocalStorage() {
     });
 
     localStorage.setItem("profile_edit_data", JSON.stringify(formData));
-    showNotification("Thông tin đã được lưu tạm thời", "info");
+    showNotification("Information has been saved temporarily", "info");
   }
 }
 

@@ -80,31 +80,4 @@ namespace DataAccessLayer.Models.ViewModels
         [Compare("NewPassword", ErrorMessage = "Confirmation password does not match")]
         public string ConfirmPassword { get; set; } = "";
     }
-    public class VietQRViewModel
-    {
-        [Required(ErrorMessage = "Bank selection is required")]
-        public string BankId { get; set; } = "";
-
-        [Required(ErrorMessage = "Account number is required")]
-        [StringLength(19, ErrorMessage = "Account number cannot exceed 19 characters")]
-        [Display(Name = "Account Number")]
-        public string AccountNumber { get; set; } = "";
-
-        [Required(ErrorMessage = "Template selection is required")]
-        public string Template { get; set; } = "compact2";
-
-        [Range(1, 9999999999999, ErrorMessage = "Amount must be between 1 and 9,999,999,999,999")]
-        [Display(Name = "Amount (VND)")]
-        public decimal? Amount { get; set; }
-
-        [StringLength(50, ErrorMessage = "Description cannot exceed 50 characters")]
-        [Display(Name = "Transfer Description")]
-        public string? Description { get; set; }
-
-        [StringLength(100, ErrorMessage = "Account name cannot exceed 100 characters")]
-        [Display(Name = "Account Holder Name")]
-        public string? AccountName { get; set; }
-
-        public string? GeneratedQRUrl { get; set; }
-    }
 }
