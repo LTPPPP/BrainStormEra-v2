@@ -5,84 +5,32 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - BrainStormEra Admin</title>
-    <link rel="icon" type="image/x-icon" href="/SharedMedia/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="icon" type="image/x-icon" href="~/SharedMedia/logo/logowithoutbackground.png" sizes="48x48">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layouts/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components/header.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components/chatbot.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components/payment.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/BrainStormEra_Razor.styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    @* User authentication meta tags for JavaScript access *@
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <meta name="user-id" content="@User.FindFirst("UserId")?.Value" />
+        <meta name="user-role" content="@User.FindFirst("UserRole")?.Value" />
+        <meta name="user-name" content="@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)" />
+    }
+
     @await RenderSectionAsync("Styles", required: false)
 </head>
 
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" href="/">
-                    <img src="/SharedMedia/logo/logowithoutbackground.png" alt="BrainStormEra Logo" 
-                         style="height: 32px; margin-right: 8px;" 
-                         onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-logo.svg';" />
-                    BrainStormEra Admin
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
-                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        @if (User.Identity != null && User.Identity.IsAuthenticated)
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" href="/admin">Dashboard</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" href="/admin/users">User Management</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" href="/admin/courses">Course Management</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" href="/admin/achievements">Achievement Management</a>
-                            </li>
-                        }
-                    </ul>
-                    <ul class="navbar-nav">
-                        @if (User.Identity != null && User.Identity.IsAuthenticated)
-                        {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <img src="/SharedMedia/defaults/default-avatar.svg" alt="Avatar" class="avatar-img me-2" 
-                                         style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;"
-                                         onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-avatar.svg';" />
-                                    <span>@User.Identity.Name</span>
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                    <li><h6 class="dropdown-header">@User.Identity.Name</h6></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item" href="/admin/profile">
-                                            <i class="fas fa-user me-2"></i>My Profile
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item text-danger" href="/auth/logout">
-                                            <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" href="/auth/login">Login</a>
-                            </li>
-                        }
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Pages/Shared/Header/_Header.cshtml")
+
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -91,19 +39,33 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - BrainStormEra Admin - <a href="/Privacy">Privacy</a>
+            &copy; 2025 - BrainStormEra Admin Panel - <a href="/Privacy">Privacy</a>
         </div>
     </footer>
 
+    @* Include Chatbot for authenticated users *@
+    @await Html.PartialAsync("_Chatbot")
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @* SignalR Client Library *@
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
+
+    @* Global Scripts *@
+    <script src="~/js/shared/toast-notifications.js" asp-append-version="true"></script>
+    <script src="~/js/utils/site.js" asp-append-version="true"></script>
+    <script src="~/js/utils/secure-logout.js" asp-append-version="true"></script>
+    <script src="~/js/imageErrorHandler.js" asp-append-version="true"></script>
+
+    @* Notification System for logged in users *@
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <script src="~/js/shared/notification-system.js" asp-append-version="true"></script>
+        <script src="~/js/components/chatbot.js" asp-append-version="true"></script>
+    }
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 
 </html>
-
-
-
-

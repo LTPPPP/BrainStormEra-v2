@@ -1,0 +1,454 @@
+/* 
+ * ========================================
+ * BRAINSTORMERA - GLOBAL CSS VARIABLES
+ * ========================================
+ * 
+ * This file consolidates ALL color variables from across the entire application.
+ * All individual CSS files now reference variables defined here for consistency.
+ * 
+ * CONSOLIDATED FROM:
+ * - learner-dashboard.css
+ * - instructor-dashboard.css  
+ * - admin-dashboard.css
+ * - login.css
+ * - base.css (layouts)
+ * - enhanced-home.css
+ * - error.css
+ * - messenger.css (Chat)
+ * - header.css (components)
+ * - loader.css (components)
+ * 
+ * COLOR SCHEMES:
+ * - Learner Dashboard: Blue theme (#3498db)
+ * - Login/Instructor: Google theme (#4285f4) 
+ * - Admin Dashboard: Red theme (#dc3545)
+ * 
+ * USAGE:
+ * Instead of defining colors locally, all CSS files now use:
+ * var(--primary-color), var(--text-color), etc.
+ * 
+ * This ensures consistent theming and easy maintenance.
+ * ========================================
+ */
+
+:root {
+  /* Primary Colors */
+  --primary-color: #3498db; /* Main blue - used across learner dashboard */
+  --primary-dark: #2980b9; /* Darker blue variant */
+  --primary-light: #258cfb; /* Lighter blue variant */
+  --primary-alt: #4285f4; /* Google blue - used in login/instructor */
+  --primary-hover: #3367d6; /* Hover state for Google blue */
+  --primary-gradient-start: #0062e6; /* Gradient start */
+  --primary-gradient-end: #33aeff; /* Gradient end */
+
+  /* Secondary Colors */
+  --secondary-color: #2c3e50; /* Dark blue-gray */
+  --secondary-light: #6c757d; /* Light gray */
+  --secondary-bg: #f8f9fa; /* Light background */
+
+  /* Success Colors */
+  --success-color: #2ecc71; /* Learner dashboard success */
+  --success-alt: #34a853; /* Google green success */
+  --success-gradient: #27ae60; /* Success gradient variant */
+
+  /* Warning Colors */
+  --warning-color: #f39c12; /* Learner dashboard warning */
+  --warning-alt: #fbbc05; /* Google yellow warning */
+  /* Error/Danger Colors */
+  --error-color: #ea4335; /* Google red error */
+  --danger-color: #ea4335; /* Alias for error */
+  --accent-color: #e74c3c; /* Alternative red accent */
+  /* Text Colors */
+  --text-color: #333; /* Main text - learner dashboard */
+  --text-primary: #202124; /* Primary text - login/instructor */
+  --text-light: #fff; /* White text */
+  --text-muted: #6c757d; /* Muted text */
+  --text-dark: #343a40; /* Dark text */
+  --text-gray: #5f6368; /* Google gray text */
+  --text-subtle: #757575; /* Subtle gray text */
+  --light-text: #5f6368; /* Light colored text (alias for text-gray) */
+
+  /* Border Colors */
+  --border-color: #dadce0; /* Google-style border */
+  --border-light: #f1f1f1; /* Light border */
+  --border-medium: #ddd; /* Medium border */
+  --border-gray: #e0e0e0; /* Gray border */
+  --border-primary: rgba(52, 152, 219, 0.1); /* Primary colored border */
+  --border-primary-dashed: rgba(52, 152, 219, 0.2); /* Dashed primary border */
+
+  /* Background Colors */
+  --bg-light: #f8f9fa; /* Light background */
+  --bg-white: #fff; /* White background */
+  --bg-dark: #343a40; /* Dark background */
+  --bg-darker: #333; /* Darker background */
+  --bg-muted: #e9ecef; /* Muted background */
+  --bg-gray: #6c757d; /* Gray background */
+  --bg-overlay: rgba(0, 0, 0, 0.7); /* Dark overlay */
+  --bg-glass: rgba(255, 255, 255, 0.95); /* Glass effect */
+  --bg-glass-light: rgba(255, 255, 255, 0.3); /* Light glass effect */
+  --bg-glass-subtle: rgba(255, 255, 255, 0.2); /* Subtle glass effect */
+  --bg-primary-light: rgba(66, 133, 244, 0.1); /* Light primary background */
+  --bg-error-light: rgba(234, 67, 53, 0.1); /* Light error background */
+  --bg-focus: #e8f0fe; /* Focus background */
+
+  /* Shadow Colors */
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  --shadow-light: rgba(0, 0, 0, 0.08);
+  --shadow-medium: rgba(0, 0, 0, 0.1);
+  --shadow-dark: rgba(0, 0, 0, 0.15);
+  --shadow-darker: rgba(0, 0, 0, 0.2);
+  --shadow-darkest: rgba(0, 0, 0, 0.3);
+  --shadow-primary: rgba(52, 152, 219, 0.3);
+  --shadow-primary-hover: rgba(52, 152, 219, 0.4);
+  /* Card Shadows */
+  --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  --card-shadow-light: 0 2px 10px rgba(0, 0, 0, 0.08);
+  --card-shadow-hover: 0 15px 30px rgba(0, 0, 0, 0.15);
+  --card-shadow-focus: 0 4px 15px rgba(52, 152, 219, 0.3);
+  --hover-shadow: 0 15px 30px rgba(0, 0, 0, 0.15); /* Legacy hover shadow */
+
+  /* Focus Colors */
+  --focus-ring-white: white;
+  --focus-ring-primary: #258cfb;
+  --focus-ring-google: rgba(66, 133, 244, 0.2);
+
+  /* Password Strength Colors */
+  --strength-weak: #ea4335; /* Weak password */
+  --strength-medium: #fbbc05; /* Medium password */
+  --strength-strong: #34a853; /* Strong password */
+
+  /* Scrollbar Colors */
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #888;
+  --scrollbar-thumb-hover: #555;
+  /* Gradient Overlays */
+  --gradient-overlay-top: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.8),
+    transparent
+  );
+  --gradient-overlay-dark: linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.8),
+    rgba(0, 0, 0, 0.6)
+  );
+  --gradient-primary: linear-gradient(
+    45deg,
+    var(--success-color),
+    var(--success-gradient)
+  );
+  --gradient-card: linear-gradient(
+    to bottom,
+    rgba(52, 152, 219, 0.02),
+    rgba(52, 152, 219, 0.05)
+  );
+  --gradient-animated: linear-gradient(
+    45deg,
+    rgba(66, 133, 244, 0.7),
+    rgba(52, 168, 83, 0.7)
+  );
+  /* Transition Variables */
+  --transition-fast: all 0.2s ease;
+  --transition-normal: all 0.3s ease-in-out;
+  --transition-medium: all 0.5s ease;
+  --transition-slow: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --transition-speed: 0.3s; /* Legacy transition speed */
+  --animation-timing: 0.3s;
+
+  /* Button Colors (Legacy Support) */
+  --btn-primary: #1b6ec2;
+  --btn-primary-border: #1861ac;
+  --btn-dark: #212529;
+  --btn-dark-hover: #343a40;
+  /* Legacy Background Colors */
+  --bg-success: #28a745;
+  --bg-danger: #dc3545;
+  --bg-warning: #ffc107;
+
+  /* Admin Theme Colors */
+  --admin-primary: #dc3545; /* Admin red theme */
+  --admin-primary-dark: #c82333; /* Darker admin red */
+  --info-color: #17a2b8; /* Info blue color */
+}
+
+/* ====================== ANIMATIONS ====================== */
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* ====================== TRANSITIONS ====================== */
+.transition-normal {
+  transition: all 0.3s ease-in-out;
+}
+
+.transition-fast {
+  transition: all 0.2s ease;
+}
+
+/* ====================== SHADOWS ====================== */
+.box-shadow-normal {
+  box-shadow: 0 0.25rem 0.75rem var(--shadow-color);
+}
+
+/* ====================== FOCUS STYLES ====================== */
+.focus-style {
+  box-shadow: 0 0 0 0.1rem var(--focus-ring-white),
+    0 0 0 0.25rem var(--focus-ring-primary);
+}
+
+/* ====================== DEFAULT STYLES ====================== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  color: var(--text-color);
+  background-color: var(--bg-white);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
+}
+
+/* Ensure white background for all main containers */
+body {
+  background-color: #ffffff !important;
+}
+
+.container,
+.container-fluid {
+  background-color: #ffffff !important;
+}
+
+main {
+  background-color: #ffffff !important;
+}
+
+/* Override any purple backgrounds */
+* {
+  background-color: inherit;
+}
+
+/* ====================== TEXT UTILITIES ====================== */
+.text-primary {
+  color: var(--text-primary) !important;
+}
+
+.text-dark {
+  color: var(--text-dark) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+.text-white {
+  color: var(--text-light) !important;
+}
+
+.text-gray {
+  color: var(--text-gray) !important;
+}
+
+/* ====================== BACKGROUND UTILITIES ====================== */
+.bg-white {
+  background-color: var(--bg-white) !important;
+}
+
+.bg-light {
+  background-color: var(--bg-light) !important;
+}
+
+.bg-dark {
+  background-color: var(--bg-dark) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+/* ====================== CARD STYLES ====================== */
+.card {
+  background-color: var(--bg-white);
+  color: var(--text-color);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--card-shadow-light);
+}
+
+.card-body {
+  color: var(--text-color);
+}
+
+.card-title,
+.card-header {
+  color: var(--text-dark);
+}
+
+/* ====================== BUTTON STYLES ====================== */
+.btn {
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-white);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--text-light);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: var(--text-light);
+}
+
+/* ====================== FORM STYLES ====================== */
+.form-control,
+.form-select {
+  color: var(--text-color);
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+}
+
+.form-control:focus,
+.form-select:focus {
+  color: var(--text-color);
+  background-color: var(--bg-white);
+  border-color: var(--primary-color);
+}
+
+/* ====================== TABLE STYLES ====================== */
+.table {
+  color: var(--text-color);
+}
+
+.table th {
+  color: var(--text-dark);
+  background-color: var(--bg-light);
+}
+
+.table td {
+  color: var(--text-color);
+}
+
+/* ====================== NAVIGATION STYLES ====================== */
+.navbar {
+  background-color: var(--bg-white);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.navbar-brand,
+.nav-link {
+  color: var(--text-dark) !important;
+}
+
+.nav-link:hover {
+  color: var(--primary-color) !important;
+}
+
+/* ====================== ALERT STYLES ====================== */
+.alert {
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.alert-success {
+  background-color: var(--bg-success);
+  border-color: var(--success-color);
+  color: var(--text-light);
+}
+
+.alert-danger {
+  background-color: var(--bg-danger);
+  border-color: var(--danger-color);
+  color: var(--text-light);
+}
+
+.alert-warning {
+  background-color: var(--bg-warning);
+  border-color: var(--warning-color);
+  color: var(--text-dark);
+}
+
+/* ====================== GENERAL TEXT ELEMENTS ====================== */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-dark);
+}
+
+p,
+span,
+div {
+  color: var(--text-color);
+}
+
+a {
+  color: var(--primary-color);
+}
+
+a:hover {
+  color: var(--primary-dark);
+}
+
+/* ====================== SPECIFIC COMPONENT OVERRIDES ====================== */
+.sidebar {
+  background-color: var(--bg-white);
+  color: var(--text-color);
+}
+
+.main-content {
+  background-color: var(--bg-light);
+  color: var(--text-color);
+}
+
+.dashboard-card {
+  background-color: var(--bg-white);
+  color: var(--text-color);
+  border: 1px solid var(--border-light);
+}
+
+/* ====================== FORCE COLOR INHERITANCE ====================== */
+.container,
+.container-fluid {
+  color: inherit;
+}
+
+.row,
+.col,
+[class*="col-"] {
+  color: inherit;
+}
