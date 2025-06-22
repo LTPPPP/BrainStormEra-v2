@@ -28,6 +28,7 @@ namespace DataAccessLayer.Models.ViewModels
     public class AdminUserViewModel
     {
         public required string UserId { get; set; }
+        public string EncodedUserId { get; set; } = string.Empty;
         public required string Username { get; set; }
         public required string FullName { get; set; }
         public required string UserEmail { get; set; }

@@ -11,9 +11,8 @@ namespace BrainStormEra_Razor.Pages.Admin
     {
         private readonly ILogger<UserDetailModel> _logger;
         private readonly IAdminService _adminService;
-        private readonly IUrlHashService _urlHashService;
-
-        public AdminUserViewModel? UserDetail { get; set; }
+        private readonly IUrlHashService _urlHashService; public AdminUserViewModel? UserDetail { get; set; }
+        public string EncodedUserId { get; set; } = string.Empty;
 
         public UserDetailModel(ILogger<UserDetailModel> logger, IAdminService adminService, IUrlHashService urlHashService)
         {
@@ -37,13 +36,14 @@ namespace BrainStormEra_Razor.Pages.Admin
 
                 // Get user details
                 var allUsers = await _adminService.GetAllUsersAsync();
-                UserDetail = allUsers.Users.FirstOrDefault(u => u.UserId == realUserId);
-
-                if (UserDetail == null)
+                UserDetail = allUsers.Users.FirstOrDefault(u => u.UserId == realUserId); if (UserDetail == null)
                 {
                     TempData["ErrorMessage"] = "User not found.";
                     return RedirectToPage("/Admin/Users");
                 }
+
+                // Store encoded user ID for UI
+                EncodedUserId = userId;
 
                 _logger.LogInformation("Admin {AdminName} viewed details for user {UserId}",
                     HttpContext.User?.Identity?.Name, realUserId);
@@ -57,7 +57,6 @@ namespace BrainStormEra_Razor.Pages.Admin
                 return RedirectToPage("/Admin/Users");
             }
         }
-
         public async Task<IActionResult> OnPostUpdateUserStatusAsync(string userId, bool isBanned)
         {
             var realUserId = string.Empty;
@@ -89,6 +88,43 @@ namespace BrainStormEra_Razor.Pages.Admin
             {
                 _logger.LogError(ex, "Error updating user status for user: {UserId}", realUserId);
                 return new JsonResult(new { success = false, message = "An error occurred while updating user status" });
+            }
+        }
+
+        public async Task<IActionResult> OnPostUpdateUserPointsAsync(string userId, decimal pointsChange)
+        {
+            var realUserId = string.Empty;
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return BadRequest("User ID is required");
+                }
+
+                // Decode hash ID to real ID
+                realUserId = _urlHashService.GetRealId(userId);
+                var result = await _adminService.UpdateUserPointsAsync(realUserId, pointsChange);
+
+                if (result)
+                {
+                    var action = pointsChange > 0 ? "added" : "subtracted";
+                    var amount = Math.Abs(pointsChange);
+
+                    _logger.LogInformation("User points updated successfully by admin {AdminName} for user {UserId}. Points {Action}: {Amount}",
+                        HttpContext.User?.Identity?.Name, realUserId, action, amount);
+
+                    TempData["SuccessMessage"] = $"{amount:N0} points have been {action} successfully.";
+                    return new JsonResult(new { success = true, message = $"Points {action} successfully" });
+                }
+                else
+                {
+                    return new JsonResult(new { success = false, message = "Failed to update user points" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user points for user: {UserId}, pointsChange: {PointsChange}", realUserId, pointsChange);
+                return new JsonResult(new { success = false, message = "An error occurred while updating user points" });
             }
         }
     }

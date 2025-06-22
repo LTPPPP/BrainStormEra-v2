@@ -165,6 +165,53 @@
         .btn:hover {
             opacity: 0.9;
         }
+
+        .point-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .point-input-group input {
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .point-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .point-buttons .btn {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 13px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
     </style>
 }
 
@@ -277,7 +324,27 @@
                     </div>
                     <div class="info-item">
                         <span class="info-label">Payment Points:</span>
-                        <span class="info-value">@(Model.UserDetail.PaymentPoint?.ToString("N0") ?? "0")</span>
+                        <span class="info-value">
+                            <strong>@(Model.UserDetail.PaymentPoint?.ToString("N0") ?? "0")</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Point Management -->
+                <div class="info-section">
+                    <h5><i class="fas fa-coins"></i>Point Management</h5>
+                    <div class="point-actions">
+                        <div class="point-input-group">
+                            <input type="number" id="pointsAmount" min="1" step="1" value="100" class="form-control" placeholder="Enter points" />
+                        </div>
+                        <div class="point-buttons">
+                            <button type="button" class="btn btn-success btn-sm" onclick="updateUserPoints('@Model.EncodedUserId', 'add')">
+                                <i class="fas fa-plus"></i> Add Points
+                            </button>
+                            <button type="button" class="btn btn-warning btn-sm" onclick="updateUserPoints('@Model.EncodedUserId', 'subtract')">
+                                <i class="fas fa-minus"></i> Subtract Points
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -320,13 +387,13 @@
                 
                 @if (Model.UserDetail.IsBanned)
                 {
-                    <button type="button" class="btn btn-unban" onclick="updateUserStatus('@Model.UserDetail.UserId', false)">
+                    <button type="button" class="btn btn-unban" onclick="updateUserStatus('@Model.EncodedUserId', false)">
                         <i class="fas fa-unlock"></i>Unban User
                     </button>
                 }
                 else
                 {
-                    <button type="button" class="btn btn-ban" onclick="updateUserStatus('@Model.UserDetail.UserId', true)">
+                    <button type="button" class="btn btn-ban" onclick="updateUserStatus('@Model.EncodedUserId', true)">
                         <i class="fas fa-ban"></i>Ban User
                     </button>
                 }
@@ -366,6 +433,42 @@
                 .catch(error => {
                     console.error('Error:', error);
                     alert('An error occurred while updating user status');
+                });
+            }
+        }
+
+        function updateUserPoints(userId, action) {
+            const pointsInput = document.getElementById('pointsAmount');
+            const points = parseInt(pointsInput.value);
+
+            if (!points || points <= 0) {
+                alert('Please enter a valid points amount');
+                return;
+            }
+
+            const pointsChange = action === 'add' ? points : -points;
+            const actionText = action === 'add' ? 'add' : 'subtract';
+
+            if (confirm(`Are you sure you want to ${actionText} ${points} points?`)) {
+                fetch('/admin/users/' + userId + '?handler=UpdateUserPoints', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({ userId: userId, pointsChange: pointsChange })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating user points');
                 });
             }
         }

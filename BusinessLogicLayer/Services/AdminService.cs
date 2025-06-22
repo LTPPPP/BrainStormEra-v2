@@ -448,6 +448,19 @@ namespace BusinessLogicLayer.Services
             }
         }
 
+        public async Task<bool> UpdateUserPointsAsync(string userId, decimal pointsChange)
+        {
+            try
+            {
+                return await _adminRepo.UpdateUserPointsAsync(userId, pointsChange);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user points for userId: {UserId}, pointsChange: {PointsChange}", userId, pointsChange);
+                throw;
+            }
+        }
+
         public async Task<bool> DeleteUserAsync(string userId)
         {
             try
