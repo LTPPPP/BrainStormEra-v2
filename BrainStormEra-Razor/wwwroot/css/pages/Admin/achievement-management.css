@@ -88,7 +88,6 @@
 }
 
 .achievements-management .btn-create:hover {
-  transform: translateY(-3px);
   box-shadow: 0 10px 30px rgba(52, 152, 219, 0.5);
   background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
 }
@@ -152,7 +151,6 @@
   border-color: #27ae60;
   box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.15);
   background: #f8f9fa;
-  transform: translateY(-1px);
 }
 
 .achievements-management .filter-actions {
@@ -184,7 +182,6 @@
 }
 
 .achievements-management .btn-filter:hover {
-  transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(39, 174, 96, 0.5);
 }
 
@@ -198,7 +195,6 @@
   background: #e67e22;
   color: white;
   border-color: #e67e22;
-  transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);
 }
 
@@ -254,7 +250,6 @@
 }
 
 .achievements-management .stat-card:hover {
-  transform: translateY(-6px) scale(1.02);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
 }
 
@@ -372,7 +367,6 @@
 }
 
 .achievements-management .achievement-card:hover {
-  transform: translateY(-12px) scale(1.02);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   border-color: #27ae60;
 }
@@ -524,7 +518,6 @@
 }
 
 .achievements-management .btn-view:hover {
-  transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(26, 188, 156, 0.5);
   background: linear-gradient(135deg, #16a085 0%, #1abc9c 100%);
 }
@@ -536,7 +529,6 @@
 }
 
 .achievements-management .btn-edit:hover {
-  transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(243, 156, 18, 0.5);
   background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
 }
@@ -548,7 +540,6 @@
 }
 
 .achievements-management .btn-delete:hover {
-  transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(231, 76, 60, 0.5);
   background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
 }
@@ -595,7 +586,6 @@
   background: #27ae60;
   color: white;
   border-color: #27ae60;
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
 }
 
@@ -690,11 +680,9 @@
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(-40px) scale(0.9);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
@@ -788,7 +776,6 @@
   border-color: #27ae60;
   box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.15);
   background: #f8f9fa;
-  transform: translateY(-1px);
 }
 
 .achievements-management .icon-selection {
@@ -824,7 +811,6 @@
 
 .achievements-management .btn-upload-icon:hover {
   background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
 }
 
@@ -870,7 +856,6 @@
 }
 
 .achievements-management .btn-confirm:hover {
-  transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(39, 174, 96, 0.5);
   background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
 }
@@ -885,7 +870,6 @@
   background: #e67e22;
   color: white;
   border-color: #e67e22;
-  transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);
 }
 

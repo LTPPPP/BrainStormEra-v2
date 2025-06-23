@@ -125,7 +125,6 @@
 
 .btn-close:hover {
   opacity: 1;
-  transform: scale(1.1);
 }
 
 /* ==============================================
@@ -177,7 +176,6 @@
 
 .user-avatar-large:hover {
   border-color: var(--primary-color);
-  transform: scale(1.05);
   box-shadow: var(--card-shadow);
 }
 
@@ -228,7 +226,6 @@
 }
 
 .badge:hover {
-  transform: scale(1.05);
   box-shadow: var(--card-shadow);
 }
 
@@ -271,7 +268,6 @@
 }
 
 .info-section:hover {
-  transform: translateY(-2px);
   box-shadow: var(--card-shadow);
 }
 
@@ -383,7 +379,6 @@
   outline: none;
   border-color: var(--primary-color);
   box-shadow: var(--focus-ring-primary);
-  transform: translateY(-1px);
 }
 
 .point-buttons {
@@ -414,7 +409,6 @@
 
 .btn-success:hover {
   background: var(--success-hover);
-  transform: translateY(-2px);
   box-shadow: var(--card-shadow);
 }
 
@@ -425,7 +419,6 @@
 
 .btn-warning:hover {
   background: var(--warning-hover);
-  transform: translateY(-2px);
   box-shadow: var(--card-shadow);
 }
 
@@ -459,7 +452,6 @@
 }
 
 .btn:hover {
-  transform: translateY(-2px);
   box-shadow: var(--card-shadow);
 }
 
@@ -648,22 +640,18 @@
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -744,13 +732,13 @@
 
 /* Enhanced hover effects */
 .btn:active {
-  transform: translateY(0);
+  opacity: 0.9;
 }
 
 .info-section:hover h5 {
-  transform: scale(1.02);
+  color: var(--primary-color);
 }
 
 .badge:active {
-  transform: scale(0.98);
+  opacity: 0.8;
 }
