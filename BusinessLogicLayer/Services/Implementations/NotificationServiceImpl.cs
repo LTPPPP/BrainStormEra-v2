@@ -502,7 +502,15 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
+                // Try different ways to get user ID - same as in controller
                 var userId = user.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                }
+
+                _logger.LogInformation("DeleteNotificationAsync - NotificationId: {NotificationId}, UserId: {UserId}", notificationId, userId);
+
                 if (string.IsNullOrEmpty(userId))
                 {
                     return new DeleteNotificationResult
@@ -514,6 +522,9 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 // Get existing notification to check authorization
                 var existingNotification = await _notificationService.GetNotificationForEditAsync(notificationId, userId);
+
+                _logger.LogInformation("DeleteNotificationAsync - Notification found: {Found}", existingNotification != null);
+
                 if (existingNotification == null)
                 {
                     return new DeleteNotificationResult
@@ -525,6 +536,8 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 // Check if user has permission to delete this notification
                 var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                _logger.LogInformation("DeleteNotificationAsync - UserRole: {UserRole}", userRole);
+
                 if (!IsAuthorizedToDeleteNotification(existingNotification, userId, userRole))
                 {
                     return new DeleteNotificationResult
@@ -539,7 +552,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 return new DeleteNotificationResult
                 {
                     Success = true,
-                    Message = "Notification deleted successfully!"
+                    Message = "Notification removed from your inbox successfully!"
                 };
             }
             catch (Exception ex)
@@ -799,7 +812,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// </summary>
         private static bool IsValidNotificationType(string type)
         {
-            var validTypes = new[] { "Info", "Warning", "Success", "Error", "Course", "Assignment", "System" };
+            var validTypes = new[] { "Info", "Warning", "Success", "Error", "Course", "Assignment", "System", "DELETED" };
             return validTypes.Contains(type, StringComparer.OrdinalIgnoreCase);
         }
 

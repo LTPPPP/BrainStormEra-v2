@@ -27,7 +27,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _dbSet
-                    .Where(n => n.UserId == userId)
+                    .Where(n => n.UserId == userId && n.NotificationType != "DELETED")
                     .OrderByDescending(n => n.NotificationCreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -45,7 +45,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _dbSet
-                    .Where(n => n.UserId == userId || n.CreatedBy == userId)
+                    .Where(n => (n.UserId == userId || n.CreatedBy == userId) && n.NotificationType != "DELETED")
                     .OrderByDescending(n => n.NotificationCreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -66,7 +66,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _dbSet
-                    .Where(n => n.UserId == userId && n.IsRead != true)
+                    .Where(n => n.UserId == userId && n.IsRead != true && n.NotificationType != "DELETED")
                     .OrderByDescending(n => n.NotificationCreatedAt)
                     .ToListAsync();
             }
@@ -82,7 +82,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _dbSet
-                    .CountAsync(n => n.UserId == userId && n.IsRead != true);
+                    .CountAsync(n => n.UserId == userId && n.IsRead != true && n.NotificationType != "DELETED");
             }
             catch (Exception ex)
             {
@@ -96,7 +96,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _dbSet
-                    .Where(n => n.UserId == userId && n.NotificationType == notificationType)
+                    .Where(n => n.UserId == userId && n.NotificationType == notificationType && n.NotificationType != "DELETED")
                     .OrderByDescending(n => n.NotificationCreatedAt)
                     .ToListAsync();
             }
@@ -112,7 +112,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _dbSet
-                    .Where(n => n.UserId == userId)
+                    .Where(n => n.UserId == userId && n.NotificationType != "DELETED")
                     .OrderByDescending(n => n.NotificationCreatedAt)
                     .Take(count)
                     .ToListAsync();
@@ -180,7 +180,11 @@ namespace DataAccessLayer.Repositories
                 if (notification == null)
                     return false;
 
-                await DeleteAsync(notification);
+                // Soft delete: Mark as deleted by changing notification type
+                notification.NotificationType = "DELETED";
+                notification.ReadAt = DateTime.UtcNow; // Mark as read when deleted
+                notification.IsRead = true;
+
                 var result = await SaveChangesAsync();
                 return result > 0;
             }
@@ -221,7 +225,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 var notification = await _dbSet
-                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId);
+                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId && n.NotificationType != "DELETED");
 
                 if (notification == null)
                     return false;
@@ -244,7 +248,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 var notification = await _dbSet
-                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId);
+                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId && n.NotificationType != "DELETED");
 
                 if (notification == null)
                     return false;
@@ -267,7 +271,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 var unreadNotifications = await _dbSet
-                    .Where(n => n.UserId == userId && n.IsRead != true)
+                    .Where(n => n.UserId == userId && n.IsRead != true && n.NotificationType != "DELETED")
                     .ToListAsync();
 
                 foreach (var notification in unreadNotifications)
@@ -291,7 +295,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 var notification = await _dbSet
-                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId);
+                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId && n.NotificationType != "DELETED");
 
                 if (notification == null)
                     return false;
@@ -312,7 +316,7 @@ namespace DataAccessLayer.Repositories
         // Basic implementations for remaining interface methods
         public async Task<List<string>> GetNotificationTypesAsync()
         {
-            var types = await _dbSet.Select(n => n.NotificationType).Distinct().ToListAsync();
+            var types = await _dbSet.Where(n => n.NotificationType != "DELETED").Select(n => n.NotificationType).Distinct().ToListAsync();
             return types.Where(t => !string.IsNullOrEmpty(t)).ToList()!;
         }
 
@@ -409,7 +413,9 @@ namespace DataAccessLayer.Repositories
                 return await _dbSet
                     .Include(n => n.Course)
                     .Include(n => n.User)
-                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.CreatedBy == userId);
+                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId &&
+                                            (n.CreatedBy == userId || n.UserId == userId) &&
+                                            n.NotificationType != "DELETED");
             }
             catch (Exception ex)
             {
@@ -423,7 +429,9 @@ namespace DataAccessLayer.Repositories
             try
             {
                 var notification = await _dbSet
-                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.CreatedBy == userId);
+                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId &&
+                                            n.CreatedBy == userId &&
+                                            n.NotificationType != "DELETED");
 
                 if (notification == null)
                     return false;
@@ -438,6 +446,47 @@ namespace DataAccessLayer.Repositories
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error updating notification content: {NotificationId}", notificationId);
+                throw;
+            }
+        }
+
+        public async Task<bool> RestoreNotificationAsync(string notificationId, string userId)
+        {
+            try
+            {
+                var notification = await _dbSet
+                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId && n.NotificationType == "DELETED");
+
+                if (notification == null)
+                    return false;
+
+                // Restore by setting back to original type (we'll use "info" as default)
+                notification.NotificationType = "info";
+
+                var result = await SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error restoring notification");
+                throw;
+            }
+        }
+
+        public async Task<List<Notification>> GetDeletedNotificationsAsync(string userId, int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                return await _dbSet
+                    .Where(n => n.UserId == userId && n.NotificationType == "DELETED")
+                    .OrderByDescending(n => n.NotificationCreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting deleted notifications: {UserId}", userId);
                 throw;
             }
         }

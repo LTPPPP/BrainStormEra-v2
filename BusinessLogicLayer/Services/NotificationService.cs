@@ -276,6 +276,16 @@ namespace BusinessLogicLayer.Services
                 return false;
             }
         }
+
+        public async Task<bool> RestoreNotificationAsync(string notificationId, string userId)
+        {
+            return await _notificationRepo.RestoreNotificationAsync(notificationId, userId);
+        }
+
+        public async Task<List<Notification>> GetDeletedNotificationsAsync(string userId, int page = 1, int pageSize = 20)
+        {
+            return await _notificationRepo.GetDeletedNotificationsAsync(userId, page, pageSize);
+        }
     }
 }
 

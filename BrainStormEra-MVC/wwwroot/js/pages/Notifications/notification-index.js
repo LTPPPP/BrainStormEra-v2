@@ -17,13 +17,24 @@ class NotificationIndex {
       e.preventDefault();
       const notificationId = $(e.currentTarget).data("notification-id");
       this.markAsRead(notificationId, e.currentTarget);
-    });
-
-    // Delete notification functionality
+    }); // Delete notification functionality
     $(document).on("click", ".delete-btn", (e) => {
       e.preventDefault();
-      const notificationId = $(e.currentTarget).data("notification-id");
-      this.showDeleteConfirmation(notificationId, e.currentTarget);
+      const element = e.currentTarget;
+
+      // Debug the element
+      this.debugNotificationElement(element);
+
+      const notificationId = $(element).data("notification-id");
+      console.log("Delete button clicked, notification ID:", notificationId);
+
+      if (!notificationId) {
+        console.error("No notification ID found");
+        this.showToast("Notification ID not found", "error");
+        return;
+      }
+
+      this.showDeleteConfirmation(notificationId, element);
     });
 
     // Load more functionality
@@ -63,11 +74,12 @@ class NotificationIndex {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          RequestVerificationToken: $(
-            'input[name="__RequestVerificationToken"]'
-          ).val(),
         },
-        body: `notificationId=${encodeURIComponent(notificationId)}`,
+        body: `notificationId=${encodeURIComponent(
+          notificationId
+        )}&__RequestVerificationToken=${encodeURIComponent(
+          $('input[name="__RequestVerificationToken"]').val()
+        )}`,
       });
 
       if (response.ok) {
@@ -122,7 +134,7 @@ class NotificationIndex {
   showDeleteConfirmation(notificationId, buttonElement) {
     // Create a modern confirmation modal
     const modal = $(`
-            <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header border-0">
@@ -130,17 +142,17 @@ class NotificationIndex {
                                 <i class="fas fa-exclamation-triangle text-warning me-2"></i>
                                 Confirm Deletion
                             </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <p class="mb-0">Are you sure you want to delete this notification? This action cannot be undone.</p>
+                            <p class="mb-0">Are you sure you want to remove this notification from your inbox? You can still access it from your notification history if needed.</p>
                         </div>
                         <div class="modal-footer border-0">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                 <i class="fas fa-times me-1"></i> Cancel
                             </button>
                             <button type="button" class="btn btn-danger" id="confirmDelete">
-                                <i class="fas fa-trash me-1"></i> Delete
+                                <i class="fas fa-archive me-1"></i> Remove
                             </button>
                         </div>
                     </div>
@@ -150,12 +162,33 @@ class NotificationIndex {
 
     $("body").append(modal);
     const bootstrapModal = new bootstrap.Modal(modal[0]);
+
+    // Remove aria-hidden when modal is shown
+    modal.on("shown.bs.modal", () => {
+      modal.removeAttr("aria-hidden");
+    });
+
     bootstrapModal.show();
 
-    // Handle confirm delete
-    modal.find("#confirmDelete").on("click", () => {
-      this.deleteNotification(notificationId, buttonElement);
-      bootstrapModal.hide();
+    // Handle confirm delete with better error handling
+    modal.find("#confirmDelete").on("click", async () => {
+      try {
+        // Disable button to prevent double clicks
+        const confirmBtn = modal.find("#confirmDelete");
+        confirmBtn
+          .prop("disabled", true)
+          .html('<i class="fas fa-spinner fa-spin me-1"></i> Removing...');
+
+        await this.deleteNotification(notificationId, buttonElement);
+        bootstrapModal.hide();
+      } catch (error) {
+        console.error("Error in delete confirmation:", error);
+        // Re-enable button on error
+        const confirmBtn = modal.find("#confirmDelete");
+        confirmBtn
+          .prop("disabled", false)
+          .html('<i class="fas fa-archive me-1"></i> Remove');
+      }
     });
 
     // Clean up modal after hiding
@@ -165,20 +198,64 @@ class NotificationIndex {
   }
 
   async deleteNotification(notificationId, buttonElement) {
+    console.log("Attempting to delete notification:", notificationId);
+
+    // Temporary: Comment out checks to test direct delete
+    // // Check if notification exists before attempting delete
+    // console.log("Checking if notification exists...");
+    // const exists = await this.testNotificationExists(notificationId);
+    // console.log("Notification exists:", exists);
+
+    // Test authorization
+    console.log("Testing delete authorization...");
+    const authTest = await this.testDeleteAuthorization(notificationId);
+    console.log("Authorization test result:", authTest);
+
+    // if (!exists) {
+    //   console.error("Notification does not exist or is not accessible");
+    //   this.showToast("Notification not found or already removed", "error");
+    //   return;
+    // }
+
     try {
+      // Get CSRF token - try different selectors
+      let token = $('input[name="__RequestVerificationToken"]').val();
+      if (!token) {
+        token = $('input[name="__RequestVerificationToken"]:first').val();
+      }
+      if (!token) {
+        token = $('[name="__RequestVerificationToken"]').val();
+      }
+
+      console.log("CSRF Token:", token ? "Found" : "Not found");
+
+      if (!token) {
+        console.error("CSRF Token not found in DOM");
+        this.showToast(
+          "Security token not found. Please refresh the page.",
+          "error"
+        );
+        return;
+      }
+
       const response = await fetch("/Notification/Delete", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          RequestVerificationToken: $(
-            'input[name="__RequestVerificationToken"]'
-          ).val(),
+          RequestVerificationToken: token,
         },
-        body: `notificationId=${encodeURIComponent(notificationId)}`,
+        body: `notificationId=${encodeURIComponent(
+          notificationId
+        )}&__RequestVerificationToken=${encodeURIComponent(token)}`,
       });
+
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
 
       if (response.ok) {
         const result = await response.json();
+        console.log("Delete result:", result);
+
         if (result.success) {
           // Animate and remove the notification card
           const notificationCard =
@@ -198,17 +275,23 @@ class NotificationIndex {
             }
           });
 
-          this.showToast("Notification deleted successfully", "success");
+          this.showToast("Notification removed from your inbox", "success");
           this.updateUnreadCount();
         } else {
-          this.showToast("Failed to delete notification", "error");
+          console.error("Delete failed:", result.message);
+          this.showToast(
+            result.message || "Failed to remove notification",
+            "error"
+          );
         }
       } else {
-        this.showToast("Error deleting notification", "error");
+        const errorText = await response.text();
+        console.error("HTTP Error:", response.status, errorText);
+        this.showToast("Error removing notification", "error");
       }
     } catch (error) {
-      console.error("Error deleting notification:", error);
-      this.showToast("Error deleting notification", "error");
+      console.error("Error removing notification:", error);
+      this.showToast("Error removing notification", "error");
     }
   }
   async markAllAsRead() {
@@ -229,10 +312,10 @@ class NotificationIndex {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          RequestVerificationToken: $(
-            'input[name="__RequestVerificationToken"]'
-          ).val(),
         },
+        body: `__RequestVerificationToken=${encodeURIComponent(
+          $('input[name="__RequestVerificationToken"]').val()
+        )}`,
       });
 
       if (response.ok) {
@@ -528,6 +611,60 @@ class NotificationIndex {
     });
 
     this.updateHeaderNotificationBell();
+  }
+
+  async testNotificationExists(notificationId) {
+    try {
+      const response = await fetch(
+        `/Notification/DirectCheckNotification?notificationId=${encodeURIComponent(
+          notificationId
+        )}`
+      );
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Notification check result:", result);
+        return result.exists;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error checking notification:", error);
+      return false;
+    }
+  }
+
+  async testDeleteAuthorization(notificationId) {
+    try {
+      const response = await fetch(
+        `/Notification/TestDeleteAuth?notificationId=${encodeURIComponent(
+          notificationId
+        )}`
+      );
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Delete authorization test result:", result);
+        return result;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error testing delete authorization:", error);
+      return null;
+    }
+  }
+
+  debugNotificationElement(element) {
+    console.log("Debug notification element:");
+    console.log("Element:", element);
+    console.log("Data attributes:", element.dataset);
+    console.log("data-notification-id:", $(element).data("notification-id"));
+    console.log(
+      "data-notification-id (attr):",
+      $(element).attr("data-notification-id")
+    );
+    console.log(
+      "Closest notification item:",
+      $(element).closest(".notification-item")
+    );
+    console.log("All data attributes:", $(element).data());
   }
 }
 

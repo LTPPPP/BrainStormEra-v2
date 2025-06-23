@@ -18,6 +18,8 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<bool> SendToCourseAsync(string courseId, string title, string content, string? type = null, string? excludeUserId = null, string? createdBy = null);
         Task<bool> SendToRoleAsync(string role, string title, string content, string? type = null, string? createdBy = null);
         Task<bool> SendToAllAsync(string title, string content, string? type = null, string? createdBy = null);
+        Task<bool> RestoreNotificationAsync(string notificationId, string userId);
+        Task<List<Notification>> GetDeletedNotificationsAsync(string userId, int page = 1, int pageSize = 20);
     }
 }
 
