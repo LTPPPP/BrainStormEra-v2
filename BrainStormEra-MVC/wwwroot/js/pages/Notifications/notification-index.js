@@ -7,6 +7,8 @@ class NotificationIndex {
   init() {
     this.setupEventHandlers();
     this.setupSignalR();
+    this.updateHeaderNotificationBell(); // Initialize notification bell state
+    this.initializeNotificationStates(); // Initialize notification states on page load
   }
 
   setupEventHandlers() {
@@ -43,6 +45,19 @@ class NotificationIndex {
   }
 
   async markAsRead(notificationId, buttonElement) {
+    // Immediately update UI for better UX
+    const notificationCard = $(buttonElement).closest(".notification-item");
+    const originalBackground = notificationCard.css("background");
+
+    // Show loading state
+    $(buttonElement)
+      .prop("disabled", true)
+      .html('<i class="fas fa-spinner fa-spin"></i>');
+
+    // Apply immediate visual feedback
+    notificationCard.css("transition", "all 0.3s ease");
+    notificationCard.removeClass("unread").addClass("read");
+
     try {
       const response = await fetch("/Notification/MarkAsRead", {
         method: "POST",
@@ -58,31 +73,48 @@ class NotificationIndex {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          // Remove the mark as read button
+          // Remove the mark as read button with animation
           $(buttonElement).fadeOut(300, function () {
             $(this).remove();
           });
 
-          // Update the notification card to show as read
-          const notificationCard =
-            $(buttonElement).closest(".notification-item");
-          notificationCard.removeClass("unread").addClass("read");
-
-          // Remove the "New" badge if present
+          // Remove the "New" badge if present with animation
           notificationCard.find(".badge.bg-primary").fadeOut(300, function () {
             $(this).remove();
           });
 
+          // Show success animation
+          notificationCard.addClass("read-success");
+          setTimeout(() => {
+            notificationCard.removeClass("read-success");
+          }, 1000);
+
           this.showToast("Notification marked as read", "success");
           this.updateUnreadCount();
+          this.updateHeaderNotificationBell();
         } else {
+          // Revert UI changes on failure
+          notificationCard.removeClass("read").addClass("unread");
+          $(buttonElement)
+            .prop("disabled", false)
+            .html('<i class="fas fa-check"></i>');
           this.showToast("Failed to mark notification as read", "error");
         }
       } else {
+        // Revert UI changes on error
+        notificationCard.removeClass("read").addClass("unread");
+        $(buttonElement)
+          .prop("disabled", false)
+          .html('<i class="fas fa-check"></i>');
         this.showToast("Error marking notification as read", "error");
       }
     } catch (error) {
       console.error("Error marking notification as read:", error);
+      // Revert UI changes on error
+      notificationCard.removeClass("read").addClass("unread");
+      $(buttonElement)
+        .prop("disabled", false)
+        .html('<i class="fas fa-check"></i>');
       this.showToast("Error marking notification as read", "error");
     }
   }
@@ -180,6 +212,18 @@ class NotificationIndex {
     }
   }
   async markAllAsRead() {
+    // Show loading state on button
+    const markAllBtn = $("#markAllRead");
+    const originalText = markAllBtn.html();
+    markAllBtn
+      .prop("disabled", true)
+      .html('<i class="fas fa-spinner fa-spin me-1"></i>Marking...');
+
+    // Immediately update UI for better UX
+    const unreadItems = $(".notification-item.unread");
+    unreadItems.css("transition", "all 0.3s ease");
+    unreadItems.removeClass("unread").addClass("read");
+
     try {
       const response = await fetch("/Notification/MarkAllAsRead", {
         method: "POST",
@@ -194,29 +238,53 @@ class NotificationIndex {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          // Remove all mark as read buttons
-          $(".mark-read-btn").fadeOut(300, function () {
-            $(this).remove();
+          // Remove all mark as read buttons with staggered animation
+          $(".mark-read-btn").each(function (index) {
+            $(this)
+              .delay(index * 100)
+              .fadeOut(300, function () {
+                $(this).remove();
+              });
           });
 
-          // Update all notification cards to show as read
-          $(".notification-item.unread").removeClass("unread").addClass("read");
-
-          // Remove all "New" badges
-          $(".badge.bg-primary").fadeOut(300, function () {
-            $(this).remove();
+          // Remove all "New" badges with staggered animation
+          $(".badge.bg-primary").each(function (index) {
+            $(this)
+              .delay(index * 50)
+              .fadeOut(300, function () {
+                $(this).remove();
+              });
           });
+
+          // Show success animation on all items
+          unreadItems.addClass("read-success");
+          setTimeout(() => {
+            unreadItems.removeClass("read-success");
+          }, 1000);
+
+          // Hide the "Mark All Read" button
+          markAllBtn.fadeOut(300);
 
           this.showToast("All notifications marked as read", "success");
           this.updateUnreadCount();
+          this.updateHeaderNotificationBell();
         } else {
+          // Revert UI changes on failure
+          $(".notification-item.read").removeClass("read").addClass("unread");
+          markAllBtn.prop("disabled", false).html(originalText);
           this.showToast("Failed to mark all notifications as read", "error");
         }
       } else {
+        // Revert UI changes on error
+        $(".notification-item.read").removeClass("read").addClass("unread");
+        markAllBtn.prop("disabled", false).html(originalText);
         this.showToast("Error marking all notifications as read", "error");
       }
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
+      // Revert UI changes on error
+      $(".notification-item.read").removeClass("read").addClass("unread");
+      markAllBtn.prop("disabled", false).html(originalText);
       this.showToast("Error marking all notifications as read", "error");
     }
   }
@@ -319,6 +387,20 @@ class NotificationIndex {
     }
   }
 
+  updateHeaderNotificationBell() {
+    // Update notification bell icon in header
+    const notificationBell = $(".notification-bell");
+    const unreadCount = $(".notification-item.unread").length;
+
+    if (unreadCount > 0) {
+      if (!notificationBell.find(".notification-dot").length) {
+        notificationBell.append('<span class="notification-dot"></span>');
+      }
+    } else {
+      notificationBell.find(".notification-dot").remove();
+    }
+  }
+
   setupSignalR() {
     // Initialize SignalR connection for real-time updates
     const connection = new signalR.HubConnectionBuilder()
@@ -328,9 +410,7 @@ class NotificationIndex {
 
     connection
       .start()
-      .then(() => {
-
-      })
+      .then(() => {})
       .catch((err) => {
         console.error("SignalR Connection Error:", err);
       });
@@ -412,8 +492,34 @@ class NotificationIndex {
       showToast(message, type);
     } else {
       // Fallback to console log
-  
     }
+  }
+
+  // Update points display in header if needed
+  updatePointsDisplay() {
+    // This can be extended to update user points in real-time
+    // For now, just a placeholder for future enhancement
+  }
+
+  // Initialize notification state on page load
+  initializeNotificationStates() {
+    // Ensure all notification items have proper classes
+    $(".notification-item").each(function () {
+      const $item = $(this);
+      if (!$item.hasClass("read") && !$item.hasClass("unread")) {
+        // Check if there's a "New" badge or mark-read button to determine state
+        if (
+          $item.find(".badge.bg-primary").length > 0 ||
+          $item.find(".mark-read-btn").length > 0
+        ) {
+          $item.addClass("unread");
+        } else {
+          $item.addClass("read");
+        }
+      }
+    });
+
+    this.updateHeaderNotificationBell();
   }
 }
 

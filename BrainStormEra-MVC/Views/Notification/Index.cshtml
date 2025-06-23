@@ -230,6 +230,17 @@
     @Html.AntiForgeryToken()
 
     <script>
+        // Initialize notification styling on page load
+        $(document).ready(function() {
+            // Ensure proper styling is applied
+            $('.notification-item').each(function() {
+                const $item = $(this);
+                if ($item.hasClass('unread')) {
+                    $item.css('transition', 'all 0.3s ease');
+                }
+            });
+        });
+
         // Hide preloader when page is loaded
         window.addEventListener('load', function () {
             document.querySelector('.page-loader').classList.add('loaded');
