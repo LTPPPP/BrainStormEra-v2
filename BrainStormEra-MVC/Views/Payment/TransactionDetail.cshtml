@@ -1,0 +1,271 @@
+@model DataAccessLayer.Models.PaymentTransaction
+
+@{
+    ViewData["Title"] = "Transaction Details";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - BrainStormEra</title>
+    <meta name="description" content="Transaction Details - View detailed information about your payment transaction">
+    <link rel="icon" type="image/x-icon" href="~/SharedMedia/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css">
+    <link rel="stylesheet" href="~/css/layouts/base.css">
+    <link rel="stylesheet" href="~/css/components/header.css">
+    <link rel="stylesheet" href="~/css/components/loader.css">
+    <link rel="stylesheet" href="~/css/components/payment.css">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+
+    <link rel="stylesheet" href="~/css/components/footer.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
+
+    <!-- Load page loader script -->
+    <script src="~/js/components/loader.js"></script>
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css">
+    <!-- Chatbot CSS -->
+    <link rel="stylesheet" href="~/css/components/chatbot.css">
+
+    @* User authentication meta tags for JavaScript access *@
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <meta name="user-id" content="@User.FindFirst("UserId")?.Value" />
+        <meta name="user-role" content="@User.FindFirst("UserRole")?.Value" />
+        <meta name="user-name" content="@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)" />
+    }
+</head>
+
+<body>
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <!-- Page Loader -->
+    <div class="page-loader">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Include Header partial view -->
+    @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
+
+    <!-- Page Header -->
+    <div class="container mt-4">
+        <div class="page-header dashboard-page">
+            <div class="text-center">
+                <h1 class="page-title">
+                    <i class="fas fa-receipt"></i>
+                    Transaction Details
+                </h1>
+                <p class="page-subtitle">Complete information about your payment transaction</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container main-content">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card modern-card">
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-3 fw-bold">Transaction Information</h6>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Transaction ID:</label>
+                                    <div><code class="transaction-id">@Model.TransactionId</code></div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Transaction Type:</label>
+                                    <div>
+                                        @if (Model.TransactionType == "topup")
+                                        {
+                                            <span class="badge bg-info fs-6">Top Up</span>
+                                        }
+                                        else if (Model.TransactionType == "course_payment")
+                                        {
+                                            <span class="badge bg-primary fs-6">Course Purchase</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary fs-6">@Model.TransactionType</span>
+                                        }
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Amount:</label>
+                                    <div class="transaction-amount fs-4">
+                                        @Model.Amount.ToString("N0") VND
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Status:</label>
+                                    <div>
+                                        @switch (Model.TransactionStatus)
+                                        {
+                                            case "SUCCESS":
+                                                <span class="badge bg-success fs-6">Success</span>
+                                                break;
+                                            case "PENDING":
+                                                <span class="badge bg-warning fs-6">Pending</span>
+                                                break;
+                                            case "FAILED":
+                                                <span class="badge bg-danger fs-6">Failed</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-secondary fs-6">@Model.TransactionStatus</span>
+                                                break;
+                                        }
+                                    </div>
+                                </div> @if (Model.TransactionType == "course_payment")
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Course:</label>
+                                        <div>Course Payment Transaction</div>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-3 fw-bold">Payment Information</h6>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Payment Gateway:</label>
+                                    <div>@(Model.PaymentGateway ?? "N/A")</div>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(Model.PaymentGatewayRef))
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Gateway Reference:</label>
+                                        <div><code>@Model.PaymentGatewayRef</code></div>
+                                    </div>
+                                }
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Created Date:</label>
+                                    <div>@Model.TransactionCreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</div>
+                                </div>
+
+                                @if (Model.PaymentDate.HasValue)
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Payment Date:</label>
+                                        <div>@Model.PaymentDate.Value.ToString("dd/MM/yyyy HH:mm:ss")</div>
+                                    </div>
+                                }
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Last Updated:</label>
+                                    <div>@Model.TransactionUpdatedAt.ToString("dd/MM/yyyy HH:mm:ss")</div>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(Model.CurrencyCode))
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Currency:</label>
+                                        <div>@Model.CurrencyCode</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        @if (Model.TransactionStatus == "SUCCESS")
+                        {
+                            <div class="alert alert-payment alert-success mt-4">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Transaction completed successfully!</strong>
+                                @if (Model.TransactionType == "topup")
+                                {
+                                    <p class="mb-0 mt-2">Amount of @Model.Amount.ToString("N0") VND has been added to your
+                                        account.</p>
+                                }
+                                else if (Model.TransactionType == "course_payment")
+                                {
+                                    <p class="mb-0 mt-2">You have successfully completed a course payment transaction.</p>
+                                }
+                                else
+                                {
+                                    <p class="mb-0 mt-2">Transaction completed successfully.</p>
+                                }
+                            </div>
+                        }
+                        else if (Model.TransactionStatus == "FAILED")
+                        {
+                            <div class="alert alert-payment alert-danger mt-4">
+                                <i class="fas fa-times-circle me-2"></i>
+                                <strong>Transaction failed!</strong>
+                                <p class="mb-0 mt-2">No money has been deducted from your account.</p>
+                            </div>
+                        }
+                        else if (Model.TransactionStatus == "PENDING")
+                        {
+                            <div class="alert alert-payment alert-warning mt-4">
+                                <i class="fas fa-clock me-2"></i>
+                                <strong>Transaction is being processed...</strong>
+                                <p class="mb-0 mt-2">Please wait while the system processes your transaction.</p>
+                            </div>
+                        }
+
+                        <div class="mt-4 text-center"> <a href="@Url.Action("Index", "Payment")"
+                                class="btn btn-primary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Back to Payment History
+                            </a>
+                            @if (Model.TransactionStatus == "FAILED" && Model.TransactionType == "topup")
+                            {
+                                <a href="@Url.Action("TopUp", "Payment")" class="btn btn-success btn-lg ms-2">
+                                    <i class="fas fa-redo me-2"></i>
+                                    Try Again
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Footer -->
+    @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
+
+    <!-- Include Chatbot for authenticated users -->
+    @await Html.PartialAsync("~/Views/Shared/_Chatbot.cshtml")
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/components/toast-notifications.js"></script>
+    <script src="~/js/components/header.js"></script>
+    <script src="~/js/payment-test.js"></script>
+</body>
+
+</html>
+

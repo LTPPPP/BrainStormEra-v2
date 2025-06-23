@@ -35,6 +35,7 @@ namespace DataAccessLayer.Repositories.Interfaces
         Task<List<Account>> SearchUsersAsync(string searchTerm, int page = 1, int pageSize = 20);
         Task<Account?> GetUserWithDetailsAsync(string userId);
         Task<bool> BanUserAsync(string userId, bool isBanned, string reason = "");
+        Task<bool> UpdateUserPointsAsync(string userId, decimal pointsChange);
         Task<bool> ChangeUserRoleAsync(string userId, string newRole);
         Task<List<Account>> GetBannedUsersAsync(int page = 1, int pageSize = 20);
 

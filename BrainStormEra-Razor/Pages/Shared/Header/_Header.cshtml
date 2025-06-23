@@ -1,0 +1,130 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@{
+    // This partial view contains the common header used across the application
+}
+
+<header class="container-fluid bse-sticky-header">
+    <nav class="navbar navbar-expand-lg admin-navbar">
+        <div class="container-fluid"> <a class="navbar-brand bse-navbar-brand d-flex align-items-center" href="/">
+                <img src="~/SharedMedia/logo/logowithoutbackground.png" alt="BrainStormEra Logo"
+                    class="logo_img bse-logo-img me-2"
+                    onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-logo.svg';">
+                <span class="brand-text">Admin Dashboard</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"> <a class="nav-link bse-nav-link" href="/">DASHBOARD</a>
+                    </li>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link bse-nav-link" href="/admin/users">USERS</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link bse-nav-link" href="/admin/courses">COURSES</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link bse-nav-link" href="/admin/achievements">ACHIEVEMENTS</a>
+                        </li>
+                    }
+                </ul>
+                <div class="profile d-flex align-items-center">
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <!-- Payment Points Display -->
+                        <div class="payment-points me-3">
+                            <div class="points-container">
+                                <i class="fas fa-coins text-warning"></i>
+                                <span class="points-value" id="userPoints">@(User.FindFirst("PaymentPoint")?.Value ??
+                                                                    "0")</span>
+                            <span class="points-label">Points</span>
+                        </div>
+                    </div>
+                    <div class="dropdown me-3">
+                        <a href="#" class="notification-bell" id="notificationDropdown" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge" id="notificationBadge"></span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end notification-dropdown"
+                            aria-labelledby="notificationDropdown">
+                            <li class="dropdown-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Notifications</span>
+                                    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("instructor"))
+                                        {
+                                            <a href="/admin/notifications/create" class="btn-create-notification"
+                                                title="Create New Notification">
+                                                <i class="fas fa-plus"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </li>
+                                <div class="notification-list-container">
+                                    <li class="notification-empty">
+                                        <p class="mb-0">No new notifications</p>
+                                    </li>
+                                </div>
+                                <li class="notification-footer">
+                                    <a href="/admin/notifications" class="view-all-notifications">
+                                        <i class="fas fa-list me-1"></i>View All Notifications
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="dropdown">
+                            <a href="#" class="user-avatar" id="userDropdown" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <img src="/auth/avatar/@(User.FindFirst("UserId")?.Value)" alt="User Avatar"
+                                    onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-avatar.svg';">
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li class="dropdown-header">
+                                    <div class="user-info">
+                                        <strong>@(User.FindFirst("FullName")?.Value ?? User.Identity?.Name ??
+                                                                                    "User")</strong>
+                                    <small>@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</small>
+                                </div>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/admin/profile"><i class="fas fa-user me-2"></i>Admin
+                                    Profile</a></li>
+                            <li><a class="dropdown-item" href="/admin/system"><i class="fas fa-cogs me-2"></i>System
+                                    Settings</a></li>
+                            <li><a class="dropdown-item" href="/admin/logs"><i class="fas fa-file-alt me-2"></i>System
+                                    Logs</a></li>
+                            <li><a class="dropdown-item" href="/admin/backup"><i class="fas fa-database me-2"></i>Backup
+                                    & Restore</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/auth/logout" data-action="logout"><i
+                                        class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                                        }
+                    else
+                    {
+
+                        <a href="/auth/register" class="btn_register bse-btn-register me-2">
+                            <i class="fas fa-user-plus me-1"></i>Register
+                        </a>
+                        <a href="/auth/login" class="btn_login bse-btn-login">
+                            <i class="fas fa-sign-in-alt me-2"></i>Log In
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!-- Load header script -->
+<script src="~/js/components/header.js"></script>

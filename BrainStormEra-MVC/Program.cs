@@ -6,12 +6,17 @@ using DataAccessLayer.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.FileProviders;
 using BusinessLogicLayer;
+using BusinessLogicLayer.Utilities;
+
 namespace BrainStormEra_MVC
 {
     public class Program
     {
         public static async Task Main(string[] args)
         {
+            // Load environment variables from .env file
+            EnvironmentLoader.LoadEnvironmentFile();
+
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
@@ -133,6 +138,9 @@ namespace BrainStormEra_MVC
 
             // Register Query Hash Service for smart ID/hash handling in queries
             builder.Services.AddScoped<BusinessLogicLayer.Services.QueryHashService>();
+
+            // Register Payment Service
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPaymentService, BusinessLogicLayer.Services.Implementations.PaymentService>();
 
             // Seed services
             builder.Services.AddScoped<BusinessLogicLayer.Services.StatusSeedService>();

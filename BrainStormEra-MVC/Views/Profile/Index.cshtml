@@ -31,7 +31,7 @@
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" as="style">
     <!-- Load page loader script -->
     <script src="~/js/components/loader.js" defer></script>
-    
+
     @* User authentication meta tags for JavaScript access *@
     @if (User.Identity?.IsAuthenticated == true)
     {
@@ -153,38 +153,6 @@
                             </div>
                         </div>
 
-                        <!-- Bank Information Card -->
-                        <div class="profile-card mt-3">
-                            <div class="card-header">
-                                <h3><i class="fas fa-university"></i> Bank Information</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-sm-6">
-                                        <div class="info-item">
-                                            <label><i class="fas fa-credit-card text-primary me-2"></i>Account
-                                                Number:</label>
-                                            <span>@(Model.BankAccountNumber ?? "Not updated")</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="info-item">
-                                            <label><i class="fas fa-university text-primary me-2"></i>Bank Name:</label>
-                                            <span>@(Model.BankName ?? "Not updated")</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-12">
-                                        <div class="info-item">
-                                            <label><i class="fas fa-user-tie text-primary me-2"></i>Account Holder
-                                                Name:</label>
-                                            <span>@(Model.AccountHolderName ?? "Not updated")</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Statistics -->
@@ -317,6 +285,26 @@
                 observer.observe(element);
             });
         });
+
+        // Toast notification function
+        function showToast(type, message) {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 3000);
+        }
     </script>
 </body>
 

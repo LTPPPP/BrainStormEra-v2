@@ -10,16 +10,31 @@
 }
 
 <div class="courses-management">
-    <!-- Page Header -->
+    <!-- Page Header with Hero Content Layout -->
     <div class="page-header">
-        <div>
-            <h1><i class="fas fa-graduation-cap"></i> Course Management</h1>
-            <p>Manage course approvals, content moderation, and instructor oversight</p>
-        </div>
-        <div>
-            <a href="/admin" class="btn-filter">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
+        <div class="hero-background"></div>
+        <div class="hero-content">
+            <div class="welcome-section">
+                <div class="welcome-text">
+                    <h1 class="hero-title"><i class="fas fa-graduation-cap"></i> Course Management</h1>
+                    <p class="hero-subtitle">Manage course approvals, content moderation, and instructor oversight</p>
+                </div>
+            </div>
+            <div class="dashboard-actions">
+                <a href="/admin" class="action-btn secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+            <div class="quick-stats">
+                <div class="stat-badge">
+                    <span class="stat-value">@Model.CoursesData.TotalCourses</span>
+                    <span class="stat-label">Total</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-value">@Model.CoursesData.PendingCourses</span>
+                    <span class="stat-label">Pending</span>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -1,0 +1,18 @@
+/* Payment component styles */
+.payment-container {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.payment-points {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.points-value {
+  font-weight: bold;
+  color: var(--primary-color);
+}

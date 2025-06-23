@@ -4,6 +4,7 @@ using DataAccessLayer.Data;
 using DataAccessLayer.Models;
 using DataAccessLayer.Repositories.Interfaces;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Text;
@@ -60,12 +61,22 @@ namespace BusinessLogicLayer.Services
                     return cachedResponse;
                 }
 
-                var apiKey = _configuration["GeminiApiKey"];
-                var apiUrl = _configuration["GeminiApiUrl"];
+                var apiKey = EnvironmentHelper.GetChatbotApiKey();
+                var apiUrl = EnvironmentHelper.GetChatbotApiUrl();
+
+                // Fallback to configuration if environment variables are not set
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    apiKey = _configuration["ChatbotApiKey"];
+                }
+                if (string.IsNullOrEmpty(apiUrl))
+                {
+                    apiUrl = _configuration["ChatbotApiUrl"];
+                }
 
                 if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiUrl))
                 {
-                    throw new InvalidOperationException("Gemini API configuration is missing");
+                    throw new InvalidOperationException("Chatbot API configuration is missing");
                 }
 
                 // Get user context to personalize responses
@@ -75,7 +86,7 @@ namespace BusinessLogicLayer.Services
                 var systemPrompt = BuildSystemPrompt(userContext, context);
 
                 // Get recent conversation history for context
-                var recentHistory = await GetRecentConversationHistoryAsync(userId, 3);
+                var recentHistory = await GetRecentConversationHistoryAsync(userId, EnvironmentHelper.GetChatbotHistoryLimit());
                 var historyContext = BuildHistoryContext(recentHistory);
 
                 // Prepare the request payload
@@ -95,10 +106,10 @@ namespace BusinessLogicLayer.Services
                     },
                     generationConfig = new
                     {
-                        temperature = 0.7,
-                        topK = 40,
-                        topP = 0.95,
-                        maxOutputTokens = 1024,
+                        temperature = EnvironmentHelper.GetChatbotTemperature(),
+                        topK = EnvironmentHelper.GetChatbotTopK(),
+                        topP = EnvironmentHelper.GetChatbotTopP(),
+                        maxOutputTokens = EnvironmentHelper.GetChatbotMaxTokens(),
                         candidateCount = 1
                     },
                     safetySettings = new[]
@@ -118,13 +129,13 @@ namespace BusinessLogicLayer.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var responseJson = await response.Content.ReadAsStringAsync();
-                    var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseJson); var botResponse = geminiResponse?.candidates?.FirstOrDefault()?.content?.parts?.FirstOrDefault()?.text
-                        ?? "Sorry, I cannot process your question at this time. Please try again later.";
+                    var chatbotResponse = JsonSerializer.Deserialize<ChatbotResponse>(responseJson); var botResponse = chatbotResponse?.candidates?.FirstOrDefault()?.content?.parts?.FirstOrDefault()?.text
+                        ?? EnvironmentHelper.GetChatbotErrorMessage();
 
-                    // Cache common educational responses for 1 hour
+                    // Cache common educational responses
                     if (IsCommonEducationalQuestion(userMessage))
                     {
-                        _cache.Set(cacheKey, botResponse, TimeSpan.FromHours(1));
+                        _cache.Set(cacheKey, botResponse, TimeSpan.FromHours(EnvironmentHelper.GetChatbotCacheHours()));
                     }
 
                     // Save conversation to database
@@ -142,14 +153,14 @@ namespace BusinessLogicLayer.Services
                 }
                 else
                 {
-                    _logger.LogError($"Gemini API error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
-                    return "Sorry, an error occurred while processing your question. Please try again later.";
+                    _logger.LogError($"Chatbot API error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+                    return EnvironmentHelper.GetChatbotApiErrorMessage();
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in ChatbotService.GetResponseAsync");
-                return "Sorry, an error occurred. Please try again later.";
+                return EnvironmentHelper.GetChatbotGeneralErrorMessage();
             }
         }
 
@@ -201,15 +212,7 @@ namespace BusinessLogicLayer.Services
         private string BuildSystemPrompt(string userContext, string? pageContext)
         {
             var prompt = new StringBuilder();
-            prompt.AppendLine("You are BrainStorm Bot, the intelligent AI assistant of the BrainStormEra learning platform.");
-            prompt.AppendLine("Your tasks are:");
-            prompt.AppendLine("1. Support students in learning and answering academic questions");
-            prompt.AppendLine("2. Provide information about courses, lessons and content on the platform");
-            prompt.AppendLine("3. Help explain difficult concepts in an easy-to-understand way");
-            prompt.AppendLine("4. Encourage and guide students during their learning process");
-            prompt.AppendLine();
-            prompt.AppendLine("Please respond in English, concisely, friendly and helpfully.");
-            prompt.AppendLine("If you don't know the answer, be honest and suggest ways to find out more.");
+            prompt.AppendLine(EnvironmentHelper.GetChatbotSystemPrompt());
 
             if (!string.IsNullOrEmpty(userContext))
             {
@@ -265,8 +268,8 @@ namespace BusinessLogicLayer.Services
         }
     }
 
-    // DTOs for Gemini API response
-    public class GeminiResponse
+    // DTOs for Chatbot API response
+    public class ChatbotResponse
     {
         public List<Candidate>? candidates { get; set; }
     }

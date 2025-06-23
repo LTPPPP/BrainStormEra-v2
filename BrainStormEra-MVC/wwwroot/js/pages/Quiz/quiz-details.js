@@ -111,15 +111,21 @@ document.addEventListener("DOMContentLoaded", function () {
               // Show success message
               showToast(
                 "success",
-                data.message || "Thứ tự câu hỏi đã được cập nhật!"
+                data.message || "Question order has been updated!"
               );
             } else {
-              showToast("error", "Có lỗi xảy ra khi cập nhật thứ tự câu hỏi.");
+              showToast(
+                "error",
+                "An error occurred while updating question order."
+              );
             }
           })
           .catch((error) => {
             console.error("Error:", error);
-            showToast("error", "Có lỗi xảy ra khi cập nhật thứ tự câu hỏi.");
+            showToast(
+              "error",
+              "An error occurred while updating question order."
+            );
           });
       },
     });

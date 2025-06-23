@@ -133,7 +133,6 @@ namespace BusinessLogicLayer.Services
                 .Include(c => c.Enrollments)
                 .Include(c => c.Chapters)
                     .ThenInclude(ch => ch.Lessons)
-                .Include(c => c.PaymentTransactions)
                 .Include(c => c.Feedbacks)
                 .FirstOrDefaultAsync(c => c.CourseId == courseId && c.AuthorId == userId);
 
@@ -153,14 +152,8 @@ namespace BusinessLogicLayer.Services
                 result.RecommendedAction = "Archive course instead of deleting, or contact enrolled students";
             }
 
-            // Check for payment transactions
-            var hasPayments = course.PaymentTransactions.Any();
-            if (hasPayments)
-            {
-                result.CanDelete = false;
-                result.BlockingDependencies.Add("Course has associated payment transactions");
-                result.RequiresHardDelete = false; // Force soft delete only
-            }
+            // Note: Payment transactions are now independent of courses
+            // No need to check payment transactions for course deletion
 
             // Check course status
             if (course.CourseStatus == 1 || course.CourseStatus == 2) // Published or Active
@@ -172,7 +165,7 @@ namespace BusinessLogicLayer.Services
             if (result.BlockingDependencies.Count == 0)
             {
                 result.CanDelete = true;
-                result.RecommendedAction = hasPayments || activeEnrollments > 0 ? "Soft delete (Archive)" : "Soft delete recommended";
+                result.RecommendedAction = activeEnrollments > 0 ? "Soft delete (Archive)" : "Soft delete recommended";
             }
 
             return result;
@@ -339,7 +332,6 @@ namespace BusinessLogicLayer.Services
             var result = new SafeDeleteValidationResult(); var enrollment = await _context.Enrollments
                 .Include(e => e.Certificates)
                 .Include(e => e.Course)
-                    .ThenInclude(c => c.PaymentTransactions.Where(pt => pt.UserId == userId))
                 .FirstOrDefaultAsync(e => e.EnrollmentId == enrollmentId && e.UserId == userId);
 
             if (enrollment == null)
@@ -353,11 +345,10 @@ namespace BusinessLogicLayer.Services
             if (enrollment.Certificates.Any())
             {
                 result.BlockingDependencies.Add("Enrollment has issued certificates");
-            }            // Check for payment transactions related to this enrollment
-            if (enrollment.Course.PaymentTransactions.Any())
-            {
-                result.BlockingDependencies.Add("Course has payment transactions");
             }
+
+            // Note: Payment transactions are now independent of specific enrollments
+            // We don't block enrollment deletion based on payment history
 
             // Check completion status
             if (enrollment.EnrollmentStatus == 6) // Completed

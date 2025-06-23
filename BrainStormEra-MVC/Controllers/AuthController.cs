@@ -613,6 +613,44 @@ namespace BrainStormEra_MVC.Controllers
             }
         }
 
+        /// <summary>
+        /// Get user information (for AJAX calls)
+        /// </summary>
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetUserInfo()
+        {
+            try
+            {
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new { success = false, message = "User not found" });
+                }
+
+                var userInfo = await _authServiceImpl.GetUserInfoAsync(userId);
+                if (userInfo == null)
+                {
+                    return Json(new { success = false, message = "User not found" });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    userId = userInfo.UserId,
+                    fullName = userInfo.FullName,
+                    email = userInfo.UserEmail,
+                    paymentPoint = userInfo.PaymentPoint ?? 0,
+                    userRole = userInfo.UserRole
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user info");
+                return Json(new { success = false, message = "Error getting user info" });
+            }
+        }
+
         #endregion
 
         #region Access Denied

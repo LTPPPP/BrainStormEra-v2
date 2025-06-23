@@ -354,46 +354,24 @@ namespace BusinessLogicLayer.Services
             {
                 var startDate = DateTime.Now.AddDays(-days);
 
-                // Try to get instructor's income from payment transactions
-                var incomeData = await _context.PaymentTransactions
+                // Note: Since PaymentTransaction no longer has CourseId, 
+                // we simulate income based on enrollments for now
+                var enrollmentData = await _context.Enrollments
                     .AsNoTracking()
-                    .Include(pt => pt.Course)
-                    .Where(pt => pt.Course.AuthorId == userId &&
-                                pt.TransactionStatus == "Completed" &&
-                                pt.PaymentDate.HasValue &&
-                                pt.PaymentDate >= startDate &&
-                                pt.PaymentDate <= DateTime.Now)
-                    .GroupBy(pt => pt.PaymentDate!.Value.Date)
+                    .Include(e => e.Course)
+                    .Where(e => e.Course.AuthorId == userId &&
+                               e.EnrollmentCreatedAt >= startDate &&
+                               e.EnrollmentCreatedAt <= DateTime.Now)
+                    .GroupBy(e => e.EnrollmentCreatedAt.Date)
                     .Select(g => new
                     {
                         Date = g.Key,
-                        Amount = g.Sum(pt => pt.NetAmount ?? pt.Amount)
+                        Amount = g.Sum(e => e.Course.Price)
                     })
                     .OrderBy(g => g.Date)
                     .ToListAsync();
 
-                // If no payment transaction data, simulate based on enrollments
-                if (!incomeData.Any())
-                {
-                    var enrollmentData = await _context.Enrollments
-                        .AsNoTracking()
-                        .Include(e => e.Course)
-                        .Where(e => e.Course.AuthorId == userId &&
-                                   e.EnrollmentCreatedAt >= startDate &&
-                                   e.EnrollmentCreatedAt <= DateTime.Now)
-                        .GroupBy(e => e.EnrollmentCreatedAt.Date)
-                        .Select(g => new
-                        {
-                            Date = g.Key,
-                            Amount = g.Sum(e => e.Course.Price)
-                        })
-                        .OrderBy(g => g.Date)
-                        .ToListAsync();
-
-                    incomeData = enrollmentData;
-                }
-
-                return incomeData.Cast<dynamic>().ToList();
+                return enrollmentData.Cast<dynamic>().ToList();
             }
             catch (Exception ex)
             {

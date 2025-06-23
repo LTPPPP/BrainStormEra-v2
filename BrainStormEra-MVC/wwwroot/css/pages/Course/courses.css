@@ -96,7 +96,6 @@
 
 .stat-item:hover {
   background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
 }
 
 .stat-item i {
@@ -1352,7 +1351,6 @@
 .chapter-actions .btn-outline-primary:hover {
   background-color: var(--primary-color);
   color: white;
-  transform: translateY(-1px);
 }
 
 .chapter-actions .btn-outline-danger {
@@ -1363,7 +1361,6 @@
 .chapter-actions .btn-outline-danger:hover {
   background-color: #dc3545;
   color: white;
-  transform: translateY(-1px);
 }
 
 .section-meta i {
@@ -1732,7 +1729,6 @@
 }
 
 .review-item:hover {
-  transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
@@ -2151,7 +2147,6 @@
   background: #1976d2;
   color: white;
   text-decoration: none;
-  transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(33, 150, 243, 0.4);
 }
 

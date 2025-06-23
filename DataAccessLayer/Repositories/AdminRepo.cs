@@ -456,6 +456,33 @@ namespace DataAccessLayer.Repositories
             }
         }
 
+        public async Task<bool> UpdateUserPointsAsync(string userId, decimal pointsChange)
+        {
+            try
+            {
+                var user = await GetByIdAsync(userId);
+                if (user == null)
+                    return false;
+
+                // Add or subtract points (pointsChange can be positive or negative)
+                user.PaymentPoint = (user.PaymentPoint ?? 0) + pointsChange;
+
+                // Ensure points don't go below 0
+                if (user.PaymentPoint < 0)
+                    user.PaymentPoint = 0;
+
+                user.AccountUpdatedAt = DateTime.UtcNow;
+
+                var result = await SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error updating user points: {UserId}, pointsChange: {PointsChange}", userId, pointsChange);
+                throw;
+            }
+        }
+
         public async Task<bool> ChangeUserRoleAsync(string userId, string newRole)
         {
             try
@@ -857,7 +884,6 @@ namespace DataAccessLayer.Repositories
             {
                 return await _context.PaymentTransactions
                     .Include(pt => pt.User)
-                    .Include(pt => pt.Course)
                     .OrderByDescending(pt => pt.TransactionCreatedAt)
                     .Take(count)
                     .ToListAsync();
@@ -875,7 +901,6 @@ namespace DataAccessLayer.Repositories
             {
                 return await _context.PaymentTransactions
                     .Include(pt => pt.User)
-                    .Include(pt => pt.Course)
                     .OrderByDescending(pt => pt.TransactionCreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -894,7 +919,6 @@ namespace DataAccessLayer.Repositories
             {
                 return await _context.PaymentTransactions
                     .Include(pt => pt.User)
-                    .Include(pt => pt.Course)
                     .Where(pt => pt.TransactionStatus == status)
                     .OrderByDescending(pt => pt.TransactionCreatedAt)
                     .Skip((page - 1) * pageSize)
@@ -914,7 +938,6 @@ namespace DataAccessLayer.Repositories
             {
                 return await _context.PaymentTransactions
                     .Include(pt => pt.User)
-                    .Include(pt => pt.Course)
                     .Include(pt => pt.Recipient)
                     .FirstOrDefaultAsync(pt => pt.TransactionId == transactionId);
             }
@@ -972,7 +995,6 @@ namespace DataAccessLayer.Repositories
             {
                 return await _context.PaymentTransactions
                     .Include(pt => pt.User)
-                    .Include(pt => pt.Course)
                     .Where(pt => pt.TransactionStatus == "Refunded")
                     .OrderByDescending(pt => pt.TransactionUpdatedAt)
                     .Skip((page - 1) * pageSize)
@@ -1076,7 +1098,7 @@ namespace DataAccessLayer.Repositories
             {
                 var feedbackStats = await _context.ChatbotConversations
                     .Where(c => c.FeedbackRating.HasValue)
-                    .GroupBy(c => c.FeedbackRating.Value)
+                    .GroupBy(c => c.FeedbackRating!.Value)
                     .Select(g => new FeedbackRatingStats
                     {
                         Rating = g.Key,

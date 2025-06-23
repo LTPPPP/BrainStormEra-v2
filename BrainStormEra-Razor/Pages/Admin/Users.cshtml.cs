@@ -55,7 +55,11 @@ namespace BrainStormEra_Razor.Pages.Admin
                         roleFilter: RoleFilter,
                         page: CurrentPage,
                         pageSize: PageSize
-                    );
+                    );                    // Encode user IDs for each user
+                    foreach (var user in UsersData.Users)
+                    {
+                        user.EncodedUserId = _urlHashService.EncodeId(user.UserId);
+                    }
 
                     // Apply status filter in frontend since backend doesn't support it yet
                     if (!string.IsNullOrEmpty(StatusFilter))
@@ -86,7 +90,6 @@ namespace BrainStormEra_Razor.Pages.Admin
                 UsersData = new AdminUsersViewModel();
             }
         }
-
         public async Task<IActionResult> OnPostUpdateUserStatusAsync(string userId, bool isBanned)
         {
             var realUserId = string.Empty;
@@ -119,6 +122,40 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
         }
 
+        public async Task<IActionResult> OnPostUpdateUserPointsAsync(string userId, decimal pointsChange)
+        {
+            var realUserId = string.Empty;
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return BadRequest("User ID is required");
+                }
 
+                // Decode hash ID to real ID
+                realUserId = _urlHashService.GetRealId(userId);
+                var result = await _adminService.UpdateUserPointsAsync(realUserId, pointsChange);
+
+                if (result)
+                {
+                    var action = pointsChange > 0 ? "added" : "subtracted";
+                    var amount = Math.Abs(pointsChange);
+
+                    _logger.LogInformation("User points updated successfully by admin {AdminName} for user {UserId}. Points {Action}: {Amount}",
+                        HttpContext.User?.Identity?.Name, realUserId, action, amount);
+
+                    return new JsonResult(new { success = true, message = $"Points {action} successfully" });
+                }
+                else
+                {
+                    return new JsonResult(new { success = false, message = "Failed to update user points" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user points for user: {UserId}, pointsChange: {PointsChange}", realUserId, pointsChange);
+                return new JsonResult(new { success = false, message = "An error occurred while updating user points" });
+            }
+        }
     }
 }
