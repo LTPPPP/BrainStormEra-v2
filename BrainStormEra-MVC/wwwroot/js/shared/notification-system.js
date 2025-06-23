@@ -24,19 +24,16 @@ class NotificationSystem {
 
       // Connection event handlers
       this.connection.onreconnecting(() => {
-
         this.isConnected = false;
       });
 
       this.connection.onreconnected(() => {
-
         this.isConnected = true;
         this.reconnectAttempts = 0;
         this.joinGroups();
       });
 
       this.connection.onclose(async () => {
-
         this.isConnected = false;
         await this.handleReconnect();
       });
@@ -56,7 +53,6 @@ class NotificationSystem {
       this.isConnected = true;
       this.joinGroups();
     } catch (err) {
-
       await this.handleReconnect();
     }
   }
@@ -74,12 +70,10 @@ class NotificationSystem {
           this.reconnectAttempts = 0;
           this.joinGroups();
         } catch (err) {
-
           await this.handleReconnect();
         }
       }, delay);
     } else {
-
       this.showReconnectMessage();
     }
   }
@@ -103,9 +97,7 @@ class NotificationSystem {
       if (courseId) {
         this.connection.invoke("JoinCourseGroup", courseId);
       }
-    } catch (err) {
-
-    }
+    } catch (err) {}
   }
 
   handleNewNotification(notification) {
@@ -114,9 +106,6 @@ class NotificationSystem {
 
     // Play sound
     this.playNotificationSound();
-
-    // Update dropdown if it exists
-    this.updateNotificationDropdown(notification);
 
     // Trigger custom event for other parts of the app
     const event = new CustomEvent("newNotification", { detail: notification });
@@ -169,51 +158,17 @@ class NotificationSystem {
       new bootstrap.Toast(toastElement);
     }
   }
-  updateNotificationDropdown(notification) {
-    // Use the global function if available (from header.js)
-    if (typeof window.addNotificationToDropdown === "function") {
-      const formattedNotification = {
-        title: notification.title,
-        message: notification.content,
-        time: "Just now",
-        isRead: false,
-      };
-      window.addNotificationToDropdown(formattedNotification);
-      return;
-    }
-
-    // Fallback for when header.js function is not available
-
-    // Add to dropdown (prepend to show newest first)
-    const firstItem = dropdown.querySelector(".dropdown-item");
-    if (firstItem) {
-      dropdown.insertBefore(notificationItem, firstItem);
-    } else {
-      dropdown.appendChild(notificationItem);
-    }
-
-    // Limit to 5 items in dropdown
-    const items = dropdown.querySelectorAll(".notification-item");
-    if (items.length > 5) {
-      items[items.length - 1].remove();
-    }
-  }
   updateNotificationBadge(count) {
-    // Use the global function if available (from header.js)
-    if (typeof window.updateNotificationBadge === "function") {
-      window.updateNotificationBadge(count);
-    } else {
-      // Fallback implementation
-      const badges = document.querySelectorAll(".notification-badge");
-      badges.forEach((badge) => {
-        if (count > 0) {
-          badge.textContent = count > 99 ? "99+" : count;
-          badge.style.display = "inline-block";
-        } else {
-          badge.style.display = "none";
-        }
-      });
-    }
+    // Fallback implementation for notification badges
+    const badges = document.querySelectorAll(".notification-badge");
+    badges.forEach((badge) => {
+      if (count > 0) {
+        badge.textContent = count > 99 ? "99+" : count;
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+    });
 
     // Update page title
     this.updatePageTitle(count);
@@ -235,9 +190,7 @@ class NotificationSystem {
         const data = await response.json();
         this.updateNotificationBadge(data.count);
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   playNotificationSound() {
@@ -246,13 +199,9 @@ class NotificationSystem {
       if (localStorage.getItem("notificationSoundEnabled") !== "false") {
         const audio = new Audio("/sounds/notification.mp3");
         audio.volume = 0.3;
-        audio.play().catch((e) => {
-
-        });
+        audio.play().catch((e) => {});
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   setupEventHandlers() {
@@ -285,11 +234,8 @@ class NotificationSystem {
 
       if (response.ok) {
         // The server will send updated count via SignalR
-
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   toggleNotificationSound() {
@@ -353,7 +299,6 @@ class NotificationSystem {
 
       return response.ok;
     } catch (error) {
-
       return false;
     }
   }
@@ -380,7 +325,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (isAuthenticated) {
     window.notificationSystem = new NotificationSystem();
-
   }
 });
 

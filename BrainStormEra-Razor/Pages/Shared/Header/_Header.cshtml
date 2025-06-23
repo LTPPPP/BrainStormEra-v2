@@ -36,8 +36,7 @@
                 <div class="profile d-flex align-items-center">
                     @if (User.Identity?.IsAuthenticated == true)
                     {
-                        <!-- Payment Points Display -->
-                        <div class="payment-points me-3">
+                        <!-- Payment Points Display -->                        <div class="payment-points me-3">
                             <div class="points-container">
                                 <i class="fas fa-coins text-warning"></i>
                                 <span class="points-value" id="userPoints">@(User.FindFirst("PaymentPoint")?.Value ??
@@ -45,38 +44,14 @@
                             <span class="points-label">Points</span>
                         </div>
                     </div>
-                    <div class="dropdown me-3">
-                        <a href="#" class="notification-bell" id="notificationDropdown" data-bs-toggle="dropdown"
-                            aria-expanded="false">
+                    
+                    <!-- Notification Bell Icon -->
+                    <div class="me-3">
+                        <a href="/admin/notifications" class="notification-bell">
                             <i class="fas fa-bell"></i>
-                            <span class="notification-badge" id="notificationBadge"></span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end notification-dropdown"
-                            aria-labelledby="notificationDropdown">
-                            <li class="dropdown-header">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span>Notifications</span>
-                                    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("instructor"))
-                                        {
-                                            <a href="/admin/notifications/create" class="btn-create-notification"
-                                                title="Create New Notification">
-                                                <i class="fas fa-plus"></i>
-                                            </a>
-                                        }
-                                    </div>
-                                </li>
-                                <div class="notification-list-container">
-                                    <li class="notification-empty">
-                                        <p class="mb-0">No new notifications</p>
-                                    </li>
-                                </div>
-                                <li class="notification-footer">
-                                    <a href="/admin/notifications" class="view-all-notifications">
-                                        <i class="fas fa-list me-1"></i>View All Notifications
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
+                    </div>
+                    
                         <div class="dropdown">
                             <a href="#" class="user-avatar" id="userDropdown" data-bs-toggle="dropdown"
                                 aria-expanded="false">
@@ -93,9 +68,9 @@
                             </li>
                             <li>
                                 <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item" href="/admin/profile"><i class="fas fa-user me-2"></i>Admin
+                            </li>                            <li><a class="dropdown-item" href="/admin/profile"><i class="fas fa-user me-2"></i>Admin
                                     Profile</a></li>
+                            <li><a class="dropdown-item" href="/admin/notifications"><i class="fas fa-bell me-2"></i>Notifications</a></li>
                             <li><a class="dropdown-item" href="/admin/system"><i class="fas fa-cogs me-2"></i>System
                                     Settings</a></li>
                             <li><a class="dropdown-item" href="/admin/logs"><i class="fas fa-file-alt me-2"></i>System
