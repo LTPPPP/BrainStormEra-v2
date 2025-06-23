@@ -11,7 +11,9 @@ namespace BrainStormEra_Razor.Pages.Admin
     {
         private readonly ILogger<UserDetailModel> _logger;
         private readonly IAdminService _adminService;
-        private readonly IUrlHashService _urlHashService; public AdminUserViewModel? UserDetail { get; set; }
+        private readonly IUrlHashService _urlHashService;
+
+        public AdminUserViewModel? UserDetail { get; set; }
         public string EncodedUserId { get; set; } = string.Empty;
 
         public UserDetailModel(ILogger<UserDetailModel> logger, IAdminService adminService, IUrlHashService urlHashService)
@@ -25,19 +27,26 @@ namespace BrainStormEra_Razor.Pages.Admin
         {
             try
             {
+                _logger.LogInformation("UserDetail OnGet called with userId: {UserId}", userId);
+
                 if (string.IsNullOrEmpty(userId))
                 {
                     TempData["ErrorMessage"] = "User ID is required.";
                     return RedirectToPage("/Admin/Users");
-                }
-
-                // Decode hash ID to real ID
+                }                // Decode hash ID to real ID
                 var realUserId = _urlHashService.GetRealId(userId);
+                _logger.LogInformation("Decoded userId {EncodedId} to realUserId: {RealUserId}", userId, realUserId);
 
                 // Get user details
                 var allUsers = await _adminService.GetAllUsersAsync();
-                UserDetail = allUsers.Users.FirstOrDefault(u => u.UserId == realUserId); if (UserDetail == null)
+                _logger.LogInformation("Retrieved {UserCount} users from service", allUsers.Users.Count);
+
+                UserDetail = allUsers.Users.FirstOrDefault(u => u.UserId == realUserId);
+
+                if (UserDetail == null)
                 {
+                    _logger.LogWarning("User not found with realUserId: {RealUserId}. Available user IDs: {UserIds}",
+                        realUserId, string.Join(", ", allUsers.Users.Select(u => u.UserId).Take(5)));
                     TempData["ErrorMessage"] = "User not found.";
                     return RedirectToPage("/Admin/Users");
                 }
@@ -65,9 +74,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 if (string.IsNullOrEmpty(userId))
                 {
                     return BadRequest("User ID is required");
-                }
-
-                // Decode hash ID to real ID
+                }                // Decode hash ID to real ID
                 realUserId = _urlHashService.GetRealId(userId);
                 var result = await _adminService.UpdateUserStatusAsync(realUserId, isBanned);
 
@@ -99,9 +106,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 if (string.IsNullOrEmpty(userId))
                 {
                     return BadRequest("User ID is required");
-                }
-
-                // Decode hash ID to real ID
+                }                // Decode hash ID to real ID
                 realUserId = _urlHashService.GetRealId(userId);
                 var result = await _adminService.UpdateUserPointsAsync(realUserId, pointsChange);
 

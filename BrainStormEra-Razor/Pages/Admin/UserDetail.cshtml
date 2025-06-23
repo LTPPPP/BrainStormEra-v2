@@ -6,213 +6,9 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/admin/dashboard.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/admin/components.css" asp-append-version="true" />
-    <style>
-        .user-detail-container {
-            padding: 20px;
-        }
-        
-        .page-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e9ecef;
-        }
-        
-        .user-profile-card {
-            background: white;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-        
-        .user-header {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .user-avatar-large {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid #e9ecef;
-        }
-        
-        .user-basic-info h2 {
-            margin: 0 0 10px 0;
-            color: #333;
-        }
-        
-        .user-basic-info .user-email {
-            color: #6c757d;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-        }
-        
-        .user-badges {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-        
-        .badge-role {
-            background: #007bff;
-            color: white;
-        }
-        
-        .badge-status-active {
-            background: #28a745;
-            color: white;
-        }
-        
-        .badge-status-banned {
-            background: #dc3545;
-            color: white;
-        }
-        
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-        }
-        
-        .info-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-        }
-        
-        .info-section h5 {
-            margin: 0 0 15px 0;
-            color: #495057;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #dee2e6;
-        }
-        
-        .info-item:last-child {
-            border-bottom: none;
-        }
-        
-        .info-label {
-            font-weight: 600;
-            color: #495057;
-        }
-        
-        .info-value {
-            color: #6c757d;
-            text-align: right;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e9ecef;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 500;
-        }
-        
-        .btn-back {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .btn-ban {
-            background: #ffc107;
-            color: #212529;
-        }
-        
-        .btn-unban {
-            background: #28a745;
-            color: white;
-        }
-        
-        .btn:hover {
-            opacity: 0.9;
-        }
-
-        .point-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .point-input-group input {
-            padding: 8px 12px;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            font-size: 14px;
-            width: 100%;
-        }
-
-        .point-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .point-buttons .btn {
-            flex: 1;
-            padding: 8px 12px;
-            font-size: 13px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #218838;
-        }
-
-        .btn-warning {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .btn-warning:hover {
-            background: #e0a800;
-        }
-    </style>
+    <link rel="stylesheet" href="~/css/global.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pages/Admin/user-detail.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 }
 
 <div class="user-detail-container">
@@ -256,8 +52,12 @@
                     <h2>@Model.UserDetail.FullName</h2>
                     <div class="user-email">@Model.UserDetail.UserEmail</div>
                     <div class="user-badges">
-                        <span class="badge badge-role">@Model.UserDetail.UserRole</span>
+                        <span class="badge badge-role">
+                            <i class="fas @(Model.UserDetail.UserRole.ToLower() == "admin" ? "fa-crown" : Model.UserDetail.UserRole.ToLower() == "instructor" ? "fa-chalkboard-teacher" : "fa-user-graduate")"></i>
+                            @Model.UserDetail.UserRole
+                        </span>
                         <span class="badge @(Model.UserDetail.IsBanned ? "badge-status-banned" : "badge-status-active")">
+                            <i class="fas @(Model.UserDetail.IsBanned ? "fa-ban" : "fa-check-circle")"></i>
                             @(Model.UserDetail.IsBanned ? "Banned" : "Active")
                         </span>
                     </div>
@@ -325,7 +125,10 @@
                     <div class="info-item">
                         <span class="info-label">Payment Points:</span>
                         <span class="info-value">
-                            <strong>@(Model.UserDetail.PaymentPoint?.ToString("N0") ?? "0")</strong>
+                            <strong>
+                                <i class="fas fa-coins"></i>
+                                @(Model.UserDetail.PaymentPoint?.ToString("N0") ?? "0")
+                            </strong>
                         </span>
                     </div>
                 </div>
@@ -368,11 +171,17 @@
                         <span class="info-value">
                             @if (!string.IsNullOrEmpty(Model.UserDetail.BankName) && !string.IsNullOrEmpty(Model.UserDetail.BankAccountNumber))
                             {
-                                <span class="badge badge-status-active">Verified</span>
+                                <span class="badge badge-status-active">
+                                    <i class="fas fa-check-circle"></i>
+                                    Verified
+                                </span>
                             }
                             else
                             {
-                                <span class="badge badge-status-banned">Not Set</span>
+                                <span class="badge badge-status-banned">
+                                    <i class="fas fa-times-circle"></i>
+                                    Not Set
+                                </span>
                             }
                         </span>
                     </div>
