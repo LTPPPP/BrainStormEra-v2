@@ -14,7 +14,8 @@
   min-height: 100vh;
   background: var(--bg-white);
   color: var(--text-color);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", sans-serif;
 }
 
 /* ==============================================
@@ -125,7 +126,6 @@
 
 .action-btn.secondary:hover {
   background: var(--bg-light);
-  transform: translateY(-1px);
   box-shadow: var(--card-shadow);
 }
 
@@ -217,7 +217,6 @@
 
 .btn-filter:hover {
   background: var(--bg-light);
-  transform: translateY(-1px);
   box-shadow: var(--card-shadow);
 }
 
@@ -245,7 +244,6 @@
 }
 
 .stat-card:hover {
-  transform: translateY(-4px);
   box-shadow: var(--card-shadow-hover);
 }
 
@@ -382,7 +380,6 @@
 .btn-clear:hover {
   background: var(--bg-light);
   color: var(--text-color);
-  transform: translateY(-1px);
 }
 
 /* ==============================================
@@ -407,7 +404,6 @@
 }
 
 .course-card:hover {
-  transform: translateY(-4px);
   box-shadow: var(--card-shadow-hover);
 }
 
@@ -426,7 +422,7 @@
 }
 
 .course-card:hover .course-image img {
-  transform: scale(1.05);
+  opacity: 0.9;
 }
 
 .course-status-overlay {
@@ -453,7 +449,6 @@
 }
 
 .status-badge:hover {
-  transform: scale(1.05);
   box-shadow: var(--card-shadow-hover);
 }
 
@@ -583,7 +578,6 @@
 }
 
 .btn-approve:hover {
-  transform: translateY(-1px);
   box-shadow: var(--card-shadow);
 }
 
@@ -594,7 +588,6 @@
 }
 
 .btn-reject:hover {
-  transform: translateY(-1px);
   box-shadow: var(--card-shadow);
 }
 
@@ -605,7 +598,6 @@
 }
 
 .btn-ban:hover {
-  transform: translateY(-1px);
   box-shadow: var(--card-shadow);
 }
 
@@ -616,7 +608,6 @@
 }
 
 .btn-delete:hover {
-  transform: translateY(-1px);
   box-shadow: var(--card-shadow);
 }
 
@@ -627,7 +618,6 @@
 }
 
 .btn-details:hover {
-  transform: translateY(-1px);
   box-shadow: var(--card-shadow);
 }
 
@@ -975,10 +965,8 @@
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }

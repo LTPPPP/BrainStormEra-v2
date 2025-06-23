@@ -219,7 +219,6 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   text-decoration: none;
   color: inherit;
-  transform: translateY(-2px);
 }
 
 .quick-action-icon {
@@ -275,7 +274,6 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   text-decoration: none;
   color: inherit;
-  transform: translateY(-2px);
 }
 
 /* Avatar Modal */
