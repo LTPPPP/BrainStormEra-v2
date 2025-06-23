@@ -16,6 +16,14 @@ class NotificationSystem {
 
   async initializeSignalR() {
     try {
+      // Check if SignalR is available
+      if (typeof signalR === "undefined") {
+        console.error(
+          "SignalR is not loaded. Please ensure the SignalR library is included before this script."
+        );
+        return;
+      }
+
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl("/notificationHub")
         .withAutomaticReconnect()

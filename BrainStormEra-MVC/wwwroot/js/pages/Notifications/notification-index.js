@@ -402,6 +402,14 @@ class NotificationIndex {
   }
 
   setupSignalR() {
+    // Check if SignalR is available
+    if (typeof signalR === "undefined") {
+      console.error(
+        "SignalR is not loaded. Please ensure the SignalR library is included before this script."
+      );
+      return;
+    }
+
     // Initialize SignalR connection for real-time updates
     const connection = new signalR.HubConnectionBuilder()
       .withUrl("/notificationHub")
