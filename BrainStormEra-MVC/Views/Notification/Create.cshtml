@@ -151,44 +151,160 @@
                     <i class="fas fa-bullseye me-2"></i>
                     Target Audience
                 </h3>
-                <p class="text-muted mb-4">Search and select a user by name to send this notification. <small
+                <p class="text-muted mb-4">Search and select users to send this notification. <small
                         class="text-info"><i class="fas fa-info-circle me-1"></i>Note: You cannot send notifications to
                         yourself.</small></p>
 
                 <div class="row">
-                    <div class="col-lg-8">
-                        <!-- Hidden input to set target type as User -->
-                        <input asp-for="TargetType" type="hidden" value="User" />
+                    <div class="col-12">
+                        <!-- Target Type Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-bullseye me-2"></i>Target Type
+                            </label>
+                            <div class="btn-group w-100" role="group" aria-label="Target type selection">
+                                <input type="radio" class="btn-check" name="targetType" id="targetTypeMultiple"
+                                    value="MultipleUsers" checked>
+                                <label class="btn btn-outline-primary" for="targetTypeMultiple">
+                                    <i class="fas fa-users me-1"></i> Multiple Users
+                                </label>
 
-                        <!-- User Selection -->
-                        <div class="mb-4">
+                                <input type="radio" class="btn-check" name="targetType" id="targetTypeCourse"
+                                    value="Course">
+                                <label class="btn btn-outline-primary" for="targetTypeCourse">
+                                    <i class="fas fa-graduation-cap me-1"></i> Course Students
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Hidden inputs -->
+                        <input asp-for="TargetType" type="hidden" value="MultipleUsers" />
+                        <input asp-for="TargetUserId" type="hidden" id="selectedUserId" />
+                        <input asp-for="CourseId" type="hidden" id="selectedCourseId" />
+
+                        <!-- Multiple User IDs (will be populated by JavaScript) -->
+                        <div id="multipleUserIdsContainer"></div>
+
+                        <!-- Course Selection (only visible when Course target type is selected) -->
+                        <div id="courseSelectionContainer" class="mb-4" style="display: none;">
+                            <label class="form-label">
+                                <i class="fas fa-graduation-cap me-2"></i>Select Course *
+                            </label>
+                            <select id="courseFilter" class="form-select">
+                                <option value="">Loading courses...</option>
+                            </select>
+                            <div class="form-text">All students enrolled in the selected course will receive this
+                                notification.</div>
+                        </div>
+
+                        <!-- User Selection (visible for User and MultipleUsers target types) -->
+                        <div id="userSelectionContainer" class="mb-4">
                             <label asp-for="TargetUserId" class="form-label">
-                                <i class="fas fa-user me-2"></i>Select User *
+                                <i class="fas fa-user me-2"></i><span id="userSelectionLabel">Select User</span> *
                             </label>
 
-                            <div class="user-search-container">
-                                <input type="text" id="userSearchInput" class="form-control"
-                                    placeholder="Search by name, email, or username..." />
-                                <div id="userSearchResults" class="user-search-results"></div>
-                                <input asp-for="TargetUserId" type="hidden" id="selectedUserId" />
+                            <div class="user-table-container">
+                                <!-- Search and Filter Controls -->
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                            <input type="text" id="userSearchInput" class="form-control"
+                                                placeholder="Search by name, email, or username..." />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select id="roleFilter" class="form-select">
+                                            <option value="">All Roles</option>
+                                            <option value="learner">Learners</option>
+                                            <option value="instructor">Instructors</option>
+                                            <option value="admin">Administrators</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select id="courseFilterUsers" class="form-select">
+                                            <option value="">All Courses</option>
+                                            <!-- Will be populated dynamically -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="d-flex gap-1">
+                                            <button type="button" id="selectAllBtn"
+                                                class="btn btn-outline-primary btn-sm" style="display: none;">
+                                                <i class="fas fa-check-double me-1"></i> All
+                                            </button>
+                                            <button type="button" id="clearAllBtn"
+                                                class="btn btn-outline-secondary btn-sm" style="display: none;">
+                                                <i class="fas fa-times me-1"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                <div id="selectedUserDisplay" class="selected-user-display mt-2" style="display: none;">
+                                <!-- Selected User(s) Display -->
+                                <div id="selectedUserDisplay" class="selected-user-display mb-3" style="display: none;">
                                     <div class="alert alert-success d-flex align-items-center">
                                         <i class="fas fa-user-check me-2"></i>
                                         <div class="flex-grow-1">
-                                            <strong>Selected User:</strong>
+                                            <strong id="selectedUserLabel">Selected User:</strong>
                                             <span id="selectedUserInfo"></span>
+                                            <div id="selectedUsersCount" class="mt-1" style="display: none;">
+                                                <small class="text-muted"></small>
+                                            </div>
                                         </div>
                                         <button type="button" class="btn btn-sm btn-outline-success"
                                             onclick="clearUserSelection()">
-                                            <i class="fas fa-times"></i> Change
+                                            <i class="fas fa-times"></i> <span id="clearBtnText">Change</span>
                                         </button>
                                     </div>
                                 </div>
+
+                                <!-- Users Table -->
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped" id="usersTable">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>
+                                                    <input type="checkbox" id="selectAllCheckbox"
+                                                        class="form-check-input" style="border-radius: 2rem;">
+                                                </th>
+                                                <th>Avatar</th>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Role</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="usersTableBody">
+                                            <tr>
+                                                <td id="loadingColspan" colspan="5" class="text-center">
+                                                    <div class="loading-users">
+                                                        <i class="fas fa-spinner fa-spin me-2"></i>
+                                                        Loading users...
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Pagination -->
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <div class="showing-info">
+                                        Showing <span id="showingStart">0</span> to <span id="showingEnd">0</span> of
+                                        <span id="totalUsers">0</span> users
+                                    </div>
+                                    <nav aria-label="Users pagination">
+                                        <ul class="pagination pagination-sm mb-0" id="usersPagination">
+                                            <!-- Pagination will be generated here -->
+                                        </ul>
+                                    </nav>
+                                </div>
+
                             </div>
                             <span asp-validation-for="TargetUserId" class="text-danger"></span>
-                            <div class="form-text">Search and select the user who will receive this notification. Note:
-                                You cannot send notifications to yourself.</div>
+                            <div class="form-text" id="userSelectionHelpText">Select a user from the table above who
+                                will receive this
+                                notification. Note: You cannot send notifications to yourself.</div>
                         </div>
                     </div>
                 </div>
@@ -252,12 +368,19 @@
 
         // Set the search URL for the external script
         document.addEventListener('DOMContentLoaded', function () {
-            // Set the search URL that the external script needs
-            if (typeof setSearchUsersUrl === 'function') {
-                setSearchUsersUrl('@Url.Action("SearchUsers", "Notification")');
+            // Set the get all users URL that the external script needs
+            // Note: This will fall back to mock data if the URL is not available
+            if (typeof setGetAllUsersUrl === 'function') {
+                setGetAllUsersUrl('@Url.Action("GetAllUsers", "Notification")');
+            }
+
+            // Set the get courses URL for course filtering
+            if (typeof setGetCoursesUrl === 'function') {
+                setGetCoursesUrl('@Url.Action("GetCourses", "Notification")');
             }
         });
     </script>
 </body>
 
 </html>
+
