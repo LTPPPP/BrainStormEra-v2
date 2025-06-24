@@ -86,10 +86,16 @@ namespace BrainStormEra_MVC.Controllers
 
         // POST: Mark notification as read
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAsRead(string notificationId)
         {
             try
             {
+                if (string.IsNullOrEmpty(notificationId))
+                {
+                    return Json(new { success = false, message = "Notification ID is required" });
+                }
+
                 var result = await _notificationServiceImpl.MarkAsReadAsync(User, notificationId);
                 return Json(new { success = result.Success, message = result.Message });
             }
@@ -102,6 +108,7 @@ namespace BrainStormEra_MVC.Controllers
 
         // POST: Mark all notifications as read
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAllAsRead()
         {
             try
@@ -116,17 +123,23 @@ namespace BrainStormEra_MVC.Controllers
             }
         }        // POST: Delete notification
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(string notificationId)
         {
             try
             {
+                if (string.IsNullOrEmpty(notificationId))
+                {
+                    return Json(new { success = false, message = "Notification ID is required" });
+                }
+
                 var result = await _notificationServiceImpl.DeleteNotificationAsync(User, notificationId);
                 return Json(new { success = result.Success, message = result.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting notification");
-                return Json(new { success = false, message = "An error occurred" });
+                _logger.LogError(ex, "Error deleting notification {NotificationId}", notificationId);
+                return Json(new { success = false, message = "An error occurred while deleting the notification" });
             }
         }
 
@@ -346,8 +359,187 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["ErrorMessage"] = "An error occurred while updating the notification.";
                 return View(model);
             }
+        }        // POST: Restore deleted notification (optional feature for admins or users)
+        [HttpPost]
+        public async Task<IActionResult> RestoreNotification(string notificationId)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userId == null)
+                {
+                    return Json(new { success = false, message = "User not authenticated" });
+                }
+
+                var success = await _notificationService.RestoreNotificationAsync(notificationId, userId);
+
+                if (success)
+                {
+                    return Json(new { success = true, message = "Notification restored successfully" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Notification not found or cannot be restored" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error restoring notification");
+                return Json(new { success = false, message = "An error occurred while restoring notification" });
+            }
+        }        // GET: Debug method to check notification exists
+        [HttpGet]
+        public async Task<IActionResult> CheckNotification(string notificationId)
+        {
+            try
+            {
+                // Try different ways to get user ID
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                }
+
+                _logger.LogInformation("CheckNotification - NotificationId: {NotificationId}, UserId: {UserId}", notificationId, userId);
+
+                if (userId == null)
+                {
+                    return Json(new { exists = false, message = "User not authenticated", userId = "null" });
+                }
+
+                var notification = await _notificationService.GetNotificationForEditAsync(notificationId, userId);
+
+                _logger.LogInformation("CheckNotification - Notification found: {Found}", notification != null);
+
+                return Json(new
+                {
+                    exists = notification != null,
+                    notificationId = notificationId,
+                    userId = userId,
+                    notificationType = notification?.NotificationType,
+                    debug = new
+                    {
+                        claimsCount = User.Claims.Count(),
+                        claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList()
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking notification {NotificationId}", notificationId);
+                return Json(new { exists = false, message = "Error occurred", error = ex.Message });
+            }
+        }        // GET: Simple check if notification exists in database
+        [HttpGet]
+        public async Task<IActionResult> DirectCheckNotification(string notificationId)
+        {
+            try
+            {
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                }
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new { exists = false, message = "User ID not found in claims" });
+                }
+
+                // Direct database check
+                var allNotifications = await _notificationService.GetNotificationsAsync(userId, 1, 100);
+                var targetNotification = allNotifications.FirstOrDefault(n => n.NotificationId == notificationId);
+
+                return Json(new
+                {
+                    exists = targetNotification != null,
+                    notificationId = notificationId,
+                    userId = userId,
+                    notificationType = targetNotification?.NotificationType,
+                    isRead = targetNotification?.IsRead,
+                    totalNotifications = allNotifications.Count(),
+                    allNotificationIds = allNotifications.Select(n => n.NotificationId).ToList()
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in direct check notification {NotificationId}", notificationId);
+                return Json(new { exists = false, message = "Error occurred", error = ex.Message });
+            }
+        }        // GET: Test method to debug delete authorization
+        [HttpGet]
+        public async Task<IActionResult> TestDeleteAuth(string notificationId)
+        {
+            try
+            {
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                }
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new { error = "User ID not found in claims" });
+                }
+
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+                // Test GetNotificationForEditAsync
+                var notification = await _notificationService.GetNotificationForEditAsync(notificationId, userId);
+
+                return Json(new
+                {
+                    notificationId = notificationId,
+                    userId = userId,
+                    userRole = userRole,
+                    notificationFound = notification != null,
+                    notification = notification != null ? new
+                    {
+                        notification.NotificationId,
+                        notification.UserId,
+                        notification.CreatedBy,
+                        notification.NotificationType,
+                        notification.IsRead
+                    } : null,
+                    canDelete = notification != null && (
+                        userRole?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true ||
+                        notification.CreatedBy == userId ||
+                        notification.UserId == userId
+                    )
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error testing delete auth for notification {NotificationId}", notificationId);
+                return Json(new { error = ex.Message });
+            }
         }
 
+        // GET: Search users for notification targeting
+        [HttpGet]
+        [Authorize(Roles = "admin,instructor")]
+        public async Task<IActionResult> SearchUsers(string searchTerm = "")
+        {
+            try
+            {
+                var result = await _notificationServiceImpl.SearchUsersAsync(User, searchTerm);
+
+                if (result.Success)
+                {
+                    return Json(new { success = true, users = result.Users });
+                }
+                else
+                {
+                    return Json(new { success = false, message = result.ErrorMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching users for notification");
+                return Json(new { success = false, message = "An error occurred while searching users" });
+            }
+        }
     }
 }
 

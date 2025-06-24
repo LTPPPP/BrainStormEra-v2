@@ -404,18 +404,15 @@ CREATE TABLE notification (
 
 CREATE TABLE conversation (
     conversation_id VARCHAR(36) PRIMARY KEY,
-    conversation_name NVARCHAR(255), -- Conversation name (can be null for 1-1 chat)
     conversation_type VARCHAR(20) DEFAULT 'private' CHECK (conversation_type IN ('private', 'group', 'course_discussion')),
     created_by VARCHAR(36) NOT NULL,
-    course_id VARCHAR(36), -- Link to course (if course discussion)
     is_active BIT DEFAULT 1,
     last_message_id VARCHAR(36),
     last_message_at DATETIME,
     conversation_created_at DATETIME NOT NULL DEFAULT GETDATE(),
     conversation_updated_at DATETIME NOT NULL DEFAULT GETDATE(),
     
-    FOREIGN KEY (created_by) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE SET NULL ON UPDATE NO ACTION
+    FOREIGN KEY (created_by) REFERENCES account(user_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
 -- Table to store conversations between users

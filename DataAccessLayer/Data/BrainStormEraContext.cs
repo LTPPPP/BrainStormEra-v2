@@ -359,9 +359,6 @@ public partial class BrainStormEraContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("conversation_created_at");
-            entity.Property(e => e.ConversationName)
-                .HasMaxLength(255)
-                .HasColumnName("conversation_name");
             entity.Property(e => e.ConversationType)
                 .HasMaxLength(20)
                 .IsUnicode(false)
@@ -371,10 +368,6 @@ public partial class BrainStormEraContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("conversation_updated_at");
-            entity.Property(e => e.CourseId)
-                .HasMaxLength(36)
-                .IsUnicode(false)
-                .HasColumnName("course_id");
             entity.Property(e => e.CreatedBy)
                 .HasMaxLength(36)
                 .IsUnicode(false)
@@ -389,11 +382,6 @@ public partial class BrainStormEraContext : DbContext
                 .HasMaxLength(36)
                 .IsUnicode(false)
                 .HasColumnName("last_message_id");
-
-            entity.HasOne(d => d.Course).WithMany(p => p.Conversations)
-                .HasForeignKey(d => d.CourseId)
-                .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("FK__conversat__cours__756D6ECB");
 
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.Conversations)
                 .HasForeignKey(d => d.CreatedBy)

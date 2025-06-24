@@ -3,6 +3,7 @@ using DataAccessLayer.Data;
 using DataAccessLayer.Models;
 using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.DTOs.Common;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -420,10 +421,9 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var result = await GetCreateQuizViewModelAsync(chapterId, userId);
-                if (!result.IsSuccess)
+                var result = await GetCreateQuizViewModelAsync(chapterId, userId); if (!result.IsSuccess)
                 {
-                    if (result.Error == "Chapter not found")
+                    if (result.Message == "Chapter not found")
                     {
                         return new CreateQuizResult
                         {
@@ -431,7 +431,7 @@ namespace BusinessLogicLayer.Services.Implementations
                             IsNotFound = true
                         };
                     }
-                    else if (result.Error == "Unauthorized")
+                    else if (result.Message == "Unauthorized")
                     {
                         return new CreateQuizResult
                         {
@@ -439,11 +439,10 @@ namespace BusinessLogicLayer.Services.Implementations
                             IsForbidden = true
                         };
                     }
-
                     return new CreateQuizResult
                     {
                         Success = false,
-                        ErrorMessage = result.Error
+                        ErrorMessage = result.Message
                     };
                 }
 
@@ -554,10 +553,9 @@ namespace BusinessLogicLayer.Services.Implementations
                 // Set the lesson ID to the last lesson
                 model.LessonId = finalLesson.LessonId;
 
-                var result = await CreateQuizAsync(model, userId);
-                if (!result.IsSuccess)
+                var result = await CreateQuizAsync(model, userId); if (!result.IsSuccess)
                 {
-                    modelState.AddModelError("", result.Error);
+                    modelState.AddModelError("", result.Message);
                     return new CreateQuizResult
                     {
                         Success = false,
@@ -896,11 +894,10 @@ namespace BusinessLogicLayer.Services.Implementations
                         RedirectController = "Login"
                     };
                 }
-
                 var result = await GetQuizDetailsAsync(quizId, userId);
                 if (!result.IsSuccess)
                 {
-                    if (result.Error == "Quiz not found")
+                    if (result.Message == "Quiz not found")
                     {
                         return new QuizDetailsResult
                         {
@@ -908,7 +905,7 @@ namespace BusinessLogicLayer.Services.Implementations
                             IsNotFound = true
                         };
                     }
-                    else if (result.Error == "Unauthorized")
+                    else if (result.Message == "Unauthorized")
                     {
                         return new QuizDetailsResult
                         {
@@ -916,11 +913,10 @@ namespace BusinessLogicLayer.Services.Implementations
                             IsForbidden = true
                         };
                     }
-
                     return new QuizDetailsResult
                     {
                         Success = false,
-                        ErrorMessage = result.Error
+                        ErrorMessage = result.Message
                     };
                 }
 
@@ -959,11 +955,10 @@ namespace BusinessLogicLayer.Services.Implementations
                         RedirectController = "Login"
                     };
                 }
-
                 var result = await GetQuizPreviewAsync(quizId, userId);
                 if (!result.IsSuccess)
                 {
-                    if (result.Error == "Quiz not found")
+                    if (result.Message == "Quiz not found")
                     {
                         return new QuizPreviewResult
                         {
@@ -971,7 +966,7 @@ namespace BusinessLogicLayer.Services.Implementations
                             IsNotFound = true
                         };
                     }
-                    else if (result.Error == "Unauthorized")
+                    else if (result.Message == "Unauthorized")
                     {
                         return new QuizPreviewResult
                         {
@@ -979,11 +974,10 @@ namespace BusinessLogicLayer.Services.Implementations
                             IsForbidden = true
                         };
                     }
-
                     return new QuizPreviewResult
                     {
                         Success = false,
-                        ErrorMessage = result.Error
+                        ErrorMessage = result.Message
                     };
                 }
 

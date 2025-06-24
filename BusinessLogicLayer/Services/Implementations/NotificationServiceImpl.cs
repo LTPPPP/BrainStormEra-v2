@@ -264,6 +264,14 @@ namespace BusinessLogicLayer.Services.Implementations
                         }
                         break;
 
+                    case NotificationTargetType.MultipleUsers:
+                        if (model.TargetUserIds != null && model.TargetUserIds.Any())
+                        {
+                            success = await _notificationService.SendToMultipleUsersAsync(
+                                model.TargetUserIds, model.Title, model.Content, model.Type, model.CourseId, userId);
+                        }
+                        break;
+
                     case NotificationTargetType.Course:
                         if (!string.IsNullOrEmpty(model.CourseId))
                         {
@@ -502,7 +510,15 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
+                // Try different ways to get user ID - same as in controller
                 var userId = user.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                }
+
+                _logger.LogInformation("DeleteNotificationAsync - NotificationId: {NotificationId}, UserId: {UserId}", notificationId, userId);
+
                 if (string.IsNullOrEmpty(userId))
                 {
                     return new DeleteNotificationResult
@@ -514,6 +530,9 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 // Get existing notification to check authorization
                 var existingNotification = await _notificationService.GetNotificationForEditAsync(notificationId, userId);
+
+                _logger.LogInformation("DeleteNotificationAsync - Notification found: {Found}", existingNotification != null);
+
                 if (existingNotification == null)
                 {
                     return new DeleteNotificationResult
@@ -525,6 +544,8 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 // Check if user has permission to delete this notification
                 var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                _logger.LogInformation("DeleteNotificationAsync - UserRole: {UserRole}", userRole);
+
                 if (!IsAuthorizedToDeleteNotification(existingNotification, userId, userRole))
                 {
                     return new DeleteNotificationResult
@@ -539,7 +560,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 return new DeleteNotificationResult
                 {
                     Success = true,
-                    Message = "Notification deleted successfully!"
+                    Message = "Notification removed from your inbox successfully!"
                 };
             }
             catch (Exception ex)
@@ -601,6 +622,48 @@ namespace BusinessLogicLayer.Services.Implementations
                         if (string.IsNullOrWhiteSpace(model.TargetUserId))
                         {
                             AddValidationError(errors, nameof(model.TargetUserId), "Target user is required when sending to specific user.");
+                        }
+                        else if (model.TargetUserId == userId)
+                        {
+                            AddValidationError(errors, nameof(model.TargetUserId), "You cannot send notification to yourself.");
+                        }
+                        break;
+
+                    case NotificationTargetType.MultipleUsers:
+                        if (model.TargetUserIds == null || !model.TargetUserIds.Any())
+                        {
+                            AddValidationError(errors, nameof(model.TargetUserIds), "At least one target user is required when sending to multiple users.");
+                        }
+                        else if (model.TargetUserIds.Count > 50)
+                        {
+                            AddValidationError(errors, nameof(model.TargetUserIds), "Cannot send to more than 50 users at once.");
+                        }
+                        else
+                        {
+                            // Check if user is trying to send to themselves
+                            if (model.TargetUserIds.Contains(userId))
+                            {
+                                AddValidationError(errors, nameof(model.TargetUserIds), "You cannot send notification to yourself.");
+                            }
+
+                            // Check for duplicates
+                            var duplicates = model.TargetUserIds.GroupBy(x => x)
+                                .Where(g => g.Count() > 1)
+                                .Select(g => g.Key)
+                                .ToList();
+
+                            if (duplicates.Any())
+                            {
+                                AddValidationError(errors, nameof(model.TargetUserIds),
+                                    "Duplicate users detected in the selection.");
+                            }
+
+                            // Validate no empty user IDs
+                            if (model.TargetUserIds.Any(id => string.IsNullOrWhiteSpace(id)))
+                            {
+                                AddValidationError(errors, nameof(model.TargetUserIds),
+                                    "Invalid user selection detected. Please refresh and try again.");
+                            }
                         }
                         break;
 
@@ -799,11 +862,73 @@ namespace BusinessLogicLayer.Services.Implementations
         /// </summary>
         private static bool IsValidNotificationType(string type)
         {
-            var validTypes = new[] { "Info", "Warning", "Success", "Error", "Course", "Assignment", "System" };
+            var validTypes = new[] { "info", "warning", "success", "urgent", "course", "announcement" };
             return validTypes.Contains(type, StringComparer.OrdinalIgnoreCase);
         }
 
         #endregion
+
+        #region User Search Operations
+
+        /// <summary>
+        /// Search users for notification targeting
+        /// </summary>
+        public async Task<UserSearchResult> SearchUsersAsync(ClaimsPrincipal user, string searchTerm)
+        {
+            try
+            {
+                var userId = user.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new UserSearchResult
+                    {
+                        Success = false,
+                        ErrorMessage = "User not authenticated"
+                    };
+                }
+
+                var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                if (!IsAuthorizedToCreateNotifications(userRole))
+                {
+                    return new UserSearchResult
+                    {
+                        Success = false,
+                        ErrorMessage = "You are not authorized to search users"
+                    };
+                }
+
+                // Get users based on search term
+                var users = await _notificationService.SearchUsersAsync(searchTerm?.Trim() ?? "");
+
+                // Filter out the current user (creator) to prevent sending notification to themselves
+                var filteredUsers = users.Where(u => u.UserId != userId).ToList();
+
+                return new UserSearchResult
+                {
+                    Success = true,
+                    Users = filteredUsers.Select(u => new UserSearchItem
+                    {
+                        UserId = u.UserId,
+                        UserName = u.Username,
+                        Email = u.UserEmail,
+                        FullName = u.FullName ?? "",
+                        Role = u.UserRole
+                    }).ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while searching users");
+                return new UserSearchResult
+                {
+                    Success = false,
+                    ErrorMessage = "An error occurred while searching users"
+                };
+            }
+        }
+
+        #endregion
+
     }
 
     #region Result Classes
@@ -863,6 +988,22 @@ namespace BusinessLogicLayer.Services.Implementations
     {
         public bool IsValid { get; set; }
         public Dictionary<string, List<string>> Errors { get; set; } = new();
+    }
+
+    public class UserSearchResult
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
+        public List<UserSearchItem> Users { get; set; } = new List<UserSearchItem>();
+    }
+
+    public class UserSearchItem
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
     }
 
     #endregion

@@ -47,8 +47,6 @@ public partial class Course
 
     public virtual ICollection<Chapter> Chapters { get; set; } = new List<Chapter>();
 
-    public virtual ICollection<Conversation> Conversations { get; set; } = new List<Conversation>();
-
     public virtual Status? CourseStatusNavigation { get; set; }
 
     public virtual ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();

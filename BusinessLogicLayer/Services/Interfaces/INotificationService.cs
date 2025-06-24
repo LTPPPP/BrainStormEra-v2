@@ -15,9 +15,13 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task MarkAllAsReadAsync(string userId);
         Task DeleteNotificationAsync(string notificationId, string userId);
         Task<bool> SendToUserAsync(string userId, string title, string content, string? type = null, string? courseId = null, string? createdBy = null);
+        Task<bool> SendToMultipleUsersAsync(List<string> userIds, string title, string content, string? type = null, string? courseId = null, string? createdBy = null);
         Task<bool> SendToCourseAsync(string courseId, string title, string content, string? type = null, string? excludeUserId = null, string? createdBy = null);
         Task<bool> SendToRoleAsync(string role, string title, string content, string? type = null, string? createdBy = null);
         Task<bool> SendToAllAsync(string title, string content, string? type = null, string? createdBy = null);
+        Task<bool> RestoreNotificationAsync(string notificationId, string userId);
+        Task<List<Notification>> GetDeletedNotificationsAsync(string userId, int page = 1, int pageSize = 20);
+        Task<List<Account>> SearchUsersAsync(string searchTerm);
     }
 }
 

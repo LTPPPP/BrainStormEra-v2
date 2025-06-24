@@ -7,6 +7,8 @@ class NotificationIndex {
   init() {
     this.setupEventHandlers();
     this.setupSignalR();
+    this.updateHeaderNotificationBell(); // Initialize notification bell state
+    this.initializeNotificationStates(); // Initialize notification states on page load
   }
 
   setupEventHandlers() {
@@ -15,13 +17,24 @@ class NotificationIndex {
       e.preventDefault();
       const notificationId = $(e.currentTarget).data("notification-id");
       this.markAsRead(notificationId, e.currentTarget);
-    });
-
-    // Delete notification functionality
+    }); // Delete notification functionality
     $(document).on("click", ".delete-btn", (e) => {
       e.preventDefault();
-      const notificationId = $(e.currentTarget).data("notification-id");
-      this.showDeleteConfirmation(notificationId, e.currentTarget);
+      const element = e.currentTarget;
+
+      // Debug the element
+      this.debugNotificationElement(element);
+
+      const notificationId = $(element).data("notification-id");
+      console.log("Delete button clicked, notification ID:", notificationId);
+
+      if (!notificationId) {
+        console.error("No notification ID found");
+        this.showToast("Notification ID not found", "error");
+        return;
+      }
+
+      this.showDeleteConfirmation(notificationId, element);
     });
 
     // Load more functionality
@@ -43,46 +56,77 @@ class NotificationIndex {
   }
 
   async markAsRead(notificationId, buttonElement) {
+    // Immediately update UI for better UX
+    const notificationCard = $(buttonElement).closest(".notification-item");
+    const originalBackground = notificationCard.css("background");
+
+    // Show loading state
+    $(buttonElement)
+      .prop("disabled", true)
+      .html('<i class="fas fa-spinner fa-spin"></i>');
+
+    // Apply immediate visual feedback
+    notificationCard.css("transition", "all 0.3s ease");
+    notificationCard.removeClass("unread").addClass("read");
+
     try {
       const response = await fetch("/Notification/MarkAsRead", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          RequestVerificationToken: $(
-            'input[name="__RequestVerificationToken"]'
-          ).val(),
         },
-        body: `notificationId=${encodeURIComponent(notificationId)}`,
+        body: `notificationId=${encodeURIComponent(
+          notificationId
+        )}&__RequestVerificationToken=${encodeURIComponent(
+          $('input[name="__RequestVerificationToken"]').val()
+        )}`,
       });
 
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          // Remove the mark as read button
+          // Remove the mark as read button with animation
           $(buttonElement).fadeOut(300, function () {
             $(this).remove();
           });
 
-          // Update the notification card to show as read
-          const notificationCard =
-            $(buttonElement).closest(".notification-item");
-          notificationCard.removeClass("unread").addClass("read");
-
-          // Remove the "New" badge if present
+          // Remove the "New" badge if present with animation
           notificationCard.find(".badge.bg-primary").fadeOut(300, function () {
             $(this).remove();
           });
 
+          // Show success animation
+          notificationCard.addClass("read-success");
+          setTimeout(() => {
+            notificationCard.removeClass("read-success");
+          }, 1000);
+
           this.showToast("Notification marked as read", "success");
           this.updateUnreadCount();
+          this.updateHeaderNotificationBell();
         } else {
+          // Revert UI changes on failure
+          notificationCard.removeClass("read").addClass("unread");
+          $(buttonElement)
+            .prop("disabled", false)
+            .html('<i class="fas fa-check"></i>');
           this.showToast("Failed to mark notification as read", "error");
         }
       } else {
+        // Revert UI changes on error
+        notificationCard.removeClass("read").addClass("unread");
+        $(buttonElement)
+          .prop("disabled", false)
+          .html('<i class="fas fa-check"></i>');
         this.showToast("Error marking notification as read", "error");
       }
     } catch (error) {
       console.error("Error marking notification as read:", error);
+      // Revert UI changes on error
+      notificationCard.removeClass("read").addClass("unread");
+      $(buttonElement)
+        .prop("disabled", false)
+        .html('<i class="fas fa-check"></i>');
       this.showToast("Error marking notification as read", "error");
     }
   }
@@ -90,7 +134,7 @@ class NotificationIndex {
   showDeleteConfirmation(notificationId, buttonElement) {
     // Create a modern confirmation modal
     const modal = $(`
-            <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header border-0">
@@ -98,17 +142,17 @@ class NotificationIndex {
                                 <i class="fas fa-exclamation-triangle text-warning me-2"></i>
                                 Confirm Deletion
                             </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <p class="mb-0">Are you sure you want to delete this notification? This action cannot be undone.</p>
+                            <p class="mb-0">Are you sure you want to remove this notification from your inbox? You can still access it from your notification history if needed.</p>
                         </div>
                         <div class="modal-footer border-0">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                 <i class="fas fa-times me-1"></i> Cancel
                             </button>
                             <button type="button" class="btn btn-danger" id="confirmDelete">
-                                <i class="fas fa-trash me-1"></i> Delete
+                                <i class="fas fa-archive me-1"></i> Remove
                             </button>
                         </div>
                     </div>
@@ -118,12 +162,33 @@ class NotificationIndex {
 
     $("body").append(modal);
     const bootstrapModal = new bootstrap.Modal(modal[0]);
+
+    // Remove aria-hidden when modal is shown
+    modal.on("shown.bs.modal", () => {
+      modal.removeAttr("aria-hidden");
+    });
+
     bootstrapModal.show();
 
-    // Handle confirm delete
-    modal.find("#confirmDelete").on("click", () => {
-      this.deleteNotification(notificationId, buttonElement);
-      bootstrapModal.hide();
+    // Handle confirm delete with better error handling
+    modal.find("#confirmDelete").on("click", async () => {
+      try {
+        // Disable button to prevent double clicks
+        const confirmBtn = modal.find("#confirmDelete");
+        confirmBtn
+          .prop("disabled", true)
+          .html('<i class="fas fa-spinner fa-spin me-1"></i> Removing...');
+
+        await this.deleteNotification(notificationId, buttonElement);
+        bootstrapModal.hide();
+      } catch (error) {
+        console.error("Error in delete confirmation:", error);
+        // Re-enable button on error
+        const confirmBtn = modal.find("#confirmDelete");
+        confirmBtn
+          .prop("disabled", false)
+          .html('<i class="fas fa-archive me-1"></i> Remove');
+      }
     });
 
     // Clean up modal after hiding
@@ -133,20 +198,64 @@ class NotificationIndex {
   }
 
   async deleteNotification(notificationId, buttonElement) {
+    console.log("Attempting to delete notification:", notificationId);
+
+    // Temporary: Comment out checks to test direct delete
+    // // Check if notification exists before attempting delete
+    // console.log("Checking if notification exists...");
+    // const exists = await this.testNotificationExists(notificationId);
+    // console.log("Notification exists:", exists);
+
+    // Test authorization
+    console.log("Testing delete authorization...");
+    const authTest = await this.testDeleteAuthorization(notificationId);
+    console.log("Authorization test result:", authTest);
+
+    // if (!exists) {
+    //   console.error("Notification does not exist or is not accessible");
+    //   this.showToast("Notification not found or already removed", "error");
+    //   return;
+    // }
+
     try {
+      // Get CSRF token - try different selectors
+      let token = $('input[name="__RequestVerificationToken"]').val();
+      if (!token) {
+        token = $('input[name="__RequestVerificationToken"]:first').val();
+      }
+      if (!token) {
+        token = $('[name="__RequestVerificationToken"]').val();
+      }
+
+      console.log("CSRF Token:", token ? "Found" : "Not found");
+
+      if (!token) {
+        console.error("CSRF Token not found in DOM");
+        this.showToast(
+          "Security token not found. Please refresh the page.",
+          "error"
+        );
+        return;
+      }
+
       const response = await fetch("/Notification/Delete", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          RequestVerificationToken: $(
-            'input[name="__RequestVerificationToken"]'
-          ).val(),
+          RequestVerificationToken: token,
         },
-        body: `notificationId=${encodeURIComponent(notificationId)}`,
+        body: `notificationId=${encodeURIComponent(
+          notificationId
+        )}&__RequestVerificationToken=${encodeURIComponent(token)}`,
       });
+
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
 
       if (response.ok) {
         const result = await response.json();
+        console.log("Delete result:", result);
+
         if (result.success) {
           // Animate and remove the notification card
           const notificationCard =
@@ -166,57 +275,99 @@ class NotificationIndex {
             }
           });
 
-          this.showToast("Notification deleted successfully", "success");
+          this.showToast("Notification removed from your inbox", "success");
           this.updateUnreadCount();
         } else {
-          this.showToast("Failed to delete notification", "error");
+          console.error("Delete failed:", result.message);
+          this.showToast(
+            result.message || "Failed to remove notification",
+            "error"
+          );
         }
       } else {
-        this.showToast("Error deleting notification", "error");
+        const errorText = await response.text();
+        console.error("HTTP Error:", response.status, errorText);
+        this.showToast("Error removing notification", "error");
       }
     } catch (error) {
-      console.error("Error deleting notification:", error);
-      this.showToast("Error deleting notification", "error");
+      console.error("Error removing notification:", error);
+      this.showToast("Error removing notification", "error");
     }
   }
   async markAllAsRead() {
+    // Show loading state on button
+    const markAllBtn = $("#markAllRead");
+    const originalText = markAllBtn.html();
+    markAllBtn
+      .prop("disabled", true)
+      .html('<i class="fas fa-spinner fa-spin me-1"></i>Marking...');
+
+    // Immediately update UI for better UX
+    const unreadItems = $(".notification-item.unread");
+    unreadItems.css("transition", "all 0.3s ease");
+    unreadItems.removeClass("unread").addClass("read");
+
     try {
       const response = await fetch("/Notification/MarkAllAsRead", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          RequestVerificationToken: $(
-            'input[name="__RequestVerificationToken"]'
-          ).val(),
         },
+        body: `__RequestVerificationToken=${encodeURIComponent(
+          $('input[name="__RequestVerificationToken"]').val()
+        )}`,
       });
 
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          // Remove all mark as read buttons
-          $(".mark-read-btn").fadeOut(300, function () {
-            $(this).remove();
+          // Remove all mark as read buttons with staggered animation
+          $(".mark-read-btn").each(function (index) {
+            $(this)
+              .delay(index * 100)
+              .fadeOut(300, function () {
+                $(this).remove();
+              });
           });
 
-          // Update all notification cards to show as read
-          $(".notification-item.unread").removeClass("unread").addClass("read");
-
-          // Remove all "New" badges
-          $(".badge.bg-primary").fadeOut(300, function () {
-            $(this).remove();
+          // Remove all "New" badges with staggered animation
+          $(".badge.bg-primary").each(function (index) {
+            $(this)
+              .delay(index * 50)
+              .fadeOut(300, function () {
+                $(this).remove();
+              });
           });
+
+          // Show success animation on all items
+          unreadItems.addClass("read-success");
+          setTimeout(() => {
+            unreadItems.removeClass("read-success");
+          }, 1000);
+
+          // Hide the "Mark All Read" button
+          markAllBtn.fadeOut(300);
 
           this.showToast("All notifications marked as read", "success");
           this.updateUnreadCount();
+          this.updateHeaderNotificationBell();
         } else {
+          // Revert UI changes on failure
+          $(".notification-item.read").removeClass("read").addClass("unread");
+          markAllBtn.prop("disabled", false).html(originalText);
           this.showToast("Failed to mark all notifications as read", "error");
         }
       } else {
+        // Revert UI changes on error
+        $(".notification-item.read").removeClass("read").addClass("unread");
+        markAllBtn.prop("disabled", false).html(originalText);
         this.showToast("Error marking all notifications as read", "error");
       }
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
+      // Revert UI changes on error
+      $(".notification-item.read").removeClass("read").addClass("unread");
+      markAllBtn.prop("disabled", false).html(originalText);
       this.showToast("Error marking all notifications as read", "error");
     }
   }
@@ -319,7 +470,29 @@ class NotificationIndex {
     }
   }
 
+  updateHeaderNotificationBell() {
+    // Update notification bell icon in header
+    const notificationBell = $(".notification-bell");
+    const unreadCount = $(".notification-item.unread").length;
+
+    if (unreadCount > 0) {
+      if (!notificationBell.find(".notification-dot").length) {
+        notificationBell.append('<span class="notification-dot"></span>');
+      }
+    } else {
+      notificationBell.find(".notification-dot").remove();
+    }
+  }
+
   setupSignalR() {
+    // Check if SignalR is available
+    if (typeof signalR === "undefined") {
+      console.error(
+        "SignalR is not loaded. Please ensure the SignalR library is included before this script."
+      );
+      return;
+    }
+
     // Initialize SignalR connection for real-time updates
     const connection = new signalR.HubConnectionBuilder()
       .withUrl("/notificationHub")
@@ -328,9 +501,7 @@ class NotificationIndex {
 
     connection
       .start()
-      .then(() => {
-
-      })
+      .then(() => {})
       .catch((err) => {
         console.error("SignalR Connection Error:", err);
       });
@@ -412,8 +583,88 @@ class NotificationIndex {
       showToast(message, type);
     } else {
       // Fallback to console log
-  
     }
+  }
+
+  // Update points display in header if needed
+  updatePointsDisplay() {
+    // This can be extended to update user points in real-time
+    // For now, just a placeholder for future enhancement
+  }
+
+  // Initialize notification state on page load
+  initializeNotificationStates() {
+    // Ensure all notification items have proper classes
+    $(".notification-item").each(function () {
+      const $item = $(this);
+      if (!$item.hasClass("read") && !$item.hasClass("unread")) {
+        // Check if there's a "New" badge or mark-read button to determine state
+        if (
+          $item.find(".badge.bg-primary").length > 0 ||
+          $item.find(".mark-read-btn").length > 0
+        ) {
+          $item.addClass("unread");
+        } else {
+          $item.addClass("read");
+        }
+      }
+    });
+
+    this.updateHeaderNotificationBell();
+  }
+
+  async testNotificationExists(notificationId) {
+    try {
+      const response = await fetch(
+        `/Notification/DirectCheckNotification?notificationId=${encodeURIComponent(
+          notificationId
+        )}`
+      );
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Notification check result:", result);
+        return result.exists;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error checking notification:", error);
+      return false;
+    }
+  }
+
+  async testDeleteAuthorization(notificationId) {
+    try {
+      const response = await fetch(
+        `/Notification/TestDeleteAuth?notificationId=${encodeURIComponent(
+          notificationId
+        )}`
+      );
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Delete authorization test result:", result);
+        return result;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error testing delete authorization:", error);
+      return null;
+    }
+  }
+
+  debugNotificationElement(element) {
+    console.log("Debug notification element:");
+    console.log("Element:", element);
+    console.log("Data attributes:", element.dataset);
+    console.log("data-notification-id:", $(element).data("notification-id"));
+    console.log(
+      "data-notification-id (attr):",
+      $(element).attr("data-notification-id")
+    );
+    console.log(
+      "Closest notification item:",
+      $(element).closest(".notification-item")
+    );
+    console.log("All data attributes:", $(element).data());
   }
 }
 

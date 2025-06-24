@@ -273,7 +273,7 @@ namespace BrainStormEra_MVC.Controllers
 
         // GET: Get user courses for notifications (Instructor only)
         [HttpGet]
-        [Authorize(Roles = "instructor")]
+        [Authorize(Roles = "instructor,admin")]
         public async Task<IActionResult> GetUserCourses()
         {
             var result = await _courseServiceImpl.GetUserCoursesAsync(User);

@@ -24,8 +24,10 @@
     <link rel="stylesheet" href="~/css/pages/Course/create-course.css">
     <link rel="stylesheet" href="~/css/components/page-header-themes.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
-    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">    <link rel="stylesheet" href="~/css/components/chatbot.css">
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
+    <link rel="stylesheet" href="~/css/components/chatbot.css">
     <link rel="stylesheet" href="~/css/pages/Notifications/notification.css">
+    <link rel="stylesheet" href="~/css/pages/Notifications/create-notification.css">
     <!-- User meta tags for chatbot -->
     @if (Context.Session.GetString("UserId") != null)
     {
@@ -110,7 +112,8 @@
                             <label asp-for="Title" class="form-label">
                                 <i class="fas fa-heading me-2"></i>Notification Title *
                             </label>
-                            <input asp-for="Title" class="form-control" placeholder="Enter notification title" maxlength="100" required>
+                            <input asp-for="Title" class="form-control" placeholder="Enter notification title"
+                                maxlength="100" required>
                             <span asp-validation-for="Title" class="text-danger"></span>
                         </div>
 
@@ -118,7 +121,8 @@
                             <label asp-for="Content" class="form-label">
                                 <i class="fas fa-align-left me-2"></i>Message Content *
                             </label>
-                            <textarea asp-for="Content" class="form-control" rows="5" placeholder="Enter your notification message" maxlength="500" required></textarea>
+                            <textarea asp-for="Content" class="form-control" rows="5"
+                                placeholder="Enter your notification message" maxlength="500" required></textarea>
                             <span asp-validation-for="Content" class="text-danger"></span>
                             <div class="form-text">Maximum 500 characters</div>
                         </div>
@@ -147,56 +151,178 @@
                     <i class="fas fa-bullseye me-2"></i>
                     Target Audience
                 </h3>
-                <p class="text-muted mb-4">Choose who will receive this notification</p>                <div class="row">
-                    <div class="col-lg-8">
-                        <div class="mb-4">
-                            <label class="form-label">
-                                <i class="fas fa-users me-2"></i>Send To *
-                            </label>
-                            
-                            <!-- Professional Switch Design -->
-                            <div class="target-audience-selection">
-                                @if (User.IsInRole("instructor"))
-                                {
-                                    <div class="form-check form-switch custom-cursor-default-hover" style="padding-left: 2rem;">
-                                        <input asp-for="TargetType" class="form-check-input" type="radio" value="Course" id="targetCourse" />
-                                        <label class="form-check-label" for="targetCourse">
-                                            <i class="fas fa-graduation-cap me-2 text-primary"></i>
-                                            <strong>Course Students</strong>
-                                            <div class="small text-muted mt-1">Send notification to students enrolled in your courses</div>
-                                        </label>
-                                    </div>
-                                }
-                                
+                <p class="text-muted mb-4">Search and select users to send this notification. <small
+                        class="text-info"><i class="fas fa-info-circle me-1"></i>Note: You cannot send notifications to
+                        yourself.</small></p>
 
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Target Type Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-bullseye me-2"></i>Target Type
+                            </label>
+                            <div class="btn-group w-100" role="group" aria-label="Target type selection">
+                                <input type="radio" class="btn-check" name="targetType" id="targetTypeMultiple"
+                                    value="MultipleUsers" checked>
+                                <label class="btn btn-outline-primary" for="targetTypeMultiple">
+                                    <i class="fas fa-users me-1"></i> Multiple Users
+                                </label>
+
+                                <input type="radio" class="btn-check" name="targetType" id="targetTypeCourse"
+                                    value="Course">
+                                <label class="btn btn-outline-primary" for="targetTypeCourse">
+                                    <i class="fas fa-graduation-cap me-1"></i> Course Students
+                                </label>
                             </div>
                         </div>
 
-                        <!-- Course Selection (for Instructors and Course-specific notifications) -->
-                        <div class="mb-4" id="courseSelection" style="display: none;">
-                            <label asp-for="CourseId" class="form-label">
-                                <i class="fas fa-book me-2"></i>Select Course
+                        <!-- Hidden inputs -->
+                        <input asp-for="TargetType" type="hidden" value="MultipleUsers" />
+                        <input asp-for="TargetUserId" type="hidden" id="selectedUserId" />
+                        <input asp-for="CourseId" type="hidden" id="selectedCourseId" />
+
+                        <!-- Multiple User IDs (will be populated by JavaScript) -->
+                        <div id="multipleUserIdsContainer"></div>
+
+                        <!-- Course Selection (only visible when Course target type is selected) -->
+                        <div id="courseSelectionContainer" class="mb-4" style="display: none;">
+                            <label class="form-label">
+                                <i class="fas fa-graduation-cap me-2"></i>Select Course *
                             </label>
-                            <select asp-for="CourseId" class="form-select" id="courseSelect">
-                                <option value="">Select a course</option>
-                                <!-- Courses will be loaded via JavaScript -->
+                            <select id="courseFilter" class="form-select">
+                                <option value="">Loading courses...</option>
                             </select>
+                            <div class="form-text">All students enrolled in the selected course will receive this
+                                notification.</div>
                         </div>
 
+                        <!-- User Selection (visible for User and MultipleUsers target types) -->
+                        <div id="userSelectionContainer" class="mb-4">
+                            <label asp-for="TargetUserId" class="form-label">
+                                <i class="fas fa-user me-2"></i><span id="userSelectionLabel">Select User</span> *
+                            </label>
+
+                            <div class="user-table-container">
+                                <!-- Search and Filter Controls -->
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                            <input type="text" id="userSearchInput" class="form-control"
+                                                placeholder="Search by name, email, or username..." />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select id="roleFilter" class="form-select">
+                                            <option value="">All Roles</option>
+                                            <option value="learner">Learners</option>
+                                            <option value="instructor">Instructors</option>
+                                            <option value="admin">Administrators</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select id="courseFilterUsers" class="form-select">
+                                            <option value="">All Courses</option>
+                                            <!-- Will be populated dynamically -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="d-flex gap-1">
+                                            <button type="button" id="selectAllBtn"
+                                                class="btn btn-outline-primary btn-sm" style="display: none;">
+                                                <i class="fas fa-check-double me-1"></i> All
+                                            </button>
+                                            <button type="button" id="clearAllBtn"
+                                                class="btn btn-outline-secondary btn-sm" style="display: none;">
+                                                <i class="fas fa-times me-1"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Selected User(s) Display -->
+                                <div id="selectedUserDisplay" class="selected-user-display mb-3" style="display: none;">
+                                    <div class="alert alert-success d-flex align-items-center">
+                                        <i class="fas fa-user-check me-2"></i>
+                                        <div class="flex-grow-1">
+                                            <strong id="selectedUserLabel">Selected User:</strong>
+                                            <span id="selectedUserInfo"></span>
+                                            <div id="selectedUsersCount" class="mt-1" style="display: none;">
+                                                <small class="text-muted"></small>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-success"
+                                            onclick="clearUserSelection()">
+                                            <i class="fas fa-times"></i> <span id="clearBtnText">Change</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Users Table -->
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped" id="usersTable">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>
+                                                    <input type="checkbox" id="selectAllCheckbox"
+                                                        class="form-check-input" style="border-radius: 2rem;">
+                                                </th>
+                                                <th>Avatar</th>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Role</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="usersTableBody">
+                                            <tr>
+                                                <td id="loadingColspan" colspan="5" class="text-center">
+                                                    <div class="loading-users">
+                                                        <i class="fas fa-spinner fa-spin me-2"></i>
+                                                        Loading users...
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Pagination -->
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <div class="showing-info">
+                                        Showing <span id="showingStart">0</span> to <span id="showingEnd">0</span> of
+                                        <span id="totalUsers">0</span> users
+                                    </div>
+                                    <nav aria-label="Users pagination">
+                                        <ul class="pagination pagination-sm mb-0" id="usersPagination">
+                                            <!-- Pagination will be generated here -->
+                                        </ul>
+                                    </nav>
+                                </div>
+
+                            </div>
+                            <span asp-validation-for="TargetUserId" class="text-danger"></span>
+                            <div class="form-text" id="userSelectionHelpText">Select a user from the table above who
+                                will receive this
+                                notification. Note: You cannot send notifications to yourself.</div>
+                        </div>
                     </div>
-                </div>            </div>
+                </div>
+            </div>
 
             <!-- Form Actions -->
             <div class="form-actions">
                 <div class="row justify-content-center">
                     <div class="col-lg-8 text-center">
                         <h5 class="mb-4 text-muted">Ready to send your notification?</h5>
-                        <button type="submit" class="btn btn-create me-3" style="font-size: 0.8rem; padding: 0.5rem 1rem;">
+                        <button type="submit" class="btn btn-create me-3"
+                            style="font-size: 0.8rem; padding: 0.5rem 1rem;">
                             <i class="fas fa-paper-plane me-2"></i>
                             Send Notification
                         </button>
 
-                        <a href="@Url.Action("Index", "Notification")" class="btn btn-outline-secondary" style="font-size: 0.8rem; padding: 0.5rem 1rem;">
+                        <a href="@Url.Action("Index", "Notification")" class="btn btn-outline-secondary"
+                            style="font-size: 0.8rem; padding: 0.5rem 1rem;">
                             <i class="fas fa-arrow-left me-2"></i>
                             Cancel
                         </a>
@@ -228,6 +354,9 @@
         <script src="~/js/components/chatbot.js"></script>
     }
 
+    <!-- Page-specific scripts -->
+    <script src="~/js/pages/Notifications/create-notification.js"></script>
+
     <script>
         // Hide preloader when page is loaded
         window.addEventListener('load', function () {
@@ -237,101 +366,21 @@
             }, 500);
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Target type selection handling
-            const targetTypeRadios = document.querySelectorAll('input[name="TargetType"]');
-            const courseSelection = document.getElementById('courseSelection');
-            const roleSelection = document.getElementById('roleSelection');
-
-            targetTypeRadios.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    // Hide all conditional sections
-                    courseSelection.style.display = 'none';
-                    if (roleSelection) roleSelection.style.display = 'none';
-
-                    // Show relevant section based on selection
-                    if (this.value === 'Course') {
-                        courseSelection.style.display = 'block';
-                        loadUserCourses();
-                    } else if (this.value === 'Role' && roleSelection) {
-                        roleSelection.style.display = 'block';
-                    }
-                });
-            });            // Input validation enhancements
-            const titleInput = document.getElementById('Title');
-            const contentInput = document.getElementById('Content');
-            const typeSelect = document.getElementById('Type');            // Character counter and input validation for content
-            const maxLength = 500;
-            
-            // Initialize character counter
-            function updateCharacterCounter() {
-                const remaining = maxLength - contentInput.value.length;
-                const formText = contentInput.parentNode.querySelector('.form-text');
-                
-                if (remaining >= 0) {
-                    formText.textContent = `${remaining} characters remaining`;
-                    formText.classList.remove('text-danger');
-                    if (remaining < 50) {
-                        formText.classList.add('text-warning');
-                    } else {
-                        formText.classList.remove('text-warning');
-                    }
-                } else {
-                    formText.textContent = `${Math.abs(remaining)} characters over limit!`;
-                    formText.classList.add('text-danger');
-                    formText.classList.remove('text-warning');
-                }
-            }
-            
-            // Update counter on input and initialize on page load
-            contentInput.addEventListener('input', updateCharacterCounter);
-            updateCharacterCounter(); // Initialize counter on page load
-
-            // Load user courses for course selection
-            function loadUserCourses() {
-                fetch('@Url.Action("GetUserCourses", "Course")')
-                    .then(response => response.json())
-                    .then(data => {
-                        const courseSelect = document.getElementById('courseSelect');
-                        courseSelect.innerHTML = '<option value="">Select a course</option>';
-                        
-                        if (data.success && data.courses) {
-                            data.courses.forEach(course => {
-                                const option = document.createElement('option');
-                                option.value = course.courseId;
-                                option.textContent = course.courseName;
-                                courseSelect.appendChild(option);
-                            });
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error loading courses:', error);
-                    });
+        // Set the search URL for the external script
+        document.addEventListener('DOMContentLoaded', function () {
+            // Set the get all users URL that the external script needs
+            // Note: This will fall back to mock data if the URL is not available
+            if (typeof setGetAllUsersUrl === 'function') {
+                setGetAllUsersUrl('@Url.Action("GetAllUsers", "Notification")');
             }
 
-            // Form validation
-            document.getElementById('createNotificationForm').addEventListener('submit', function(e) {
-                const targetType = document.querySelector('input[name="TargetType"]:checked');
-                if (!targetType) {
-                    e.preventDefault();
-                    showToast('Please select a target audience', 'error');
-                    return;
-                }
-
-                if (targetType.value === 'Course' && !document.getElementById('courseSelect').value) {
-                    e.preventDefault();
-                    showToast('Please select a course', 'error');
-                    return;
-                }
-
-                if (targetType.value === 'Role' && !document.querySelector('select[name="TargetRole"]').value) {
-                    e.preventDefault();
-                    showToast('Please select a role', 'error');
-                    return;
-                }
-            });
+            // Set the get courses URL for course filtering
+            if (typeof setGetCoursesUrl === 'function') {
+                setGetCoursesUrl('@Url.Action("GetCourses", "Notification")');
+            }
         });
     </script>
 </body>
 
 </html>
+

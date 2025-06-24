@@ -53,5 +53,9 @@ namespace DataAccessLayer.Repositories.Interfaces
         // Additional notification methods for service support
         Task<Notification?> GetNotificationForEditAsync(string notificationId, string userId);
         Task<bool> UpdateNotificationContentAsync(string notificationId, string userId, string title, string content, string? type);
+
+        // Soft delete support methods
+        Task<bool> RestoreNotificationAsync(string notificationId, string userId);
+        Task<List<Notification>> GetDeletedNotificationsAsync(string userId, int page = 1, int pageSize = 20);
     }
 }

@@ -192,13 +192,13 @@ VALUES
 ('not5', 'usr4', 'crs3', N'Complete your course', N'You haven''t accessed your Python course for 3 days', 'reminder', 0, GETDATE(), 'usr3');
 
 -- Conversation data
-INSERT INTO conversation (conversation_id, conversation_name, conversation_type, created_by, course_id, is_active, conversation_created_at, conversation_updated_at)
+INSERT INTO conversation (conversation_id, conversation_type, created_by, is_active, conversation_created_at, conversation_updated_at)
 VALUES
-('conv1', NULL, 'private', 'usr2', NULL, 1, GETDATE(), GETDATE()),
-('conv2', N'JavaScript Study Group', 'group', 'usr1', 'crs1', 1, GETDATE(), GETDATE()),
-('conv3', NULL, 'private', 'usr4', NULL, 1, GETDATE(), GETDATE()),
-('conv4', N'Design Discussion', 'course_discussion', 'usr5', 'crs2', 1, GETDATE(), GETDATE()),
-('conv5', N'Python Help Group', 'group', 'usr1', 'crs3', 1, GETDATE(), GETDATE());
+('conv1', 'private', 'usr2', 1, GETDATE(), GETDATE()),
+('conv2', 'group', 'usr1', 1, GETDATE(), GETDATE()),
+('conv3', 'private', 'usr4', 1, GETDATE(), GETDATE()),
+('conv4', 'course_discussion', 'usr5', 1, GETDATE(), GETDATE()),
+('conv5', 'group', 'usr1', 1, GETDATE(), GETDATE());
 
 -- Message entity data
 INSERT INTO message_entity (message_id, sender_id, receiver_id, conversation_id, message_content, message_type, is_read, message_created_at, message_updated_at)

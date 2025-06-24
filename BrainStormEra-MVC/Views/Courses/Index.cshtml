@@ -296,54 +296,53 @@
                                                 <button class="btn btn-sm btn-outline-success" onclick="enrollInCourse('@Html.EncodeId(course.CourseId)')" title="Enroll for Free">
                                                     <i class="fas fa-play"></i> Enroll Free
                                                 </button>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            @* Show status for everyone, not just instructor *@
-                                            @if (course.ApprovalStatus?.ToLower() == "pending")
-                                            {
-                                                <span class="btn btn-sm btn-warning" title="Course Status">
-                                                    <i class="fas fa-clock"></i> Pending
-                                                </span>
-                                            }
-                                            else if (course.ApprovalStatus?.ToLower() == "denied" || course.ApprovalStatus?.ToLower() == "rejected")
-                                            {
-                                                <span class="btn btn-sm btn-danger" title="Course Status">
-                                                    <i class="fas fa-times-circle"></i> Rejected
-                                                </span>
-                                            }
-                                            else if (course.CourseStatus == 4)
-                                            {
-                                                <span class="btn btn-sm btn-secondary" title="Course Status">
-                                                    <i class="fas fa-trash"></i> Deleted
-                                                </span>
-                                            }
-                                            else if (course.ApprovalStatus?.ToLower() == "draft")
-                                            {
-                                                <span class="btn btn-sm btn-info" title="Course Status">
-                                                    <i class="fas fa-edit"></i> Draft
-                                                </span>
-                                            }
-                                            else if (course.ApprovalStatus?.ToLower() == "approved")
-                                            {
-                                                <span class="btn btn-sm btn-success" title="Course Status">
-                                                    <i class="fas fa-check-circle"></i> Approved
-                                                </span>
-                                            }
-                                            else if (string.IsNullOrEmpty(course.ApprovalStatus))
-                                            {
-                                                <span class="btn btn-sm btn-outline-info" title="Course Status">
-                                                    <i class="fas fa-edit"></i> Draft
-                                                </span>
-                                            }
-                                            else
-                                            {
-                                                <span class="btn btn-sm btn-outline-secondary" title="Course Status">
-                                                    <i class="fas fa-question-circle"></i> @(course.ApprovalStatus ?? "Unknown")
-                                                </span>
-                                            }
-                                        }
+                                            }                        }
+                        else if (ViewBag.IsAuthenticated == true && (ViewBag.UserRole == "Instructor" || ViewBag.UserRole == "Admin"))
+                        {
+                            @* Show status only for instructor and admin roles *@
+                            @if (course.ApprovalStatus?.ToLower() == "pending")
+                            {
+                                <span class="btn btn-sm btn-warning" title="Course Status">
+                                    <i class="fas fa-clock"></i> Pending
+                                </span>
+                            }
+                            else if (course.ApprovalStatus?.ToLower() == "denied" || course.ApprovalStatus?.ToLower() == "rejected")
+                            {
+                                <span class="btn btn-sm btn-danger" title="Course Status">
+                                    <i class="fas fa-times-circle"></i> Rejected
+                                </span>
+                            }
+                            else if (course.CourseStatus == 4)
+                            {
+                                <span class="btn btn-sm btn-secondary" title="Course Status">
+                                    <i class="fas fa-trash"></i> Deleted
+                                </span>
+                            }
+                            else if (course.ApprovalStatus?.ToLower() == "draft")
+                            {
+                                <span class="btn btn-sm btn-info" title="Course Status">
+                                    <i class="fas fa-edit"></i> Draft
+                                </span>
+                            }
+                            else if (course.ApprovalStatus?.ToLower() == "approved")
+                            {
+                                <span class="btn btn-sm btn-success" title="Course Status">
+                                    <i class="fas fa-check-circle"></i> Approved
+                                </span>
+                            }
+                            else if (string.IsNullOrEmpty(course.ApprovalStatus))
+                            {
+                                <span class="btn btn-sm btn-outline-info" title="Course Status">
+                                    <i class="fas fa-edit"></i> Draft
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="btn btn-sm btn-outline-secondary" title="Course Status">
+                                    <i class="fas fa-question-circle"></i> @(course.ApprovalStatus ?? "Unknown")
+                                </span>
+                            }
+                        }
                                     </div>
                                 </div>
                             </div>

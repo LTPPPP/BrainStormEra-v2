@@ -7,13 +7,9 @@ public partial class Conversation
 {
     public string ConversationId { get; set; } = null!;
 
-    public string? ConversationName { get; set; }
-
     public string? ConversationType { get; set; }
 
     public string CreatedBy { get; set; } = null!;
-
-    public string? CourseId { get; set; }
 
     public bool? IsActive { get; set; }
 
@@ -26,8 +22,6 @@ public partial class Conversation
     public DateTime ConversationUpdatedAt { get; set; }
 
     public virtual ICollection<ConversationParticipant> ConversationParticipants { get; set; } = new List<ConversationParticipant>();
-
-    public virtual Course? Course { get; set; }
 
     public virtual Account CreatedByNavigation { get; set; } = null!;
 

@@ -1,0 +1,83 @@
+@* SignalR Chat Integration Partial *@
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <!-- SignalR for Chat -->
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        // Global chat connection for real-time features
+        let globalChatConnection;
+        const currentUserId = '@User.FindFirst("UserId")?.Value';
+
+        async function initializeGlobalChat() {
+            try {
+                globalChatConnection = new signalR.HubConnectionBuilder()
+                    .withUrl("/chatHub")
+                    .build();
+
+                // Handle global chat events
+                globalChatConnection.on("ReceiveMessage", function (message) {
+                    // Show notification for new messages when not on chat page
+                    if (!window.location.pathname.includes('/Chat/')) {
+                        showChatNotification(message);
+                        updateChatIcon();
+                    }
+                });
+
+                await globalChatConnection.start();
+                console.log("Global Chat SignalR Connected");
+
+                // Update chat icon with unread count
+                updateChatIcon();
+
+            } catch (err) {
+                console.error("Global Chat SignalR Connection Error:", err);
+            }
+        }
+
+        function showChatNotification(message) {
+            // Create a simple notification
+            if (Notification.permission === "granted") {
+                new Notification(`New message from ${message.senderName}`, {
+                    body: message.messageContent.substring(0, 100),
+                    icon: '/SharedMedia/logo/logowithoutbackground.png'
+                });
+            }
+
+            // You can also show in-app notification here
+            console.log("New chat message:", message);
+        }
+
+        function updateChatIcon() {
+            // Update chat icon with unread message count
+            // This would typically fetch unread count from server
+            // For now, we'll just update the visual indicator
+
+            const chatIcon = document.querySelector('.chat-icon');
+            if (chatIcon) {
+                // Add visual indicator for new messages
+                chatIcon.style.color = '#007bff';
+                setTimeout(() => {
+                    chatIcon.style.color = '';
+                }, 3000);
+            }
+        }
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Initialize global chat when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeGlobalChat();
+        });
+
+        // Cleanup connection when page unloads
+        window.addEventListener('beforeunload', function () {
+            if (globalChatConnection) {
+                globalChatConnection.stop();
+            }
+        });
+    </script>
+}
+  
