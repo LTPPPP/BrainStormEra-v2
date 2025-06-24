@@ -20,6 +20,7 @@ namespace DataAccessLayer.Models.ViewModels
         public string? Type { get; set; }
         public string? CourseId { get; set; }
         public string? TargetUserId { get; set; }
+        public List<string> TargetUserIds { get; set; } = new List<string>();
         public string? TargetRole { get; set; }
         public NotificationTargetType TargetType { get; set; }
     }
@@ -39,6 +40,7 @@ namespace DataAccessLayer.Models.ViewModels
     public enum NotificationTargetType
     {
         User,
+        MultipleUsers,
         Course,
         Role,
         All

@@ -581,14 +581,31 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var courses = await _courseService.GetInstructorCoursesAsync(userId, null, null, 1, int.MaxValue);
+                var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                List<dynamic> courseList;
 
-                var courseList = courses.Courses.Select(c => new
+                if (userRole?.Equals("admin", StringComparison.OrdinalIgnoreCase) == true)
                 {
-                    courseId = c.CourseId,
-                    courseName = c.CourseName,
-                    enrollmentCount = c.EnrollmentCount
-                }).ToList();
+                    // Admin can see all courses
+                    var allCourses = await _courseService.GetCoursesAsync(null, null, 1, int.MaxValue);
+                    courseList = allCourses.Courses.Select(c => new
+                    {
+                        courseId = c.CourseId,
+                        courseName = c.CourseName,
+                        enrollmentCount = c.EnrollmentCount
+                    }).ToList<dynamic>();
+                }
+                else
+                {
+                    // Instructor can see only their courses
+                    var courses = await _courseService.GetInstructorCoursesAsync(userId, null, null, 1, int.MaxValue);
+                    courseList = courses.Courses.Select(c => new
+                    {
+                        courseId = c.CourseId,
+                        courseName = c.CourseName,
+                        enrollmentCount = c.EnrollmentCount
+                    }).ToList<dynamic>();
+                }
 
                 return new InstructorCoursesResult
                 {

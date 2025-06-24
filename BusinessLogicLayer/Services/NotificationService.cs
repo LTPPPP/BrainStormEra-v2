@@ -160,6 +160,50 @@ namespace BusinessLogicLayer.Services
             }
         }
 
+        public async Task<bool> SendToMultipleUsersAsync(List<string> userIds, string title, string content, string? type = null, string? courseId = null, string? createdBy = null)
+        {
+            try
+            {
+                if (userIds == null || !userIds.Any())
+                {
+                    _logger.LogWarning("No user IDs provided for multiple user notification");
+                    return false;
+                }
+
+                // Create notifications for all specified users
+                var tasks = userIds.Select(async userId =>
+                {
+                    await CreateNotificationAsync(userId, title, content, type, courseId, createdBy);
+                });
+
+                await Task.WhenAll(tasks);
+
+                // Send real-time notifications via SignalR to each user
+                foreach (var userId in userIds)
+                {
+                    await _hubContext.Clients.Group($"User_{userId}").SendAsync("ReceiveNotification", new
+                    {
+                        title = title,
+                        content = content,
+                        type = type,
+                        createdAt = DateTime.Now
+                    });
+
+                    // Update unread count for each user
+                    var unreadCount = await GetUnreadNotificationCountAsync(userId);
+                    await _hubContext.Clients.Group($"User_{userId}").SendAsync("UpdateUnreadCount", unreadCount);
+                }
+
+                _logger.LogInformation("Successfully sent notification to {Count} users", userIds.Count);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending notification to multiple users");
+                return false;
+            }
+        }
+
         public async Task<bool> SendToRoleAsync(string role, string title, string content, string? type = null, string? createdBy = null)
         {
             try
@@ -285,6 +329,26 @@ namespace BusinessLogicLayer.Services
         public async Task<List<Notification>> GetDeletedNotificationsAsync(string userId, int page = 1, int pageSize = 20)
         {
             return await _notificationRepo.GetDeletedNotificationsAsync(userId, page, pageSize);
+        }
+
+        public async Task<List<Account>> SearchUsersAsync(string searchTerm)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(searchTerm))
+                {
+                    // Return top 20 users if no search term
+                    return await _userRepo.GetTopUsersAsync(20);
+                }
+
+                // Search users by name, email, or username
+                return await _userRepo.SearchUsersAsync(searchTerm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching users with term: {SearchTerm}", searchTerm);
+                return new List<Account>();
+            }
         }
     }
 }

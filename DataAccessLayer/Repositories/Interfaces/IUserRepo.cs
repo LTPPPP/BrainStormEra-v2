@@ -51,5 +51,9 @@ namespace DataAccessLayer.Repositories.Interfaces
 
         // Chatbot context methods
         Task<Account?> GetUserWithEnrollmentsAndProgressAsync(string userId);
+
+        // User search methods
+        Task<List<Account>> SearchUsersAsync(string searchTerm);
+        Task<List<Account>> GetTopUsersAsync(int count);
     }
 }

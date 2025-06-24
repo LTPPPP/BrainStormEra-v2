@@ -515,6 +515,31 @@ namespace BrainStormEra_MVC.Controllers
                 return Json(new { error = ex.Message });
             }
         }
+
+        // GET: Search users for notification targeting
+        [HttpGet]
+        [Authorize(Roles = "admin,instructor")]
+        public async Task<IActionResult> SearchUsers(string searchTerm = "")
+        {
+            try
+            {
+                var result = await _notificationServiceImpl.SearchUsersAsync(User, searchTerm);
+
+                if (result.Success)
+                {
+                    return Json(new { success = true, users = result.Users });
+                }
+                else
+                {
+                    return Json(new { success = false, message = result.ErrorMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching users for notification");
+                return Json(new { success = false, message = "An error occurred while searching users" });
+            }
+        }
     }
 }
 

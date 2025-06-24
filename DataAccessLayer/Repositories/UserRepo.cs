@@ -615,5 +615,51 @@ namespace DataAccessLayer.Repositories
                 throw;
             }
         }
+
+        // User search methods
+        public async Task<List<Account>> SearchUsersAsync(string searchTerm)
+        {
+            try
+            {
+                var query = _dbSet.AsQueryable();
+
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    var lowerSearchTerm = searchTerm.ToLower();
+                    query = query.Where(u =>
+                        u.Username.ToLower().Contains(lowerSearchTerm) ||
+                        u.UserEmail.ToLower().Contains(lowerSearchTerm) ||
+                        (u.FullName != null && u.FullName.ToLower().Contains(lowerSearchTerm)));
+                }
+
+                return await query
+                    .Where(u => u.IsBanned != true) // Exclude banned users
+                    .OrderBy(u => u.Username)
+                    .Take(50) // Limit results
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error searching users with term: {SearchTerm}", searchTerm);
+                throw;
+            }
+        }
+
+        public async Task<List<Account>> GetTopUsersAsync(int count)
+        {
+            try
+            {
+                return await _dbSet
+                    .Where(u => u.IsBanned != true) // Exclude banned users
+                    .OrderBy(u => u.Username)
+                    .Take(count)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting top {Count} users", count);
+                throw;
+            }
+        }
     }
 }

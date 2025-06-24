@@ -26,6 +26,288 @@
     <link rel="stylesheet" href="~/css/components/footer.css">
     <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">    <link rel="stylesheet" href="~/css/components/chatbot.css">
     <link rel="stylesheet" href="~/css/pages/Notifications/notification.css">
+    
+    <style>
+        .user-search-container {
+            position: relative;
+        }
+        
+        .user-search-results {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            background: white;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+            margin-top: 0.5rem;
+        }
+        
+        .user-search-results:empty {
+            display: none;
+        }
+        
+        .user-search-item {
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+        
+        .user-search-item:last-child {
+            border-bottom: none;
+        }
+        
+        .user-search-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .selected-user-display .alert {
+            margin-bottom: 0;
+        }
+        
+        .target-audience-selection .form-check {
+            padding: 1.25rem;
+            border: 2px solid #e9ecef;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .target-audience-selection .form-check:hover {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .target-audience-selection .form-check-input:checked + .form-check-label {
+            color: #0d6efd;
+        }
+        
+        .target-audience-selection .form-check-input:checked ~ * {
+            background-color: #f8f9ff;
+        }
+
+        .target-audience-selection .form-check:has(.form-check-input:checked) {
+            border-color: #0d6efd;
+            background-color: #f8f9ff;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+        }
+        
+        /* Search results styling */
+        .user-search-results {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            background: white;
+            box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.1);
+            margin-top: 0.5rem;
+            z-index: 1000;
+        }
+        
+        .user-search-results:empty {
+            display: none;
+        }
+        
+        .user-search-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f1f3f4;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .user-search-item:last-child {
+            border-bottom: none;
+        }
+        
+        .user-search-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* Selected users display */
+        .selected-users-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            background: #fafafa;
+        }
+        
+        .selected-user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        
+        .selected-user-item:hover {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.1rem rgba(13, 110, 253, 0.1);
+        }
+        
+        .selected-user-info {
+            flex-grow: 1;
+        }
+        
+        .selected-user-name {
+            font-weight: 600;
+            margin-bottom: 0.125rem;
+            color: #333;
+        }
+        
+        .selected-user-email {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        
+        .selected-user-role {
+            font-size: 0.75rem;
+            color: #495057;
+            background: #e9ecef;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.25rem;
+            margin-top: 0.25rem;
+            display: inline-block;
+        }
+        
+        .remove-user-btn {
+            background: #dc3545;
+            border: none;
+            color: white;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .remove-user-btn:hover {
+            background: #c82333;
+            transform: scale(1.05);
+        }
+
+        /* Loading states */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .search-loading {
+            text-align: center;
+            padding: 1rem;
+            color: #6c757d;
+        }
+
+        /* Validation states */
+        .is-invalid + .user-search-results {
+            border-color: #dc3545;
+        }
+        
+        .is-valid + .user-search-results {
+            border-color: #198754;
+        }
+        /* Remove old debug styles */
+        
+        /* Responsive design */
+        @@media (max-width: 768px) {
+            .target-audience-selection .form-check {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .selected-user-item {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: left;
+            }
+            
+            .remove-user-btn {
+                align-self: flex-end;
+                margin-top: 0.5rem;
+            }
+            
+            .user-search-results {
+                max-height: 200px;
+            }
+            
+            .selected-users-list {
+                max-height: 200px;
+            }
+        }
+
+        /* Animation and transitions */
+        .form-section {
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading animation for search */
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fa-spinner.fa-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Enhanced form validation styles */
+        .form-control.is-invalid {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+
+        .form-control.is-valid {
+            border-color: #198754;
+            box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+        }
+
+        /* Success states */
+        .alert-success {
+            background-color: #d1e7dd;
+            border-color: #badbcc;
+            color: #0f5132;
+        }
+
+        /* Enhanced button styles */
+        .btn-create {
+            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+        }
+
+        .btn-create:hover {
+            background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(13, 110, 253, 0.4);
+            color: white;
+        }
+
+        .btn-create:active {
+            transform: translateY(0);
+        }
+    </style>
     <!-- User meta tags for chatbot -->
     @if (Context.Session.GetString("UserId") != null)
     {
@@ -147,44 +429,189 @@
                     <i class="fas fa-bullseye me-2"></i>
                     Target Audience
                 </h3>
-                <p class="text-muted mb-4">Choose who will receive this notification</p>                <div class="row">
+                <p class="text-muted mb-4">Choose who will receive this notification. <small class="text-info"><i class="fas fa-info-circle me-1"></i>Note: You cannot send notifications to yourself.</small></p>
+                
+                <div class="row">
                     <div class="col-lg-8">
                         <div class="mb-4">
                             <label class="form-label">
                                 <i class="fas fa-users me-2"></i>Send To *
                             </label>
+                            <span asp-validation-for="TargetType" class="text-danger"></span>
                             
-                            <!-- Professional Switch Design -->
+                            <!-- Professional Radio Button Design -->
                             <div class="target-audience-selection">
-                                @if (User.IsInRole("instructor"))
+                                @if (User.IsInRole("instructor") || User.IsInRole("admin"))
                                 {
-                                    <div class="form-check form-switch custom-cursor-default-hover" style="padding-left: 2rem;">
+                                    <div class="form-check">
                                         <input asp-for="TargetType" class="form-check-input" type="radio" value="Course" id="targetCourse" />
                                         <label class="form-check-label" for="targetCourse">
-                                            <i class="fas fa-graduation-cap me-2 text-primary"></i>
-                                            <strong>Course Students</strong>
-                                            <div class="small text-muted mt-1">Send notification to students enrolled in your courses</div>
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-graduation-cap me-3 text-primary mt-1"></i>
+                                                <div>
+                                                    <strong>Course Students</strong>
+                                                    <div class="small text-muted">Send notification to students enrolled in @(User.IsInRole("admin") ? "any course" : "your courses")</div>
+                                                </div>
+                                            </div>
                                         </label>
                                     </div>
                                 }
                                 
+                                @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                                {
+                                    <div class="form-check">
+                                        <input asp-for="TargetType" class="form-check-input" type="radio" value="User" id="targetUser" />
+                                        <label class="form-check-label" for="targetUser">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-user me-3 text-success mt-1"></i>
+                                                <div>
+                                                    <strong>Specific User</strong>
+                                                    <div class="small text-muted">Send notification to a specific user</div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
 
+                                    <div class="form-check">
+                                        <input asp-for="TargetType" class="form-check-input" type="radio" value="MultipleUsers" id="targetMultipleUsers" />
+                                        <label class="form-check-label" for="targetMultipleUsers">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-users me-3 text-info mt-1"></i>
+                                                <div>
+                                                    <strong>Multiple Users</strong>
+                                                    <div class="small text-muted">Send notification to multiple selected users (up to 50)</div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                }
+
+                                @if (User.IsInRole("admin"))
+                                {
+                                    <div class="form-check">
+                                        <input asp-for="TargetType" class="form-check-input" type="radio" value="Role" id="targetRole" />
+                                        <label class="form-check-label" for="targetRole">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-users-cog me-3 text-warning mt-1"></i>
+                                                <div>
+                                                    <strong>User Role</strong>
+                                                    <div class="small text-muted">Send notification to all users with a specific role</div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check">
+                                        <input asp-for="TargetType" class="form-check-input" type="radio" value="All" id="targetAll" />
+                                        <label class="form-check-label" for="targetAll">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-globe me-3 text-danger mt-1"></i>
+                                                <div>
+                                                    <strong>All Users</strong>
+                                                    <div class="small text-muted">Send notification to all registered users</div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                }
                             </div>
                         </div>
 
-                        <!-- Course Selection (for Instructors and Course-specific notifications) -->
+                        <!-- Course Selection -->
                         <div class="mb-4" id="courseSelection" style="display: none;">
                             <label asp-for="CourseId" class="form-label">
-                                <i class="fas fa-book me-2"></i>Select Course
+                                <i class="fas fa-book me-2"></i>Select Course *
                             </label>
                             <select asp-for="CourseId" class="form-select" id="courseSelect">
-                                <option value="">Select a course</option>
-                                <!-- Courses will be loaded via JavaScript -->
+                                <option value="">Choose a course...</option>
                             </select>
+                            <span asp-validation-for="CourseId" class="text-danger"></span>
+                            <div class="form-text">Select the course whose students will receive this notification</div>
                         </div>
 
+                        <!-- User Selection -->
+                        <div class="mb-4" id="userSelection" style="display: none;">
+                            <label asp-for="TargetUserId" class="form-label">
+                                <i class="fas fa-user me-2"></i>Select User *
+                            </label>
+                            
+                            <div class="user-search-container">
+                                <input type="text" id="userSearchInput" class="form-control" placeholder="Search by name, email, or username..." />
+                                <div id="userSearchResults" class="user-search-results"></div>
+                                <input asp-for="TargetUserId" type="hidden" id="selectedUserId" />
+                                
+                                <div id="selectedUserDisplay" class="selected-user-display mt-2" style="display: none;">
+                                    <div class="alert alert-success d-flex align-items-center">
+                                        <i class="fas fa-user-check me-2"></i>
+                                        <div class="flex-grow-1">
+                                            <strong>Selected User:</strong>
+                                            <span id="selectedUserInfo"></span>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-success" onclick="clearUserSelection()">
+                                            <i class="fas fa-times"></i> Change
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <span asp-validation-for="TargetUserId" class="text-danger"></span>
+                            <div class="form-text">Search and select the user who will receive this notification. Note: You cannot send notifications to yourself.</div>
+                        </div>
+
+                        <!-- Multiple Users Selection -->
+                        <div class="mb-4" id="multipleUsersSelection" style="display: none;">
+                            <label class="form-label">
+                                <i class="fas fa-users me-2"></i>Select Multiple Users *
+                            </label>
+                            
+                            <div class="multiple-users-container">
+                                <input type="text" id="multipleUsersSearchInput" class="form-control mb-2" placeholder="Search and select users (max 50)..." />
+                                <div id="multipleUsersSearchResults" class="user-search-results"></div>
+                                
+                                <!-- Selected Users Display -->
+                                <div id="selectedUsersContainer" class="mt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0">Selected Users: <span id="selectedUsersCount" class="badge bg-primary">0</span></h6>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllSelectedUsers()">
+                                            <i class="fas fa-times"></i> Clear All
+                                        </button>
+                                    </div>
+                                    <div id="selectedUsersList" class="selected-users-list">
+                                        <div class="text-muted p-3 text-center">No users selected yet</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Hidden inputs for form submission -->
+                                <div id="hiddenUserInputs"></div>
+                            </div>
+                            <div class="form-text">You can select up to 50 users. Use the search box to find users by name, email, or username. Note: You cannot send notifications to yourself.</div>
+                        </div>
+
+                        <!-- Role Selection -->
+                        <div class="mb-4" id="roleSelection" style="display: none;">
+                            <label asp-for="TargetRole" class="form-label">
+                                <i class="fas fa-users-cog me-2"></i>Select Role *
+                            </label>
+                            <select asp-for="TargetRole" class="form-select">
+                                <option value="">Choose a role...</option>
+                                <option value="learner">Learners</option>
+                                <option value="instructor">Instructors</option>
+                                <option value="admin">Administrators</option>
+                            </select>
+                            <span asp-validation-for="TargetRole" class="text-danger"></span>
+                            <div class="form-text">All users with the selected role will receive this notification</div>
+                        </div>
+
+                        <!-- All Users Confirmation -->
+                        <div class="mb-4" id="allUsersConfirmation" style="display: none;">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Send to All Users</strong>
+                                <p class="mb-0 mt-2">This notification will be sent to all registered users on the platform. Please ensure the content is appropriate for all user types.</p>
+                            </div>
+                        </div>
                     </div>
-                </div>            </div>
+                </div>
+            </div>
 
             <!-- Form Actions -->
             <div class="form-actions">
@@ -238,32 +665,79 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Target type selection handling
+            console.log('Notification Create page loaded');
+            
+            // Initialize variables
+            let selectedUsers = [];
+            const MAX_USERS = 50;
+            
+            // Get current user ID to prevent self-selection
+            const currentUserId = '@Context.Session.GetString("UserId")';
+            
+            // Get DOM elements
             const targetTypeRadios = document.querySelectorAll('input[name="TargetType"]');
             const courseSelection = document.getElementById('courseSelection');
+            const userSelection = document.getElementById('userSelection');
+            const multipleUsersSelection = document.getElementById('multipleUsersSelection');
             const roleSelection = document.getElementById('roleSelection');
+            const allUsersConfirmation = document.getElementById('allUsersConfirmation');
 
+            // Target type selection handling
             targetTypeRadios.forEach(radio => {
                 radio.addEventListener('change', function() {
-                    // Hide all conditional sections
-                    courseSelection.style.display = 'none';
-                    if (roleSelection) roleSelection.style.display = 'none';
+                    console.log('Target type changed to:', this.value);
+                    handleTargetTypeChange(this.value);
+                });
+            });
 
-                    // Show relevant section based on selection
-                    if (this.value === 'Course') {
-                        courseSelection.style.display = 'block';
+            function handleTargetTypeChange(targetType) {
+                // Hide all conditional sections
+                hideAllSections();
+                
+                // Show relevant section based on selection
+                switch(targetType) {
+                    case 'Course':
+                        showElement(courseSelection);
                         loadUserCourses();
-                    } else if (this.value === 'Role' && roleSelection) {
-                        roleSelection.style.display = 'block';
+                        break;
+                    case 'User':
+                        showElement(userSelection);
+                        initializeUserSearch();
+                        break;
+                    case 'MultipleUsers':
+                        showElement(multipleUsersSelection);
+                        initializeMultipleUsersSearch();
+                        break;
+                    case 'Role':
+                        showElement(roleSelection);
+                        break;
+                    case 'All':
+                        showElement(allUsersConfirmation);
+                        break;
+                }
+            }
+
+            function hideAllSections() {
+                const sections = [courseSelection, userSelection, multipleUsersSelection, roleSelection, allUsersConfirmation];
+                sections.forEach(section => {
+                    if (section) {
+                        section.style.display = 'none';
+                        section.classList.remove('show');
                     }
                 });
-            });            // Input validation enhancements
-            const titleInput = document.getElementById('Title');
+            }
+            
+            function showElement(element) {
+                if (element) {
+                    element.style.display = 'block';
+                    element.classList.add('show');
+                }
+            }
+
+            // Character counter for content
             const contentInput = document.getElementById('Content');
-            const typeSelect = document.getElementById('Type');            // Character counter and input validation for content
             const maxLength = 500;
             
-            // Initialize character counter
             function updateCharacterCounter() {
                 const remaining = maxLength - contentInput.value.length;
                 const formText = contentInput.parentNode.querySelector('.form-text');
@@ -271,11 +745,7 @@
                 if (remaining >= 0) {
                     formText.textContent = `${remaining} characters remaining`;
                     formText.classList.remove('text-danger');
-                    if (remaining < 50) {
-                        formText.classList.add('text-warning');
-                    } else {
-                        formText.classList.remove('text-warning');
-                    }
+                    formText.classList.toggle('text-warning', remaining < 50);
                 } else {
                     formText.textContent = `${Math.abs(remaining)} characters over limit!`;
                     formText.classList.add('text-danger');
@@ -283,54 +753,350 @@
                 }
             }
             
-            // Update counter on input and initialize on page load
             contentInput.addEventListener('input', updateCharacterCounter);
-            updateCharacterCounter(); // Initialize counter on page load
+            updateCharacterCounter();
 
-            // Load user courses for course selection
+            // Load user courses
             function loadUserCourses() {
+                const courseSelect = document.getElementById('courseSelect');
+                if (!courseSelect) return;
+                
+                courseSelect.innerHTML = '<option value="">Loading courses...</option>';
+                
                 fetch('@Url.Action("GetUserCourses", "Course")')
                     .then(response => response.json())
                     .then(data => {
-                        const courseSelect = document.getElementById('courseSelect');
-                        courseSelect.innerHTML = '<option value="">Select a course</option>';
+                        courseSelect.innerHTML = '<option value="">Choose a course...</option>';
                         
-                        if (data.success && data.courses) {
+                        if (data.success && data.courses && data.courses.length > 0) {
                             data.courses.forEach(course => {
                                 const option = document.createElement('option');
                                 option.value = course.courseId;
                                 option.textContent = course.courseName;
                                 courseSelect.appendChild(option);
                             });
+                        } else {
+                            courseSelect.innerHTML = '<option value="">No courses available</option>';
                         }
                     })
                     .catch(error => {
                         console.error('Error loading courses:', error);
+                        courseSelect.innerHTML = '<option value="">Error loading courses</option>';
                     });
             }
 
+            // Single user search
+            function initializeUserSearch() {
+                const searchInput = document.getElementById('userSearchInput');
+                const searchResults = document.getElementById('userSearchResults');
+                
+                if (!searchInput || !searchResults) return;
+                
+                let searchTimeout;
+
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    const searchTerm = this.value.trim();
+                    
+                    if (searchTerm.length < 2) {
+                        searchResults.innerHTML = '<div class="text-center p-3 text-muted"><i class="fas fa-search me-2"></i>Type at least 2 characters to search...</div>';
+                        return;
+                    }
+
+                    searchTimeout = setTimeout(() => {
+                        searchUsers(searchTerm, searchResults, selectUser);
+                    }, 300);
+                });
+
+                // Initial message
+                searchResults.innerHTML = '<div class="text-center p-3 text-muted"><i class="fas fa-search me-2"></i>Start typing to search for users...</div>';
+            }
+
+            // Multiple users search
+            function initializeMultipleUsersSearch() {
+                const searchInput = document.getElementById('multipleUsersSearchInput');
+                const searchResults = document.getElementById('multipleUsersSearchResults');
+                
+                if (!searchInput || !searchResults) return;
+                
+                let searchTimeout;
+
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    const searchTerm = this.value.trim();
+                    
+                    if (searchTerm.length < 2) {
+                        searchResults.innerHTML = '<div class="text-center p-3 text-muted"><i class="fas fa-search me-2"></i>Type at least 2 characters to search...</div>';
+                        return;
+                    }
+
+                    searchTimeout = setTimeout(() => {
+                        searchUsers(searchTerm, searchResults, addUserToSelection);
+                    }, 300);
+                });
+
+                // Initial message
+                searchResults.innerHTML = '<div class="text-center p-3 text-muted"><i class="fas fa-search me-2"></i>Start typing to search for users...</div>';
+                updateSelectedUsersDisplay();
+            }
+
+            // Generic user search function
+            function searchUsers(searchTerm, resultsContainer, onUserClick) {
+                resultsContainer.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin me-2"></i>Searching...</div>';
+
+                const searchUrl = `@Url.Action("SearchUsers", "Notification")?searchTerm=${encodeURIComponent(searchTerm)}`;
+
+                fetch(searchUrl)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Search failed');
+                        return response.json();
+                    })
+                    .then(data => {
+                        resultsContainer.innerHTML = '';
+                        
+                        if (data.success && data.users && data.users.length > 0) {
+                            data.users.forEach(user => {
+                                // Skip if user is already selected (for multiple users)
+                                if (onUserClick === addUserToSelection && isUserAlreadySelected(user.userId)) {
+                                    return;
+                                }
+
+                                const userItem = createUserItem(user, onUserClick);
+                                resultsContainer.appendChild(userItem);
+                            });
+                            
+                            if (resultsContainer.children.length === 0) {
+                                resultsContainer.innerHTML = '<div class="text-center p-3 text-muted">All matching users are already selected</div>';
+                            }
+                        } else {
+                            resultsContainer.innerHTML = '<div class="text-center p-3 text-muted">No users found</div>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error searching users:', error);
+                        resultsContainer.innerHTML = '<div class="text-center p-3 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error searching users. Please try again.</div>';
+                    });
+            }
+
+            function createUserItem(user, onClickCallback) {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-search-item';
+                userItem.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">${user.fullName || user.userName}</div>
+                            <div class="small text-muted">${user.email}</div>
+                            <div class="small"><span class="selected-user-role">${user.role}</span></div>
+                        </div>
+                        <i class="fas fa-plus text-primary"></i>
+                    </div>
+                `;
+                
+                userItem.addEventListener('click', () => onClickCallback(user));
+                return userItem;
+            }
+
+            // Single user selection
+            function selectUser(user) {
+                // Prevent selecting current user
+                if (user.userId === currentUserId) {
+                    showToast('You cannot send notification to yourself', 'warning');
+                    return;
+                }
+                
+                document.getElementById('selectedUserId').value = user.userId;
+                document.getElementById('selectedUserInfo').innerHTML = `
+                    <strong>${user.fullName || user.userName}</strong><br>
+                    <small class="text-muted">${user.email}</small>
+                `;
+                document.getElementById('selectedUserDisplay').style.display = 'block';
+                document.getElementById('userSearchResults').innerHTML = '';
+                document.getElementById('userSearchInput').value = '';
+            }
+
+            // Multiple users selection
+            function addUserToSelection(user) {
+                // Prevent selecting current user
+                if (user.userId === currentUserId) {
+                    showToast('You cannot send notification to yourself', 'warning');
+                    return;
+                }
+                
+                if (selectedUsers.length >= MAX_USERS) {
+                    showToast(`Maximum ${MAX_USERS} users allowed`, 'warning');
+                    return;
+                }
+                
+                if (isUserAlreadySelected(user.userId)) {
+                    return;
+                }
+
+                selectedUsers.push(user);
+                updateSelectedUsersDisplay();
+                
+                // Clear search and refresh results
+                const searchInput = document.getElementById('multipleUsersSearchInput');
+                searchInput.value = '';
+                searchUsers('', document.getElementById('multipleUsersSearchResults'), addUserToSelection);
+            }
+
+            function isUserAlreadySelected(userId) {
+                return selectedUsers.some(u => u.userId === userId);
+            }
+
+            function removeUserFromSelection(userId) {
+                selectedUsers = selectedUsers.filter(u => u.userId !== userId);
+                updateSelectedUsersDisplay();
+                
+                // Refresh search results
+                const searchTerm = document.getElementById('multipleUsersSearchInput').value;
+                if (searchTerm.length >= 2) {
+                    searchUsers(searchTerm, document.getElementById('multipleUsersSearchResults'), addUserToSelection);
+                }
+            }
+
+            function updateSelectedUsersDisplay() {
+                const selectedUsersList = document.getElementById('selectedUsersList');
+                const selectedUsersCount = document.getElementById('selectedUsersCount');
+                const hiddenUserInputs = document.getElementById('hiddenUserInputs');
+                
+                // Update count
+                selectedUsersCount.textContent = selectedUsers.length;
+                selectedUsersCount.className = `badge ${selectedUsers.length > 0 ? 'bg-primary' : 'bg-secondary'}`;
+                
+                // Clear existing content
+                selectedUsersList.innerHTML = '';
+                hiddenUserInputs.innerHTML = '';
+                
+                if (selectedUsers.length === 0) {
+                    selectedUsersList.innerHTML = '<div class="text-muted p-3 text-center"><i class="fas fa-users me-2"></i>No users selected yet</div>';
+                    return;
+                }
+
+                // Add each selected user
+                selectedUsers.forEach(user => {
+                    // Create visual display
+                    const userItem = document.createElement('div');
+                    userItem.className = 'selected-user-item';
+                    userItem.innerHTML = `
+                        <div class="selected-user-info">
+                            <div class="selected-user-name">${user.fullName || user.userName}</div>
+                            <div class="selected-user-email">${user.email}</div>
+                            <span class="selected-user-role">${user.role}</span>
+                        </div>
+                        <button type="button" class="remove-user-btn" onclick="removeUserFromSelection('${user.userId}')">
+                            <i class="fas fa-times me-1"></i> Remove
+                        </button>
+                    `;
+                    selectedUsersList.appendChild(userItem);
+                    
+                    // Create hidden input for form submission
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'TargetUserIds';
+                    hiddenInput.value = user.userId;
+                    hiddenUserInputs.appendChild(hiddenInput);
+                });
+            }
+
+            // Clear functions
+            window.clearUserSelection = function() {
+                document.getElementById('selectedUserId').value = '';
+                document.getElementById('selectedUserDisplay').style.display = 'none';
+                document.getElementById('userSearchInput').value = '';
+                document.getElementById('userSearchResults').innerHTML = '<div class="text-center p-3 text-muted"><i class="fas fa-search me-2"></i>Start typing to search for users...</div>';
+            }
+
+            window.clearAllSelectedUsers = function() {
+                selectedUsers = [];
+                updateSelectedUsersDisplay();
+                document.getElementById('multipleUsersSearchInput').value = '';
+                document.getElementById('multipleUsersSearchResults').innerHTML = '<div class="text-center p-3 text-muted"><i class="fas fa-search me-2"></i>Start typing to search for users...</div>';
+            }
+
+            window.removeUserFromSelection = removeUserFromSelection;
+
             // Form validation
             document.getElementById('createNotificationForm').addEventListener('submit', function(e) {
-                const targetType = document.querySelector('input[name="TargetType"]:checked');
-                if (!targetType) {
+                if (!validateForm()) {
                     e.preventDefault();
-                    showToast('Please select a target audience', 'error');
-                    return;
-                }
-
-                if (targetType.value === 'Course' && !document.getElementById('courseSelect').value) {
-                    e.preventDefault();
-                    showToast('Please select a course', 'error');
-                    return;
-                }
-
-                if (targetType.value === 'Role' && !document.querySelector('select[name="TargetRole"]').value) {
-                    e.preventDefault();
-                    showToast('Please select a role', 'error');
-                    return;
                 }
             });
+
+            function validateForm() {
+                const targetType = document.querySelector('input[name="TargetType"]:checked');
+                
+                if (!targetType) {
+                    showToast('Please select a target audience', 'error');
+                    return false;
+                }
+
+                switch(targetType.value) {
+                    case 'Course':
+                        if (!document.getElementById('courseSelect').value) {
+                            showToast('Please select a course', 'error');
+                            return false;
+                        }
+                        break;
+                    case 'User':
+                        const selectedUserId = document.getElementById('selectedUserId').value;
+                        if (!selectedUserId) {
+                            showToast('Please select a user', 'error');
+                            return false;
+                        }
+                        if (selectedUserId === currentUserId) {
+                            showToast('You cannot send notification to yourself', 'error');
+                            return false;
+                        }
+                        break;
+                    case 'MultipleUsers':
+                        if (selectedUsers.length === 0) {
+                            showToast('Please select at least one user', 'error');
+                            return false;
+                        }
+                        if (selectedUsers.length > MAX_USERS) {
+                            showToast(`Cannot send to more than ${MAX_USERS} users at once`, 'error');
+                            return false;
+                        }
+                        // Check if current user is in the selection (additional safety check)
+                        if (selectedUsers.some(user => user.userId === currentUserId)) {
+                            showToast('You cannot send notification to yourself', 'error');
+                            return false;
+                        }
+                        break;
+                    case 'Role':
+                        if (!document.querySelector('select[name="TargetRole"]').value) {
+                            showToast('Please select a role', 'error');
+                            return false;
+                        }
+                        break;
+                }
+
+                return true;
+            }
+
+            // Helper function for toast notifications
+            function showToast(message, type = 'info') {
+                // Create toast element
+                const toast = document.createElement('div');
+                toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+                toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                toast.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                document.body.appendChild(toast);
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, 5000);
+            }
         });
+
     </script>
 </body>
 
