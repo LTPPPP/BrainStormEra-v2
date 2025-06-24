@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.DTOs.Chat;
+using BusinessLogicLayer.DTOs.Common;
 using System.Security.Claims;
 
 namespace BrainStormEra_MVC.Controllers
@@ -8,177 +10,148 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class ChatController : BaseController
     {
-        private readonly IChatService _chatService;
+        private readonly IChatBusinessService _chatBusinessService;
 
-        public ChatController(IChatService chatService)
+        public ChatController(IChatBusinessService chatBusinessService)
         {
-            _chatService = chatService;
+            _chatBusinessService = chatBusinessService;
+        }
+
+        private string? GetCurrentUserId()
+        {
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
 
         public async Task<IActionResult> Index()
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserId = GetCurrentUserId();
             if (currentUserId == null)
                 return RedirectToAction("Login", "Auth");
 
-            var users = await _chatService.GetChatUsersAsync(currentUserId);
-            ViewBag.CurrentUserId = currentUserId;
+            var result = await _chatBusinessService.GetChatIndexViewModelAsync(currentUserId);
 
-            return View(users);
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = result.Message;
+                return View(new ChatIndexViewModel { CurrentUserId = currentUserId });
+            }
+
+            return View(result.Data);
         }
 
         public async Task<IActionResult> Conversation(string userId)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserId = GetCurrentUserId();
             if (currentUserId == null)
                 return RedirectToAction("Login", "Auth");
 
             if (string.IsNullOrEmpty(userId))
                 return RedirectToAction("Index");
 
-            ViewBag.CurrentUserId = currentUserId;
-            ViewBag.ReceiverId = userId;
+            var result = await _chatBusinessService.GetConversationViewModelAsync(currentUserId, userId);
 
-            // Get chat users for sidebar
-            var users = await _chatService.GetChatUsersAsync(currentUserId);
-            ViewBag.ChatUsers = users;
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction("Index");
+            }
 
-            // Get messages
-            var messages = await _chatService.GetConversationMessagesAsync(currentUserId, userId);
-
-            return View(messages);
+            return View(result.Data);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetMessages(string receiverId, int page = 1, int pageSize = 50)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserId = GetCurrentUserId();
             if (currentUserId == null)
                 return Json(new { success = false, message = "User not authenticated" });
 
-            var messages = await _chatService.GetConversationMessagesAsync(currentUserId, receiverId, page, pageSize);
-
-            var result = messages.Select(m => new
+            var request = new GetMessagesRequest
             {
-                messageId = m.MessageId,
-                senderId = m.SenderId,
-                receiverId = m.ReceiverId,
-                content = m.MessageContent,
-                messageType = m.MessageType,
-                isRead = m.IsRead,
-                replyToMessageId = m.ReplyToMessageId,
-                isEdited = m.IsEdited,
-                createdAt = m.MessageCreatedAt,
-                senderName = m.Sender?.Username ?? "Unknown",
-                senderAvatar = m.Sender?.UserImage
-            }).Reverse().ToList(); // Reverse to show oldest first
+                ReceiverId = receiverId,
+                Page = page,
+                PageSize = pageSize
+            };
 
-            return Json(new { success = true, messages = result });
+            var result = await _chatBusinessService.GetMessagesAsync(currentUserId, request);
+
+            if (!result.IsSuccess)
+            {
+                return Json(new { success = false, message = result.Message });
+            }
+
+            return Json(new { success = true, messages = result.Data });
         }
 
         [HttpPost]
         public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserId = GetCurrentUserId();
             if (currentUserId == null)
                 return Json(new { success = false, message = "User not authenticated" });
 
-            if (string.IsNullOrEmpty(request.ReceiverId) || string.IsNullOrEmpty(request.Message))
-                return Json(new { success = false, message = "Invalid message data" });
+            var result = await _chatBusinessService.SendMessageAsync(currentUserId, request);
 
-            var message = await _chatService.SendMessageAsync(currentUserId, request.ReceiverId, request.Message, request.ReplyToMessageId);
-
-            if (message != null)
+            if (!result.IsSuccess)
             {
-                return Json(new
-                {
-                    success = true,
-                    message = new
-                    {
-                        messageId = message.MessageId,
-                        senderId = message.SenderId,
-                        receiverId = message.ReceiverId,
-                        content = message.MessageContent,
-                        messageType = message.MessageType,
-                        createdAt = message.MessageCreatedAt,
-                        senderName = message.Sender?.Username ?? "Unknown",
-                        senderAvatar = message.Sender?.UserImage
-                    }
-                });
+                return Json(new { success = false, message = result.Message });
             }
 
-            return Json(new { success = false, message = "Failed to send message" });
+            return Json(new { success = true, message = result.Data });
         }
 
         [HttpPost]
         public async Task<IActionResult> MarkAsRead([FromBody] MarkAsReadRequest request)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserId = GetCurrentUserId();
             if (currentUserId == null)
                 return Json(new { success = false, message = "User not authenticated" });
 
-            var result = await _chatService.MarkMessageAsReadAsync(request.MessageId, currentUserId);
+            var result = await _chatBusinessService.MarkMessageAsReadAsync(currentUserId, request);
 
-            return Json(new { success = result });
+            return Json(new { success = result.IsSuccess, message = result.Message });
         }
 
         [HttpGet]
         public async Task<IActionResult> GetUnreadCount(string senderId)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserId = GetCurrentUserId();
             if (currentUserId == null)
                 return Json(new { success = false, message = "User not authenticated" });
 
-            var count = await _chatService.GetUnreadMessageCountAsync(currentUserId, senderId);
+            var request = new GetUnreadCountRequest { SenderId = senderId };
+            var result = await _chatBusinessService.GetUnreadCountAsync(currentUserId, request);
 
-            return Json(new { success = true, count });
+            if (!result.IsSuccess)
+            {
+                return Json(new { success = false, message = result.Message });
+            }
+
+            return Json(new { success = true, count = result.Data });
         }
 
         [HttpPost]
         public async Task<IActionResult> DeleteMessage([FromBody] DeleteMessageRequest request)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserId = GetCurrentUserId();
             if (currentUserId == null)
                 return Json(new { success = false, message = "User not authenticated" });
 
-            var result = await _chatService.DeleteMessageAsync(request.MessageId, currentUserId);
+            var result = await _chatBusinessService.DeleteMessageAsync(currentUserId, request);
 
-            return Json(new { success = result });
+            return Json(new { success = result.IsSuccess, message = result.Message });
         }
 
         [HttpPost]
         public async Task<IActionResult> EditMessage([FromBody] EditMessageRequest request)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserId = GetCurrentUserId();
             if (currentUserId == null)
                 return Json(new { success = false, message = "User not authenticated" });
 
-            var result = await _chatService.EditMessageAsync(request.MessageId, request.NewContent, currentUserId);
+            var result = await _chatBusinessService.EditMessageAsync(currentUserId, request);
 
-            return Json(new { success = result });
+            return Json(new { success = result.IsSuccess, message = result.Message });
         }
-    }
-
-    public class SendMessageRequest
-    {
-        public string ReceiverId { get; set; } = string.Empty;
-        public string Message { get; set; } = string.Empty;
-        public string? ReplyToMessageId { get; set; }
-    }
-
-    public class MarkAsReadRequest
-    {
-        public string MessageId { get; set; } = string.Empty;
-    }
-
-    public class DeleteMessageRequest
-    {
-        public string MessageId { get; set; } = string.Empty;
-    }
-
-    public class EditMessageRequest
-    {
-        public string MessageId { get; set; } = string.Empty;
-        public string NewContent { get; set; } = string.Empty;
     }
 }

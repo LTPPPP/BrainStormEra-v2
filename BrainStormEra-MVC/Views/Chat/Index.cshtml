@@ -1,4 +1,4 @@
-@model List<DataAccessLayer.Models.Account>
+@model BusinessLogicLayer.DTOs.Chat.ChatIndexViewModel
 @{
     ViewData["Title"] = "Chat";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -18,11 +18,10 @@
                     Messages
                 </h5>
             </div>
-            
-            <div class="chat-users-list">
-                @if (Model != null && Model.Any())
+              <div class="chat-users-list">
+                @if (Model != null && Model.Users.Any())
                 {
-                    @foreach (var user in Model)
+                    @foreach (var user in Model.Users)
                     {
                         <div class="chat-user-item p-3" data-user-id="@user.UserId" 
                              onclick="openChat('@user.UserId')">
@@ -42,13 +41,15 @@
                                     }
                                     <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle user-status" 
                                           style="width: 15px; height: 15px;" data-user-id="@user.UserId"></span>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0">@user.FullName</h6>
+                                </div>                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">@user.Username</h6>
                                     <small class="text-muted">@@@user.Username</small>
-                                    <div class="text-muted small">
-                                        <span class="user-role-badge badge bg-secondary">@user.UserRole</span>
-                                    </div>
+                                    @if (!string.IsNullOrEmpty(user.LastMessage))
+                                    {
+                                        <div class="text-muted small">
+                                            <span>@user.LastMessage</span>
+                                        </div>
+                                    }
                                 </div>
                                 <div class="text-end">
                                     <span class="unread-count" data-user-id="@user.UserId" style="display: none;">0</span>

@@ -1,10 +1,10 @@
-@model List<DataAccessLayer.Models.MessageEntity>
+@model BusinessLogicLayer.DTOs.Chat.ConversationViewModel
 @{
     ViewData["Title"] = "Chat Conversation";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var currentUserId = ViewBag.CurrentUserId as string;
-    var receiverId = ViewBag.ReceiverId as string;
-    var chatUsers = ViewBag.ChatUsers as List<DataAccessLayer.Models.Account> ?? new List<DataAccessLayer.Models.Account>();
+    var currentUserId = Model.CurrentUserId;
+    var receiverId = Model.ReceiverId;
+    var chatUsers = Model.ChatUsers ?? new List<BusinessLogicLayer.DTOs.Chat.ChatUserDTO>();
     var receiver = chatUsers.FirstOrDefault(u => u.UserId == receiverId);
 }
 
@@ -47,9 +47,8 @@
                                 }
                                 <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle user-status" 
                                       style="width: 12px; height: 12px;" data-user-id="@user.UserId"></span>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0 text-truncate">@user.FullName</h6>
+                            </div>                            <div class="flex-grow-1">
+                                <h6 class="mb-0 text-truncate">@user.Username</h6>
                                 <small class="text-muted">@@@user.Username</small>
                             </div>
                             <div class="text-end">
@@ -83,10 +82,9 @@
                             }
                             <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle user-status" 
                                   style="width: 15px; height: 15px;" data-user-id="@receiver.UserId"></span>
-                        </div>
-                        <div class="user-info">
-                            <h5 class="mb-0">@receiver.FullName</h5>
-                            <small class="text-muted">@@@receiver.Username • @receiver.UserRole</small>
+                        </div>                        <div class="user-info">
+                            <h5 class="mb-0">@receiver.Username</h5>
+                            <small class="text-muted">@@@receiver.Username</small>
                             <div class="typing-indicator" style="display: none;">
                                 <i class="fas fa-ellipsis-h"></i> typing...
                             </div>

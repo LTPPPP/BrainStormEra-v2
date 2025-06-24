@@ -123,6 +123,7 @@ namespace BrainStormEra_MVC
             // Add Chatbot Service
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IChatbotService, BusinessLogicLayer.Services.ChatbotService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IChatService, BusinessLogicLayer.Services.Implementations.ChatService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IChatBusinessService, BusinessLogicLayer.Services.Implementations.ChatBusinessService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPageContextService, BusinessLogicLayer.Services.PageContextService>();
             builder.Services.AddHttpClient<BusinessLogicLayer.Services.ChatbotService>();
 
