@@ -63,6 +63,9 @@
     {
         <script src="~/js/shared/notification-system.js" asp-append-version="true"></script>
         <script src="~/js/components/chatbot.js" asp-append-version="true"></script>
+
+        @* Include Chat SignalR for global chat notifications *@
+        @await Html.PartialAsync("_ChatSignalR")
     }
 
     @await RenderSectionAsync("Scripts", required: false)

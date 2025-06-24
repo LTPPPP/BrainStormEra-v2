@@ -59,6 +59,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICertificateRepo, DataAccessLayer.Repositories.CertificateRepo>();
 
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatbotRepo, DataAccessLayer.Repositories.ChatbotRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatRepo, DataAccessLayer.Repositories.ChatRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();
             // Register Services with SOLID principles - Now using BusinessLogicLayer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.UserService>();
@@ -121,6 +122,7 @@ namespace BrainStormEra_MVC
 
             // Add Chatbot Service
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IChatbotService, BusinessLogicLayer.Services.ChatbotService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IChatService, BusinessLogicLayer.Services.Implementations.ChatService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPageContextService, BusinessLogicLayer.Services.PageContextService>();
             builder.Services.AddHttpClient<BusinessLogicLayer.Services.ChatbotService>();
 
@@ -319,6 +321,7 @@ namespace BrainStormEra_MVC
                 return Results.NotFound("Test file not found");
             });            // Configure SignalR Hub
             app.MapHub<BusinessLogicLayer.Hubs.NotificationHub>("/notificationHub");
+            app.MapHub<BusinessLogicLayer.Hubs.ChatHub>("/chatHub");
 
             app.Run();
         }
