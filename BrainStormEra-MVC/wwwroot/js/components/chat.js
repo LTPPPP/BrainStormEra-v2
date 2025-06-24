@@ -3,7 +3,8 @@
  * Handles real-time chat functionality using SignalR
  */
 
-class ChatSystem {  constructor() {
+class ChatSystem {
+  constructor() {
     this.connection = null;
     this.currentUserId = null;
     this.receiverId = null;
@@ -291,7 +292,8 @@ class ChatSystem {  constructor() {
       this.showError("Failed to load messages");
       this.hideLoadingMessages();
     }
-  }  /**
+  }
+  /**
    * Display a message in the chat
    */
   displayMessage(message, isSent) {
@@ -300,19 +302,26 @@ class ChatSystem {  constructor() {
       this.messageDisplayCount[message.messageId] = 0;
     }
     this.messageDisplayCount[message.messageId]++;
-    
-    console.log(`Displaying message ${message.messageId} - attempt #${this.messageDisplayCount[message.messageId]}`, {
-      messageId: message.messageId,
-      content: message.content,
-      isSent: isSent,
-      callStack: new Error().stack
-    });
+
+    console.log(
+      `Displaying message ${message.messageId} - attempt #${
+        this.messageDisplayCount[message.messageId]
+      }`,
+      {
+        messageId: message.messageId,
+        content: message.content,
+        isSent: isSent,
+        callStack: new Error().stack,
+      }
+    );
 
     const container = document.getElementById("messagesContainer");
     if (!container) return;
 
     // Kiểm tra xem tin nhắn đã tồn tại chưa để tránh duplicate
-    const existingMessage = container.querySelector(`[data-message-id="${message.messageId}"]`);
+    const existingMessage = container.querySelector(
+      `[data-message-id="${message.messageId}"]`
+    );
     if (existingMessage) {
       console.log("Message already exists, skipping:", message.messageId);
       return;
