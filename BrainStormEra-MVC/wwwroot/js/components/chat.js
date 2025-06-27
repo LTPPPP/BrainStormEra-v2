@@ -89,14 +89,12 @@ class ChatSystem {
       this.setupSignalRHandlers();
       await this.connection.start();
 
-      console.log("SignalR Connected");
       this.reconnectAttempts = 0;
 
       if (this.receiverId) {
         this.loadMessages();
       }
     } catch (err) {
-      console.error("SignalR Connection Error:", err);
       this.handleConnectionError();
     }
   }
@@ -113,40 +111,25 @@ class ChatSystem {
     this.connection.off("MessageError");
 
     this.connection.on("ReceiveMessage", (message) => {
-      console.log("ReceiveMessage event:", {
-        messageId: message.messageId,
-        senderId: message.senderId,
-        receiverId: message.receiverId,
-        currentUserId: this.currentUserId,
-        chatWithUserId: this.receiverId,
-      });
-
       // Chỉ hiển thị tin nhắn nếu tôi là người nhận VÀ tin nhắn này từ người tôi đang chat
       if (
         message.receiverId === this.currentUserId &&
         message.senderId === this.receiverId
       ) {
-        console.log("Displaying received message");
         this.displayMessage(message, false);
         this.markMessageAsRead(message.messageId);
         this.scrollToBottom();
         this.showNotification(message);
       } else {
-        console.log(
-          "Not displaying message - not for me or not from current chat partner"
-        );
         this.updateUnreadCounts();
       }
     });
     this.connection.on("MessageSent", (message) => {
-      console.log("MessageSent confirmation:", message);
-
       // Tìm và thay thế tin nhắn tạm bằng tin nhắn thật từ server
       const tempMessages = document.querySelectorAll(
         '[data-message-id^="temp_"]'
       );
       if (tempMessages.length > 0) {
-        console.log("Replacing temporary message with real message");
         const lastTempMessage = tempMessages[tempMessages.length - 1];
         lastTempMessage.setAttribute("data-message-id", message.messageId);
 
@@ -218,18 +201,15 @@ class ChatSystem {
     });
 
     this.connection.onreconnecting(() => {
-      console.log("SignalR reconnecting...");
       this.showConnectionStatus("Reconnecting...", "warning");
     });
 
     this.connection.onreconnected(() => {
-      console.log("SignalR reconnected");
       this.showConnectionStatus("Connected", "success");
       this.reconnectAttempts = 0;
     });
 
     this.connection.onclose(() => {
-      console.log("SignalR connection closed");
       this.showConnectionStatus("Disconnected", "danger");
       this.handleConnectionError();
     });
@@ -242,10 +222,6 @@ class ChatSystem {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
-
-      console.log(
-        `Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`
-      );
 
       setTimeout(() => {
         this.initializeSignalR();
@@ -288,7 +264,6 @@ class ChatSystem {
         }
       }
     } catch (error) {
-      console.error("Error loading messages:", error);
       this.showError("Failed to load messages");
       this.hideLoadingMessages();
     }
@@ -303,18 +278,6 @@ class ChatSystem {
     }
     this.messageDisplayCount[message.messageId]++;
 
-    console.log(
-      `Displaying message ${message.messageId} - attempt #${
-        this.messageDisplayCount[message.messageId]
-      }`,
-      {
-        messageId: message.messageId,
-        content: message.content,
-        isSent: isSent,
-        callStack: new Error().stack,
-      }
-    );
-
     const container = document.getElementById("messagesContainer");
     if (!container) return;
 
@@ -323,7 +286,6 @@ class ChatSystem {
       `[data-message-id="${message.messageId}"]`
     );
     if (existingMessage) {
-      console.log("Message already exists, skipping:", message.messageId);
       return;
     }
 
@@ -432,7 +394,6 @@ class ChatSystem {
         throw new Error("Not connected to chat server");
       }
     } catch (error) {
-      console.error("Error sending message:", error);
       this.showError("Failed to send message. Please try again.");
 
       // Xóa tin nhắn tạm nếu gửi thất bại
@@ -458,7 +419,7 @@ class ChatSystem {
         body: JSON.stringify({ messageId: messageId }),
       });
     } catch (error) {
-      console.error("Error marking message as read:", error);
+      // Error handled silently
     }
   }
 
@@ -538,7 +499,6 @@ class ChatSystem {
           this.showError("Failed to edit message");
         }
       } catch (error) {
-        console.error("Error editing message:", error);
         this.showError("Failed to edit message");
       }
     }
@@ -575,7 +535,6 @@ class ChatSystem {
         this.showError("Failed to delete message");
       }
     } catch (error) {
-      console.error("Error deleting message:", error);
       this.showError("Failed to delete message");
     }
   }
@@ -678,9 +637,9 @@ class ChatSystem {
               unreadBadge.style.display = "none";
             }
           })
-          .catch((error) =>
-            console.error("Error fetching unread count:", error)
-          );
+          .catch((error) => {
+            // Error handled silently
+          });
       }
     });
   }
@@ -714,7 +673,6 @@ class ChatSystem {
    */
   showConnectionStatus(message, type) {
     // You can implement a status bar or toast notification here
-    console.log(`Connection Status: ${message} (${type})`);
   }
 
   /**
@@ -722,7 +680,6 @@ class ChatSystem {
    */
   showError(message) {
     // You can implement a toast notification or alert here
-    console.error("Chat Error:", message);
     alert(message); // Temporary - replace with better UI
   }
 

@@ -29,7 +29,7 @@
                                 <div class="position-relative me-3">
                                     @if (!string.IsNullOrEmpty(user.UserImage))
                                     {
-                                        <img src="@user.UserImage" alt="@user.Username" 
+                                        <img src="@(user.UserImage.StartsWith("/") ? user.UserImage : "/SharedMedia/avatars/" + user.UserImage)" alt="@user.Username" 
                                              class="rounded-circle" width="50" height="50">
                                     }
                                     else
@@ -89,7 +89,7 @@
 </div>
 
 @section Scripts {
-    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
     <script src="~/js/components/chat.js" asp-append-version="true"></script>
     <script>
         // Update unread counts on page load

@@ -35,7 +35,7 @@
                             <div class="position-relative me-3">
                                 @if (!string.IsNullOrEmpty(user.UserImage))
                                 {
-                                    <img src="@user.UserImage" alt="@user.Username" 
+                                    <img src="@(user.UserImage.StartsWith("/") ? user.UserImage : "/SharedMedia/avatars/" + user.UserImage)" alt="@user.Username" 
                                          class="rounded-circle" width="40" height="40">
                                 }
                                 else
@@ -70,7 +70,7 @@
                         <div class="position-relative me-3">
                             @if (!string.IsNullOrEmpty(receiver.UserImage))
                             {
-                                <img src="@receiver.UserImage" alt="@receiver.Username" 
+                                <img src="@(receiver.UserImage.StartsWith("/") ? receiver.UserImage : "/SharedMedia/avatars/" + receiver.UserImage)" alt="@receiver.Username" 
                                      class="rounded-circle" width="50" height="50">
                             }
                             else
@@ -142,7 +142,7 @@
 </div>
 
 @section Scripts {
-    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
     <script src="~/js/components/chat.js" asp-append-version="true"></script>
     <script>
         // Set current user and receiver for chat system
