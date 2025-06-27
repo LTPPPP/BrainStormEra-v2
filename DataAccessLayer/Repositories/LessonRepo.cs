@@ -414,10 +414,17 @@ namespace DataAccessLayer.Repositories
             try
             {
                 var totalLessons = await GetTotalLessonsInCourseAsync(courseId);
+                _logger?.LogInformation("Total lessons in course {CourseId}: {TotalLessons}", courseId, totalLessons);
+
                 if (totalLessons == 0) return 0;
 
                 var completedLessons = await GetCompletedLessonsCountAsync(userId, courseId);
-                return Math.Round((decimal)completedLessons / totalLessons * 100, 2);
+                _logger?.LogInformation("Completed lessons for user {UserId} in course {CourseId}: {CompletedLessons}", userId, courseId, completedLessons);
+
+                var percentage = Math.Round((decimal)completedLessons / totalLessons * 100, 2);
+                _logger?.LogInformation("Calculated percentage: {Percentage}% ({CompletedLessons}/{TotalLessons})", percentage, completedLessons, totalLessons);
+
+                return percentage;
             }
             catch (Exception ex)
             {

@@ -16,17 +16,20 @@ namespace BusinessLogicLayer.Services.Implementations
     {
         private readonly ICourseService _courseService;
         private readonly ICourseImageService _courseImageService;
+        private readonly ILessonService _lessonService;
         private readonly ILogger<CourseServiceImpl> _logger;
         private readonly IServiceProvider _serviceProvider;
 
         public CourseServiceImpl(
             ICourseService courseService,
             ICourseImageService courseImageService,
+            ILessonService lessonService,
             ILogger<CourseServiceImpl> logger,
             IServiceProvider serviceProvider)
         {
             _courseService = courseService;
             _courseImageService = courseImageService;
+            _lessonService = lessonService;
             _logger = logger;
             _serviceProvider = serviceProvider;
         }
@@ -800,21 +803,28 @@ namespace BusinessLogicLayer.Services.Implementations
                     // Get all lessons for each chapter
                     var lessons = await _courseService.GetLessonsByChapterIdAsync(chapter.ChapterId);
 
-                    var lessonViewModels = lessons.OrderBy(l => l.LessonOrder)
-                        .Select(l => new LearnLessonViewModel
+                    var lessonViewModels = new List<LearnLessonViewModel>();
+
+                    foreach (var lesson in lessons.OrderBy(l => l.LessonOrder))
+                    {
+                        // Check if lesson is completed
+                        var isCompleted = await _lessonService.IsLessonCompletedAsync(userId, lesson.LessonId);
+
+                        lessonViewModels.Add(new LearnLessonViewModel
                         {
-                            LessonId = l.LessonId,
-                            LessonName = l.LessonName,
-                            LessonDescription = l.LessonDescription ?? "",
-                            LessonOrder = l.LessonOrder,
-                            LessonType = l.LessonType?.LessonTypeName ?? "Content",
-                            LessonTypeIcon = GetLessonTypeIcon(l.LessonType?.LessonTypeName),
-                            IsLocked = l.IsLocked ?? false,
-                            IsMandatory = l.IsMandatory ?? true,
-                            EstimatedDuration = l.MinTimeSpent ?? 0,
-                            IsCompleted = false, // For demo purposes
-                            ProgressPercentage = 0 // For demo purposes
-                        }).ToList();
+                            LessonId = lesson.LessonId,
+                            LessonName = lesson.LessonName,
+                            LessonDescription = lesson.LessonDescription ?? "",
+                            LessonOrder = lesson.LessonOrder,
+                            LessonType = lesson.LessonType?.LessonTypeName ?? "Content",
+                            LessonTypeIcon = GetLessonTypeIcon(lesson.LessonType?.LessonTypeName),
+                            IsLocked = lesson.IsLocked ?? false,
+                            IsMandatory = lesson.IsMandatory ?? true,
+                            EstimatedDuration = lesson.MinTimeSpent ?? 0,
+                            IsCompleted = isCompleted,
+                            ProgressPercentage = isCompleted ? 100 : 0
+                        });
+                    }
 
                     chapterViewModels.Add(new LearnChapterViewModel
                     {
@@ -827,6 +837,9 @@ namespace BusinessLogicLayer.Services.Implementations
                     });
                 }
 
+                // Calculate overall course progress
+                var courseProgress = await _lessonService.GetLessonCompletionPercentageAsync(userId, courseId);
+
                 var viewModel = new LearnManagementViewModel
                 {
                     CourseId = course.CourseId,
@@ -835,7 +848,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     CourseImage = course.CourseImage ?? "/SharedMedia/defaults/default-course.png",
                     AuthorName = course.Author?.FullName ?? "Unknown Author",
                     IsEnrolled = true,
-                    ProgressPercentage = 0, // For now, set to 0
+                    ProgressPercentage = courseProgress,
                     Chapters = chapterViewModels
                 };
 
