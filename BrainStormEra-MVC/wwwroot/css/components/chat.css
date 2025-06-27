@@ -154,7 +154,7 @@
 
 .message-bubble.sent {
   margin-left: auto;
-  background: linear-gradient(135deg, #007bff, #0056b3);
+  background: var(--bs-primary);
   color: white;
   border-bottom-right-radius: 6px;
 }
@@ -170,7 +170,6 @@
 /* Message Content */
 .message-content {
   line-height: 1.4;
-  margin-bottom: 4px;
 }
 
 .message-time {
@@ -193,7 +192,6 @@
 .reply-line {
   border-left: 3px solid #007bff;
   padding-left: 10px;
-  margin-bottom: 8px;
   font-size: 0.85rem;
   opacity: 0.8;
   background-color: rgba(0, 123, 255, 0.1);
