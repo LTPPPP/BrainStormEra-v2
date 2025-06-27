@@ -14,21 +14,7 @@ class ChatUrlManager {
   }
 
   bindEvents() {
-    // Share conversation button
-    document.addEventListener("click", (e) => {
-      if (
-        e.target.matches(".share-conversation-btn") ||
-        e.target.closest(".share-conversation-btn")
-      ) {
-        const btn = e.target.matches(".share-conversation-btn")
-          ? e.target
-          : e.target.closest(".share-conversation-btn");
-        const userId = btn.getAttribute("data-user-id");
-        if (userId) {
-          this.showShareModal(userId);
-        }
-      }
-    });
+    // Share conversation button functionality removed
 
     // Share message button
     document.addEventListener("click", (e) => {
@@ -69,30 +55,15 @@ class ChatUrlManager {
   }
 
   /**
-   * Generate URLs for a conversation
+   * Generate URLs for a conversation - DISABLED
+   * Share conversation functionality has been removed
    * @param {string} userId - Target user ID
    * @returns {Promise<Object>} URL bundle
    */
   async generateConversationUrls(userId) {
-    try {
-      const response = await fetch(`/Chat/GenerateUrls?userId=${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        return result.urls;
-      } else {
-        throw new Error(result.message || "Failed to generate URLs");
-      }
-    } catch (error) {
-      console.error("Error generating conversation URLs:", error);
-      this.showError("Failed to generate conversation URLs");
-      return null;
-    }
+    // Share conversation functionality removed
+    console.log("Conversation URL generation has been disabled");
+    return null;
   }
 
   /**
@@ -153,148 +124,14 @@ class ChatUrlManager {
   }
 
   /**
-   * Show share modal for conversation
+   * Show share modal for conversation - REMOVED
+   * Share conversation functionality has been disabled
    * @param {string} userId - Target user ID
    */
   async showShareModal(userId) {
-    const urls = await this.generateConversationUrls(userId);
-    if (!urls) return;
-
-    const modalHtml = `
-            <div class="modal fade" id="shareUrlModal" tabindex="-1" aria-labelledby="shareUrlModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="shareUrlModalLabel">
-                                <i class="fas fa-share-alt me-2"></i>Share Conversation
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row g-3">
-                                <!-- Direct URL -->
-                                <div class="col-12">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h6 class="mb-0">
-                                                <i class="fas fa-link me-2"></i>Direct Link
-                                            </h6>
-                                            <small class="text-muted">Simple URL for quick access</small>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" value="${
-                                                  urls.directUrl
-                                                }" readonly>
-                                                <button class="btn btn-outline-primary copy-url-btn" data-url="${
-                                                  urls.directUrl
-                                                }">
-                                                    <i class="fas fa-copy"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Secure URL -->
-                                <div class="col-12">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h6 class="mb-0">
-                                                <i class="fas fa-shield-alt me-2"></i>Secure Link
-                                            </h6>
-                                            <small class="text-muted">Encrypted URL with expiration (24 hours)</small>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" value="${
-                                                  urls.secureUrl
-                                                }" readonly>
-                                                <button class="btn btn-outline-primary copy-url-btn" data-url="${
-                                                  urls.secureUrl
-                                                }">
-                                                    <i class="fas fa-copy"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Quick URL -->
-                                <div class="col-12">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h6 class="mb-0">
-                                                <i class="fas fa-bolt me-2"></i>Quick Access
-                                            </h6>
-                                            <small class="text-muted">One-click conversation starter</small>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" value="${
-                                                  urls.quickUrl
-                                                }" readonly>
-                                                <button class="btn btn-outline-primary copy-url-btn" data-url="${
-                                                  urls.quickUrl
-                                                }">
-                                                    <i class="fas fa-copy"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- URL Info -->
-                                <div class="col-12">
-                                    <div class="alert alert-info">
-                                        <h6><i class="fas fa-info-circle me-2"></i>URL Information</h6>
-                                        <ul class="mb-0">
-                                            <li><strong>Generated:</strong> ${new Date(
-                                              urls.generatedAt
-                                            ).toLocaleString()}</li>
-                                            <li><strong>Expires:</strong> ${new Date(
-                                              urls.expiresAt
-                                            ).toLocaleString()}</li>
-                                            <li><strong>Conversation ID:</strong> ${
-                                              urls.conversationId
-                                            }</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="button" class="btn btn-primary" onclick="chatUrlManager.shareViaSystem('${
-                              urls.directUrl
-                            }')">
-                                <i class="fas fa-share me-2"></i>Share via System
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-    // Remove existing modal if present
-    const existingModal = document.getElementById("shareUrlModal");
-    if (existingModal) {
-      existingModal.remove();
-    }
-
-    // Add modal to page
-    document.body.insertAdjacentHTML("beforeend", modalHtml);
-
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById("shareUrlModal"));
-    modal.show();
-
-    // Clean up after modal is hidden
-    document
-      .getElementById("shareUrlModal")
-      .addEventListener("hidden.bs.modal", function () {
-        this.remove();
-      });
+    // Share conversation functionality removed
+    console.log("Share conversation functionality has been disabled");
+    return;
   }
 
   /**
@@ -404,22 +241,12 @@ class ChatUrlManager {
   }
 
   /**
-   * Add share button to conversation header
-   * @param {string} userId - Target user ID
+   * Add share button to conversation header - REMOVED
+   * Share conversation functionality has been disabled
    */
   addShareButtonToHeader(userId) {
-    const chatHeader = document.querySelector(".chat-header");
-    if (!chatHeader || document.querySelector(".share-conversation-btn"))
-      return;
-
-    const shareButton = document.createElement("button");
-    shareButton.className =
-      "btn btn-outline-primary btn-sm share-conversation-btn ms-2";
-    shareButton.setAttribute("data-user-id", userId);
-    shareButton.innerHTML = '<i class="fas fa-share-alt"></i>';
-    shareButton.title = "Share Conversation";
-
-    chatHeader.appendChild(shareButton);
+    // Share conversation functionality removed
+    return;
   }
 
   /**
@@ -476,12 +303,10 @@ class ChatUrlManager {
    * Initialize share functionality for current page
    */
   initializeForCurrentPage() {
-    // Add share button to conversation header
+    // Share conversation button functionality removed
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get("userId");
-    if (userId) {
-      this.addShareButtonToHeader(userId);
-    }
+    // Share button no longer added to header
 
     // Add share buttons to existing messages
     this.addShareButtonsToMessages();
