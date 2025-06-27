@@ -324,5 +324,32 @@ namespace BusinessLogicLayer.Services.Implementations
 
             return chatUsers.OrderByDescending(u => u.LastMessageTime).ToList();
         }
+
+        public async Task<ServiceResult<string?>> GetMostRecentConversationUserIdAsync(string currentUserId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    return ServiceResult<string?>.Failure("User not authenticated");
+                }
+
+                var users = await _chatService.GetChatUsersAsync(currentUserId);
+                var chatUsers = await MapToChatUserDTOsAsync(users, currentUserId);
+
+                // Get the user with the most recent message time
+                var mostRecentUser = chatUsers
+                    .Where(u => u.LastMessageTime.HasValue)
+                    .OrderByDescending(u => u.LastMessageTime)
+                    .FirstOrDefault();
+
+                return ServiceResult<string?>.Success(mostRecentUser?.UserId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting most recent conversation user for user {UserId}", currentUserId);
+                return ServiceResult<string?>.Failure("An error occurred while getting most recent conversation");
+            }
+        }
     }
 }

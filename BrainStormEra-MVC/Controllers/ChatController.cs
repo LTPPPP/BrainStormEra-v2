@@ -61,6 +61,34 @@ namespace BrainStormEra_MVC.Controllers
             return View(result.Data);
         }
 
+        /// <summary>
+        /// Redirects to the most recent conversation or to chat index if no conversations exist
+        /// </summary>
+        /// <returns>Redirect to conversation or chat index</returns>
+        public async Task<IActionResult> Recent()
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+                return RedirectToAction("Login", "Auth");
+
+            var result = await _chatBusinessService.GetMostRecentConversationUserIdAsync(currentUserId);
+
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction("Index");
+            }
+
+            // If there's a recent conversation, redirect to it
+            if (!string.IsNullOrEmpty(result.Data))
+            {
+                return RedirectToAction("Conversation", new { userId = result.Data });
+            }
+
+            // If no recent conversations, redirect to chat index
+            return RedirectToAction("Index");
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetMessages(string receiverId, int page = 1, int pageSize = 50)
         {

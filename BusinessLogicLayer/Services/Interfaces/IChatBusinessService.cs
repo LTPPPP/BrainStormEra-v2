@@ -22,5 +22,12 @@ namespace BusinessLogicLayer.Services.Interfaces
         /// <param name="userId2">Second user ID</param>
         /// <returns>Service result with conversation</returns>
         Task<ServiceResult<Conversation>> GetOrCreateConversationAsync(string userId1, string userId2);
+
+        /// <summary>
+        /// Get the most recent conversation user ID for a user
+        /// </summary>
+        /// <param name="currentUserId">Current user ID</param>
+        /// <returns>Service result with the most recent conversation user ID, or null if no conversations exist</returns>
+        Task<ServiceResult<string?>> GetMostRecentConversationUserIdAsync(string currentUserId);
     }
 }
