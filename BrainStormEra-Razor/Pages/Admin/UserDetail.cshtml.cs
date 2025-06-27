@@ -11,16 +11,13 @@ namespace BrainStormEra_Razor.Pages.Admin
     {
         private readonly ILogger<UserDetailModel> _logger;
         private readonly IAdminService _adminService;
-        private readonly IUrlHashService _urlHashService;
-
         public AdminUserViewModel? UserDetail { get; set; }
-        public string EncodedUserId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
 
-        public UserDetailModel(ILogger<UserDetailModel> logger, IAdminService adminService, IUrlHashService urlHashService)
+        public UserDetailModel(ILogger<UserDetailModel> logger, IAdminService adminService)
         {
             _logger = logger;
             _adminService = adminService;
-            _urlHashService = urlHashService;
         }
 
         public async Task<IActionResult> OnGetAsync(string userId)
@@ -33,29 +30,28 @@ namespace BrainStormEra_Razor.Pages.Admin
                 {
                     TempData["ErrorMessage"] = "User ID is required.";
                     return RedirectToPage("/Admin/Users");
-                }                // Decode hash ID to real ID
-                var realUserId = _urlHashService.GetRealId(userId);
-                _logger.LogInformation("Decoded userId {EncodedId} to realUserId: {RealUserId}", userId, realUserId);
+                }                // Use user ID directly
+                _logger.LogInformation("Using userId: {UserId}", userId);
 
                 // Get user details
                 var allUsers = await _adminService.GetAllUsersAsync();
                 _logger.LogInformation("Retrieved {UserCount} users from service", allUsers.Users.Count);
 
-                UserDetail = allUsers.Users.FirstOrDefault(u => u.UserId == realUserId);
+                UserDetail = allUsers.Users.FirstOrDefault(u => u.UserId == userId);
 
                 if (UserDetail == null)
                 {
-                    _logger.LogWarning("User not found with realUserId: {RealUserId}. Available user IDs: {UserIds}",
-                        realUserId, string.Join(", ", allUsers.Users.Select(u => u.UserId).Take(5)));
+                    _logger.LogWarning("User not found with userId: {UserId}. Available user IDs: {UserIds}",
+                        userId, string.Join(", ", allUsers.Users.Select(u => u.UserId).Take(5)));
                     TempData["ErrorMessage"] = "User not found.";
                     return RedirectToPage("/Admin/Users");
                 }
 
-                // Store encoded user ID for UI
-                EncodedUserId = userId;
+                // Store user ID for UI
+                UserId = userId;
 
                 _logger.LogInformation("Admin {AdminName} viewed details for user {UserId}",
-                    HttpContext.User?.Identity?.Name, realUserId);
+                    HttpContext.User?.Identity?.Name, userId);
 
                 return Page();
             }
@@ -68,20 +64,20 @@ namespace BrainStormEra_Razor.Pages.Admin
         }
         public async Task<IActionResult> OnPostUpdateUserStatusAsync(string userId, bool isBanned)
         {
-            var realUserId = string.Empty;
             try
             {
                 if (string.IsNullOrEmpty(userId))
                 {
                     return BadRequest("User ID is required");
-                }                // Decode hash ID to real ID
-                realUserId = _urlHashService.GetRealId(userId);
-                var result = await _adminService.UpdateUserStatusAsync(realUserId, isBanned);
+                }
+
+                // Use user ID directly
+                var result = await _adminService.UpdateUserStatusAsync(userId, isBanned);
 
                 if (result)
                 {
                     _logger.LogInformation("User status updated successfully by admin {AdminName} for user {UserId}",
-                        HttpContext.User?.Identity?.Name, realUserId);
+                        HttpContext.User?.Identity?.Name, userId);
 
                     TempData["SuccessMessage"] = $"User has been {(isBanned ? "banned" : "unbanned")} successfully.";
                     return new JsonResult(new { success = true, message = "User status updated successfully" });
@@ -93,22 +89,22 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating user status for user: {UserId}", realUserId);
+                _logger.LogError(ex, "Error updating user status for user: {UserId}", userId);
                 return new JsonResult(new { success = false, message = "An error occurred while updating user status" });
             }
         }
 
         public async Task<IActionResult> OnPostUpdateUserPointsAsync(string userId, decimal pointsChange)
         {
-            var realUserId = string.Empty;
             try
             {
                 if (string.IsNullOrEmpty(userId))
                 {
                     return BadRequest("User ID is required");
-                }                // Decode hash ID to real ID
-                realUserId = _urlHashService.GetRealId(userId);
-                var result = await _adminService.UpdateUserPointsAsync(realUserId, pointsChange);
+                }
+
+                // Use user ID directly
+                var result = await _adminService.UpdateUserPointsAsync(userId, pointsChange);
 
                 if (result)
                 {
@@ -116,7 +112,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     var amount = Math.Abs(pointsChange);
 
                     _logger.LogInformation("User points updated successfully by admin {AdminName} for user {UserId}. Points {Action}: {Amount}",
-                        HttpContext.User?.Identity?.Name, realUserId, action, amount);
+                        HttpContext.User?.Identity?.Name, userId, action, amount);
 
                     TempData["SuccessMessage"] = $"{amount:N0} points have been {action} successfully.";
                     return new JsonResult(new { success = true, message = $"Points {action} successfully" });
@@ -128,7 +124,7 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating user points for user: {UserId}, pointsChange: {PointsChange}", realUserId, pointsChange);
+                _logger.LogError(ex, "Error updating user points for user: {UserId}, pointsChange: {PointsChange}", userId, pointsChange);
                 return new JsonResult(new { success = false, message = "An error occurred while updating user points" });
             }
         }

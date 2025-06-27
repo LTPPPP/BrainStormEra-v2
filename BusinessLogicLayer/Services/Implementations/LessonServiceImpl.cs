@@ -25,6 +25,7 @@ namespace BusinessLogicLayer.Services.Implementations
             public SelectLessonTypeViewModel? ViewModel { get; set; }
             public string? ErrorMessage { get; set; }
             public string? RedirectAction { get; set; }
+            public string? RedirectController { get; set; }
             public object? RedirectValues { get; set; }
         }
 
@@ -150,6 +151,7 @@ namespace BusinessLogicLayer.Services.Implementations
                         {
                             Success = true,
                             RedirectAction = "CreateVideoLesson",
+                            RedirectController = "Lesson",
                             RedirectValues = new { chapterId = model.ChapterId }
                         };
                     case 2: // Text
@@ -157,6 +159,7 @@ namespace BusinessLogicLayer.Services.Implementations
                         {
                             Success = true,
                             RedirectAction = "CreateTextLesson",
+                            RedirectController = "Lesson",
                             RedirectValues = new { chapterId = model.ChapterId }
                         };
                     case 3: // Interactive/Document
@@ -164,6 +167,7 @@ namespace BusinessLogicLayer.Services.Implementations
                         {
                             Success = true,
                             RedirectAction = "CreateInteractiveLesson",
+                            RedirectController = "Lesson",
                             RedirectValues = new { chapterId = model.ChapterId }
                         };
                     default:

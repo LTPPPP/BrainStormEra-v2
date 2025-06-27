@@ -11,7 +11,7 @@ namespace BrainStormEra_Razor.Pages.Admin
     {
         private readonly ILogger<UsersModel> _logger;
         private readonly IAdminService _adminService;
-        private readonly IUrlHashService _urlHashService;
+
 
         public string? AdminName { get; set; }
         public string? UserId { get; set; }
@@ -33,11 +33,10 @@ namespace BrainStormEra_Razor.Pages.Admin
         [BindProperty(SupportsGet = true)]
         public int PageSize { get; set; } = 10;
 
-        public UsersModel(ILogger<UsersModel> logger, IAdminService adminService, IUrlHashService urlHashService)
+        public UsersModel(ILogger<UsersModel> logger, IAdminService adminService)
         {
             _logger = logger;
             _adminService = adminService;
-            _urlHashService = urlHashService;
         }
 
         public async Task OnGetAsync()
@@ -55,11 +54,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                         roleFilter: RoleFilter,
                         page: CurrentPage,
                         pageSize: PageSize
-                    );                    // Encode user IDs for each user
-                    foreach (var user in UsersData.Users)
-                    {
-                        user.EncodedUserId = _urlHashService.EncodeId(user.UserId);
-                    }
+                    );                    // No need to encode user IDs anymore
 
                     // Apply status filter in frontend since backend doesn't support it yet
                     if (!string.IsNullOrEmpty(StatusFilter))
@@ -92,7 +87,6 @@ namespace BrainStormEra_Razor.Pages.Admin
         }
         public async Task<IActionResult> OnPostUpdateUserStatusAsync(string userId, bool isBanned)
         {
-            var realUserId = string.Empty;
             try
             {
                 if (string.IsNullOrEmpty(userId))
@@ -100,14 +94,13 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return BadRequest("User ID is required");
                 }
 
-                // Decode hash ID to real ID
-                realUserId = _urlHashService.GetRealId(userId);
-                var result = await _adminService.UpdateUserStatusAsync(realUserId, isBanned);
+                // Use user ID directly
+                var result = await _adminService.UpdateUserStatusAsync(userId, isBanned);
 
                 if (result)
                 {
                     _logger.LogInformation("User status updated successfully by admin {AdminName} for user {UserId}",
-                        HttpContext.User?.Identity?.Name, realUserId);
+                        HttpContext.User?.Identity?.Name, userId);
                     return new JsonResult(new { success = true, message = "User status updated successfully" });
                 }
                 else
@@ -117,14 +110,13 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating user status for user: {UserId}", realUserId);
+                _logger.LogError(ex, "Error updating user status for user: {UserId}", userId);
                 return new JsonResult(new { success = false, message = "An error occurred while updating user status" });
             }
         }
 
         public async Task<IActionResult> OnPostUpdateUserPointsAsync(string userId, decimal pointsChange)
         {
-            var realUserId = string.Empty;
             try
             {
                 if (string.IsNullOrEmpty(userId))
@@ -132,9 +124,8 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return BadRequest("User ID is required");
                 }
 
-                // Decode hash ID to real ID
-                realUserId = _urlHashService.GetRealId(userId);
-                var result = await _adminService.UpdateUserPointsAsync(realUserId, pointsChange);
+                // Use user ID directly
+                var result = await _adminService.UpdateUserPointsAsync(userId, pointsChange);
 
                 if (result)
                 {
@@ -142,7 +133,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     var amount = Math.Abs(pointsChange);
 
                     _logger.LogInformation("User points updated successfully by admin {AdminName} for user {UserId}. Points {Action}: {Amount}",
-                        HttpContext.User?.Identity?.Name, realUserId, action, amount);
+                        HttpContext.User?.Identity?.Name, userId, action, amount);
 
                     return new JsonResult(new { success = true, message = $"Points {action} successfully" });
                 }
@@ -153,7 +144,7 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating user points for user: {UserId}, pointsChange: {PointsChange}", realUserId, pointsChange);
+                _logger.LogError(ex, "Error updating user points for user: {UserId}, pointsChange: {PointsChange}", userId, pointsChange);
                 return new JsonResult(new { success = false, message = "An error occurred while updating user points" });
             }
         }

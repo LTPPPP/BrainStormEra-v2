@@ -25,7 +25,7 @@
                                     <a href="@Url.Action("Index", "Home")">Home</a>
                                 </li>
                                 <li class="breadcrumb-item">
-                                    <a href="@Url.Action("Learn", "Course", new { id = ViewBag.UrlHashService?.EncodeId(Model.CourseId) })">
+                                    <a href="@Url.Action("Learn", "Course", new { courseId = Model.CourseId })">
                                         @Model.CourseName
                                     </a>
                                 </li>
@@ -84,7 +84,7 @@
                                     @foreach(var lesson in chapter.Lessons)
                                     {
                                         <div class="lesson-item @(lesson.LessonId == Model.LessonId ? "current" : "") @(lesson.IsCompleted ? "completed" : "")" 
-                                             onclick="location.href='@Url.Action("Learn", "Lesson", new { id = ViewBag.UrlHashService?.EncodeId(lesson.LessonId) })'">
+                                             onclick="location.href='@Url.Action("Learn", "Lesson", new { id = lesson.LessonId })'">
                                             <div class="lesson-icon">
                                                 @if(lesson.IsCompleted)
                                                 {
@@ -156,7 +156,7 @@
                 </div>
             }
 
-            <div class="main-content" data-lesson-type="@Model.LessonType" data-course-id="@ViewBag.UrlHashService?.EncodeId(Model.CourseId)">
+                <div class="main-content" data-lesson-type="@Model.LessonType" data-course-id="@Model.CourseId">
                 @switch (Model.LessonType.ToLower())
                 {
                     case "video":
@@ -181,7 +181,7 @@
                 <div class="navigation-buttons">
                     @if (!string.IsNullOrEmpty(Model.PreviousLessonId))
                     {
-                        <a href="@Url.Action("Learn", "Lesson", new { id = ViewBag.UrlHashService?.EncodeId(Model.PreviousLessonId) })" 
+                                                    <a href="@Url.Action("Learn", "Lesson", new { id = Model.PreviousLessonId })" 
                            class="btn btn-outline-secondary">
                             <i class="fas fa-chevron-left"></i> Previous
                         </a>
@@ -193,7 +193,7 @@
 
                     @if (!string.IsNullOrEmpty(Model.NextLessonId))
                     {
-                        <a href="@Url.Action("Learn", "Lesson", new { id = ViewBag.UrlHashService?.EncodeId(Model.NextLessonId) })" 
+                                                    <a href="@Url.Action("Learn", "Lesson", new { id = Model.NextLessonId })" 
                            class="btn btn-primary">
                             Next <i class="fas fa-chevron-right"></i>
                         </a>

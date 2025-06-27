@@ -11,7 +11,7 @@ namespace BrainStormEra_Razor.Pages.Admin
     {
         private readonly ILogger<CoursesModel> _logger;
         private readonly IAdminService _adminService;
-        private readonly IUrlHashService _urlHashService;
+
 
         public string? AdminName { get; set; }
         public string? UserId { get; set; }
@@ -45,11 +45,10 @@ namespace BrainStormEra_Razor.Pages.Admin
         [BindProperty(SupportsGet = true)]
         public int PageSize { get; set; } = 12;
 
-        public CoursesModel(ILogger<CoursesModel> logger, IAdminService adminService, IUrlHashService urlHashService)
+        public CoursesModel(ILogger<CoursesModel> logger, IAdminService adminService)
         {
             _logger = logger;
             _adminService = adminService;
-            _urlHashService = urlHashService;
         }
 
         public async Task OnGetAsync()

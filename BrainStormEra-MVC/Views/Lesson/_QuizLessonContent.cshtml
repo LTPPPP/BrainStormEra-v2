@@ -23,7 +23,7 @@
                     }
                 </div>
                 <div class="quiz-actions">
-                    <a href="@Url.Action("Details", "Quiz", new { id = ViewBag.UrlHashService?.EncodeId(Model.QuizId) })" 
+                    <a href="@Url.Action("Details", "Quiz", new { id = Model.QuizId })" 
                        class="btn btn-primary">
                         <i class="fas fa-play"></i>
                         Start Quiz

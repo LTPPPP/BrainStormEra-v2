@@ -328,7 +328,7 @@
                                         </div>
                                         <h3 class="instructor-notification-title">You are the instructor of this course</h3>
                                         <div class="instructor-notification-actions">
-                                            <a href="@Url.ActionWithHash("EditCourse", "Course", Model.CourseId)" class="instructor-action-btn">
+                                            <a href="@Url.Action("EditCourse", "Course", new { id = Model.CourseId })" class="instructor-action-btn">
                                                 <i class="fas fa-edit"></i>Edit Course
                                             </a>
                                                                         @if (string.IsNullOrEmpty(Model.ApprovalStatus) || Model.ApprovalStatus.ToLower() == "rejected" || Model.ApprovalStatus.ToLower() == "draft")
@@ -358,7 +358,7 @@
                                     <button class="btn btn-success btn-lg w-100 mb-3" disabled>
                                         <i class="fas fa-check-circle me-2"></i>Enrolled
                                     </button>
-                                    <a href="@Url.ActionWithHash("Learn", "Course", Model.CourseId)" class="btn btn-primary btn-lg w-100">
+                                    <a href="@Url.Action("Learn", "Course", new { courseId = Model.CourseId })" class="btn btn-primary btn-lg w-100">
                                         <i class="fas fa-play me-2"></i>Take Course
                                     </a>
                                 }
@@ -378,13 +378,13 @@
                                     </button>
                                     
                                     <!-- Take Course Button (hidden initially) -->
-                                    <a id="takeCourseBtn" href="@Url.ActionWithHash("Learn", "Course", Model.CourseId)" 
+                                    <a id="takeCourseBtn" href="@Url.Action("Learn", "Course", new { courseId = Model.CourseId })" 
                                        class="btn btn-primary btn-lg w-100 mb-3" style="display: none;">
                                         <i class="fas fa-play me-2"></i>Take Course
                                     </a>
                                     
                                     <!-- Continue Course Button (hidden initially) -->
-                                    <a id="continueCourseBtn" href="@Url.ActionWithHash("Learn", "Course", Model.CourseId)"
+                                    <a id="continueCourseBtn" href="@Url.Action("Learn", "Course", new { courseId = Model.CourseId })"
                                        class="btn btn-outline-primary btn-lg w-100" style="display: none;">
                                         <i class="fas fa-play-circle me-2"></i>Continue Learning
                                     </a>
@@ -508,7 +508,7 @@
                                             @if (ViewBag.IsAuthor == true)
                                             {
                                                 <div>
-                                                    <a href="@Url.Action("CreateChapter", "Chapter", new { courseId = Html.EncodeId(Model.CourseId) })" 
+                                                    <a href="@Url.Action("CreateChapter", "Chapter", new { courseId = Model.CourseId })" 
                                                        class="btn btn-primary">
                                                         <i class="fas fa-plus me-2"></i>Create Chapter
                                                     </a>
@@ -617,11 +617,11 @@
                                                             if (!hasQuiz)
                                                             {
                                                                 <div class="lesson-actions mt-3 text-center" style="justify-content: center;">
-                                                                    <a href="@Url.Action("SelectLessonType", "Lesson", new { chapterId = Html.EncodeId(chapter.ChapterId) })" 
+                                                                    <a href="@Url.Action("SelectLessonType", "Lesson", new { chapterId = chapter.ChapterId })" 
                                                                        class="btn btn-sm btn-outline-primary me-2">
                                                                         <i class="fas fa-plus me-2"></i>Create Lesson
                                                                     </a>
-                                                                    <a href="@Url.Action("CreateQuiz", "Quiz", new { chapterId = Html.EncodeId(chapter.ChapterId) })" 
+                                                                    <a href="@Url.Action("CreateQuiz", "Quiz", new { chapterId = chapter.ChapterId })" 
                                                                        class="btn btn-sm btn-outline-success">
                                                                         <i class="fas fa-question-circle me-2"></i>Create Quiz
                                                                     </a>
@@ -1241,7 +1241,7 @@
         
         // Initialize course player functionality for enrollment
         document.addEventListener('DOMContentLoaded', function() {
-            const courseHashId = '@Html.EncodeId(Model.CourseId)';
+            const courseHashId = '@Model.CourseId';
             
             console.log('Course Details page initializing with courseId:', courseHashId);
             
