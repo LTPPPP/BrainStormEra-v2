@@ -22,10 +22,6 @@ html {
   min-height: 100%;
 }
 
-body {
-  margin-bottom: 60px;
-}
-
 /* Chat specific styles */
 .chat-card {
   height: 80vh;

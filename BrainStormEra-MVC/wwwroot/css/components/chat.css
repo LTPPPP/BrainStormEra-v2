@@ -2,7 +2,9 @@
 
 /* Chat Layout */
 .chat-container {
-  height: calc(100vh - 120px);
+  height: calc(100vh - 200px); /* Adjusted for header and footer */
+  margin-top: 20px; /* Space after header */
+  margin-bottom: 20px; /* Space before footer */
 }
 
 .chat-sidebar {
@@ -19,7 +21,7 @@
 
 /* Chat Users List */
 .chat-users-list {
-  max-height: calc(100vh - 120px);
+  max-height: calc(100vh - 250px); /* Adjusted for header and footer */
   overflow-y: auto;
 }
 
