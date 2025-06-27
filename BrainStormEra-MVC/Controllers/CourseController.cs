@@ -114,6 +114,7 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Course");
                 }
 
+                ViewBag.CourseId = realCourseId;
                 return View(result.ViewModel);
             }
             catch (Exception ex)
@@ -324,6 +325,42 @@ namespace BrainStormEra_MVC.Controllers
 
             var result = await _courseServiceImpl.RequestCourseApprovalAsync(User, courseId);
             return Json(new { success = result.Success, message = result.Message });
+        }
+
+        // GET: Get updated course learn data for AJAX refresh
+        [HttpGet]
+        [Authorize(Roles = "learner")]
+        public async Task<IActionResult> GetCourseLearnData(string courseId)
+        {
+            if (string.IsNullOrEmpty(courseId) || string.IsNullOrEmpty(CurrentUserId))
+            {
+                return Json(new { success = false, message = "Invalid request" });
+            }
+
+            try
+            {
+                var result = await _courseServiceImpl.GetLearnManagementDataAsync(User, courseId);
+
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.ErrorMessage });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    progressPercentage = result.ViewModel.ProgressPercentage,
+                    completedLessons = result.ViewModel.CompletedLessons,
+                    totalLessons = result.ViewModel.TotalLessons,
+                    chapters = result.ViewModel.Chapters,
+                    message = "Course data retrieved successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting course learn data for courseId: {CourseId}, userId: {UserId}", courseId, CurrentUserId);
+                return Json(new { success = false, message = "An error occurred while retrieving course data" });
+            }
         }
 
         // Temporary endpoint to clear cache for debugging

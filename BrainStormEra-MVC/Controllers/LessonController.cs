@@ -12,11 +12,13 @@ namespace BrainStormEra_MVC.Controllers
     public class LessonController : BaseController
     {
         private readonly LessonServiceImpl _lessonServiceImpl;
+        private readonly ILessonService _lessonService;
         private readonly ILogger<LessonController> _logger;
 
-        public LessonController(LessonServiceImpl lessonServiceImpl, ILogger<LessonController> logger) : base()
+        public LessonController(LessonServiceImpl lessonServiceImpl, ILessonService lessonService, ILogger<LessonController> logger) : base()
         {
             _lessonServiceImpl = lessonServiceImpl;
+            _lessonService = lessonService;
             _logger = logger;
         }
 
@@ -388,6 +390,72 @@ namespace BrainStormEra_MVC.Controllers
             ViewBag.CourseDescription = result.ViewModel?.CourseDescription;
 
             return View(result.ViewModel);
+        }
+
+        // AJAX endpoint to mark lesson as completed
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireAuthentication("You need to login to complete lessons.")]
+        public async Task<IActionResult> MarkAsComplete(string lessonId)
+        {
+            var userId = User.FindFirst("UserId")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new { success = false, message = "User not authenticated" });
+            }
+
+            if (string.IsNullOrEmpty(lessonId))
+            {
+                return Json(new { success = false, message = "Lesson ID is required" });
+            }
+
+            try
+            {
+                var result = await _lessonServiceImpl.MarkLessonAsCompletedAsync(userId, lessonId);
+                return Json(new { success = result.Success, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error marking lesson {LessonId} as completed for user {UserId}", lessonId, userId);
+                return Json(new { success = false, message = "An error occurred while completing the lesson" });
+            }
+        }
+
+        [HttpGet]
+        [RequireAuthentication("You need to login to access lesson data.")]
+        public async Task<IActionResult> GetLessonData(string lessonId)
+        {
+            if (string.IsNullOrEmpty(lessonId) || string.IsNullOrEmpty(CurrentUserId))
+            {
+                return Json(new { success = false, message = "Invalid request" });
+            }
+
+            try
+            {
+                var result = await _lessonServiceImpl.GetLessonLearningDataAsync(lessonId, CurrentUserId);
+
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.ErrorMessage });
+                }
+
+                // Get course progress
+                var courseProgress = await _lessonService.GetLessonCompletionPercentageAsync(CurrentUserId, result.ViewModel.CourseId);
+
+                return Json(new
+                {
+                    success = true,
+                    chapters = result.ViewModel.Chapters,
+                    courseProgress = courseProgress,
+                    message = "Lesson data retrieved successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting lesson data for lessonId: {LessonId}, userId: {UserId}", lessonId, CurrentUserId);
+                return Json(new { success = false, message = "An error occurred while retrieving lesson data" });
+            }
         }
     }
 }

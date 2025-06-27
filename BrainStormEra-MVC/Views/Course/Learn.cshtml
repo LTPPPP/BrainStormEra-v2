@@ -9,7 +9,7 @@
 <div class="learn-management-container">
     <!-- Course Header -->
     <div class="course-header">
-        <div class="course-info">
+        <div class="course-info" data-course-id="@ViewBag.CourseId">
             <div class="course-image">
                 <img src="@Model.CourseImage" alt="@Model.CourseName" onerror="handleImageError(this)">
             </div>
@@ -207,5 +207,189 @@
 
     function handleImageError(img) {
         img.src = '/SharedMedia/defaults/default-course.png';
+    }
+    
+    // Check for lesson completion updates when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        checkForLessonCompletion();
+        
+        // Also check periodically for updates from lesson learning page
+        setInterval(checkForLessonCompletion, 2000);
+    });
+    
+    function checkForLessonCompletion() {
+        const courseId = getCourseIdFromPage();
+        if (!courseId) return;
+        
+        const completionKey = `lesson_completed_${courseId}`;
+        const completionData = sessionStorage.getItem(completionKey);
+        
+        if (completionData) {
+            try {
+                const data = JSON.parse(completionData);
+                if (data.needsRefresh && data.courseId === courseId) {
+                    console.log('Detected lesson completion, refreshing course data...', data);
+                    
+                    // Mark as processed to avoid multiple refreshes
+                    data.needsRefresh = false;
+                    sessionStorage.setItem(completionKey, JSON.stringify(data));
+                    
+                    // Refresh course data
+                    refreshCourseData(courseId);
+                }
+            } catch (e) {
+                console.error('Error parsing completion data:', e);
+                sessionStorage.removeItem(completionKey);
+            }
+        }
+    }
+    
+    function getCourseIdFromPage() {
+        // Try to get course ID from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('courseId');
+        if (courseId) return courseId;
+        
+        // Try to get from page data attributes
+        const courseInfo = document.querySelector('[data-course-id]');
+        if (courseInfo) return courseInfo.getAttribute('data-course-id');
+        
+        return null;
+    }
+    
+    function refreshCourseData(courseId) {
+        console.log('Refreshing course data for courseId:', courseId);
+        
+        // Show loading indicator
+        showRefreshIndicator();
+        
+        // Fetch updated course data
+        fetch(`/Course/GetCourseLearnData?courseId=${encodeURIComponent(courseId)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Received updated course data:', data);
+            if (data.success) {
+                updateCourseProgress(data.progressPercentage, data.completedLessons, data.totalLessons);
+                updateLessonStatuses(data.chapters);
+                hideRefreshIndicator();
+                
+                if (window.showToast) {
+                    window.showToast('success', 'Course progress updated!');
+                }
+            } else {
+                console.error('Failed to refresh course data:', data.message);
+                hideRefreshIndicator();
+            }
+        })
+        .catch(error => {
+            console.error('Error refreshing course data:', error);
+            hideRefreshIndicator();
+            // Fallback to page reload if AJAX fails
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        });
+    }
+    
+    function updateCourseProgress(progressPercentage, completedLessons, totalLessons) {
+        // Update main progress bar
+        const progressFill = document.querySelector('.progress-info .progress-fill');
+        if (progressFill) {
+            progressFill.style.width = `${progressPercentage}%`;
+        }
+        
+        // Update progress text
+        const progressText = document.querySelector('.progress-info .progress-text');
+        if (progressText) {
+            progressText.textContent = `${progressPercentage}% Complete`;
+        }
+        
+        // Update completed lessons count
+        const completedStat = document.querySelector('.course-stats .stat:nth-child(3) span');
+        if (completedStat) {
+            completedStat.textContent = `${completedLessons} Completed`;
+        }
+        
+        console.log(`Updated course progress: ${progressPercentage}% (${completedLessons}/${totalLessons})`);
+    }
+    
+    function updateLessonStatuses(chapters) {
+        if (!chapters || !Array.isArray(chapters)) return;
+        
+        chapters.forEach(chapter => {
+            if (chapter.lessons && Array.isArray(chapter.lessons)) {
+                chapter.lessons.forEach(lesson => {
+                    const lessonElement = document.querySelector(`[onclick*="${lesson.lessonId}"]`);
+                    if (lessonElement) {
+                        // Update lesson completion status
+                        if (lesson.isCompleted) {
+                            lessonElement.classList.add('completed');
+                            
+                            // Update action buttons
+                            const actionButtons = lessonElement.querySelector('.lesson-actions');
+                            if (actionButtons && !actionButtons.querySelector('.btn-completed')) {
+                                actionButtons.innerHTML = `
+                                    <button class="btn btn-completed">
+                                        <i class="fas fa-check"></i>
+                                        Completed
+                                    </button>
+                                    <button class="btn btn-review" onclick="startLesson('${lesson.lessonId}')">
+                                        <i class="fas fa-redo"></i>
+                                        Review
+                                    </button>
+                                `;
+                            }
+                        }
+                        
+                        // Update progress if exists
+                        if (lesson.progressPercentage !== undefined) {
+                            const progressFill = lessonElement.querySelector('.progress-fill');
+                            if (progressFill) {
+                                progressFill.style.width = `${lesson.progressPercentage}%`;
+                            }
+                            const progressText = lessonElement.querySelector('.progress-text');
+                            if (progressText) {
+                                progressText.textContent = `${lesson.progressPercentage}%`;
+                            }
+                        }
+                    }
+                });
+                
+                // Update chapter progress
+                const chapterProgress = document.querySelector(`#chapter-${chapter.chapterOrder} .progress-fill-mini`);
+                if (chapterProgress) {
+                    chapterProgress.style.width = `${chapter.completionPercentage}%`;
+                }
+                const chapterProgressText = document.querySelector(`#chapter-${chapter.chapterOrder} .progress-text-mini`);
+                if (chapterProgressText) {
+                    chapterProgressText.textContent = `${chapter.completionPercentage}%`;
+                }
+            }
+        });
+    }
+    
+    function showRefreshIndicator() {
+        // Add a small loading indicator
+        const progressInfo = document.querySelector('.progress-info');
+        if (progressInfo && !progressInfo.querySelector('.refresh-indicator')) {
+            const indicator = document.createElement('div');
+            indicator.className = 'refresh-indicator';
+            indicator.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i>';
+            indicator.style.cssText = 'position: absolute; top: 5px; right: 5px; color: #007bff; font-size: 12px;';
+            progressInfo.style.position = 'relative';
+            progressInfo.appendChild(indicator);
+        }
+    }
+    
+    function hideRefreshIndicator() {
+        const indicator = document.querySelector('.refresh-indicator');
+        if (indicator) {
+            indicator.remove();
+        }
     }
 </script> 

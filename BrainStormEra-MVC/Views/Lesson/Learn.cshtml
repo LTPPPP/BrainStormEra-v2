@@ -11,7 +11,11 @@
 <link rel="stylesheet" href="~/css/pages/Lesson/quiz-lesson.css" />
 <link rel="stylesheet" href="~/css/pages/Lesson/default-lesson.css" />
 <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
-<div class="lesson-learning-container">
+
+@* Anti-forgery token for AJAX requests *@
+@Html.AntiForgeryToken()
+
+<div class="lesson-learning-container" data-lesson-id="@Model.LessonId">
     <!-- Main Layout -->
     <div class="lesson-main-layout">
         <!-- Sidebar -->
@@ -182,7 +186,7 @@
                 <div class="action-buttons">
                     @if (!Model.IsCompleted)
                     {
-                        <button type="button" class="btn btn-success" onclick="markAsComplete()">
+                        <button type="button" class="btn btn-success" onclick="markAsCompleteNew()">
                             <i class="fas fa-check-circle"></i> Mark as Complete
                         </button>
                     }
@@ -201,7 +205,7 @@
     </div>
 </div>
 
-<script src="~/js/pages/lesson/lesson-learning.js"></script>
+<script src="~/js/pages/lesson/lesson-learning.js?v=2"></script>
 <script src="~/js/pages/lesson/video-lesson.js"></script>
 <script src="~/js/pages/lesson/text-lesson.js"></script>
 <script src="~/js/pages/lesson/interactive-lesson.js"></script>
