@@ -255,6 +255,30 @@ namespace BusinessLogicLayer.Services.Implementations
             }
         }
 
+        public async Task<ServiceResult<Conversation>> GetOrCreateConversationAsync(string userId1, string userId2)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId1) || string.IsNullOrEmpty(userId2))
+                {
+                    return ServiceResult<Conversation>.Failure("Both user IDs are required");
+                }
+
+                var conversation = await _chatService.GetOrCreateConversationAsync(userId1, userId2);
+                if (conversation != null)
+                {
+                    return ServiceResult<Conversation>.Success(conversation);
+                }
+
+                return ServiceResult<Conversation>.Failure("Failed to get or create conversation");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting or creating conversation between {UserId1} and {UserId2}", userId1, userId2);
+                return ServiceResult<Conversation>.Failure("An error occurred while getting conversation");
+            }
+        }
+
         private List<ChatMessageDTO> MapToChatMessageDTOs(List<MessageEntity> messages)
         {
             return messages.Select(MapToChatMessageDTO).ToList();

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.FileProviders;
 using BusinessLogicLayer;
 using BusinessLogicLayer.Utilities;
+using BusinessLogicLayer.Extensions;
 
 namespace BrainStormEra_MVC
 {
@@ -115,6 +116,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.INotificationService, BusinessLogicLayer.Services.NotificationService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAvatarService, BusinessLogicLayer.Services.AvatarService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseImageService, BusinessLogicLayer.Services.CourseImageService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
             builder.Services.AddSingleton<BusinessLogicLayer.Services.Interfaces.ICacheService, BusinessLogicLayer.Services.CacheService>();
 
             // Add Safe Delete Service for secure delete operations
@@ -127,23 +129,8 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPageContextService, BusinessLogicLayer.Services.PageContextService>();
             builder.Services.AddHttpClient<BusinessLogicLayer.Services.ChatbotService>();
 
-            // Register Chatbot Service Implementation for business logic layer
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.ChatbotServiceImpl>();
-
-            // Register SafeDelete Service Implementation for business logic layer
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.SafeDeleteServiceImpl>();
-
-            // Register Media Path Service for centralized media path management
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
-
-            // Register URL Hash Service for secure URL handling
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUrlHashService, BusinessLogicLayer.Services.UrlHashServiceImproved>();
-
-            // Register Query Hash Service for smart ID/hash handling in queries
-            builder.Services.AddScoped<BusinessLogicLayer.Services.QueryHashService>();
-
-            // Register Payment Service
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPaymentService, BusinessLogicLayer.Services.Implementations.PaymentService>();
+            // Add Chat URL Hashing Services
+            builder.Services.AddChatUrlServices();
 
             // Seed services
             builder.Services.AddScoped<BusinessLogicLayer.Services.StatusSeedService>();
