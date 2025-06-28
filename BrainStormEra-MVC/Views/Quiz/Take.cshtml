@@ -1,0 +1,191 @@
+@model DataAccessLayer.Models.ViewModels.QuizTakeViewModel
+
+@{
+    ViewData["Title"] = "Take Quiz - " + Model.QuizName;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="quiz-take-container">
+    <div class="quiz-header">
+        <div class="quiz-info">
+            <h1 class="quiz-title">@Model.QuizName</h1>
+            @if (!string.IsNullOrEmpty(Model.QuizDescription))
+            {
+                <p class="quiz-description">@Model.QuizDescription</p>
+            }
+            
+            <div class="quiz-metadata">
+                @if (Model.TimeLimit.HasValue)
+                {
+                    <div class="time-limit">
+                        <i class="fas fa-clock"></i>
+                        Time Limit: @Model.TimeLimit minutes
+                    </div>
+                }
+                @if (Model.PassingScore.HasValue)
+                {
+                    <div class="passing-score">
+                        <i class="fas fa-target"></i>
+                        Passing Score: @Model.PassingScore%
+                    </div>
+                }
+                <div class="attempt-info">
+                    <i class="fas fa-redo"></i>
+                    Attempt @Model.CurrentAttemptNumber of @Model.MaxAttempts
+                </div>
+            </div>
+        </div>
+
+        @if (Model.TimeLimit.HasValue)
+        {
+            <div class="timer-container">
+                <div class="timer" id="quiz-timer">
+                    <i class="fas fa-clock"></i>
+                    <span id="time-remaining">@(Model.TimeLimit):00</span>
+                </div>
+                <div class="timer-warning" id="timer-warning" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Time is running out!
+                </div>
+            </div>
+        }
+    </div>
+
+    <form id="quiz-form" asp-action="Submit" asp-controller="Quiz" method="post">
+        <input type="hidden" asp-for="QuizId" />
+        <input type="hidden" asp-for="AttemptId" />
+        <input type="hidden" asp-for="StartTime" />
+        <input type="hidden" name="SubmissionTime" id="submission-time" />
+
+        <div class="questions-container">
+            @for (int i = 0; i < Model.Questions.Count; i++)
+            {
+                var question = Model.Questions[i];
+                <div class="question-card" data-question-id="@question.QuestionId">
+                    <div class="question-header">
+                        <span class="question-number">Question @(i + 1)</span>
+                        @if (question.Points.HasValue)
+                        {
+                            <span class="question-points">(@question.Points pts)</span>
+                        }
+                    </div>
+
+                    <div class="question-text">
+                        @Html.Raw(question.QuestionText)
+                    </div>
+
+                    <div class="answer-options">
+                        @if (question.QuestionType == "multiple_choice")
+                        {
+                            @for (int j = 0; j < question.AnswerOptions.Count; j++)
+                            {
+                                var option = question.AnswerOptions[j];
+                                <div class="answer-option">
+                                    <input type="radio" 
+                                           id="option_@(i)_@(j)" 
+                                           name="UserAnswers[@i].SelectedOptionId" 
+                                           value="@option.OptionId" 
+                                           @(option.IsSelected ? "checked" : "") />
+                                    <label for="option_@(i)_@(j)">
+                                        <span class="option-letter">@(((char)('A' + j)).ToString())</span>
+                                        <span class="option-text">@option.OptionText</span>
+                                    </label>
+                                </div>
+                            }
+                        }
+                        else if (question.QuestionType == "text")
+                        {
+                            <div class="text-answer">
+                                <textarea name="UserAnswers[@i].AnswerText" 
+                                         placeholder="Enter your answer here..." 
+                                         rows="4" 
+                                         class="form-control">@question.AnswerText</textarea>
+                            </div>
+                        }
+
+                        <input type="hidden" name="UserAnswers[@i].QuestionId" value="@question.QuestionId" />
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="quiz-navigation">
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <span class="progress-text" id="progress-text">0 of @Model.Questions.Count questions answered</span>
+            </div>
+
+            <div class="navigation-buttons">
+                <button type="button" class="btn btn-secondary" id="save-draft" style="display: none;">
+                    <i class="fas fa-save"></i>
+                    Save Draft
+                </button>
+                <button type="submit" class="btn btn-primary" id="submit-quiz">
+                    <i class="fas fa-paper-plane"></i>
+                    Submit Quiz
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Auto-submit warning modal -->
+<div class="modal fade" id="auto-submit-modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Time's Up!</h5>
+            </div>
+            <div class="modal-body">
+                <p>Your time limit has been reached. The quiz will be automatically submitted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="confirm-auto-submit">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation modal -->
+<div class="modal fade" id="submit-confirmation-modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Submission</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to submit your quiz? You cannot change your answers after submission.</p>
+                <div id="unanswered-warning" class="alert alert-warning" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    You have <span id="unanswered-count"></span> unanswered questions.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-submit">Submit Quiz</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/Quiz/quiz-take.css" />
+}
+
+@section Scripts {
+    <script src="~/js/pages/Quiz/quiz-take.js"></script>
+    <script>
+        // Initialize quiz with server data
+        window.quizData = {
+            quizId: '@Model.QuizId',
+            timeLimit: @(Model.TimeLimit?.ToString() ?? "null"),
+            totalQuestions: @Model.Questions.Count,
+            startTime: new Date('@Model.StartTime?.ToString("yyyy-MM-ddTHH:mm:ss")')
+        };
+    </script>
+}

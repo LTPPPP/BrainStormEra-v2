@@ -998,6 +998,453 @@ namespace BusinessLogicLayer.Services.Implementations
             }
         }
 
+        /// <summary>
+        /// Handle Quiz Take GET request with user authentication and authorization
+        /// </summary>
+        public async Task<QuizTakeResult> GetQuizTakeAsync(ClaimsPrincipal user, string quizId)
+        {
+            try
+            {
+                var userId = user.FindFirst("UserId")?.Value;
+                var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new QuizTakeResult
+                    {
+                        Success = false,
+                        ErrorMessage = "User not authenticated",
+                        RedirectAction = "Login",
+                        RedirectController = "Auth"
+                    };
+                }
+
+                // Get quiz with questions and course details
+                var quiz = await _context.Quizzes
+                    .Include(q => q.Questions.OrderBy(qu => qu.QuestionOrder))
+                        .ThenInclude(qu => qu.AnswerOptions.OrderBy(ao => ao.OptionOrder))
+                    .Include(q => q.Lesson)
+                        .ThenInclude(l => l!.Chapter)
+                            .ThenInclude(c => c!.Course)
+                    .Include(q => q.QuizAttempts.Where(qa => qa.UserId == userId))
+                    .FirstOrDefaultAsync(q => q.QuizId == quizId);
+
+                if (quiz == null)
+                {
+                    return new QuizTakeResult
+                    {
+                        Success = false,
+                        IsNotFound = true
+                    };
+                }
+
+                // Check if user is enrolled in the course (learners only)
+                if (userRole == "learner")
+                {
+                    var isEnrolled = await _context.Enrollments
+                        .AnyAsync(e => e.UserId == userId && e.CourseId == quiz.CourseId);
+
+                    if (!isEnrolled)
+                    {
+                        return new QuizTakeResult
+                        {
+                            Success = false,
+                            ErrorMessage = "You must be enrolled in this course to take the quiz",
+                            RedirectAction = "Details",
+                            RedirectController = "Course",
+                            RouteValues = new { id = quiz.CourseId }
+                        };
+                    }
+                }
+
+                // Check if quiz has questions
+                if (!quiz.Questions.Any())
+                {
+                    return new QuizTakeResult
+                    {
+                        Success = false,
+                        ErrorMessage = "This quiz does not have any questions yet",
+                        RedirectAction = "Details",
+                        RedirectController = "Course",
+                        RouteValues = new { id = quiz.CourseId }
+                    };
+                }
+
+                // Check attempts
+                var userAttempts = quiz.QuizAttempts.Where(qa => qa.UserId == userId).ToList();
+                var currentAttemptNumber = userAttempts.Count + 1;
+                var maxAttempts = quiz.MaxAttempts ?? 3;
+
+                if (currentAttemptNumber > maxAttempts)
+                {
+                    return new QuizTakeResult
+                    {
+                        Success = false,
+                        ErrorMessage = "You have exceeded the maximum number of attempts for this quiz",
+                        RedirectAction = "Details",
+                        RedirectController = "Course",
+                        RouteValues = new { id = quiz.CourseId }
+                    };
+                }
+
+                // Create new attempt
+                var attemptId = Guid.NewGuid().ToString();
+                var startTime = DateTime.UtcNow;
+
+                var attempt = new QuizAttempt
+                {
+                    AttemptId = attemptId,
+                    UserId = userId,
+                    QuizId = quizId,
+                    StartTime = startTime,
+                    AttemptNumber = currentAttemptNumber
+                };
+
+                _context.QuizAttempts.Add(attempt);
+                await _context.SaveChangesAsync();
+
+                // Build view model
+                var viewModel = new QuizTakeViewModel
+                {
+                    QuizId = quiz.QuizId,
+                    QuizName = quiz.QuizName,
+                    QuizDescription = quiz.QuizDescription,
+                    TimeLimit = quiz.TimeLimit,
+                    PassingScore = quiz.PassingScore,
+                    MaxAttempts = maxAttempts,
+                    CurrentAttemptNumber = currentAttemptNumber,
+                    RemainingAttempts = maxAttempts - currentAttemptNumber,
+                    CanAttempt = true,
+                    CourseId = quiz.CourseId,
+                    CourseName = quiz.Lesson?.Chapter?.Course?.CourseName,
+                    LessonId = quiz.LessonId,
+                    LessonTitle = quiz.Lesson?.LessonName,
+                    StartTime = startTime,
+                    AttemptId = attemptId,
+                    IsPrerequisiteQuiz = quiz.IsPrerequisiteQuiz ?? false,
+                    BlocksLessonCompletion = quiz.BlocksLessonCompletion ?? false,
+                    Questions = quiz.Questions.Select(q => new QuizQuestionViewModel
+                    {
+                        QuestionId = q.QuestionId,
+                        QuestionText = q.QuestionText,
+                        QuestionType = q.QuestionType,
+                        Points = q.Points,
+                        QuestionOrder = q.QuestionOrder,
+                        Explanation = q.Explanation,
+                        AnswerOptions = q.AnswerOptions.Select(ao => new QuizAnswerOptionViewModel
+                        {
+                            OptionId = ao.OptionId,
+                            OptionText = ao.OptionText,
+                            OptionOrder = ao.OptionOrder,
+                            IsSelected = false
+                        }).ToList()
+                    }).ToList()
+                };
+
+                return new QuizTakeResult
+                {
+                    Success = true,
+                    ViewModel = viewModel
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetQuizTakeAsync for quiz {QuizId}", quizId);
+                return new QuizTakeResult
+                {
+                    Success = false,
+                    ErrorMessage = "An error occurred while preparing the quiz"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Handle Quiz Submit POST request
+        /// </summary>
+        public async Task<QuizSubmitResult> SubmitQuizAsync(ClaimsPrincipal user, QuizTakeSubmitViewModel model, ModelStateDictionary modelState)
+        {
+            try
+            {
+                var userId = user.FindFirst("UserId")?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new QuizSubmitResult
+                    {
+                        Success = false,
+                        ErrorMessage = "User not authenticated"
+                    };
+                }
+
+                if (!modelState.IsValid)
+                {
+                    return new QuizSubmitResult
+                    {
+                        Success = false,
+                        ReturnView = true,
+                        ErrorMessage = "Please check your answers and try again"
+                    };
+                }
+
+                // Get attempt with quiz and questions
+                var attempt = await _context.QuizAttempts
+                    .Include(qa => qa.Quiz)
+                        .ThenInclude(q => q.Questions)
+                            .ThenInclude(qu => qu.AnswerOptions)
+                    .FirstOrDefaultAsync(qa => qa.AttemptId == model.AttemptId && qa.UserId == userId);
+
+                if (attempt == null)
+                {
+                    return new QuizSubmitResult
+                    {
+                        Success = false,
+                        IsNotFound = true
+                    };
+                }
+
+                // Check if already submitted
+                if (attempt.EndTime.HasValue)
+                {
+                    return new QuizSubmitResult
+                    {
+                        Success = false,
+                        ErrorMessage = "This quiz attempt has already been submitted"
+                    };
+                }
+
+                // Check time limit
+                if (attempt.Quiz.TimeLimit.HasValue)
+                {
+                    var timeElapsed = (DateTime.UtcNow - attempt.StartTime!.Value).TotalMinutes;
+                    if (timeElapsed > attempt.Quiz.TimeLimit.Value)
+                    {
+                        // Auto-submit with current answers
+                        model.SubmissionTime = DateTime.UtcNow;
+                    }
+                }
+
+                // Process answers
+                decimal totalPoints = 0;
+                decimal earnedPoints = 0;
+
+                foreach (var question in attempt.Quiz.Questions)
+                {
+                    totalPoints += question.Points ?? 1;
+
+                    var userAnswerSubmission = model.UserAnswers
+                        .FirstOrDefault(ua => ua.QuestionId == question.QuestionId);
+
+                    if (userAnswerSubmission != null)
+                    {
+                        var isCorrect = false;
+                        decimal pointsEarned = 0;
+
+                        if (question.QuestionType == "multiple_choice" && !string.IsNullOrEmpty(userAnswerSubmission.SelectedOptionId))
+                        {
+                            var selectedOption = question.AnswerOptions
+                                .FirstOrDefault(ao => ao.OptionId == userAnswerSubmission.SelectedOptionId);
+
+                            if (selectedOption?.IsCorrect == true)
+                            {
+                                isCorrect = true;
+                                pointsEarned = question.Points ?? 1;
+                                earnedPoints += pointsEarned;
+                            }
+                        }
+                        else if (question.QuestionType == "text" && !string.IsNullOrEmpty(userAnswerSubmission.AnswerText))
+                        {
+                            // For text questions, mark as correct if answered (manual grading can be implemented later)
+                            isCorrect = true;
+                            pointsEarned = question.Points ?? 1;
+                            earnedPoints += pointsEarned;
+                        }
+
+                        // Save user answer
+                        var userAnswer = new UserAnswer
+                        {
+                            UserId = userId,
+                            QuestionId = question.QuestionId,
+                            AttemptId = model.AttemptId,
+                            SelectedOptionId = userAnswerSubmission.SelectedOptionId,
+                            AnswerText = userAnswerSubmission.AnswerText,
+                            IsCorrect = isCorrect,
+                            PointsEarned = pointsEarned
+                        };
+
+                        _context.UserAnswers.Add(userAnswer);
+                    }
+                }
+
+                // Calculate final score
+                var percentageScore = totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
+                var passingScore = attempt.Quiz.PassingScore ?? 70;
+                var isPassed = percentageScore >= passingScore;
+
+                // Update attempt
+                attempt.EndTime = model.SubmissionTime;
+                attempt.Score = earnedPoints;
+                attempt.TotalPoints = totalPoints;
+                attempt.PercentageScore = percentageScore;
+                attempt.IsPassed = isPassed;
+
+                if (attempt.StartTime.HasValue)
+                {
+                    var timeSpentMinutes = (attempt.EndTime.Value - attempt.StartTime.Value).TotalMinutes;
+                    attempt.TimeSpent = (int)Math.Round(timeSpentMinutes);
+                }
+
+                await _context.SaveChangesAsync();
+
+                return new QuizSubmitResult
+                {
+                    Success = true,
+                    AttemptId = attempt.AttemptId,
+                    SuccessMessage = "Quiz submitted successfully!"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in SubmitQuizAsync for attempt {AttemptId}", model.AttemptId);
+                return new QuizSubmitResult
+                {
+                    Success = false,
+                    ErrorMessage = "An error occurred while submitting the quiz"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Handle Quiz Result GET request
+        /// </summary>
+        public async Task<QuizResultResult> GetQuizResultAsync(ClaimsPrincipal user, string attemptId)
+        {
+            try
+            {
+                var userId = user.FindFirst("UserId")?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new QuizResultResult
+                    {
+                        Success = false,
+                        ErrorMessage = "User not authenticated",
+                        RedirectAction = "Login",
+                        RedirectController = "Auth"
+                    };
+                }
+
+                // Get attempt with quiz, questions, and user answers
+                var attempt = await _context.QuizAttempts
+                    .Include(qa => qa.Quiz)
+                        .ThenInclude(q => q.Lesson)
+                            .ThenInclude(l => l!.Chapter)
+                                .ThenInclude(c => c!.Course)
+                    .Include(qa => qa.Quiz)
+                        .ThenInclude(q => q.Questions.OrderBy(qu => qu.QuestionOrder))
+                            .ThenInclude(qu => qu.AnswerOptions.OrderBy(ao => ao.OptionOrder))
+                    .Include(qa => qa.UserAnswers)
+                    .FirstOrDefaultAsync(qa => qa.AttemptId == attemptId && qa.UserId == userId);
+
+                if (attempt == null)
+                {
+                    return new QuizResultResult
+                    {
+                        Success = false,
+                        IsNotFound = true
+                    };
+                }
+
+                // Check if quiz is completed
+                if (!attempt.EndTime.HasValue)
+                {
+                    return new QuizResultResult
+                    {
+                        Success = false,
+                        ErrorMessage = "This quiz attempt has not been completed yet",
+                        RedirectAction = "Take",
+                        RedirectController = "Quiz",
+                        RouteValues = new { id = attempt.QuizId }
+                    };
+                }
+
+                // Check if user can retake
+                var totalAttempts = await _context.QuizAttempts
+                    .CountAsync(qa => qa.UserId == userId && qa.QuizId == attempt.QuizId);
+                var maxAttempts = attempt.Quiz.MaxAttempts ?? 3;
+                var canRetake = totalAttempts < maxAttempts && (attempt.IsPassed != true);
+
+                // Build view model
+                var viewModel = new QuizResultViewModel
+                {
+                    AttemptId = attempt.AttemptId,
+                    QuizId = attempt.QuizId,
+                    QuizName = attempt.Quiz.QuizName,
+                    QuizDescription = attempt.Quiz.QuizDescription,
+                    Score = attempt.Score,
+                    TotalPoints = attempt.TotalPoints,
+                    PercentageScore = attempt.PercentageScore,
+                    PassingScore = attempt.Quiz.PassingScore,
+                    IsPassed = attempt.IsPassed,
+                    StartTime = attempt.StartTime,
+                    EndTime = attempt.EndTime,
+                    TimeSpent = attempt.TimeSpent,
+                    AttemptNumber = attempt.AttemptNumber,
+                    MaxAttempts = maxAttempts,
+                    RemainingAttempts = maxAttempts - totalAttempts,
+                    CourseId = attempt.Quiz.CourseId,
+                    CourseName = attempt.Quiz.Lesson?.Chapter?.Course?.CourseName,
+                    LessonId = attempt.Quiz.LessonId,
+                    LessonTitle = attempt.Quiz.Lesson?.LessonName,
+                    CanRetake = canRetake,
+                    IsPrerequisiteQuiz = attempt.Quiz.IsPrerequisiteQuiz ?? false,
+                    BlocksLessonCompletion = attempt.Quiz.BlocksLessonCompletion ?? false,
+                    QuestionResults = attempt.Quiz.Questions.Select(q =>
+                    {
+                        var userAnswer = attempt.UserAnswers.FirstOrDefault(ua => ua.QuestionId == q.QuestionId);
+                        var correctOption = q.AnswerOptions.FirstOrDefault(ao => ao.IsCorrect == true);
+
+                        return new QuestionResultViewModel
+                        {
+                            QuestionId = q.QuestionId,
+                            QuestionText = q.QuestionText,
+                            QuestionType = q.QuestionType,
+                            Points = q.Points,
+                            PointsEarned = userAnswer?.PointsEarned,
+                            IsCorrect = userAnswer?.IsCorrect,
+                            UserAnswer = userAnswer?.AnswerText ??
+                                        (userAnswer?.SelectedOptionId != null ?
+                                         q.AnswerOptions.FirstOrDefault(ao => ao.OptionId == userAnswer.SelectedOptionId)?.OptionText :
+                                         null),
+                            CorrectAnswer = correctOption?.OptionText,
+                            Explanation = q.Explanation,
+                            AnswerOptions = q.AnswerOptions.Select(ao => new AnswerOptionResultViewModel
+                            {
+                                OptionId = ao.OptionId,
+                                OptionText = ao.OptionText,
+                                IsCorrect = ao.IsCorrect ?? false,
+                                IsSelected = userAnswer?.SelectedOptionId == ao.OptionId
+                            }).ToList()
+                        };
+                    }).ToList()
+                };
+
+                return new QuizResultResult
+                {
+                    Success = true,
+                    ViewModel = viewModel
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetQuizResultAsync for attempt {AttemptId}", attemptId);
+                return new QuizResultResult
+                {
+                    Success = false,
+                    ErrorMessage = "An error occurred while loading the quiz results"
+                };
+            }
+        }
+
         #endregion
     }
 
@@ -1060,6 +1507,41 @@ namespace BusinessLogicLayer.Services.Implementations
         public string? ErrorMessage { get; set; }
         public string? RedirectAction { get; set; }
         public string? RedirectController { get; set; }
+        public bool IsNotFound { get; set; }
+        public bool IsForbidden { get; set; }
+    }
+
+    public class QuizTakeResult
+    {
+        public bool Success { get; set; }
+        public QuizTakeViewModel? ViewModel { get; set; }
+        public string? ErrorMessage { get; set; }
+        public string? RedirectAction { get; set; }
+        public string? RedirectController { get; set; }
+        public object? RouteValues { get; set; }
+        public bool IsNotFound { get; set; }
+        public bool IsForbidden { get; set; }
+    }
+
+    public class QuizSubmitResult
+    {
+        public bool Success { get; set; }
+        public string? AttemptId { get; set; }
+        public string? SuccessMessage { get; set; }
+        public string? ErrorMessage { get; set; }
+        public bool ReturnView { get; set; }
+        public bool IsNotFound { get; set; }
+        public bool IsForbidden { get; set; }
+    }
+
+    public class QuizResultResult
+    {
+        public bool Success { get; set; }
+        public QuizResultViewModel? ViewModel { get; set; }
+        public string? ErrorMessage { get; set; }
+        public string? RedirectAction { get; set; }
+        public string? RedirectController { get; set; }
+        public object? RouteValues { get; set; }
         public bool IsNotFound { get; set; }
         public bool IsForbidden { get; set; }
     }

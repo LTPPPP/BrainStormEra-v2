@@ -23,10 +23,15 @@
                     }
                 </div>
                 <div class="quiz-actions">
-                    <a href="@Url.Action("Details", "Quiz", new { id = Model.QuizId })" 
+                    <a href="@Url.Action("Take", "Quiz", new { id = Model.QuizId })" 
                        class="btn btn-primary">
                         <i class="fas fa-play"></i>
-                        Start Quiz
+                        Take Quiz
+                    </a>
+                    <a href="@Url.Action("Details", "Quiz", new { id = Model.QuizId })" 
+                       class="btn btn-outline-info ms-2">
+                        <i class="fas fa-info-circle"></i>
+                        Quiz Info
                     </a>
                 </div>
             </div>
