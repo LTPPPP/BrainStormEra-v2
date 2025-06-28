@@ -67,13 +67,16 @@ namespace DataAccessLayer.Repositories
                 if (feedback == null)
                     return false;
 
-                _context.Feedbacks.Remove(feedback);
+                // Soft delete: Set HiddenStatus to true instead of removing the record
+                feedback.HiddenStatus = true;
+                feedback.FeedbackUpdatedAt = DateTime.UtcNow;
+
                 var result = await _context.SaveChangesAsync();
                 return result > 0;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error deleting feedback {FeedbackId}", feedbackId);
+                _logger?.LogError(ex, "Error soft deleting feedback {FeedbackId}", feedbackId);
                 throw;
             }
         }
@@ -85,7 +88,7 @@ namespace DataAccessLayer.Repositories
                 return await _context.Feedbacks
                     .Include(f => f.User)
                     .Include(f => f.Course)
-                    .FirstOrDefaultAsync(f => f.FeedbackId == feedbackId);
+                    .FirstOrDefaultAsync(f => f.FeedbackId == feedbackId && (f.HiddenStatus == null || f.HiddenStatus == false));
             }
             catch (Exception ex)
             {
@@ -101,7 +104,7 @@ namespace DataAccessLayer.Repositories
                 return await _context.Feedbacks
                     .Include(f => f.User)
                     .Include(f => f.Course)
-                    .FirstOrDefaultAsync(f => f.UserId == userId && f.CourseId == courseId);
+                    .FirstOrDefaultAsync(f => f.UserId == userId && f.CourseId == courseId && (f.HiddenStatus == null || f.HiddenStatus == false));
             }
             catch (Exception ex)
             {
@@ -135,7 +138,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 return await _context.Feedbacks
-                    .AnyAsync(f => f.UserId == userId && f.CourseId == courseId);
+                    .AnyAsync(f => f.UserId == userId && f.CourseId == courseId && (f.HiddenStatus == null || f.HiddenStatus == false));
             }
             catch (Exception ex)
             {
@@ -190,6 +193,62 @@ namespace DataAccessLayer.Repositories
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error getting average rating for course {CourseId}", courseId);
+                throw;
+            }
+        }
+
+        public async Task<bool> RestoreFeedbackAsync(string feedbackId, string userId)
+        {
+            try
+            {
+                var feedback = await _context.Feedbacks
+                    .FirstOrDefaultAsync(f => f.FeedbackId == feedbackId && f.UserId == userId && f.HiddenStatus == true);
+
+                if (feedback == null)
+                    return false;
+
+                feedback.HiddenStatus = false;
+                feedback.FeedbackUpdatedAt = DateTime.UtcNow;
+
+                var result = await _context.SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error restoring feedback {FeedbackId}", feedbackId);
+                throw;
+            }
+        }
+
+        public async Task<Feedback?> GetFeedbackByIdIncludingDeletedAsync(string feedbackId)
+        {
+            try
+            {
+                return await _context.Feedbacks
+                    .Include(f => f.User)
+                    .Include(f => f.Course)
+                    .FirstOrDefaultAsync(f => f.FeedbackId == feedbackId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting feedback {FeedbackId} including deleted", feedbackId);
+                throw;
+            }
+        }
+
+        public async Task<Feedback?> GetUserFeedbackForCourseIncludingDeletedAsync(string userId, string courseId)
+        {
+            try
+            {
+                return await _context.Feedbacks
+                    .Include(f => f.User)
+                    .Include(f => f.Course)
+                    .FirstOrDefaultAsync(f => f.UserId == userId && f.CourseId == courseId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting user feedback for course {CourseId} by user {UserId} including deleted",
+                    courseId, userId);
                 throw;
             }
         }

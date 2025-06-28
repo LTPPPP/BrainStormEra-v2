@@ -912,6 +912,22 @@
                                                     </div>
                                                     <div class="review-content">
                                                         <p>@review.ReviewComment</p>
+                                                        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("learner"))
+                                                        {
+                                                            var currentUserId = User.FindFirst("UserId")?.Value;
+                                                            <!-- Debug info: Current User ID: @currentUserId, Review User ID: @review.UserId -->
+                                                            if (currentUserId == review.UserId)
+                                                            {
+                                                                <div class="review-actions-buttons">
+                                                                    <button class="btn btn-sm btn-outline-primary edit-review-btn" onclick="courseReviews.editReview('@review.ReviewId', @review.StarRating, '@Html.Raw(Html.Encode(review.ReviewComment ?? "").Replace("'", "\\'"))')">
+                                                                        <i class="fas fa-edit"></i> Edit
+                                                                    </button>
+                                                                    <button class="btn btn-sm btn-outline-danger delete-review-btn" onclick="courseReviews.deleteReview('@review.ReviewId')">
+                                                                        <i class="fas fa-trash"></i> Delete
+                                                                    </button>
+                                                                </div>
+                                                            }
+                                                        }
                                                     </div>
                                                 </div>
                                             }
@@ -1457,7 +1473,6 @@
         let courseReviews;
         document.addEventListener('DOMContentLoaded', function() {
             courseReviews = new CourseReviews('@Model.CourseId');
-            courseReviews.init();
         });
     </script>
 

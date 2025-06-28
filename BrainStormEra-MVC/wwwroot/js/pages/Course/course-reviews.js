@@ -2,6 +2,7 @@
 class CourseReviews {
     constructor(courseId) {
         this.courseId = courseId;
+        this.editingReviewId = null;
         this.init();
     }
 
@@ -171,9 +172,18 @@ class CourseReviews {
         }
     }
 
-    showReviewForm() {
+    showReviewForm(isEdit = false, reviewData = null) {
         this.createReviewSection.style.display = 'block';
         this.writeReviewBtn.style.display = 'none';
+        
+        if (isEdit && reviewData) {
+            this.editingReviewId = reviewData.reviewId;
+            this.populateFormForEdit(reviewData);
+            this.updateFormForEdit();
+        } else {
+            this.editingReviewId = null;
+            this.updateFormForCreate();
+        }
         
         // Scroll to form
         this.createReviewSection.scrollIntoView({ 
@@ -182,9 +192,53 @@ class CourseReviews {
         });
     }
 
+    populateFormForEdit(reviewData) {
+        // Set star rating
+        this.selectedRating = reviewData.starRating;
+        const starInput = this.starRatingInput.querySelector(`input[value="${reviewData.starRating}"]`);
+        if (starInput) {
+            starInput.checked = true;
+        }
+        this.updateStarDisplay();
+        this.updateRatingText();
+
+        // Set comment
+        if (this.reviewComment) {
+            this.reviewComment.value = reviewData.reviewComment || '';
+            this.updateCharCount();
+        }
+    }
+
+    updateFormForEdit() {
+        // Update form title
+        const formTitle = this.createReviewSection.querySelector('h4');
+        if (formTitle) {
+            formTitle.innerHTML = '<i class="fas fa-edit"></i> Edit Your Review';
+        }
+
+        // Update submit button
+        if (this.submitReviewBtn) {
+            this.submitReviewBtn.innerHTML = '<i class="fas fa-save"></i> Update Review';
+        }
+    }
+
+    updateFormForCreate() {
+        // Update form title
+        const formTitle = this.createReviewSection.querySelector('h4');
+        if (formTitle) {
+            formTitle.innerHTML = '<i class="fas fa-star"></i> Write a Review';
+        }
+
+        // Update submit button
+        if (this.submitReviewBtn) {
+            this.submitReviewBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
+        }
+    }
+
     hideReviewForm() {
         this.createReviewSection.style.display = 'none';
         this.writeReviewBtn.style.display = 'inline-block';
+        this.editingReviewId = null;
         this.resetForm();
     }
 
@@ -195,6 +249,7 @@ class CourseReviews {
         this.updateRatingText();
         this.charCount.textContent = '0';
         this.charCount.style.color = '#6c757d';
+        this.updateFormForCreate();
     }
 
     async handleSubmitReview(e) {
@@ -213,7 +268,17 @@ class CourseReviews {
                 comment: this.reviewComment.value.trim()
             };
 
-            const response = await fetch('/Course/CreateReview', {
+            let endpoint, method;
+            if (this.editingReviewId) {
+                // Update existing review
+                endpoint = '/Course/UpdateReview';
+                formData.reviewId = this.editingReviewId;
+            } else {
+                // Create new review
+                endpoint = '/Course/CreateReview';
+            }
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -225,12 +290,15 @@ class CourseReviews {
             const result = await response.json();
 
             if (result.success) {
-                this.showSuccessMessage('Review submitted successfully!');
+                const message = this.editingReviewId ? 'Review updated successfully!' : 'Review submitted successfully!';
+                this.showSuccessMessage(message);
                 this.hideReviewForm();
                 
-                // Hide write review button and show eligibility message
-                this.hideWriteReviewButton();
-                this.showEligibilityMessage('You have already reviewed this course.', 'info');
+                if (!this.editingReviewId) {
+                    // Hide write review button and show eligibility message for new reviews
+                    this.hideWriteReviewButton();
+                    this.showEligibilityMessage('You have already reviewed this course.', 'info');
+                }
                 
                 // Refresh reviews list
                 await this.refreshReviews();
@@ -261,10 +329,13 @@ class CourseReviews {
     setSubmitButtonLoading(isLoading) {
         if (isLoading) {
             this.submitReviewBtn.disabled = true;
-            this.submitReviewBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            const loadingText = this.editingReviewId ? 'Updating...' : 'Submitting...';
+            this.submitReviewBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${loadingText}`;
         } else {
             this.submitReviewBtn.disabled = false;
-            this.submitReviewBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
+            const buttonText = this.editingReviewId ? 'Update Review' : 'Submit Review';
+            const iconClass = this.editingReviewId ? 'fas fa-save' : 'fas fa-paper-plane';
+            this.submitReviewBtn.innerHTML = `<i class="${iconClass}"></i> ${buttonText}`;
         }
     }
 
@@ -315,10 +386,15 @@ class CourseReviews {
         const currentUserId = document.querySelector('meta[name="user-id"]')?.getAttribute('content');
         const isCurrentUserReview = currentUserId && review.userId === currentUserId;
         
-        const deleteButton = isCurrentUserReview ? 
-            `<button class="btn btn-sm btn-outline-danger delete-review-btn" onclick="courseReviews.deleteReview('${review.reviewId}')">
-                <i class="fas fa-trash"></i> Delete
-            </button>` : '';
+        const actionButtons = isCurrentUserReview ? 
+            `<div class="review-actions-buttons">
+                <button class="btn btn-sm btn-outline-primary edit-review-btn" onclick="courseReviews.editReview('${review.reviewId}', ${review.starRating}, '${(review.reviewComment || '').replace(/'/g, "\\'")}')">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn btn-sm btn-outline-danger delete-review-btn" onclick="courseReviews.deleteReview('${review.reviewId}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>` : '';
 
         return `
             <div class="review-item">
@@ -335,7 +411,7 @@ class CourseReviews {
                 </div>
                 <div class="review-content">
                     <p>${review.reviewComment}</p>
-                    ${deleteButton}
+                    ${actionButtons}
                 </div>
             </div>
         `;
@@ -374,6 +450,16 @@ class CourseReviews {
         if (ratingCount) {
             ratingCount.textContent = `(${totalReviews} review${totalReviews !== 1 ? 's' : ''})`;
         }
+    }
+
+    editReview(reviewId, starRating, reviewComment) {
+        const reviewData = {
+            reviewId: reviewId,
+            starRating: starRating,
+            reviewComment: reviewComment
+        };
+        
+        this.showReviewForm(true, reviewData);
     }
 
     showSuccessMessage(message) {
@@ -437,7 +523,6 @@ class CourseReviews {
                 this.showErrorMessage(result.message || 'Failed to delete review');
             }
         } catch (error) {
-            // Đã xoá console.error debug
             this.showErrorMessage('An error occurred while deleting your review');
         }
     }

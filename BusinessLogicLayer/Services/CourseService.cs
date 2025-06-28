@@ -186,7 +186,8 @@ namespace BusinessLogicLayer.Services
                         StarRating = f.StarRating ?? 0,
                         ReviewComment = f.Comment ?? "",
                         ReviewDate = f.FeedbackCreatedAt,
-                        IsVerifiedPurchase = f.IsVerifiedPurchase ?? false
+                        IsVerifiedPurchase = f.IsVerifiedPurchase ?? false,
+                        UserId = f.UserId
                     }).ToList();
 
                 return viewModel;
@@ -290,7 +291,8 @@ namespace BusinessLogicLayer.Services
                         StarRating = f.StarRating ?? 0,
                         ReviewComment = f.Comment ?? "",
                         ReviewDate = f.FeedbackCreatedAt,
-                        IsVerifiedPurchase = f.IsVerifiedPurchase ?? false
+                        IsVerifiedPurchase = f.IsVerifiedPurchase ?? false,
+                        UserId = f.UserId
                     }).ToList();
 
                 return viewModel;

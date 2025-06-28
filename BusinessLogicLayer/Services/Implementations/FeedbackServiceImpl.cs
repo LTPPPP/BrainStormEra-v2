@@ -84,7 +84,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     return ReviewResponseExtensions.UpdateFailure("User not authenticated");
                 }
 
-                var existingFeedback = await _feedbackRepo.GetFeedbackByIdAsync(request.ReviewId);
+                var existingFeedback = await _feedbackRepo.GetFeedbackByIdIncludingDeletedAsync(request.ReviewId);
                 if (existingFeedback == null)
                 {
                     return ReviewResponseExtensions.UpdateFailure("Review not found");
@@ -93,6 +93,12 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (existingFeedback.UserId != userId)
                 {
                     return ReviewResponseExtensions.UpdateFailure("You can only edit your own reviews");
+                }
+
+                // If the review was soft-deleted, restore it
+                if (existingFeedback.HiddenStatus == true)
+                {
+                    existingFeedback.HiddenStatus = false;
                 }
 
                 existingFeedback.StarRating = (byte)request.StarRating;
@@ -210,7 +216,9 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 var isEnrolled = await _feedbackRepo.IsUserEnrolledInCourseAsync(userId, courseId);
                 var existingReview = await _feedbackRepo.GetUserFeedbackForCourseAsync(userId, courseId);
+                var existingReviewIncludingDeleted = await _feedbackRepo.GetUserFeedbackForCourseIncludingDeletedAsync(userId, courseId);
 
+                // User can create a review if they're enrolled and don't have an active review
                 var canCreate = isEnrolled && existingReview == null;
 
                 return ReviewResponseExtensions.CheckSuccess(new CheckReviewEligibilityResponse
@@ -218,7 +226,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     CanCreateReview = canCreate,
                     IsEnrolled = isEnrolled,
                     HasExistingReview = existingReview != null,
-                    ExistingReviewId = existingReview?.FeedbackId
+                    ExistingReviewId = existingReview?.FeedbackId ?? existingReviewIncludingDeleted?.FeedbackId
                 });
             }
             catch (Exception ex)

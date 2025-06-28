@@ -414,4 +414,58 @@
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Review Action Buttons */
+.review-actions-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #f0f0f0;
+    justify-content: flex-end;
+}
+
+.edit-review-btn,
+.delete-review-btn {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0;
+    float: none;
+}
+
+.btn-outline-primary {
+    border: 1px solid #3498db;
+    color: #3498db;
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: #3498db;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.edit-review-btn:hover {
+    background: #3498db;
+    border-color: #3498db;
+    color: white;
+}
+
+.delete-review-btn:hover {
+    background: #e74c3c;
+    border-color: #e74c3c;
+    color: white;
+}
+
+/* Review Content Adjustments */
+.review-content {
+    position: relative;
 } 
