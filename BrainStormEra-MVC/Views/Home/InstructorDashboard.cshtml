@@ -437,13 +437,11 @@
                             const totalIncome = result.data.reduce((sum, item) => sum + item.Amount, 0);
                             document.getElementById('totalIncome').textContent = '$' + totalIncome.toFixed(2);
                         } else {
-                            console.error('Failed to load income data:', result.message);
                             showToast('Failed to load income data', 'error');
                         }
                     })
                     .catch(error => {
-                        console.error('Error loading income data:', error);
-                        showToast('Error loading income data', 'error');
+                        showToast('An error occurred while loading income data. Please try again.', 'error');
                     })
                     .finally(() => {
                         loading.style.display = 'none';
@@ -539,7 +537,6 @@
                         }
                     })
                     .catch(error => {
-                        console.error('Error deleting course:', error);
                         showToast('An error occurred while deleting the course. Please try again.', 'error');
                         // Restore button state
                         if (deleteButton) {

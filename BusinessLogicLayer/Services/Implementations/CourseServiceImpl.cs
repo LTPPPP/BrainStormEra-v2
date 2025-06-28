@@ -2,8 +2,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
 using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Models.ViewModels;
+using DataAccessLayer.Models;
 using System.Security.Claims;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
@@ -196,7 +203,7 @@ namespace BusinessLogicLayer.Services.Implementations
         #region Course Enrollment Operations
 
         /// <summary>
-        /// Handle course enrollment with validation
+        /// Handle course enrollment with validation and point deduction
         /// </summary>
         public async Task<EnrollmentResult> EnrollInCourseAsync(ClaimsPrincipal user, string courseId)
         {
@@ -222,23 +229,140 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var success = await _courseService.EnrollUserAsync(userId, courseId);
-                if (success)
-                {
-                    return new EnrollmentResult
-                    {
-                        Success = true,
-                        Message = "Successfully enrolled in course!"
-                    };
-                }
-                else
+                // Get course info to check price
+                var course = await _courseService.GetCourseByIdAsync(courseId);
+                if (course == null)
                 {
                     return new EnrollmentResult
                     {
                         Success = false,
-                        Message = "Course requires payment or enrollment failed"
+                        Message = "Course not found"
                     };
                 }
+
+                // If course is free, proceed with normal enrollment
+                if (course.Price == 0)
+                {
+                    var success = await _courseService.EnrollUserAsync(userId, courseId);
+                    if (success)
+                    {
+                        return new EnrollmentResult
+                        {
+                            Success = true,
+                            Message = "Successfully enrolled in course!"
+                        };
+                    }
+                    else
+                    {
+                        return new EnrollmentResult
+                        {
+                            Success = false,
+                            Message = "Enrollment failed"
+                        };
+                    }
+                }
+
+                // If course has price, check user points and deduct
+                using var scope = _serviceProvider.CreateScope();
+                var userRepo = scope.ServiceProvider.GetRequiredService<DataAccessLayer.Repositories.Interfaces.IUserRepo>();
+                var context = scope.ServiceProvider.GetRequiredService<DataAccessLayer.Data.BrainStormEraContext>();
+
+                var userWithPoints = await userRepo.GetUserWithPaymentPointAsync(userId);
+                if (userWithPoints == null)
+                {
+                    return new EnrollmentResult
+                    {
+                        Success = false,
+                        Message = "User not found"
+                    };
+                }
+
+                var userPoints = userWithPoints.PaymentPoint ?? 0;
+                if (userPoints < course.Price)
+                {
+                    return new EnrollmentResult
+                    {
+                        Success = false,
+                        Message = $"Insufficient points! You have {userPoints:N0} points but need {course.Price:N0} points. Please top up your account to enroll in this course."
+                    };
+                }
+
+                // Use execution strategy for transaction
+                var executionStrategy = context.Database.CreateExecutionStrategy();
+                return await executionStrategy.ExecuteAsync<object, EnrollmentResult>(
+                    new object(),
+                    async (dbContext, state, cancellationToken) =>
+                    {
+                        var realContext = (DataAccessLayer.Data.BrainStormEraContext)dbContext;
+                        using var transaction = await realContext.Database.BeginTransactionAsync(cancellationToken);
+                        try
+                        {
+                            // Deduct points
+                            var userAccount = await realContext.Accounts.FindAsync(new object[] { userId }, cancellationToken);
+                            if (userAccount == null)
+                            {
+                                await transaction.RollbackAsync(cancellationToken);
+                                return new EnrollmentResult
+                                {
+                                    Success = false,
+                                    Message = "User account not found"
+                                };
+                            }
+
+                            userAccount.PaymentPoint = (userAccount.PaymentPoint ?? 0) - course.Price;
+                            userAccount.AccountUpdatedAt = DateTime.UtcNow;
+
+                            // Check if already enrolled
+                            var existingEnrollment = await realContext.Enrollments
+                                .FirstOrDefaultAsync(e => e.UserId == userId && e.CourseId == courseId, cancellationToken);
+
+                            if (existingEnrollment != null)
+                            {
+                                await transaction.RollbackAsync(cancellationToken);
+                                return new EnrollmentResult
+                                {
+                                    Success = false,
+                                    Message = "Already enrolled in this course"
+                                };
+                            }
+
+                            // Create enrollment directly in the transaction context
+                            var enrollment = new DataAccessLayer.Models.Enrollment
+                            {
+                                EnrollmentId = Guid.NewGuid().ToString(),
+                                UserId = userId,
+                                CourseId = courseId,
+                                EnrollmentCreatedAt = DateTime.UtcNow,
+                                EnrollmentUpdatedAt = DateTime.UtcNow,
+                                EnrollmentStatus = 1, // Active status
+                                ProgressPercentage = 0
+                            };
+
+                            realContext.Enrollments.Add(enrollment);
+
+                            await realContext.SaveChangesAsync(cancellationToken);
+                            await transaction.CommitAsync(cancellationToken);
+
+                            return new EnrollmentResult
+                            {
+                                Success = true,
+                                Message = $"Successfully enrolled! {course.Price:N0} points deducted from your account."
+                            };
+                        }
+                        catch (Exception ex)
+                        {
+                            await transaction.RollbackAsync(cancellationToken);
+                            _logger.LogError(ex, "Error during enrollment transaction for course {CourseId}, user {UserId}", courseId, userId);
+                            return new EnrollmentResult
+                            {
+                                Success = false,
+                                Message = "An error occurred during enrollment"
+                            };
+                        }
+                    },
+                    null,
+                    System.Threading.CancellationToken.None
+                );
             }
             catch (Exception ex)
             {

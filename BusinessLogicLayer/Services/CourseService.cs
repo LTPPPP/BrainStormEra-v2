@@ -511,7 +511,7 @@ namespace BusinessLogicLayer.Services
             try
             {
                 var course = await _courseRepo.GetCourseByIdAsync(courseId);
-                if (course == null || course.Price > 0) return false;
+                if (course == null) return false;
 
                 return await _enrollmentService.EnrollAsync(userId, courseId);
             }

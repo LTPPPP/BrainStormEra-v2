@@ -162,12 +162,12 @@
 
                 // If we're still on login page after success, there might be a redirect issue
                 if (currentUrl.includes(loginPath)) {
-                    console.log('Login successful but still on login page, attempting redirect...');
+                    // Đã xoá console.log debug
 
                     // Wait a moment for any pending redirects, then force redirect
                     setTimeout(() => {
                         if (window.location.href.includes(loginPath)) {
-                            console.log('Forcing redirect to home page...');
+                            // Đã xoá console.log debug
                             window.location.href = '/Home/Index';
                         }
                     }, 2000);

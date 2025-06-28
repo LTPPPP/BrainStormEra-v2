@@ -128,6 +128,7 @@ namespace DataAccessLayer.Models.ViewModels
         public string ReviewComment { get; set; } = string.Empty;
         public DateTime ReviewDate { get; set; }
         public bool IsVerifiedPurchase { get; set; }
+        public string? UserId { get; set; }
     }
 
     public class CourseViewModel

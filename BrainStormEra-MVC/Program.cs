@@ -58,6 +58,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.INotificationRepo, DataAccessLayer.Repositories.NotificationRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAchievementRepo, DataAccessLayer.Repositories.AchievementRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICertificateRepo, DataAccessLayer.Repositories.CertificateRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IFeedbackRepo, DataAccessLayer.Repositories.FeedbackRepo>();
 
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatbotRepo, DataAccessLayer.Repositories.ChatbotRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatRepo, DataAccessLayer.Repositories.ChatRepo>();
@@ -90,6 +91,9 @@ namespace BrainStormEra_MVC
 
             // Register Certificate Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.CertificateServiceImpl>();
+
+            // Register Feedback Service Implementation for business logic layer
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IFeedbackService, BusinessLogicLayer.Services.Implementations.FeedbackServiceImpl>();
 
             // Register Notification Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.NotificationServiceImpl>();

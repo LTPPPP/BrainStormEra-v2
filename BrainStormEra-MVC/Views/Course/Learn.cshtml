@@ -228,8 +228,6 @@
             try {
                 const data = JSON.parse(completionData);
                 if (data.needsRefresh && data.courseId === courseId) {
-                    console.log('Detected lesson completion, refreshing course data...', data);
-                    
                     // Mark as processed to avoid multiple refreshes
                     data.needsRefresh = false;
                     sessionStorage.setItem(completionKey, JSON.stringify(data));
@@ -238,7 +236,6 @@
                     refreshCourseData(courseId);
                 }
             } catch (e) {
-                console.error('Error parsing completion data:', e);
                 sessionStorage.removeItem(completionKey);
             }
         }
@@ -258,8 +255,6 @@
     }
     
     function refreshCourseData(courseId) {
-        console.log('Refreshing course data for courseId:', courseId);
-        
         // Show loading indicator
         showRefreshIndicator();
         
@@ -272,7 +267,6 @@
         })
         .then(response => response.json())
         .then(data => {
-            console.log('Received updated course data:', data);
             if (data.success) {
                 updateCourseProgress(data.progressPercentage, data.completedLessons, data.totalLessons);
                 updateLessonStatuses(data.chapters);
@@ -282,12 +276,10 @@
                     window.showToast('success', 'Course progress updated!');
                 }
             } else {
-                console.error('Failed to refresh course data:', data.message);
                 hideRefreshIndicator();
             }
         })
         .catch(error => {
-            console.error('Error refreshing course data:', error);
             hideRefreshIndicator();
             // Fallback to page reload if AJAX fails
             setTimeout(() => {
@@ -314,8 +306,6 @@
         if (completedStat) {
             completedStat.textContent = `${completedLessons} Completed`;
         }
-        
-        console.log(`Updated course progress: ${progressPercentage}% (${completedLessons}/${totalLessons})`);
     }
     
     function updateLessonStatuses(chapters) {

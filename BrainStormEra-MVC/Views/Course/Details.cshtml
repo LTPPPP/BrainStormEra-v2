@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="~/css/components/header.css">
     <link rel="stylesheet" href="~/css/components/loader.css">
     <link rel="stylesheet" href="~/css/pages/Course/courses.css">
+    <link rel="stylesheet" href="~/css/pages/Course/course-reviews.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
     <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
@@ -364,6 +365,27 @@
                                 }
                                 else
                                 {
+                                    @if (Model.Price > 0 && User.Identity?.IsAuthenticated == true && User.IsInRole("learner"))
+                                    {
+                                        <div class="points-info mb-3 p-3 border rounded bg-light">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <i class="fas fa-coins text-warning me-2"></i>
+                                                    <strong>Your Points: @((ViewBag.UserPoints ?? 0).ToString("N0"))</strong>
+                                                </div>
+                                                <div>
+                                                    <span class="badge @(Model.Price <= (ViewBag.UserPoints ?? 0) ? "bg-success" : "bg-danger")">
+                                                        @(Model.Price <= (ViewBag.UserPoints ?? 0) ? "Sufficient" : "Insufficient")
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2 text-muted small">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Course cost: @Model.Price.ToString("N0") points
+                                            </div>
+                                        </div>
+                                    }
+
                                     <button id="enrollBtn" class="btn btn-primary btn-lg w-100 mb-3 enroll-btn" onclick="enrollInCourse()">
                                         @if (Model.Price == 0)
                                         {
@@ -373,7 +395,7 @@
                                         else
                                         {
                                             <i class="fas fa-shopping-cart me-2"></i>
-                                            <span>Enroll Now</span>
+                                            <span>Enroll Now - @Model.Price.ToString("N0") Points</span>
                                         }
                                     </button>
                                     
@@ -753,6 +775,80 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- Create Review Form (Only for enrolled learners) -->
+                                    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("learner"))
+                                    {
+                                        <div id="create-review-section" class="create-review-section" style="display: none;">
+                                            <div class="review-form-card">
+                                            <h4><i class="fas fa-star"></i> Write a Review</h4>
+                                            <form id="createReviewForm">
+                                                <input type="hidden" id="courseId" name="courseId" value="@ViewBag.CourseId" />
+                                                
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label">Your Rating *</label>
+                                                    <div class="rating-input">
+                                                        <div class="star-rating-input" id="star-rating-input">
+                                                            <input type="radio" id="star5" name="starRating" value="5" />
+                                                            <label for="star5" class="star-label"><i class="fas fa-star"></i></label>
+                                                            <input type="radio" id="star4" name="starRating" value="4" />
+                                                            <label for="star4" class="star-label"><i class="fas fa-star"></i></label>
+                                                            <input type="radio" id="star3" name="starRating" value="3" />
+                                                            <label for="star3" class="star-label"><i class="fas fa-star"></i></label>
+                                                            <input type="radio" id="star2" name="starRating" value="2" />
+                                                            <label for="star2" class="star-label"><i class="fas fa-star"></i></label>
+                                                            <input type="radio" id="star1" name="starRating" value="1" />
+                                                            <label for="star1" class="star-label"><i class="fas fa-star"></i></label>
+                                                        </div>
+                                                        <span class="rating-text" id="rating-text">Click to rate</span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-group mb-3">
+                                                    <label for="reviewComment" class="form-label">Your Review (optional)</label>
+                                                    <textarea class="form-control" id="reviewComment" name="comment" rows="4" 
+                                                            placeholder="Share your experience with this course..."></textarea>
+                                                    <div class="character-count">
+                                                        <span id="char-count">0</span>/1000 characters
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <button type="submit" class="btn btn-primary me-2" id="submitReviewBtn">
+                                                        <i class="fas fa-paper-plane"></i> Submit Review
+                                                    </button>
+                                                    <button type="button" class="btn btn-secondary" id="cancelReviewBtn">
+                                                        <i class="fas fa-times"></i> Cancel
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                        <!-- Review Action Buttons -->
+                                        <div class="review-actions">
+                                            <button id="writeReviewBtn" class="btn btn-outline-primary" style="display: none;">
+                                                <i class="fas fa-edit"></i> Write a Review
+                                            </button>
+                                            <div id="review-eligibility-message" class="alert" style="display: none;"></div>
+                                        </div>
+                                    }
+                                    else if (User.Identity?.IsAuthenticated == true && !User.IsInRole("learner"))
+                                    {
+                                        <div class="review-actions">
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle"></i> Only enrolled learners can write reviews.
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="review-actions">
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-sign-in-alt"></i> Please <a href="/Auth/Login">log in</a> to write a review.
+                                            </div>
+                                        </div>
+                                    }
 
                                     <!-- Reviews List -->
                                     <div class="reviews-list">
@@ -1224,7 +1320,6 @@
                         }
                     })
                     .catch(error => {
-                        console.error('Error:', error);
                         if (window.showToast) {
                             window.showToast('error', 'An error occurred while submitting approval request');
                         } else {
@@ -1243,22 +1338,11 @@
         document.addEventListener('DOMContentLoaded', function() {
             const courseHashId = '@Model.CourseId';
             
-            console.log('Course Details page initializing with courseId:', courseHashId);
-            
             if (courseHashId && courseHashId !== '' && courseHashId !== 'undefined') {
                 // Check enrollment status on page load
-                checkEnrollmentStatus();
             } else {
-                console.error('Invalid course ID - cannot initialize enrollment functionality:', courseHashId);
             }
         });
-        
-        // Check enrollment status function for course details page - DISABLED
-        function checkEnrollmentStatus() {
-            // Learning functionality has been removed
-            console.log('Learning functionality is under development');
-            return;
-        }
         
         // Update enrollment UI for course details page
         function updateEnrollmentUI(enrollmentData) {
@@ -1285,16 +1369,96 @@
             }
         }
         
-        // Enroll in course function for course details page - DISABLED
+        // Enroll in course function for course details page
         function enrollInCourse() {
-            // Learning functionality has been removed
-            if (window.showToast) {
-                window.showToast('info', 'Learning functionality is under development');
-            } else {
-                alert('Learning functionality is under development');
+            const enrollBtn = document.getElementById('enrollBtn');
+            if (enrollBtn) {
+                enrollBtn.disabled = true;
+                enrollBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
             }
-            return;
+
+            fetch('@Url.Action("EnrollInCourse", "Course")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: 'courseId=' + encodeURIComponent('@Model.CourseId')
+            })
+            .then(response => {
+                if (response.redirected) {
+                    // If response is a redirect, follow it
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && !data.success) {
+                    // Show error message
+                    if (window.showToast) {
+                        if (data.message.includes('Insufficient points')) {
+                            window.showToast('warning', data.message);
+                        } else if (data.message.includes('Already enrolled')) {
+                            window.showToast('info', data.message);
+                        } else {
+                            window.showToast('error', data.message);
+                        }
+                    } else {
+                        alert(data.message);
+                    }
+                    
+                    // Re-enable button
+                    if (enrollBtn) {
+                        enrollBtn.disabled = false;
+                        if (@Model.Price == 0) {
+                            enrollBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Enroll for Free';
+                        } else {
+                            enrollBtn.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>Enroll Now - @Model.Price.ToString("N0") Points';
+                        }
+                    }
+                } else if (data && data.success) {
+                    // Show success message and refresh page
+                    if (window.showToast) {
+                        window.showToast('success', data.message);
+                    }
+                    
+                    // Refresh page after short delay to show updated enrollment status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                }
+            })
+            .catch(error => {
+                if (window.showToast) {
+                    window.showToast('error', 'An error occurred while enrolling');
+                } else {
+                    alert('An error occurred while enrolling');
+                }
+                
+                // Re-enable button
+                if (enrollBtn) {
+                    enrollBtn.disabled = false;
+                    if (@Model.Price == 0) {
+                        enrollBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Enroll for Free';
+                    } else {
+                        enrollBtn.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>Enroll Now - @Model.Price.ToString("N0") Points';
+                    }
+                }
+            });
         }
+    </script>
+
+    <!-- Course Reviews JavaScript -->
+    <script src="~/js/pages/Course/course-reviews.js"></script>
+    
+    <script>
+        // Initialize CourseReviews
+        let courseReviews;
+        document.addEventListener('DOMContentLoaded', function() {
+            courseReviews = new CourseReviews('@Model.CourseId');
+            courseReviews.init();
+        });
     </script>
 
     <!-- Enrollment Success Modal -->

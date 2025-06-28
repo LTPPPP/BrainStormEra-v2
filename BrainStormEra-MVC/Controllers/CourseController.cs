@@ -5,6 +5,8 @@ using DataAccessLayer.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using BrainStormEra_MVC.Filters;
 using DataAccessLayer.Models;
+using BusinessLogicLayer.DTOs.Course;
+using Microsoft.EntityFrameworkCore;
 
 namespace BrainStormEra_MVC.Controllers
 {
@@ -12,11 +14,16 @@ namespace BrainStormEra_MVC.Controllers
     public class CourseController : BaseController
     {
         private readonly CourseServiceImpl _courseServiceImpl;
+        private readonly IFeedbackService _feedbackService;
         private readonly ILogger<CourseController> _logger;
 
-        public CourseController(CourseServiceImpl courseServiceImpl, ILogger<CourseController> logger) : base()
+        public CourseController(
+            CourseServiceImpl courseServiceImpl,
+            IFeedbackService feedbackService,
+            ILogger<CourseController> logger) : base()
         {
             _courseServiceImpl = courseServiceImpl;
+            _feedbackService = feedbackService;
             _logger = logger;
         }
 
@@ -53,6 +60,29 @@ namespace BrainStormEra_MVC.Controllers
                 ViewBag.CurrentUserId = result.CurrentUserId;
                 ViewBag.ActiveTab = result.ActiveTab;
                 ViewBag.CourseId = id;
+
+                // Add user points to ViewBag if user is authenticated and is a learner
+                if (User.Identity?.IsAuthenticated == true && User.IsInRole("learner"))
+                {
+                    try
+                    {
+                        using var scope = HttpContext.RequestServices.CreateScope();
+                        var userRepo = scope.ServiceProvider.GetRequiredService<DataAccessLayer.Repositories.Interfaces.IUserRepo>();
+                        var userId = User.FindFirst("UserId")?.Value;
+
+                        if (!string.IsNullOrEmpty(userId))
+                        {
+                            var userWithPoints = await userRepo.GetUserWithPaymentPointAsync(userId);
+                            ViewBag.UserPoints = userWithPoints?.PaymentPoint ?? 0;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Could not retrieve user points for course details");
+                        ViewBag.UserPoints = 0;
+                    }
+                }
+
                 return View(result.ViewModel);
             }
             catch (Exception ex)
@@ -75,12 +105,7 @@ namespace BrainStormEra_MVC.Controllers
             {
                 // Use course ID directly without decoding
                 var result = await _courseServiceImpl.EnrollInCourseAsync(User, courseId);
-                if (result.Success)
-                {
-                    // Redirect to Details action with course ID
-                    return RedirectToAction("Details", new { id = courseId });
-                }
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = result.Success, message = result.Message });
             }
             catch (Exception ex)
             {
@@ -379,6 +404,145 @@ namespace BrainStormEra_MVC.Controllers
                 return Json(new { success = false, message = ex.Message });
             }
         }
+
+        #region Review Actions
+
+        // GET: Check if user can create review for a course
+        [HttpGet]
+        [Authorize(Roles = "learner")]
+        public async Task<IActionResult> CheckReviewEligibility(string courseId)
+        {
+            if (string.IsNullOrEmpty(courseId))
+            {
+                return Json(new { success = false, message = "Course ID is required" });
+            }
+
+            try
+            {
+                var result = await _feedbackService.CheckReviewEligibilityAsync(User, courseId);
+
+                return Json(new
+                {
+                    success = true,
+                    canCreateReview = result.CanCreateReview,
+                    isEnrolled = result.IsEnrolled,
+                    hasExistingReview = result.HasExistingReview,
+                    existingReviewId = result.ExistingReviewId
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking review eligibility for course {CourseId}", courseId);
+                return Json(new { success = false, message = "An error occurred while checking review eligibility" });
+            }
+        }
+
+        // POST: Create a new review
+        [HttpPost]
+        [Authorize(Roles = "learner")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateReview([FromBody] CreateReviewRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Json(new { success = false, message = "Invalid review data" });
+            }
+
+            try
+            {
+                var result = await _feedbackService.CreateReviewAsync(User, request);
+                return Json(new { success = result.Success, message = result.Message, reviewId = result.ReviewId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating review for course {CourseId}", request.CourseId);
+                return Json(new { success = false, message = "An error occurred while creating the review" });
+            }
+        }
+
+        // POST: Update an existing review
+        [HttpPost]
+        [Authorize(Roles = "learner")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateReview([FromBody] UpdateReviewRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Json(new { success = false, message = "Invalid review data" });
+            }
+
+            try
+            {
+                var result = await _feedbackService.UpdateReviewAsync(User, request);
+                return Json(new { success = result.Success, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating review {ReviewId}", request.ReviewId);
+                return Json(new { success = false, message = "An error occurred while updating the review" });
+            }
+        }
+
+        // POST: Delete a review
+        [HttpPost]
+        [Authorize(Roles = "learner")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteReview([FromBody] DeleteReviewRequest request)
+        {
+            if (string.IsNullOrEmpty(request.ReviewId))
+            {
+                return Json(new { success = false, message = "Review ID is required" });
+            }
+
+            try
+            {
+                var result = await _feedbackService.DeleteReviewAsync(User, request.ReviewId);
+                return Json(new { success = result.Success, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting review {ReviewId}", request.ReviewId);
+                return Json(new { success = false, message = "An error occurred while deleting the review" });
+            }
+        }
+
+        // GET: Get reviews for a course
+        [HttpGet]
+        public async Task<IActionResult> GetCourseReviews(string courseId, int page = 1, int pageSize = 10)
+        {
+            if (string.IsNullOrEmpty(courseId))
+            {
+                return Json(new { success = false, message = "Course ID is required" });
+            }
+
+            try
+            {
+                var result = await _feedbackService.GetCourseReviewsAsync(courseId, page, pageSize);
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    reviews = result.ViewModel?.Reviews,
+                    averageRating = result.ViewModel?.AverageRating,
+                    totalReviews = result.ViewModel?.TotalReviews,
+                    currentPage = result.ViewModel?.CurrentPage,
+                    totalPages = result.ViewModel?.TotalPages,
+                    hasNextPage = result.ViewModel?.HasNextPage,
+                    hasPreviousPage = result.ViewModel?.HasPreviousPage
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting reviews for course {CourseId}", courseId);
+                return Json(new { success = false, message = "An error occurred while loading reviews" });
+            }
+        }
+
+        #endregion
     }
 }
 

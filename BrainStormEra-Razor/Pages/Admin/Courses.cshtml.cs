@@ -97,9 +97,8 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return BadRequest("Course ID is required");
                 }
 
-                // Decode hash ID to real ID
-                var realCourseId = _urlHashService.GetRealId(courseId);
-                var courseDetails = await _adminService.GetCourseDetailsAsync(realCourseId);
+
+                var courseDetails = await _adminService.GetCourseDetailsAsync(courseId);
 
                 if (courseDetails == null)
                 {
@@ -124,9 +123,8 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return BadRequest("Course ID is required");
                 }
 
-                // Decode hash ID to real ID
-                var realCourseId = _urlHashService.GetRealId(courseId);
-                var result = await _adminService.UpdateCourseStatusAsync(realCourseId, isApproved, UserId);
+
+                var result = await _adminService.UpdateCourseStatusAsync(courseId, isApproved, UserId);
 
                 if (result)
                 {
@@ -155,9 +153,8 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return BadRequest("Course ID is required");
                 }
 
-                // Decode hash ID to real ID
-                var realCourseId = _urlHashService.GetRealId(courseId);
-                var result = await _adminService.BanCourseAsync(realCourseId, UserId);
+
+                var result = await _adminService.BanCourseAsync(courseId, UserId);
 
                 if (result)
                 {
@@ -186,9 +183,8 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return BadRequest("Course ID is required");
                 }
 
-                // Decode hash ID to real ID
-                var realCourseId = _urlHashService.GetRealId(courseId);
-                var result = await _adminService.DeleteCourseAsync(realCourseId);
+
+                var result = await _adminService.DeleteCourseAsync(courseId);
 
                 if (result)
                 {
