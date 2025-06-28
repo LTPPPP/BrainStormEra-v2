@@ -177,40 +177,43 @@
                                     </div>
                                 </div>
 
-                                <!-- Bank Information Section -->
-                                <div class="form-section">
-                                    <h5 class="section-title"><i class="fas fa-university"></i> Bank Information</h5>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label asp-for="BankAccountNumber" class="form-label">Bank Account
-                                                    Number</label>
-                                                <input asp-for="BankAccountNumber" class="form-control"
-                                                    placeholder="Enter bank account number" />
-                                                <span asp-validation-for="BankAccountNumber" class="text-danger"></span>
+                                @if (User.IsInRole("instructor"))
+                                {
+                                    <!-- Bank Information Section -->
+                                    <div class="form-section">
+                                        <h5 class="section-title"><i class="fas fa-university"></i> Bank Information</h5>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label asp-for="BankAccountNumber" class="form-label">Bank Account
+                                                        Number</label>
+                                                    <input asp-for="BankAccountNumber" class="form-control"
+                                                           placeholder="Enter bank account number" />
+                                                    <span asp-validation-for="BankAccountNumber" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label asp-for="BankName" class="form-label">Bank Name</label>
+                                                    <input asp-for="BankName" class="form-control"
+                                                           placeholder="Enter bank name" />
+                                                    <span asp-validation-for="BankName" class="text-danger"></span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label asp-for="BankName" class="form-label">Bank Name</label>
-                                                <input asp-for="BankName" class="form-control"
-                                                    placeholder="Enter bank name" />
-                                                <span asp-validation-for="BankName" class="text-danger"></span>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="form-group">
+                                                    <label asp-for="AccountHolderName" class="form-label">Account Holder
+                                                        Name</label>
+                                                    <input asp-for="AccountHolderName" class="form-control"
+                                                           placeholder="Enter account holder name" />
+                                                    <span asp-validation-for="AccountHolderName" class="text-danger"></span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <div class="form-group">
-                                                <label asp-for="AccountHolderName" class="form-label">Account Holder
-                                                    Name</label>
-                                                <input asp-for="AccountHolderName" class="form-control"
-                                                    placeholder="Enter account holder name" />
-                                                <span asp-validation-for="AccountHolderName" class="text-danger"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                }
 
                                 <div class="form-group">
                                     <label asp-for="UserAddress" class="form-label">Address</label>

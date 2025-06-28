@@ -104,6 +104,9 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IHomeService, BusinessLogicLayer.Services.HomeService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.HomeServiceImpl>();
 
+            // Register Payment Service
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPaymentService, BusinessLogicLayer.Services.Implementations.PaymentService>();
+
             // Register Recommendation Helper
             builder.Services.AddScoped<BusinessLogicLayer.Services.RecommendationHelper>();
 
