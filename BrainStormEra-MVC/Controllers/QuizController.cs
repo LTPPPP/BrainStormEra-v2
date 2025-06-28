@@ -25,7 +25,7 @@ namespace BrainStormEra_MVC.Controllers
 
         [HttpGet]
         [Authorize(Roles = "instructor")]
-        public async Task<IActionResult> CreateQuiz(string chapterId)
+        public async Task<IActionResult> Create(string chapterId)
         {
             // Use chapter ID directly without decoding
             var realChapterId = chapterId;
@@ -78,7 +78,7 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["SuccessMessage"] = result.SuccessMessage;
             }
 
-            return RedirectToAction(result.RedirectAction, result.QuizId);
+            return RedirectToAction("Details", "Quiz", new { id = result.QuizId });
         }
 
         // GET: Quiz/Edit/5
