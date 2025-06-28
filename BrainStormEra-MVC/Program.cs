@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.FileProviders;
 using BusinessLogicLayer;
 using BusinessLogicLayer.Utilities;
+using BusinessLogicLayer.Extensions;
 
 namespace BrainStormEra_MVC
 {
@@ -57,6 +58,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.INotificationRepo, DataAccessLayer.Repositories.NotificationRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAchievementRepo, DataAccessLayer.Repositories.AchievementRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICertificateRepo, DataAccessLayer.Repositories.CertificateRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IFeedbackRepo, DataAccessLayer.Repositories.FeedbackRepo>();
 
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatbotRepo, DataAccessLayer.Repositories.ChatbotRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatRepo, DataAccessLayer.Repositories.ChatRepo>();
@@ -90,6 +92,9 @@ namespace BrainStormEra_MVC
             // Register Certificate Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.CertificateServiceImpl>();
 
+            // Register Feedback Service Implementation for business logic layer
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IFeedbackService, BusinessLogicLayer.Services.Implementations.FeedbackServiceImpl>();
+
             // Register Notification Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.NotificationServiceImpl>();
 
@@ -98,6 +103,9 @@ namespace BrainStormEra_MVC
             // Register Home Services for data access and business logic
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IHomeService, BusinessLogicLayer.Services.HomeService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.HomeServiceImpl>();
+
+            // Register Payment Service
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPaymentService, BusinessLogicLayer.Services.Implementations.PaymentService>();
 
             // Register Recommendation Helper
             builder.Services.AddScoped<BusinessLogicLayer.Services.RecommendationHelper>();
@@ -115,6 +123,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.INotificationService, BusinessLogicLayer.Services.NotificationService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAvatarService, BusinessLogicLayer.Services.AvatarService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseImageService, BusinessLogicLayer.Services.CourseImageService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
             builder.Services.AddSingleton<BusinessLogicLayer.Services.Interfaces.ICacheService, BusinessLogicLayer.Services.CacheService>();
 
             // Add Safe Delete Service for secure delete operations
@@ -127,23 +136,8 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPageContextService, BusinessLogicLayer.Services.PageContextService>();
             builder.Services.AddHttpClient<BusinessLogicLayer.Services.ChatbotService>();
 
-            // Register Chatbot Service Implementation for business logic layer
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.ChatbotServiceImpl>();
-
-            // Register SafeDelete Service Implementation for business logic layer
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.SafeDeleteServiceImpl>();
-
-            // Register Media Path Service for centralized media path management
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
-
-            // Register URL Hash Service for secure URL handling
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUrlHashService, BusinessLogicLayer.Services.UrlHashServiceImproved>();
-
-            // Register Query Hash Service for smart ID/hash handling in queries
-            builder.Services.AddScoped<BusinessLogicLayer.Services.QueryHashService>();
-
-            // Register Payment Service
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPaymentService, BusinessLogicLayer.Services.Implementations.PaymentService>();
+            // Add Chat URL Hashing Services
+            builder.Services.AddChatUrlServices();
 
             // Seed services
             builder.Services.AddScoped<BusinessLogicLayer.Services.StatusSeedService>();

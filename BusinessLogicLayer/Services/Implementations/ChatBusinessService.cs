@@ -255,6 +255,30 @@ namespace BusinessLogicLayer.Services.Implementations
             }
         }
 
+        public async Task<ServiceResult<Conversation>> GetOrCreateConversationAsync(string userId1, string userId2)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId1) || string.IsNullOrEmpty(userId2))
+                {
+                    return ServiceResult<Conversation>.Failure("Both user IDs are required");
+                }
+
+                var conversation = await _chatService.GetOrCreateConversationAsync(userId1, userId2);
+                if (conversation != null)
+                {
+                    return ServiceResult<Conversation>.Success(conversation);
+                }
+
+                return ServiceResult<Conversation>.Failure("Failed to get or create conversation");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting or creating conversation between {UserId1} and {UserId2}", userId1, userId2);
+                return ServiceResult<Conversation>.Failure("An error occurred while getting conversation");
+            }
+        }
+
         private List<ChatMessageDTO> MapToChatMessageDTOs(List<MessageEntity> messages)
         {
             return messages.Select(MapToChatMessageDTO).ToList();
@@ -299,6 +323,33 @@ namespace BusinessLogicLayer.Services.Implementations
             }
 
             return chatUsers.OrderByDescending(u => u.LastMessageTime).ToList();
+        }
+
+        public async Task<ServiceResult<string?>> GetMostRecentConversationUserIdAsync(string currentUserId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    return ServiceResult<string?>.Failure("User not authenticated");
+                }
+
+                var users = await _chatService.GetChatUsersAsync(currentUserId);
+                var chatUsers = await MapToChatUserDTOsAsync(users, currentUserId);
+
+                // Get the user with the most recent message time
+                var mostRecentUser = chatUsers
+                    .Where(u => u.LastMessageTime.HasValue)
+                    .OrderByDescending(u => u.LastMessageTime)
+                    .FirstOrDefault();
+
+                return ServiceResult<string?>.Success(mostRecentUser?.UserId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting most recent conversation user for user {UserId}", currentUserId);
+                return ServiceResult<string?>.Failure("An error occurred while getting most recent conversation");
+            }
         }
     }
 }

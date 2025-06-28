@@ -530,6 +530,86 @@ namespace BusinessLogicLayer.Services
             }
         }
 
+        public async Task<bool> MarkLessonAsCompletedAsync(string userId, string lessonId)
+        {
+            try
+            {
+                return await _lessonRepo.MarkLessonAsCompletedAsync(userId, lessonId);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> IsLessonCompletedAsync(string userId, string lessonId)
+        {
+            try
+            {
+                return await _lessonRepo.IsLessonCompletedAsync(userId, lessonId);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<Lesson?> GetLessonWithDetailsAsync(string lessonId)
+        {
+            try
+            {
+                return await _lessonRepo.GetLessonWithDetailsAsync(lessonId);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public async Task<decimal> GetLessonCompletionPercentageAsync(string userId, string courseId)
+        {
+            try
+            {
+                return await _lessonRepo.GetLessonCompletionPercentageAsync(userId, courseId);
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
+        public async Task<bool> UpdateEnrollmentProgressAsync(string userId, string courseId, decimal progressPercentage, string? currentLessonId = null)
+        {
+            try
+            {
+                var enrollment = await _context.Enrollments
+                    .FirstOrDefaultAsync(e => e.UserId == userId && e.CourseId == courseId);
+
+                if (enrollment == null)
+                {
+                    // Log not found
+                    return false;
+                }
+
+                var oldProgress = enrollment.ProgressPercentage;
+                enrollment.ProgressPercentage = progressPercentage;
+                if (!string.IsNullOrEmpty(currentLessonId))
+                {
+                    enrollment.CurrentLessonId = currentLessonId;
+                }
+                enrollment.EnrollmentUpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                // Log successful update
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         private string GetLessonTypeIcon(string lessonTypeName)
         {
             return lessonTypeName.ToLower() switch

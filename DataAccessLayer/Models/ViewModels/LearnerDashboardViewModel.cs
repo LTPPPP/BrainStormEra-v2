@@ -9,7 +9,6 @@ namespace DataAccessLayer.Models.ViewModels
         public required string FullName { get; set; }
         public required string UserImage { get; set; }
         public List<EnrolledCourseViewModel> EnrolledCourses { get; set; } = new List<EnrolledCourseViewModel>();
-        public List<CourseViewModel> RecommendedCourses { get; set; } = new List<CourseViewModel>();
         public List<NotificationViewModel> Notifications { get; set; } = new List<NotificationViewModel>();
         public int UnreadNotificationsCount => Notifications?.Count(n => !n.IsRead) ?? 0;
     }

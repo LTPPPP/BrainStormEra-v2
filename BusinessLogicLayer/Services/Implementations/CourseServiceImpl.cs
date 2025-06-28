@@ -2,8 +2,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
 using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Models.ViewModels;
+using DataAccessLayer.Models;
 using System.Security.Claims;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
@@ -16,17 +23,20 @@ namespace BusinessLogicLayer.Services.Implementations
     {
         private readonly ICourseService _courseService;
         private readonly ICourseImageService _courseImageService;
+        private readonly ILessonService _lessonService;
         private readonly ILogger<CourseServiceImpl> _logger;
         private readonly IServiceProvider _serviceProvider;
 
         public CourseServiceImpl(
             ICourseService courseService,
             ICourseImageService courseImageService,
+            ILessonService lessonService,
             ILogger<CourseServiceImpl> logger,
             IServiceProvider serviceProvider)
         {
             _courseService = courseService;
             _courseImageService = courseImageService;
+            _lessonService = lessonService;
             _logger = logger;
             _serviceProvider = serviceProvider;
         }
@@ -193,7 +203,7 @@ namespace BusinessLogicLayer.Services.Implementations
         #region Course Enrollment Operations
 
         /// <summary>
-        /// Handle course enrollment with validation
+        /// Handle course enrollment with validation and point deduction
         /// </summary>
         public async Task<EnrollmentResult> EnrollInCourseAsync(ClaimsPrincipal user, string courseId)
         {
@@ -219,23 +229,140 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var success = await _courseService.EnrollUserAsync(userId, courseId);
-                if (success)
-                {
-                    return new EnrollmentResult
-                    {
-                        Success = true,
-                        Message = "Successfully enrolled in course!"
-                    };
-                }
-                else
+                // Get course info to check price
+                var course = await _courseService.GetCourseByIdAsync(courseId);
+                if (course == null)
                 {
                     return new EnrollmentResult
                     {
                         Success = false,
-                        Message = "Course requires payment or enrollment failed"
+                        Message = "Course not found"
                     };
                 }
+
+                // If course is free, proceed with normal enrollment
+                if (course.Price == 0)
+                {
+                    var success = await _courseService.EnrollUserAsync(userId, courseId);
+                    if (success)
+                    {
+                        return new EnrollmentResult
+                        {
+                            Success = true,
+                            Message = "Successfully enrolled in course!"
+                        };
+                    }
+                    else
+                    {
+                        return new EnrollmentResult
+                        {
+                            Success = false,
+                            Message = "Enrollment failed"
+                        };
+                    }
+                }
+
+                // If course has price, check user points and deduct
+                using var scope = _serviceProvider.CreateScope();
+                var userRepo = scope.ServiceProvider.GetRequiredService<DataAccessLayer.Repositories.Interfaces.IUserRepo>();
+                var context = scope.ServiceProvider.GetRequiredService<DataAccessLayer.Data.BrainStormEraContext>();
+
+                var userWithPoints = await userRepo.GetUserWithPaymentPointAsync(userId);
+                if (userWithPoints == null)
+                {
+                    return new EnrollmentResult
+                    {
+                        Success = false,
+                        Message = "User not found"
+                    };
+                }
+
+                var userPoints = userWithPoints.PaymentPoint ?? 0;
+                if (userPoints < course.Price)
+                {
+                    return new EnrollmentResult
+                    {
+                        Success = false,
+                        Message = $"Insufficient points! You have {userPoints:N0} points but need {course.Price:N0} points. Please top up your account to enroll in this course."
+                    };
+                }
+
+                // Use execution strategy for transaction
+                var executionStrategy = context.Database.CreateExecutionStrategy();
+                return await executionStrategy.ExecuteAsync<object, EnrollmentResult>(
+                    new object(),
+                    async (dbContext, state, cancellationToken) =>
+                    {
+                        var realContext = (DataAccessLayer.Data.BrainStormEraContext)dbContext;
+                        using var transaction = await realContext.Database.BeginTransactionAsync(cancellationToken);
+                        try
+                        {
+                            // Deduct points
+                            var userAccount = await realContext.Accounts.FindAsync(new object[] { userId }, cancellationToken);
+                            if (userAccount == null)
+                            {
+                                await transaction.RollbackAsync(cancellationToken);
+                                return new EnrollmentResult
+                                {
+                                    Success = false,
+                                    Message = "User account not found"
+                                };
+                            }
+
+                            userAccount.PaymentPoint = (userAccount.PaymentPoint ?? 0) - course.Price;
+                            userAccount.AccountUpdatedAt = DateTime.UtcNow;
+
+                            // Check if already enrolled
+                            var existingEnrollment = await realContext.Enrollments
+                                .FirstOrDefaultAsync(e => e.UserId == userId && e.CourseId == courseId, cancellationToken);
+
+                            if (existingEnrollment != null)
+                            {
+                                await transaction.RollbackAsync(cancellationToken);
+                                return new EnrollmentResult
+                                {
+                                    Success = false,
+                                    Message = "Already enrolled in this course"
+                                };
+                            }
+
+                            // Create enrollment directly in the transaction context
+                            var enrollment = new DataAccessLayer.Models.Enrollment
+                            {
+                                EnrollmentId = Guid.NewGuid().ToString(),
+                                UserId = userId,
+                                CourseId = courseId,
+                                EnrollmentCreatedAt = DateTime.UtcNow,
+                                EnrollmentUpdatedAt = DateTime.UtcNow,
+                                EnrollmentStatus = 1, // Active status
+                                ProgressPercentage = 0
+                            };
+
+                            realContext.Enrollments.Add(enrollment);
+
+                            await realContext.SaveChangesAsync(cancellationToken);
+                            await transaction.CommitAsync(cancellationToken);
+
+                            return new EnrollmentResult
+                            {
+                                Success = true,
+                                Message = $"Successfully enrolled! {course.Price:N0} points deducted from your account."
+                            };
+                        }
+                        catch (Exception ex)
+                        {
+                            await transaction.RollbackAsync(cancellationToken);
+                            _logger.LogError(ex, "Error during enrollment transaction for course {CourseId}, user {UserId}", courseId, userId);
+                            return new EnrollmentResult
+                            {
+                                Success = false,
+                                Message = "An error occurred during enrollment"
+                            };
+                        }
+                    },
+                    null,
+                    System.Threading.CancellationToken.None
+                );
             }
             catch (Exception ex)
             {
@@ -800,21 +927,28 @@ namespace BusinessLogicLayer.Services.Implementations
                     // Get all lessons for each chapter
                     var lessons = await _courseService.GetLessonsByChapterIdAsync(chapter.ChapterId);
 
-                    var lessonViewModels = lessons.OrderBy(l => l.LessonOrder)
-                        .Select(l => new LearnLessonViewModel
+                    var lessonViewModels = new List<LearnLessonViewModel>();
+
+                    foreach (var lesson in lessons.OrderBy(l => l.LessonOrder))
+                    {
+                        // Check if lesson is completed
+                        var isCompleted = await _lessonService.IsLessonCompletedAsync(userId, lesson.LessonId);
+
+                        lessonViewModels.Add(new LearnLessonViewModel
                         {
-                            LessonId = l.LessonId,
-                            LessonName = l.LessonName,
-                            LessonDescription = l.LessonDescription ?? "",
-                            LessonOrder = l.LessonOrder,
-                            LessonType = l.LessonType?.LessonTypeName ?? "Content",
-                            LessonTypeIcon = GetLessonTypeIcon(l.LessonType?.LessonTypeName),
-                            IsLocked = l.IsLocked ?? false,
-                            IsMandatory = l.IsMandatory ?? true,
-                            EstimatedDuration = l.MinTimeSpent ?? 0,
-                            IsCompleted = false, // For demo purposes
-                            ProgressPercentage = 0 // For demo purposes
-                        }).ToList();
+                            LessonId = lesson.LessonId,
+                            LessonName = lesson.LessonName,
+                            LessonDescription = lesson.LessonDescription ?? "",
+                            LessonOrder = lesson.LessonOrder,
+                            LessonType = lesson.LessonType?.LessonTypeName ?? "Content",
+                            LessonTypeIcon = GetLessonTypeIcon(lesson.LessonType?.LessonTypeName),
+                            IsLocked = lesson.IsLocked ?? false,
+                            IsMandatory = lesson.IsMandatory ?? true,
+                            EstimatedDuration = lesson.MinTimeSpent ?? 0,
+                            IsCompleted = isCompleted,
+                            ProgressPercentage = isCompleted ? 100 : 0
+                        });
+                    }
 
                     chapterViewModels.Add(new LearnChapterViewModel
                     {
@@ -827,6 +961,9 @@ namespace BusinessLogicLayer.Services.Implementations
                     });
                 }
 
+                // Calculate overall course progress
+                var courseProgress = await _lessonService.GetLessonCompletionPercentageAsync(userId, courseId);
+
                 var viewModel = new LearnManagementViewModel
                 {
                     CourseId = course.CourseId,
@@ -835,7 +972,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     CourseImage = course.CourseImage ?? "/SharedMedia/defaults/default-course.png",
                     AuthorName = course.Author?.FullName ?? "Unknown Author",
                     IsEnrolled = true,
-                    ProgressPercentage = 0, // For now, set to 0
+                    ProgressPercentage = courseProgress,
                     Chapters = chapterViewModels
                 };
 

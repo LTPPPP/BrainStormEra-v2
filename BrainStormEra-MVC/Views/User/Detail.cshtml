@@ -496,8 +496,6 @@
         // Toast notification function
         function showToast(message, type) {
             // This function should be implemented based on your toast notification system
-            console.log(`${type.toUpperCase()}: ${message}`);
-
             // Create and show toast notification
             const toastContainer = document.querySelector('.toast-container') || createToastContainer();
             const toast = createToast(message, type);

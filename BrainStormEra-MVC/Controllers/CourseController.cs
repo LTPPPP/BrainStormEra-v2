@@ -4,87 +4,149 @@ using BusinessLogicLayer.Services.Implementations;
 using DataAccessLayer.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using BrainStormEra_MVC.Filters;
+using DataAccessLayer.Models;
+using BusinessLogicLayer.DTOs.Course;
+using Microsoft.EntityFrameworkCore;
 
 namespace BrainStormEra_MVC.Controllers
 {
+    [Authorize]
     public class CourseController : BaseController
     {
         private readonly CourseServiceImpl _courseServiceImpl;
+        private readonly IFeedbackService _feedbackService;
         private readonly ILogger<CourseController> _logger;
 
         public CourseController(
             CourseServiceImpl courseServiceImpl,
-            ILogger<CourseController> logger,
-            IUrlHashService urlHashService) : base(urlHashService)
+            IFeedbackService feedbackService,
+            ILogger<CourseController> logger) : base()
         {
             _courseServiceImpl = courseServiceImpl;
+            _feedbackService = feedbackService;
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index(string? search, string? category, int page = 1, int pageSize = 12)
+        [AllowAnonymous]
+        public async Task<IActionResult> Index(string search = "", string category = "", int page = 1)
         {
-            // Category filtering removed - always pass null
-            var result = await _courseServiceImpl.GetCoursesAsync(User, search, null, page, pageSize);
-
+            var result = await _courseServiceImpl.GetCoursesAsync(User, search, category, page);
             if (!result.Success)
             {
                 ViewBag.Error = result.ErrorMessage;
             }
-
-            return View("~/Views/Courses/Index.cshtml", result.ViewModel);
+            return View(result.ViewModel);
         }
 
-        [RequireAuthentication("You need to login to view course details. Please login to continue.")]
-        public async Task<IActionResult> Details(string id, string? tab = null)
+        [AllowAnonymous]
+        public async Task<IActionResult> Details(string id)
         {
-            // Decode hash ID to real ID
-            var realId = DecodeHashId(id);
-
-            if (string.IsNullOrEmpty(realId))
+            if (string.IsNullOrEmpty(id))
             {
                 return NotFound();
             }
 
-            var result = await _courseServiceImpl.GetCourseDetailsAsync(User, realId, tab);
-
-            if (!result.Success)
+            try
             {
+                // Use ID directly without decoding
+                var result = await _courseServiceImpl.GetCourseDetailsAsync(User, id);
+
+                if (!result.Success)
+                {
+                    return NotFound();
+                }
+
+                ViewBag.IsAuthor = result.IsAuthor;
+                ViewBag.CurrentUserId = result.CurrentUserId;
+                ViewBag.ActiveTab = result.ActiveTab;
+                ViewBag.CourseId = id;
+
+                // Add user points to ViewBag if user is authenticated and is a learner
+                if (User.Identity?.IsAuthenticated == true && User.IsInRole("learner"))
+                {
+                    try
+                    {
+                        using var scope = HttpContext.RequestServices.CreateScope();
+                        var userRepo = scope.ServiceProvider.GetRequiredService<DataAccessLayer.Repositories.Interfaces.IUserRepo>();
+                        var userId = User.FindFirst("UserId")?.Value;
+
+                        if (!string.IsNullOrEmpty(userId))
+                        {
+                            var userWithPoints = await userRepo.GetUserWithPaymentPointAsync(userId);
+                            ViewBag.UserPoints = userWithPoints?.PaymentPoint ?? 0;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Could not retrieve user points for course details");
+                        ViewBag.UserPoints = 0;
+                    }
+                }
+
+                return View(result.ViewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving course details for ID: {Id}", id);
                 return NotFound();
             }
-
-            ViewBag.IsAuthor = result.IsAuthor;
-            ViewBag.CurrentUserId = result.CurrentUserId;
-            ViewBag.ActiveTab = result.ActiveTab;
-            ViewBag.CourseHashId = id; // Pass hash ID to view
-
-            return View("~/Views/Courses/Details.cshtml", result.ViewModel);
-        }
-
-        [RequireAuthentication("You need to login to view course details. Please login to continue.")]
-        public IActionResult CourseDetail()
-        {
-            // Get courseId from cookie
-            string? courseId = Request.Cookies["CourseId"];
-
-            if (string.IsNullOrEmpty(courseId))
-            {
-                TempData["ErrorMessage"] = "Course information not found.";
-                return RedirectToAction("Index", "Home");
-            }
-
-            // Redirect to Details action with hash courseId
-            return RedirectToActionWithHash("Details", courseId);
         }
 
         [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> Enroll(string courseId)
+        [Authorize(Roles = "learner")]
+        public async Task<IActionResult> EnrollInCourse(string courseId)
         {
-            // Decode hash ID to real ID if needed
-            var realCourseId = DecodeHashId(courseId);
+            if (string.IsNullOrEmpty(courseId) || string.IsNullOrEmpty(CurrentUserId))
+            {
+                return Json(new { success = false, message = "Invalid request" });
+            }
 
-            var result = await _courseServiceImpl.EnrollInCourseAsync(User, realCourseId);
-            return Json(new { success = result.Success, message = result.Message });
+            try
+            {
+                // Use course ID directly without decoding
+                var result = await _courseServiceImpl.EnrollInCourseAsync(User, courseId);
+                return Json(new { success = result.Success, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error enrolling user {UserId} in course {CourseId}", CurrentUserId, courseId);
+                return Json(new { success = false, message = "An error occurred while enrolling in the course" });
+            }
+        }
+
+        public async Task<IActionResult> Learn(string courseId)
+        {
+            // Use course ID directly without decoding
+            var realCourseId = courseId;
+
+            if (string.IsNullOrEmpty(realCourseId) || string.IsNullOrEmpty(CurrentUserId))
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var result = await _courseServiceImpl.GetLearnManagementDataAsync(User, realCourseId);
+
+                if (!result.Success)
+                {
+                    if (result.IsNotFound)
+                    {
+                        return NotFound();
+                    }
+
+                    TempData["ErrorMessage"] = result.ErrorMessage;
+                    return RedirectToAction("Index", "Course");
+                }
+
+                ViewBag.CourseId = realCourseId;
+                return View(result.ViewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving course learn data for CourseId: {CourseId}, UserId: {UserId}", realCourseId, CurrentUserId);
+                return NotFound();
+            }
         }
 
         [HttpGet]
@@ -132,7 +194,7 @@ namespace BrainStormEra_MVC.Controllers
                 return RedirectToAction(result.RedirectAction, result.RedirectController);
             }
 
-            return View("~/Views/Courses/CreateCourse.cshtml", result.ViewModel);
+            return View("~/Views/Course/CreateCourse.cshtml", result.ViewModel);
         }
 
         [HttpPost]
@@ -145,7 +207,7 @@ namespace BrainStormEra_MVC.Controllers
                 var viewModelResult = await _courseServiceImpl.GetCreateCourseViewModelAsync();
                 model.AvailableCategories = viewModelResult.ViewModel?.AvailableCategories ?? new List<CourseCategoryViewModel>();
                 TempData["ErrorMessage"] = "Please correct the errors below and try again.";
-                return View("~/Views/Courses/CreateCourse.cshtml", model);
+                return View("~/Views/Course/CreateCourse.cshtml", model);
             }
 
             var result = await _courseServiceImpl.CreateCourseAsync(User, model);
@@ -155,7 +217,7 @@ namespace BrainStormEra_MVC.Controllers
                 if (result.ReturnView && result.ViewModel != null)
                 {
                     TempData["ErrorMessage"] = result.ErrorMessage;
-                    return View("~/Views/Courses/CreateCourse.cshtml", result.ViewModel);
+                    return View("~/Views/Course/CreateCourse.cshtml", result.ViewModel);
                 }
                 else
                 {
@@ -184,15 +246,12 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "instructor")]
         public async Task<IActionResult> EditCourse(string id)
         {
-            // Decode hash ID to real ID
-            var realId = DecodeHashId(id);
-
-            if (string.IsNullOrEmpty(realId))
+            if (string.IsNullOrEmpty(id))
             {
                 return NotFound();
             }
 
-            var result = await _courseServiceImpl.GetCourseForEditAsync(User, realId);
+            var result = await _courseServiceImpl.GetCourseForEditAsync(User, id);
 
             if (!result.Success)
             {
@@ -201,8 +260,7 @@ namespace BrainStormEra_MVC.Controllers
             }
 
             ViewBag.CourseId = result.CourseId;
-            ViewBag.CourseHashId = id; // Pass hash ID to view
-            return View("~/Views/Courses/EditCourse.cshtml", result.ViewModel);
+            return View("~/Views/Course/EditCourse.cshtml", result.ViewModel);
         }
 
         [HttpPost]
@@ -210,10 +268,7 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditCourse(string id, CreateCourseViewModel model)
         {
-            // Decode hash ID to real ID
-            var realId = DecodeHashId(id);
-
-            if (string.IsNullOrEmpty(realId))
+            if (string.IsNullOrEmpty(id))
             {
                 return NotFound();
             }
@@ -223,12 +278,11 @@ namespace BrainStormEra_MVC.Controllers
                 var viewModelResult = await _courseServiceImpl.GetCreateCourseViewModelAsync();
                 model.AvailableCategories = viewModelResult.ViewModel?.AvailableCategories ?? new List<CourseCategoryViewModel>();
                 TempData["ErrorMessage"] = "Please correct the errors below and try again.";
-                ViewBag.CourseId = realId;
-                ViewBag.CourseHashId = id;
-                return View("~/Views/Courses/EditCourse.cshtml", model);
+                ViewBag.CourseId = id;
+                return View("~/Views/Course/EditCourse.cshtml", model);
             }
 
-            var result = await _courseServiceImpl.UpdateCourseAsync(User, realId, model);
+            var result = await _courseServiceImpl.UpdateCourseAsync(User, id, model);
 
             if (!result.Success)
             {
@@ -236,7 +290,7 @@ namespace BrainStormEra_MVC.Controllers
                 {
                     TempData["ErrorMessage"] = result.ErrorMessage;
                     ViewBag.CourseId = result.CourseId;
-                    return View("~/Views/Courses/EditCourse.cshtml", result.ViewModel);
+                    return View("~/Views/Course/EditCourse.cshtml", result.ViewModel);
                 }
                 else
                 {
@@ -259,15 +313,12 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteCourse(string id)
         {
-            // Decode hash ID to real ID
-            var realId = DecodeHashId(id);
-
-            if (string.IsNullOrEmpty(realId))
+            if (string.IsNullOrEmpty(id))
             {
                 return Json(new { success = false, message = "Invalid course ID" });
             }
 
-            var result = await _courseServiceImpl.DeleteCourseAsync(User, realId);
+            var result = await _courseServiceImpl.DeleteCourseAsync(User, id);
             return Json(new { success = result.Success, message = result.Message });
         }
 
@@ -292,11 +343,49 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RequestCourseApproval(string courseId)
         {
-            // Decode hash ID to real ID if needed
-            var realCourseId = DecodeHashId(courseId);
+            if (string.IsNullOrEmpty(courseId))
+            {
+                return Json(new { success = false, message = "Invalid course ID" });
+            }
 
-            var result = await _courseServiceImpl.RequestCourseApprovalAsync(User, realCourseId);
+            var result = await _courseServiceImpl.RequestCourseApprovalAsync(User, courseId);
             return Json(new { success = result.Success, message = result.Message });
+        }
+
+        // GET: Get updated course learn data for AJAX refresh
+        [HttpGet]
+        [Authorize(Roles = "learner")]
+        public async Task<IActionResult> GetCourseLearnData(string courseId)
+        {
+            if (string.IsNullOrEmpty(courseId) || string.IsNullOrEmpty(CurrentUserId))
+            {
+                return Json(new { success = false, message = "Invalid request" });
+            }
+
+            try
+            {
+                var result = await _courseServiceImpl.GetLearnManagementDataAsync(User, courseId);
+
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.ErrorMessage });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    progressPercentage = result.ViewModel.ProgressPercentage,
+                    completedLessons = result.ViewModel.CompletedLessons,
+                    totalLessons = result.ViewModel.TotalLessons,
+                    chapters = result.ViewModel.Chapters,
+                    message = "Course data retrieved successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting course learn data for courseId: {CourseId}, userId: {UserId}", courseId, CurrentUserId);
+                return Json(new { success = false, message = "An error occurred while retrieving course data" });
+            }
         }
 
         // Temporary endpoint to clear cache for debugging
@@ -316,36 +405,144 @@ namespace BrainStormEra_MVC.Controllers
             }
         }
 
-        [RequireAuthentication("You need to login to access learning content. Please login to continue.")]
-        public async Task<IActionResult> Learn(string id)
+        #region Review Actions
+
+        // GET: Check if user can create review for a course
+        [HttpGet]
+        [Authorize(Roles = "learner")]
+        public async Task<IActionResult> CheckReviewEligibility(string courseId)
         {
-            // Decode hash ID to real ID
-            var realId = DecodeHashId(id);
-
-            if (string.IsNullOrEmpty(realId))
+            if (string.IsNullOrEmpty(courseId))
             {
-                return NotFound();
+                return Json(new { success = false, message = "Course ID is required" });
             }
 
-            var result = await _courseServiceImpl.GetLearnManagementDataAsync(User, realId);
-
-            if (!result.Success)
+            try
             {
-                if (result.IsNotFound)
+                var result = await _feedbackService.CheckReviewEligibilityAsync(User, courseId);
+
+                return Json(new
                 {
-                    return NotFound();
-                }
-
-                TempData["ErrorMessage"] = result.ErrorMessage;
-                return RedirectToAction("Index", "Course");
+                    success = true,
+                    canCreateReview = result.CanCreateReview,
+                    isEnrolled = result.IsEnrolled,
+                    hasExistingReview = result.HasExistingReview,
+                    existingReviewId = result.ExistingReviewId
+                });
             }
-
-            // Add UrlHashService to ViewBag for encoding lesson IDs
-            ViewBag.UrlHashService = _urlHashService;
-
-            return View("~/Views/Courses/Learn.cshtml", result.ViewModel);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking review eligibility for course {CourseId}", courseId);
+                return Json(new { success = false, message = "An error occurred while checking review eligibility" });
+            }
         }
 
+        // POST: Create a new review
+        [HttpPost]
+        [Authorize(Roles = "learner")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateReview([FromBody] CreateReviewRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Json(new { success = false, message = "Invalid review data" });
+            }
+
+            try
+            {
+                var result = await _feedbackService.CreateReviewAsync(User, request);
+                return Json(new { success = result.Success, message = result.Message, reviewId = result.ReviewId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating review for course {CourseId}", request.CourseId);
+                return Json(new { success = false, message = "An error occurred while creating the review" });
+            }
+        }
+
+        // POST: Update an existing review
+        [HttpPost]
+        [Authorize(Roles = "learner")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateReview([FromBody] UpdateReviewRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Json(new { success = false, message = "Invalid review data" });
+            }
+
+            try
+            {
+                var result = await _feedbackService.UpdateReviewAsync(User, request);
+                return Json(new { success = result.Success, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating review {ReviewId}", request.ReviewId);
+                return Json(new { success = false, message = "An error occurred while updating the review" });
+            }
+        }
+
+        // POST: Delete a review
+        [HttpPost]
+        [Authorize(Roles = "learner")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteReview([FromBody] DeleteReviewRequest request)
+        {
+            if (string.IsNullOrEmpty(request.ReviewId))
+            {
+                return Json(new { success = false, message = "Review ID is required" });
+            }
+
+            try
+            {
+                var result = await _feedbackService.DeleteReviewAsync(User, request.ReviewId);
+                return Json(new { success = result.Success, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting review {ReviewId}", request.ReviewId);
+                return Json(new { success = false, message = "An error occurred while deleting the review" });
+            }
+        }
+
+        // GET: Get reviews for a course
+        [HttpGet]
+        public async Task<IActionResult> GetCourseReviews(string courseId, int page = 1, int pageSize = 10)
+        {
+            if (string.IsNullOrEmpty(courseId))
+            {
+                return Json(new { success = false, message = "Course ID is required" });
+            }
+
+            try
+            {
+                var result = await _feedbackService.GetCourseReviewsAsync(courseId, page, pageSize);
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    reviews = result.ViewModel?.Reviews,
+                    averageRating = result.ViewModel?.AverageRating,
+                    totalReviews = result.ViewModel?.TotalReviews,
+                    currentPage = result.ViewModel?.CurrentPage,
+                    totalPages = result.ViewModel?.TotalPages,
+                    hasNextPage = result.ViewModel?.HasNextPage,
+                    hasPreviousPage = result.ViewModel?.HasPreviousPage
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting reviews for course {CourseId}", courseId);
+                return Json(new { success = false, message = "An error occurred while loading reviews" });
+            }
+        }
+
+        #endregion
     }
 }
 

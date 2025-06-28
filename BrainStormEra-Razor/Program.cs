@@ -67,8 +67,7 @@ namespace BrainStormEra_Razor
             // Register ServiceImpls from BusinessLogicLayer  
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();
 
-            // Register URL Hash Service for secure URL handling
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUrlHashService, BusinessLogicLayer.Services.UrlHashServiceImproved>();
+
 
             var app = builder.Build();
 

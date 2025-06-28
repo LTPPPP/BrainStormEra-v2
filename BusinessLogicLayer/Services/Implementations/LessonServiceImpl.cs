@@ -25,6 +25,7 @@ namespace BusinessLogicLayer.Services.Implementations
             public SelectLessonTypeViewModel? ViewModel { get; set; }
             public string? ErrorMessage { get; set; }
             public string? RedirectAction { get; set; }
+            public string? RedirectController { get; set; }
             public object? RedirectValues { get; set; }
         }
 
@@ -74,6 +75,12 @@ namespace BusinessLogicLayer.Services.Implementations
             public string? RedirectAction { get; set; }
             public string? RedirectController { get; set; }
             public object? RedirectValues { get; set; }
+        }
+
+        public class MarkLessonCompleteResult
+        {
+            public bool Success { get; set; }
+            public string? Message { get; set; }
         }
 
         // Business logic methods
@@ -150,6 +157,7 @@ namespace BusinessLogicLayer.Services.Implementations
                         {
                             Success = true,
                             RedirectAction = "CreateVideoLesson",
+                            RedirectController = "Lesson",
                             RedirectValues = new { chapterId = model.ChapterId }
                         };
                     case 2: // Text
@@ -157,6 +165,7 @@ namespace BusinessLogicLayer.Services.Implementations
                         {
                             Success = true,
                             RedirectAction = "CreateTextLesson",
+                            RedirectController = "Lesson",
                             RedirectValues = new { chapterId = model.ChapterId }
                         };
                     case 3: // Interactive/Document
@@ -164,6 +173,7 @@ namespace BusinessLogicLayer.Services.Implementations
                         {
                             Success = true,
                             RedirectAction = "CreateInteractiveLesson",
+                            RedirectController = "Lesson",
                             RedirectValues = new { chapterId = model.ChapterId }
                         };
                     default:
@@ -978,6 +988,87 @@ namespace BusinessLogicLayer.Services.Implementations
                     ErrorMessage = "An error occurred while loading the lesson"
                 };
             }
+        }
+
+        public async Task<MarkLessonCompleteResult> MarkLessonAsCompletedAsync(string userId, string lessonId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new MarkLessonCompleteResult
+                    {
+                        Success = false,
+                        Message = "User not authenticated"
+                    };
+                }
+
+                if (string.IsNullOrEmpty(lessonId))
+                {
+                    return new MarkLessonCompleteResult
+                    {
+                        Success = false,
+                        Message = "Lesson ID is required"
+                    };
+                }
+
+                var result = await _lessonService.MarkLessonAsCompletedAsync(userId, lessonId);
+
+                if (result)
+                {
+                    // Also update course progress in enrollment table
+                    try
+                    {
+                        await UpdateCourseProgressAfterLessonCompletion(userId, lessonId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to update course progress after completing lesson {LessonId} for user {UserId}", lessonId, userId);
+                        // Don't fail the entire operation if progress update fails
+                    }
+
+                    return new MarkLessonCompleteResult
+                    {
+                        Success = true,
+                        Message = "Lesson completed successfully!"
+                    };
+                }
+                else
+                {
+                    return new MarkLessonCompleteResult
+                    {
+                        Success = false,
+                        Message = "Failed to mark lesson as completed. Please try again."
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error marking lesson {LessonId} as completed for user {UserId}", lessonId, userId);
+                return new MarkLessonCompleteResult
+                {
+                    Success = false,
+                    Message = "An error occurred while completing the lesson."
+                };
+            }
+        }
+
+        private async Task UpdateCourseProgressAfterLessonCompletion(string userId, string lessonId)
+        {
+            // Get the course ID from the lesson
+            var lesson = await _lessonService.GetLessonWithDetailsAsync(lessonId);
+            if (lesson?.Chapter?.CourseId == null)
+            {
+                return;
+            }
+
+            var courseId = lesson.Chapter.CourseId;
+
+            // Calculate new course progress percentage
+            var progressPercentage = await _lessonService.GetLessonCompletionPercentageAsync(userId, courseId);
+
+            // Update the enrollment progress
+            await _lessonService.UpdateEnrollmentProgressAsync(userId, courseId, progressPercentage, lessonId);
         }
     }
 }

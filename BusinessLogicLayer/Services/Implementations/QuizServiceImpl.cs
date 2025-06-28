@@ -1012,6 +1012,7 @@ namespace BusinessLogicLayer.Services.Implementations
         public string? ErrorMessage { get; set; }
         public string? RedirectAction { get; set; }
         public string? RedirectController { get; set; }
+        public object? RouteValues { get; set; }
         public bool ReturnView { get; set; }
         public bool IsNotFound { get; set; }
         public bool IsForbidden { get; set; }

@@ -608,7 +608,6 @@ body {
 
 .course-details {
   padding: 25px;
-  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
 }
 
 /* Category badges styling */
@@ -660,7 +659,6 @@ body {
 
 /* Course Description Styling */
 .course-description {
-  color: #6c757d;
   font-size: 0.9rem;
   line-height: 1.5;
   margin-bottom: 15px;

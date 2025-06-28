@@ -2,7 +2,9 @@
 
 /* Chat Layout */
 .chat-container {
-  height: calc(100vh - 120px);
+  height: calc(100vh - 200px); /* Adjusted for header and footer */
+  margin-top: 20px; /* Space after header */
+  margin-bottom: 20px; /* Space before footer */
 }
 
 .chat-sidebar {
@@ -19,7 +21,7 @@
 
 /* Chat Users List */
 .chat-users-list {
-  max-height: calc(100vh - 120px);
+  max-height: calc(100vh - 250px); /* Adjusted for header and footer */
   overflow-y: auto;
 }
 
@@ -152,7 +154,7 @@
 
 .message-bubble.sent {
   margin-left: auto;
-  background: linear-gradient(135deg, #007bff, #0056b3);
+  background: var(--primary-color);
   color: white;
   border-bottom-right-radius: 6px;
 }
@@ -168,7 +170,6 @@
 /* Message Content */
 .message-content {
   line-height: 1.4;
-  margin-bottom: 4px;
 }
 
 .message-time {
@@ -191,7 +192,6 @@
 .reply-line {
   border-left: 3px solid #007bff;
   padding-left: 10px;
-  margin-bottom: 8px;
   font-size: 0.85rem;
   opacity: 0.8;
   background-color: rgba(0, 123, 255, 0.1);

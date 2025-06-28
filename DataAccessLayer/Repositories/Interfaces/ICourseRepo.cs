@@ -42,11 +42,10 @@ namespace DataAccessLayer.Repositories.Interfaces
 
         // Home page methods
         Task<List<Course>> GetFeaturedCoursesAsync(int count = 6);
-        Task<List<Course>> GetRecommendedCoursesForUserAsync(string userId, List<string> excludeCourseIds, int count = 6);
         Task<List<CourseCategory>> GetCategoriesWithCourseCountAsync(int count = 8);
+        Task<List<Course>> GetRecentCoursesAsync(int count = 5);
 
         // Admin dashboard methods
-        Task<List<Course>> GetRecentCoursesAsync(int count = 5);        // Statistics methods
         Task<int> GetTotalStudentsForCourseAsync(string courseId);
         Task<decimal> GetAverageRatingForCourseAsync(string courseId);
         Task<int> GetTotalReviewsForCourseAsync(string courseId);        // Admin course management methods

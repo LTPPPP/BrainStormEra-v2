@@ -2,7 +2,7 @@
 @if (User.Identity?.IsAuthenticated == true)
 {
     <!-- SignalR for Chat -->
-    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
     <script>
         // Global chat connection for real-time features
         let globalChatConnection;
@@ -24,13 +24,12 @@
                 });
 
                 await globalChatConnection.start();
-                console.log("Global Chat SignalR Connected");
 
                 // Update chat icon with unread count
                 updateChatIcon();
 
             } catch (err) {
-                console.error("Global Chat SignalR Connection Error:", err);
+                // Đã xoá console.error debug
             }
         }
 
@@ -44,7 +43,7 @@
             }
 
             // You can also show in-app notification here
-            console.log("New chat message:", message);
+            // Đã xoá console.log debug
         }
 
         function updateChatIcon() {
@@ -80,4 +79,3 @@
         });
     </script>
 }
-  
