@@ -102,53 +102,8 @@ namespace BusinessLogicLayer.Services
                     CompletionPercentage = (int)(e.ProgressPercentage ?? 0)
                 }).ToList();
 
-                // Get recommended courses using repository
-                var enrolledCourseIds = enrolledCourseViewModels.Select(ec => ec.CourseId).ToList();
-                var recommendedCourses = await _courseRepo.GetRecommendedCoursesForUserAsync(userId, enrolledCourseIds, 6);
-                var recommendedCourseViewModels = recommendedCourses.Select(c => new CourseViewModel
-                {
-                    CourseId = c.CourseId,
-                    CourseName = c.CourseName,
-                    CoursePicture = c.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
-                    Price = c.Price,
-                    CreatedBy = c.Author?.FullName ?? c.Author?.Username ?? "Unknown",
-                    Description = c.CourseDescription,
-                    StarRating = 4, // Default rating - could be calculated from actual feedback in the future
-                    EnrollmentCount = c.Enrollments?.Count ?? 0,
-                    CourseCategories = c.CourseCategories?.Select(cc => cc.CourseCategoryName).ToList() ?? new List<string>()
-                }).ToList();
-
-                // If no recommended courses found, show a helpful message in notifications
-                if (!recommendedCourseViewModels.Any())
-                {
-                    _logger.LogWarning("No recommended courses found for user {UserId}", userId);
-                }
-
                 // Get notifications (enhanced with dynamic content)
                 var notifications = new List<NotificationViewModel>();
-
-                if (!recommendedCourseViewModels.Any())
-                {
-                    notifications.Add(new NotificationViewModel
-                    {
-                        NotificationId = "no_recommendations",
-                        Title = "No Recommendations Yet",
-                        Message = "We're preparing personalized course recommendations for you. Meanwhile, explore our course catalog to discover amazing learning opportunities!",
-                        CreatedAt = DateTime.Now,
-                        IsRead = false
-                    });
-                }
-                else
-                {
-                    notifications.Add(new NotificationViewModel
-                    {
-                        NotificationId = "welcome",
-                        Title = "Welcome to BrainStormEra!",
-                        Message = $"We found {recommendedCourseViewModels.Count} courses that might interest you. Start your learning journey today!",
-                        CreatedAt = DateTime.Now.AddDays(-1),
-                        IsRead = false
-                    });
-                }
 
                 // Add additional helpful notifications
                 if (!enrolledCourseViewModels.Any())
@@ -157,7 +112,7 @@ namespace BusinessLogicLayer.Services
                     {
                         NotificationId = "first_course",
                         Title = "Get Started with Your First Course",
-                        Message = "Browse our recommended courses below and enroll in your first course to begin learning!",
+                        Message = "Browse our course catalog and enroll in your first course to begin learning!",
                         CreatedAt = DateTime.Now.AddHours(-2),
                         IsRead = false
                     });
@@ -169,7 +124,6 @@ namespace BusinessLogicLayer.Services
                     FullName = user.FullName ?? user.Username,
                     UserImage = user.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
                     EnrolledCourses = enrolledCourseViewModels,
-                    RecommendedCourses = recommendedCourseViewModels,
                     Notifications = notifications
                 };
             }
