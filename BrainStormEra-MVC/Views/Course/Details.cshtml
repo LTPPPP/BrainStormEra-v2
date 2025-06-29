@@ -274,18 +274,19 @@
                                         <span class="stat-label">Lessons</span>
                                     </div>
                                 </div>
-                                @if (Model.Chapters.SelectMany(c => c.Lessons).Any(l => l.LessonType == "Quiz"))
+                                @if (Model.Chapters.Sum(c => c.Quizzes.Count) > 0)
                                 {
                                     <div class="stat-item">
                                         <div class="stat-icon">
                                             <i class="fas fa-question-circle"></i>
                                         </div>
                                         <div class="stat-content">
-                                            <span class="stat-value">@Model.Chapters.SelectMany(c => c.Lessons).Count(l => l.LessonType == "Quiz")</span>
+                                            <span class="stat-value">@Model.Chapters.Sum(c => c.Quizzes.Count)</span>
                                             <span class="stat-label">Quizzes</span>
                                         </div>
                                     </div>
                                 }
+
                                 @if (Model.Price == 0)
                                 {
                                     <div class="stat-item price-tag free">
@@ -578,21 +579,22 @@
                                                             </div>
                                                         }
                                                         @{
-                                                            var orderedLessons = chapter.Lessons.OrderBy(l => l.LessonOrder).ToList();
+                                                            var orderedLessons = chapter.Lessons.Where(l => l.LessonType != "Quiz").OrderBy(l => l.LessonOrder).ToList();
                                                             var lessonsByType = orderedLessons.GroupBy(l => l.LessonType).OrderBy(g => g.Key).ToList();
-                                                            bool hasMoreThan5Lessons = orderedLessons.Count > 5;
+                                                            bool hasMoreThan5Items = (orderedLessons.Count + chapter.Quizzes.Count) > 5;
                                                         }
-                                                        <div class="lessons-container @(hasMoreThan5Lessons ? "scrollable-lessons" : "")">
+                                                        <div class="lessons-container @(hasMoreThan5Items ? "scrollable-lessons" : "")">
+                                                            @* Display regular lessons *@
                                                             @foreach (var lessonGroup in lessonsByType)
                                                             {
                                                                 <div class="mb-2">
                                                                     @foreach (var lesson in lessonGroup.OrderBy(l => l.LessonOrder))
                                                                     {
                                                                         <div class="lecture-item @(lesson.IsLocked ? "locked" : "")">
-                                                                            <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
+                                                                            <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
                                                                             <span class="lesson-name-truncated">@lesson.LessonName</span>
                                                                             <span class="lesson-type-with-icon">
-                                                                                <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Quiz" ? "fa-question-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
+                                                                                <i class="fas @(lesson.LessonType == "Video" ? "fa-play-circle" : lesson.LessonType == "Text Lesson" ? "fa-file-text" : "fa-file-alt")"></i>
                                                                                 @lesson.LessonType
                                                                             </span>
                                                                             @if (ViewBag.IsAuthor == true)
@@ -621,65 +623,69 @@
                                                                     }
                                                                 </div>
                                                             }
+                                                            
+                                                            @* Display quizzes separately *@
+                                                            @if (chapter.Quizzes != null && chapter.Quizzes.Count > 0)
+                                                            {
+                                                                <div class="mb-2">
+                                                                    @foreach (var quiz in chapter.Quizzes)
+                                                                    {
+                                                                        <div class="lecture-item quiz-item">
+                                                                            <i class="fas fa-question-circle"></i>
+                                                                            <span class="lesson-name-truncated">@quiz.QuizName</span>
+                                                                            <span class="lesson-type-with-icon">
+                                                                                <i class="fas fa-question-circle"></i>
+                                                                                Quiz
+                                                                            </span>
+                                                                            @if (ViewBag.IsAuthor == true)
+                                                                            {
+                                                                                <div class="lesson-actions">
+                                                                                    <a href="@Url.Action("ManageQuestions", "Quiz", new { quizId = quiz.QuizId })" 
+                                                                                       class="btn btn-sm btn-outline-primary me-1"
+                                                                                       title="Manage Questions">
+                                                                                        <i class="fas fa-cog"></i>
+                                                                                    </a>
+                                                                                    <button type="button" class="btn btn-sm btn-outline-danger delete-quiz-btn" 
+                                                                                            data-quiz-id="@quiz.QuizId" 
+                                                                                            data-quiz-name="@quiz.QuizName"
+                                                                                            data-course-id="@Model.CourseId"
+                                                                                            title="Delete Quiz">
+                                                                                        <i class="fas fa-trash-alt"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            }
+                                                                            @if (quiz.PassingScore.HasValue)
+                                                                            {
+                                                                                <span class="quiz-passing-score">
+                                                                                    <i class="fas fa-target"></i> @quiz.PassingScore%
+                                                                                </span>
+                                                                            }
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            }
                                                         </div>
-                                                        @if (hasMoreThan5Lessons)
+                                                        @if (hasMoreThan5Items)
                                                         {
                                                             <div class="lessons-scroll-indicator">
                                                                 <small class="text-muted">
                                                                     <i class="fas fa-info-circle"></i>
-                                                                    Scroll to see all @orderedLessons.Count lessons
+                                                                    Scroll to see all @(orderedLessons.Count + chapter.Quizzes.Count) items
                                                                 </small>
                                                             </div>
                                                         }
                                                         @if (ViewBag.IsAuthor == true)
                                                         {
-                                                            var chapterQuiz = chapter.Lessons.FirstOrDefault(l => l.LessonType == "Quiz");
-                                                            var hasQuiz = chapterQuiz != null;
-                                                            
-                                                            if (!hasQuiz)
-                                                            {
-                                                                <div class="lesson-actions mt-3 text-center" style="justify-content: center;">
-                                                                    <a href="@Url.Action("SelectLessonType", "Lesson", new { chapterId = chapter.ChapterId })" 
-                                                                       class="btn btn-sm btn-outline-primary me-2">
-                                                                        <i class="fas fa-plus me-2"></i>Create Lesson
-                                                                    </a>
-                                                                    <a href="@Url.Action("Create", "Quiz", new { chapterId = chapter.ChapterId })" 
-                                                                       class="btn btn-sm btn-outline-success">
-                                                                        <i class="fas fa-question-circle me-2"></i>Create Quiz
-                                                                    </a>
-                                                                </div>
-                                                            }
-                                                            else
-                                                            {
-                                                                <div class="quiz-section mt-3 p-3 bg-light rounded">
-                                                                    <div class="d-flex justify-content-between align-items-center">
-                                                                        <div>
-                                                                            <h6 class="mb-1 text-success">
-                                                                                <i class="fas fa-question-circle me-2"></i>Chapter Quiz
-                                                                            </h6>
-                                                                            <small class="text-muted">Quiz completed - No more lessons can be added to this chapter</small>
-                                                                        </div>
-                                                                        <div class="quiz-actions">
-                                                                            @{
-                                                                                // Find the actual quiz ID for this lesson
-                                                                                var quizId = chapterQuiz.LessonId; // This will be updated by service to get actual quiz ID
-                                                                            }
-                                                                            <a href="@Url.Action("ManageQuestions", "Quiz", new { quizId = quizId })" 
-                                                                               class="btn btn-sm btn-outline-primary me-1"
-                                                                               title="Manage Questions">
-                                                                                <i class="fas fa-cog"></i>
-                                                                            </a>
-                                                                            <button type="button" class="btn btn-sm btn-outline-danger delete-quiz-btn" 
-                                                                                    data-quiz-id="@quizId" 
-                                                                                    data-quiz-name="@chapterQuiz.LessonName"
-                                                                                    data-course-id="@Model.CourseId"
-                                                                                    title="Delete Quiz">
-                                                                                <i class="fas fa-trash-alt"></i>
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            }
+                                                            <div class="lesson-actions mt-3 text-center" style="justify-content: center;">
+                                                                <a href="@Url.Action("SelectLessonType", "Lesson", new { chapterId = chapter.ChapterId })" 
+                                                                   class="btn btn-sm btn-outline-primary me-2">
+                                                                    <i class="fas fa-plus me-2"></i>Create Lesson
+                                                                </a>
+                                                                <a href="@Url.Action("Create", "Quiz", new { chapterId = chapter.ChapterId })" 
+                                                                   class="btn btn-sm btn-outline-success">
+                                                                    <i class="fas fa-question-circle me-2"></i>Create Quiz
+                                                                </a>
+                                                            </div>
                                                         }
                                                     </div>
                                                 </div>

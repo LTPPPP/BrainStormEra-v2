@@ -81,9 +81,9 @@
                             {
                                 var option = question.AnswerOptions[j];
                                 <div class="answer-option">
-                                    <input type="radio" 
+                                    <input type="checkbox" 
                                            id="option_@(i)_@(j)" 
-                                           name="UserAnswers[@i].SelectedOptionId" 
+                                           name="UserAnswers[@i].SelectedOptionIds" 
                                            value="@option.OptionId" 
                                            @(option.IsSelected ? "checked" : "") />
                                     <label for="option_@(i)_@(j)">
@@ -93,7 +93,24 @@
                                 </div>
                             }
                         }
-                        else if (question.QuestionType == "text")
+                        else if (question.QuestionType == "true_false")
+                        {
+                            @for (int j = 0; j < question.AnswerOptions.Count; j++)
+                            {
+                                var option = question.AnswerOptions[j];
+                                <div class="answer-option">
+                                    <input type="radio" 
+                                           id="option_@(i)_@(j)" 
+                                           name="UserAnswers[@i].SelectedOptionId" 
+                                           value="@option.OptionId" 
+                                           @(option.IsSelected ? "checked" : "") />
+                                    <label for="option_@(i)_@(j)">
+                                        <span class="option-text">@option.OptionText</span>
+                                    </label>
+                                </div>
+                            }
+                        }
+                        else if (question.QuestionType == "essay" || question.QuestionType == "fill_blank")
                         {
                             <div class="text-answer">
                                 <textarea name="UserAnswers[@i].AnswerText" 

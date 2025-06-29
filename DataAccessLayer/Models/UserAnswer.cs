@@ -13,6 +13,8 @@ public partial class UserAnswer
 
     public string? SelectedOptionId { get; set; }
 
+    public string? SelectedOptionIds { get; set; } // Comma-separated list for multiple choice
+
     public string? AnswerText { get; set; }
 
     public bool? IsCorrect { get; set; }

@@ -23,8 +23,8 @@ namespace DataAccessLayer.Models.ViewModels
         [Required]
         public string QuestionId { get; set; } = null!;
 
-        public string? SelectedOptionId { get; set; }
-
+        public string? SelectedOptionId { get; set; } // For single choice (true/false)
+        public List<string> SelectedOptionIds { get; set; } = new List<string>(); // For multiple choice
         public string? AnswerText { get; set; }
     }
 }

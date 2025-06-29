@@ -1547,6 +1547,26 @@
   width: auto;
 }
 
+/* Quiz Item Styling */
+.lecture-item.quiz-item {
+  background: #e8f5e8;
+  border-left: 4px solid #28a745;
+}
+
+.lecture-item.quiz-item:hover {
+  background: #d4edda;
+}
+
+.quiz-passing-score {
+  font-size: 0.75rem;
+  color: #28a745;
+  font-weight: 500;
+  margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  background: rgba(40, 167, 69, 0.1);
+  border-radius: 12px;
+}
+
 /* Instructor Info */
 .instructor-card {
   display: flex;

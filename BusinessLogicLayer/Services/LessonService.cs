@@ -4,6 +4,8 @@ using DataAccessLayer.Repositories.Interfaces;
 using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace BusinessLogicLayer.Services
 {
@@ -447,13 +449,18 @@ namespace BusinessLogicLayer.Services
                 var hasQuiz = lesson.Quizzes.Any();
                 var quiz = lesson.Quizzes.FirstOrDefault();
 
-                // Get all chapters with lessons for sidebar
+                // Get all chapters with lessons and quizzes for sidebar
                 var chapters = await _context.Chapters
                     .Where(c => c.CourseId == lesson.Chapter.CourseId)
                     .Include(c => c.Lessons)
                         .ThenInclude(l => l.LessonType)
                     .Include(c => c.Lessons)
                         .ThenInclude(l => l.UserProgresses.Where(up => up.UserId == userId))
+                    .Include(c => c.Lessons)
+                        .ThenInclude(l => l.UnlockAfterLesson)
+                    .Include(c => c.Lessons)
+                        .ThenInclude(l => l.Quizzes)
+                            .ThenInclude(q => q.QuizAttempts.Where(ua => ua.UserId == userId))
                     .OrderBy(c => c.ChapterOrder)
                     .ToListAsync();
 
@@ -463,20 +470,72 @@ namespace BusinessLogicLayer.Services
                     ChapterName = c.ChapterName,
                     ChapterDescription = c.ChapterDescription ?? "",
                     ChapterOrder = c.ChapterOrder ?? 1,
-                    Lessons = c.Lessons.OrderBy(l => l.LessonOrder).Select(l => new LearnLessonViewModel
-                    {
-                        LessonId = l.LessonId,
-                        LessonName = l.LessonName,
-                        LessonDescription = l.LessonDescription ?? "",
-                        LessonOrder = l.LessonOrder,
-                        LessonType = l.LessonType?.LessonTypeName ?? "",
-                        LessonTypeIcon = GetLessonTypeIcon(l.LessonType?.LessonTypeName ?? ""),
-                        EstimatedDuration = l.MinTimeSpent ?? 0,
-                        IsCompleted = l.UserProgresses.Any(up => up.IsCompleted == true),
-                        IsMandatory = l.IsMandatory ?? false,
-                        ProgressPercentage = l.UserProgresses.FirstOrDefault()?.ProgressPercentage ?? 0
-                    }).ToList()
+                    Lessons = new List<LearnLessonViewModel>(), // Will be populated below
+                    Quizzes = c.Lessons
+                        .Where(l => l.Quizzes != null && l.Quizzes.Any())
+                        .SelectMany(l => l.Quizzes)
+                        .Select(q => new LearnQuizViewModel
+                        {
+                            QuizId = q.QuizId,
+                            QuizName = q.QuizName,
+                            QuizDescription = q.QuizDescription ?? "",
+                            LessonId = q.LessonId ?? "",
+                            LessonName = q.Lesson?.LessonName ?? "",
+                            TimeLimit = q.TimeLimit,
+                            PassingScore = q.PassingScore,
+                            MaxAttempts = q.MaxAttempts,
+                            IsFinalQuiz = q.IsFinalQuiz ?? false,
+                            IsPrerequisiteQuiz = q.IsPrerequisiteQuiz ?? false,
+                            IsCompleted = q.QuizAttempts?.Any(ua => ua.IsPassed == true) ?? false,
+                            AttemptsUsed = q.QuizAttempts?.Count ?? 0,
+                            BestScore = q.QuizAttempts?.Any() == true ? q.QuizAttempts.Max(ua => ua.Score) : null
+                        }).ToList()
                 }).ToList();
+
+                // Populate lessons for each chapter
+                for (int i = 0; i < chapters.Count; i++)
+                {
+                    var chapter = chapters[i];
+                    var chapterViewModel = chaptersViewModel[i];
+
+                    var lessonViewModels = new List<LearnLessonViewModel>();
+                    foreach (var l in chapter.Lessons.Where(l => l.LessonType?.LessonTypeName != "Quiz").OrderBy(l => l.LessonOrder))
+                    {
+                        var isLocked = await IsLessonLockedAsync(userId, l);
+                        lessonViewModels.Add(new LearnLessonViewModel
+                        {
+                            LessonId = l.LessonId,
+                            LessonName = l.LessonName,
+                            LessonDescription = l.LessonDescription ?? "",
+                            LessonOrder = l.LessonOrder,
+                            LessonType = l.LessonType?.LessonTypeName ?? "",
+                            LessonTypeIcon = GetLessonTypeIcon(l.LessonType?.LessonTypeName ?? ""),
+                            EstimatedDuration = l.MinTimeSpent ?? 0,
+                            IsCompleted = l.UserProgresses.Any(up => up.IsCompleted == true),
+                            IsMandatory = l.IsMandatory ?? false,
+                            ProgressPercentage = l.UserProgresses.FirstOrDefault()?.ProgressPercentage ?? 0,
+                            IsLocked = isLocked,
+                            PrerequisiteLessonId = l.UnlockAfterLessonId,
+                            PrerequisiteLessonName = l.UnlockAfterLesson?.LessonName
+                        });
+                    }
+                    chapterViewModel.Lessons = lessonViewModels;
+                }
+
+                // Xác định trạng thái khóa/mở cho từng chapter
+                for (int i = 0; i < chaptersViewModel.Count; i++)
+                {
+                    if (i == 0)
+                    {
+                        chaptersViewModel[i].IsLocked = false;
+                    }
+                    else
+                    {
+                        // Chapter trước đó đã hoàn thành hết lesson chưa?
+                        var prevChapter = chaptersViewModel[i - 1];
+                        chaptersViewModel[i].IsLocked = !prevChapter.Lessons.All(l => l.IsCompleted);
+                    }
+                }
 
                 var viewModel = new LessonLearningViewModel
                 {
@@ -621,6 +680,47 @@ namespace BusinessLogicLayer.Services
                 "document" => "fas fa-file-pdf",
                 _ => "fas fa-file-alt"
             };
+        }
+
+        private async Task<bool> IsLessonLockedAsync(string userId, Lesson lesson)
+        {
+            try
+            {
+                // If lesson is not locked by default, it's always accessible
+                if (lesson.IsLocked != true)
+                {
+                    return false;
+                }
+
+                // If lesson requires a specific lesson to be completed first
+                if (!string.IsNullOrEmpty(lesson.UnlockAfterLessonId))
+                {
+                    var isPrerequisiteCompleted = await IsLessonCompletedAsync(userId, lesson.UnlockAfterLessonId);
+                    return !isPrerequisiteCompleted;
+                }
+
+                // If lesson is locked but no specific prerequisite, check if previous lesson in same chapter is completed
+                var previousLesson = await _context.Lessons
+                    .Where(l => l.ChapterId == lesson.ChapterId &&
+                               l.LessonOrder < lesson.LessonOrder &&
+                               l.LessonType.LessonTypeName != "Quiz")
+                    .OrderByDescending(l => l.LessonOrder)
+                    .FirstOrDefaultAsync();
+
+                if (previousLesson != null)
+                {
+                    var isPreviousCompleted = await IsLessonCompletedAsync(userId, previousLesson.LessonId);
+                    return !isPreviousCompleted;
+                }
+
+                // If no previous lesson, unlock it
+                return false;
+            }
+            catch (Exception)
+            {
+                // If there's an error, assume lesson is locked for safety
+                return true;
+            }
         }
     }
 }

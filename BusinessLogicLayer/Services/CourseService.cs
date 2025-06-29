@@ -131,48 +131,53 @@ namespace BusinessLogicLayer.Services
                     ChapterName = ch.ChapterName,
                     ChapterDescription = ch.ChapterDescription ?? "",
                     ChapterOrder = ch.ChapterOrder ?? 0,
-                    Lessons = ch.Lessons.Select(l => new LessonViewModel
-                    {
-                        LessonId = l.LessonId,
-                        LessonName = l.LessonName,
-                        LessonDescription = l.LessonDescription ?? "",
-                        LessonOrder = l.LessonOrder,
-                        LessonType = l.LessonType?.LessonTypeName ?? "Video",
-                        EstimatedDuration = 0,
-                        IsLocked = l.IsLocked ?? false
-                    }).ToList(),
-                    Quizzes = ch.Lessons.SelectMany(l => l.Quizzes).Select(q => new QuizViewModel
-                    {
-                        QuizId = q.QuizId,
-                        QuizName = q.QuizName,
-                        QuizDescription = q.QuizDescription ?? "",
-                        LessonId = q.LessonId,
-                        LessonName = q.Lesson?.LessonName ?? "",
-                        TimeLimit = q.TimeLimit,
-                        PassingScore = q.PassingScore,
-                        MaxAttempts = q.MaxAttempts,
-                        IsFinalQuiz = q.IsFinalQuiz ?? false,
-                        IsPrerequisiteQuiz = q.IsPrerequisiteQuiz ?? false,
-                        BlocksLessonCompletion = q.BlocksLessonCompletion ?? false,
-                        QuizCreatedAt = q.QuizCreatedAt,
-                        QuizUpdatedAt = q.QuizUpdatedAt,
-                        Questions = q.Questions.OrderBy(qu => qu.QuestionOrder).Select(qu => new QuestionViewModel
+                    Lessons = ch.Lessons
+                        .Where(l => l.LessonType?.LessonTypeName != "Quiz") // Exclude quiz lessons from regular lessons
+                        .Select(l => new LessonViewModel
                         {
-                            QuestionId = qu.QuestionId,
-                            QuestionText = qu.QuestionText,
-                            QuestionType = qu.QuestionType,
-                            Points = qu.Points ?? 0,
-                            QuestionOrder = qu.QuestionOrder ?? 0,
-                            Explanation = qu.Explanation ?? "",
-                            AnswerOptions = qu.AnswerOptions.OrderBy(ao => ao.OptionOrder).Select(ao => new AnswerOptionViewModel
+                            LessonId = l.LessonId,
+                            LessonName = l.LessonName,
+                            LessonDescription = l.LessonDescription ?? "",
+                            LessonOrder = l.LessonOrder,
+                            LessonType = l.LessonType?.LessonTypeName ?? "Video",
+                            EstimatedDuration = 0,
+                            IsLocked = l.IsLocked ?? false
+                        }).ToList(),
+                    Quizzes = ch.Lessons
+                        .Where(l => l.Quizzes != null && l.Quizzes.Any())
+                        .SelectMany(l => l.Quizzes)
+                        .Select(q => new QuizViewModel
+                        {
+                            QuizId = q.QuizId,
+                            QuizName = q.QuizName,
+                            QuizDescription = q.QuizDescription ?? "",
+                            LessonId = q.LessonId,
+                            LessonName = q.Lesson?.LessonName ?? "",
+                            TimeLimit = q.TimeLimit,
+                            PassingScore = q.PassingScore,
+                            MaxAttempts = q.MaxAttempts,
+                            IsFinalQuiz = q.IsFinalQuiz ?? false,
+                            IsPrerequisiteQuiz = q.IsPrerequisiteQuiz ?? false,
+                            BlocksLessonCompletion = q.BlocksLessonCompletion ?? false,
+                            QuizCreatedAt = q.QuizCreatedAt,
+                            QuizUpdatedAt = q.QuizUpdatedAt,
+                            Questions = q.Questions?.OrderBy(qu => qu.QuestionOrder).Select(qu => new QuestionViewModel
                             {
-                                OptionId = ao.OptionId,
-                                OptionText = ao.OptionText,
-                                IsCorrect = ao.IsCorrect ?? false,
-                                OptionOrder = ao.OptionOrder ?? 0
-                            }).ToList()
+                                QuestionId = qu.QuestionId,
+                                QuestionText = qu.QuestionText,
+                                QuestionType = qu.QuestionType,
+                                Points = qu.Points ?? 0,
+                                QuestionOrder = qu.QuestionOrder ?? 0,
+                                Explanation = qu.Explanation ?? "",
+                                AnswerOptions = qu.AnswerOptions?.OrderBy(ao => ao.OptionOrder).Select(ao => new AnswerOptionViewModel
+                                {
+                                    OptionId = ao.OptionId,
+                                    OptionText = ao.OptionText,
+                                    IsCorrect = ao.IsCorrect ?? false,
+                                    OptionOrder = ao.OptionOrder ?? 0
+                                }).ToList() ?? new List<AnswerOptionViewModel>()
+                            }).ToList() ?? new List<QuestionViewModel>()
                         }).ToList()
-                    }).ToList()
                 }).ToList();
 
                 viewModel.Reviews = course.Feedbacks
@@ -236,48 +241,53 @@ namespace BusinessLogicLayer.Services
                     ChapterName = ch.ChapterName,
                     ChapterDescription = ch.ChapterDescription ?? "",
                     ChapterOrder = ch.ChapterOrder ?? 0,
-                    Lessons = ch.Lessons.Select(l => new LessonViewModel
-                    {
-                        LessonId = l.LessonId,
-                        LessonName = l.LessonName,
-                        LessonDescription = l.LessonDescription ?? "",
-                        LessonOrder = l.LessonOrder,
-                        LessonType = l.LessonType?.LessonTypeName ?? "Video",
-                        EstimatedDuration = 0,
-                        IsLocked = l.IsLocked ?? false
-                    }).ToList(),
-                    Quizzes = ch.Lessons.SelectMany(l => l.Quizzes).Select(q => new QuizViewModel
-                    {
-                        QuizId = q.QuizId,
-                        QuizName = q.QuizName,
-                        QuizDescription = q.QuizDescription ?? "",
-                        LessonId = q.LessonId,
-                        LessonName = q.Lesson?.LessonName ?? "",
-                        TimeLimit = q.TimeLimit,
-                        PassingScore = q.PassingScore,
-                        MaxAttempts = q.MaxAttempts,
-                        IsFinalQuiz = q.IsFinalQuiz ?? false,
-                        IsPrerequisiteQuiz = q.IsPrerequisiteQuiz ?? false,
-                        BlocksLessonCompletion = q.BlocksLessonCompletion ?? false,
-                        QuizCreatedAt = q.QuizCreatedAt,
-                        QuizUpdatedAt = q.QuizUpdatedAt,
-                        Questions = q.Questions.OrderBy(qu => qu.QuestionOrder).Select(qu => new QuestionViewModel
+                    Lessons = ch.Lessons
+                        .Where(l => l.LessonType?.LessonTypeName != "Quiz") // Exclude quiz lessons from regular lessons
+                        .Select(l => new LessonViewModel
                         {
-                            QuestionId = qu.QuestionId,
-                            QuestionText = qu.QuestionText,
-                            QuestionType = qu.QuestionType,
-                            Points = qu.Points ?? 0,
-                            QuestionOrder = qu.QuestionOrder ?? 0,
-                            Explanation = qu.Explanation ?? "",
-                            AnswerOptions = qu.AnswerOptions.OrderBy(ao => ao.OptionOrder).Select(ao => new AnswerOptionViewModel
+                            LessonId = l.LessonId,
+                            LessonName = l.LessonName,
+                            LessonDescription = l.LessonDescription ?? "",
+                            LessonOrder = l.LessonOrder,
+                            LessonType = l.LessonType?.LessonTypeName ?? "Video",
+                            EstimatedDuration = 0,
+                            IsLocked = l.IsLocked ?? false
+                        }).ToList(),
+                    Quizzes = ch.Lessons
+                        .Where(l => l.Quizzes != null && l.Quizzes.Any())
+                        .SelectMany(l => l.Quizzes)
+                        .Select(q => new QuizViewModel
+                        {
+                            QuizId = q.QuizId,
+                            QuizName = q.QuizName,
+                            QuizDescription = q.QuizDescription ?? "",
+                            LessonId = q.LessonId,
+                            LessonName = q.Lesson?.LessonName ?? "",
+                            TimeLimit = q.TimeLimit,
+                            PassingScore = q.PassingScore,
+                            MaxAttempts = q.MaxAttempts,
+                            IsFinalQuiz = q.IsFinalQuiz ?? false,
+                            IsPrerequisiteQuiz = q.IsPrerequisiteQuiz ?? false,
+                            BlocksLessonCompletion = q.BlocksLessonCompletion ?? false,
+                            QuizCreatedAt = q.QuizCreatedAt,
+                            QuizUpdatedAt = q.QuizUpdatedAt,
+                            Questions = q.Questions?.OrderBy(qu => qu.QuestionOrder).Select(qu => new QuestionViewModel
                             {
-                                OptionId = ao.OptionId,
-                                OptionText = ao.OptionText,
-                                IsCorrect = ao.IsCorrect ?? false,
-                                OptionOrder = ao.OptionOrder ?? 0
-                            }).ToList()
+                                QuestionId = qu.QuestionId,
+                                QuestionText = qu.QuestionText,
+                                QuestionType = qu.QuestionType,
+                                Points = qu.Points ?? 0,
+                                QuestionOrder = qu.QuestionOrder ?? 0,
+                                Explanation = qu.Explanation ?? "",
+                                AnswerOptions = qu.AnswerOptions?.OrderBy(ao => ao.OptionOrder).Select(ao => new AnswerOptionViewModel
+                                {
+                                    OptionId = ao.OptionId,
+                                    OptionText = ao.OptionText,
+                                    IsCorrect = ao.IsCorrect ?? false,
+                                    OptionOrder = ao.OptionOrder ?? 0
+                                }).ToList() ?? new List<AnswerOptionViewModel>()
+                            }).ToList() ?? new List<QuestionViewModel>()
                         }).ToList()
-                    }).ToList()
                 }).ToList();
 
                 viewModel.Reviews = course.Feedbacks
@@ -1048,6 +1058,8 @@ namespace BusinessLogicLayer.Services
             {
                 return await _context.Lessons
                     .Include(l => l.LessonType)
+                    .Include(l => l.UnlockAfterLesson)
+                    .Include(l => l.Quizzes)
                     .Where(l => l.ChapterId == chapterId)
                     .OrderBy(l => l.LessonOrder)
                     .AsNoTracking()

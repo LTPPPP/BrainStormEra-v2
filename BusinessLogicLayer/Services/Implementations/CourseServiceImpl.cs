@@ -11,6 +11,7 @@ using System.Threading;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DataAccessLayer.Data;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
@@ -928,6 +929,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     var lessons = await _courseService.GetLessonsByChapterIdAsync(chapter.ChapterId);
 
                     var lessonViewModels = new List<LearnLessonViewModel>();
+                    var quizViewModels = new List<LearnQuizViewModel>();
 
                     foreach (var lesson in lessons.OrderBy(l => l.LessonOrder))
                     {
@@ -942,12 +944,42 @@ namespace BusinessLogicLayer.Services.Implementations
                             LessonOrder = lesson.LessonOrder,
                             LessonType = lesson.LessonType?.LessonTypeName ?? "Content",
                             LessonTypeIcon = GetLessonTypeIcon(lesson.LessonType?.LessonTypeName),
-                            IsLocked = lesson.IsLocked ?? false,
+                            IsLocked = await IsLessonLockedAsync(userId, lesson),
                             IsMandatory = lesson.IsMandatory ?? true,
                             EstimatedDuration = lesson.MinTimeSpent ?? 0,
                             IsCompleted = isCompleted,
-                            ProgressPercentage = isCompleted ? 100 : 0
+                            ProgressPercentage = isCompleted ? 100 : 0,
+                            PrerequisiteLessonId = lesson.UnlockAfterLessonId,
+                            PrerequisiteLessonName = lesson.UnlockAfterLesson?.LessonName
                         });
+
+                        // Load quizzes for this lesson
+                        if (lesson.Quizzes != null && lesson.Quizzes.Any())
+                        {
+                            foreach (var quiz in lesson.Quizzes)
+                            {
+                                var quizAttempts = await GetQuizAttemptsAsync(userId, quiz.QuizId);
+                                var isQuizCompleted = quizAttempts.Any(ua => ua.IsPassed == true);
+                                var bestScore = quizAttempts.Any() ? quizAttempts.Max(ua => ua.Score) : null;
+
+                                quizViewModels.Add(new LearnQuizViewModel
+                                {
+                                    QuizId = quiz.QuizId,
+                                    QuizName = quiz.QuizName,
+                                    QuizDescription = quiz.QuizDescription ?? "",
+                                    LessonId = quiz.LessonId ?? "",
+                                    LessonName = lesson.LessonName,
+                                    TimeLimit = quiz.TimeLimit,
+                                    PassingScore = quiz.PassingScore,
+                                    MaxAttempts = quiz.MaxAttempts,
+                                    IsFinalQuiz = quiz.IsFinalQuiz ?? false,
+                                    IsPrerequisiteQuiz = quiz.IsPrerequisiteQuiz ?? false,
+                                    IsCompleted = isQuizCompleted,
+                                    AttemptsUsed = quizAttempts.Count,
+                                    BestScore = bestScore
+                                });
+                            }
+                        }
                     }
 
                     chapterViewModels.Add(new LearnChapterViewModel
@@ -957,8 +989,23 @@ namespace BusinessLogicLayer.Services.Implementations
                         ChapterDescription = chapter.ChapterDescription ?? "",
                         ChapterOrder = chapter.ChapterOrder ?? 0,
                         IsLocked = chapter.IsLocked ?? false,
-                        Lessons = lessonViewModels
+                        Lessons = lessonViewModels,
+                        Quizzes = quizViewModels
                     });
+                }
+
+                // Xác định trạng thái khóa/mở cho từng chapter
+                for (int i = 0; i < chapterViewModels.Count; i++)
+                {
+                    if (i == 0)
+                    {
+                        chapterViewModels[i].IsLocked = false;
+                    }
+                    else
+                    {
+                        var prevChapter = chapterViewModels[i - 1];
+                        chapterViewModels[i].IsLocked = !prevChapter.Lessons.All(l => l.IsCompleted);
+                    }
                 }
 
                 // Calculate overall course progress
@@ -1005,6 +1052,67 @@ namespace BusinessLogicLayer.Services.Implementations
                 "document" => "fas fa-file-pdf",
                 _ => "fas fa-book"
             };
+        }
+
+        private async Task<bool> IsLessonLockedAsync(string userId, Lesson lesson)
+        {
+            try
+            {
+                // If lesson is not locked by default, it's always accessible
+                if (lesson.IsLocked != true)
+                {
+                    return false;
+                }
+
+                // If lesson requires a specific lesson to be completed first
+                if (!string.IsNullOrEmpty(lesson.UnlockAfterLessonId))
+                {
+                    var isPrerequisiteCompleted = await _lessonService.IsLessonCompletedAsync(userId, lesson.UnlockAfterLessonId);
+                    return !isPrerequisiteCompleted;
+                }
+
+                // If lesson is locked but no specific prerequisite, check if previous lesson in same chapter is completed
+                var previousLesson = await _courseService.GetLessonsByChapterIdAsync(lesson.ChapterId);
+                var previousLessonInOrder = previousLesson
+                    .Where(l => l.LessonOrder < lesson.LessonOrder &&
+                               l.LessonType?.LessonTypeName != "Quiz")
+                    .OrderByDescending(l => l.LessonOrder)
+                    .FirstOrDefault();
+
+                if (previousLessonInOrder != null)
+                {
+                    var isPreviousCompleted = await _lessonService.IsLessonCompletedAsync(userId, previousLessonInOrder.LessonId);
+                    return !isPreviousCompleted;
+                }
+
+                // If no previous lesson, unlock it
+                return false;
+            }
+            catch (Exception)
+            {
+                // If there's an error, assume lesson is locked for safety
+                return true;
+            }
+        }
+
+        private async Task<List<QuizAttempt>> GetQuizAttemptsAsync(string userId, string quizId)
+        {
+            try
+            {
+                // Sử dụng service provider để lấy context
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<BrainStormEraContext>();
+
+                return await context.QuizAttempts
+                    .Where(qa => qa.UserId == userId && qa.QuizId == quizId)
+                    .OrderByDescending(qa => qa.StartTime)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting quiz attempts for user {UserId} and quiz {QuizId}", userId, quizId);
+                return new List<QuizAttempt>();
+            }
         }
 
         #endregion

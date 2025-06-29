@@ -1239,7 +1239,27 @@ namespace BusinessLogicLayer.Services.Implementations
                         var isCorrect = false;
                         decimal pointsEarned = 0;
 
-                        if (question.QuestionType == "multiple_choice" && !string.IsNullOrEmpty(userAnswerSubmission.SelectedOptionId))
+                        if (question.QuestionType == "multiple_choice")
+                        {
+                            // Handle multiple choice with multiple correct answers
+                            var selectedOptionIds = userAnswerSubmission.SelectedOptionIds ?? new List<string>();
+                            var correctOptionIds = question.AnswerOptions
+                                .Where(ao => ao.IsCorrect == true)
+                                .Select(ao => ao.OptionId)
+                                .ToList();
+
+                            // Check if all correct answers are selected and no incorrect answers are selected
+                            var allCorrectSelected = correctOptionIds.All(id => selectedOptionIds.Contains(id));
+                            var noIncorrectSelected = selectedOptionIds.All(id => correctOptionIds.Contains(id));
+
+                            if (allCorrectSelected && noIncorrectSelected && selectedOptionIds.Count > 0)
+                            {
+                                isCorrect = true;
+                                pointsEarned = question.Points ?? 1;
+                                earnedPoints += pointsEarned;
+                            }
+                        }
+                        else if (question.QuestionType == "true_false" && !string.IsNullOrEmpty(userAnswerSubmission.SelectedOptionId))
                         {
                             var selectedOption = question.AnswerOptions
                                 .FirstOrDefault(ao => ao.OptionId == userAnswerSubmission.SelectedOptionId);
@@ -1251,7 +1271,7 @@ namespace BusinessLogicLayer.Services.Implementations
                                 earnedPoints += pointsEarned;
                             }
                         }
-                        else if (question.QuestionType == "text" && !string.IsNullOrEmpty(userAnswerSubmission.AnswerText))
+                        else if ((question.QuestionType == "essay" || question.QuestionType == "fill_blank") && !string.IsNullOrEmpty(userAnswerSubmission.AnswerText))
                         {
                             // For text questions, mark as correct if answered (manual grading can be implemented later)
                             isCorrect = true;
@@ -1265,7 +1285,8 @@ namespace BusinessLogicLayer.Services.Implementations
                             UserId = userId,
                             QuestionId = question.QuestionId,
                             AttemptId = model.AttemptId,
-                            SelectedOptionId = userAnswerSubmission.SelectedOptionId,
+                            SelectedOptionId = question.QuestionType == "multiple_choice" ? null : userAnswerSubmission.SelectedOptionId,
+                            SelectedOptionIds = question.QuestionType == "multiple_choice" ? string.Join(",", userAnswerSubmission.SelectedOptionIds ?? new List<string>()) : null,
                             AnswerText = userAnswerSubmission.AnswerText,
                             IsCorrect = isCorrect,
                             PointsEarned = pointsEarned
@@ -1401,7 +1422,14 @@ namespace BusinessLogicLayer.Services.Implementations
                     QuestionResults = attempt.Quiz.Questions.Select(q =>
                     {
                         var userAnswer = attempt.UserAnswers.FirstOrDefault(ua => ua.QuestionId == q.QuestionId);
-                        var correctOption = q.AnswerOptions.FirstOrDefault(ao => ao.IsCorrect == true);
+                        var correctOptions = q.AnswerOptions.Where(ao => ao.IsCorrect == true).ToList();
+
+                        // Parse selected option IDs for multiple choice
+                        var selectedOptionIds = new List<string>();
+                        if (q.QuestionType == "multiple_choice" && !string.IsNullOrEmpty(userAnswer?.SelectedOptionIds))
+                        {
+                            selectedOptionIds = userAnswer.SelectedOptionIds.Split(',').ToList();
+                        }
 
                         return new QuestionResultViewModel
                         {
@@ -1412,17 +1440,23 @@ namespace BusinessLogicLayer.Services.Implementations
                             PointsEarned = userAnswer?.PointsEarned,
                             IsCorrect = userAnswer?.IsCorrect,
                             UserAnswer = userAnswer?.AnswerText ??
-                                        (userAnswer?.SelectedOptionId != null ?
+                                        (q.QuestionType == "multiple_choice" && selectedOptionIds.Any() ?
+                                         string.Join(", ", q.AnswerOptions.Where(ao => selectedOptionIds.Contains(ao.OptionId)).Select(ao => ao.OptionText)) :
+                                         (userAnswer?.SelectedOptionId != null ?
                                          q.AnswerOptions.FirstOrDefault(ao => ao.OptionId == userAnswer.SelectedOptionId)?.OptionText :
-                                         null),
-                            CorrectAnswer = correctOption?.OptionText,
+                                         null)),
+                            CorrectAnswer = q.QuestionType == "multiple_choice" ?
+                                           string.Join(", ", correctOptions.Select(ao => ao.OptionText)) :
+                                           correctOptions.FirstOrDefault()?.OptionText,
                             Explanation = q.Explanation,
                             AnswerOptions = q.AnswerOptions.Select(ao => new AnswerOptionResultViewModel
                             {
                                 OptionId = ao.OptionId,
                                 OptionText = ao.OptionText,
                                 IsCorrect = ao.IsCorrect ?? false,
-                                IsSelected = userAnswer?.SelectedOptionId == ao.OptionId
+                                IsSelected = q.QuestionType == "multiple_choice" ?
+                                            selectedOptionIds.Contains(ao.OptionId) :
+                                            userAnswer?.SelectedOptionId == ao.OptionId
                             }).ToList()
                         };
                     }).ToList()

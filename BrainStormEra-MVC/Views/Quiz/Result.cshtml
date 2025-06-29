@@ -182,7 +182,36 @@
                             }
                         </div>
                     }
-                    else if (question.QuestionType == "text")
+                    else if (question.QuestionType == "true_false")
+                    {
+                        <div class="answer-options-review">
+                            @for (int j = 0; j < question.AnswerOptions.Count; j++)
+                            {
+                                var option = question.AnswerOptions[j];
+                                var optionClass = "";
+                                if (option.IsCorrect) optionClass += " correct-answer";
+                                if (option.IsSelected) optionClass += " selected-answer";
+                                if (option.IsSelected && !option.IsCorrect) optionClass += " wrong-selection";
+                                
+                                <div class="answer-option-review@(optionClass)">
+                                    <div class="option-content">
+                                        <span class="option-text">@option.OptionText</span>
+                                    </div>
+                                    <div class="option-indicators">
+                                        @if (option.IsCorrect)
+                                        {
+                                            <i class="fas fa-check text-success" title="Correct Answer"></i>
+                                        }
+                                        @if (option.IsSelected)
+                                        {
+                                            <i class="fas fa-user-check text-primary" title="Your Answer"></i>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (question.QuestionType == "essay" || question.QuestionType == "fill_blank")
                     {
                         <div class="text-answer-review">
                             <div class="your-answer">

@@ -47,7 +47,21 @@
                                 aria-expanded="@(chapter.ChapterId == Model.ChapterId ? "true" : "false")">
                                 <div class="chapter-info">
                                     <h5>Chapter @chapter.ChapterNumber: @chapter.ChapterName</h5>
-                                    <div class="chapter-meta">@chapter.Lessons.Count lessons</div>
+                                    <div class="chapter-meta">
+                                        @{
+                                            var totalItems = chapter.Lessons.Count + (chapter.Quizzes?.Count ?? 0);
+                                            var lessonCount = chapter.Lessons.Count;
+                                            var quizCount = chapter.Quizzes?.Count ?? 0;
+                                        }
+                                        @if (quizCount > 0)
+                                        {
+                                            <span>@lessonCount lessons, @quizCount quizzes</span>
+                                        }
+                                        else
+                                        {
+                                            <span>@lessonCount lessons</span>
+                                        }
+                                    </div>
                                 </div>
                                 <div class="chapter-progress">
                                     <div class="mini-progress">
@@ -59,6 +73,7 @@
                             <div class="collapse @(chapter.ChapterId == Model.ChapterId ? "show" : "")"
                                 id="chapter-@chapter.ChapterId">
                                 <div class="chapter-lessons">
+                                    @* Display regular lessons *@
                                     @foreach (var lesson in chapter.Lessons)
                                     {
                                         <div class="lesson-item @(lesson.LessonId == Model.LessonId ? "current" : "") @(lesson.IsCompleted ? "completed" : "")"
@@ -77,9 +92,9 @@
                                                 <h6>@lesson.LessonName</h6>
                                                 <div class="lesson-meta">@lesson.LessonType • @(lesson.EstimatedDuration > 0 ?
                                                                                             lesson.EstimatedDuration + " min" : "No duration")</div>
-                                </div>
-                                <div class="lesson-status">
-                                    @if (lesson.IsCompleted)
+                                            </div>
+                                            <div class="lesson-status">
+                                                @if (lesson.IsCompleted)
                                                 {
                                                     <span>Complete</span>
                                                 }
@@ -93,6 +108,59 @@
                                                 }
                                             </div>
                                         </div>
+                                    }
+                                    
+                                    @* Display quizzes separately *@
+                                    @if (chapter.Quizzes != null && chapter.Quizzes.Count > 0)
+                                    {
+                                        @foreach (var quiz in chapter.Quizzes)
+                                        {
+                                            <div class="lesson-item quiz-item @(quiz.IsCompleted ? "completed" : "")"
+                                                onclick="location.href='@Url.Action("Take", "Quiz", new { id = quiz.QuizId })'">
+                                                <div class="lesson-icon">
+                                                    @if (quiz.IsCompleted)
+                                                    {
+                                                        <i class="fas fa-check"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="fas fa-question-circle"></i>
+                                                    }
+                                                </div>
+                                                <div class="lesson-info">
+                                                    <h6>@quiz.QuizName</h6>
+                                                    <div class="lesson-meta">
+                                                        Quiz
+                                                        @if (quiz.TimeLimit != null && quiz.TimeLimit > 0)
+                                                        {
+                                                            <span> • @quiz.TimeLimit min</span>
+                                                        }
+                                                        @if (quiz.PassingScore != null && quiz.PassingScore > 0)
+                                                        {
+                                                            <span> • @quiz.PassingScore% to pass</span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <div class="lesson-status">
+                                                    @if (quiz.IsCompleted)
+                                                    {
+                                                        <span>Complete</span>
+                                                        @if (quiz.BestScore != null)
+                                                        {
+                                                            <small class="d-block">Score: @quiz.BestScore%</small>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>Take Quiz</span>
+                                                        @if (quiz.AttemptsUsed != null && quiz.MaxAttempts != null)
+                                                        {
+                                                            <small class="d-block">@quiz.AttemptsUsed/@quiz.MaxAttempts attempts</small>
+                                                        }
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
                                     }
                                 </div>
                             </div>

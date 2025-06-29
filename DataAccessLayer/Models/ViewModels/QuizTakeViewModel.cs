@@ -35,7 +35,8 @@ namespace DataAccessLayer.Models.ViewModels
         public int? QuestionOrder { get; set; }
         public string? Explanation { get; set; }
         public List<QuizAnswerOptionViewModel> AnswerOptions { get; set; } = new List<QuizAnswerOptionViewModel>();
-        public string? SelectedOptionId { get; set; }
+        public string? SelectedOptionId { get; set; } // For single choice (true/false)
+        public List<string> SelectedOptionIds { get; set; } = new List<string>(); // For multiple choice
         public string? AnswerText { get; set; }
     }
 
