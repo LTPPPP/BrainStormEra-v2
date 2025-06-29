@@ -1,0 +1,51 @@
+@model DataAccessLayer.Models.ViewModels.CertificateDetailsViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Certificate of Completion</title>
+    <link rel="stylesheet" href="/css/pages/Certificates/certificate-pdf.css" />
+</head>
+<body>
+    <div class="certificate-outer">
+        <div class="certificate-container">
+            <img src="/SharedMedia/logo/logowithoutbackground.png" alt="Logo" class="certificate-watermark" />
+            <div class="certificate-header">
+                <img src="/SharedMedia/logo/logowithoutbackground.png" alt="Logo" class="certificate-logo" />
+                <span class="certificate-title">Certificate of Completion</span>
+            </div>
+            <div class="certificate-body">
+                <div class="certificate-presented">This is to certify that</div>
+                <div class="certificate-learner">@Model.LearnerName</div>
+                <div class="certificate-course-label">has successfully completed the course</div>
+                <div class="certificate-course">@Model.CourseName</div>
+                <div class="certificate-details-row">
+                    <div class="certificate-detail">
+                        <div class="certificate-detail-label">Date Completed</div>
+                        <div class="certificate-detail-value">@Model.FormattedCompletedDate</div>
+                    </div>
+                    <div class="certificate-detail">
+                        <div class="certificate-detail-label">Final Score</div>
+                        <div class="certificate-detail-value">@Model.ProgressPercentage%</div>
+                    </div>
+                    <div class="certificate-detail">
+                        <div class="certificate-detail-label">Duration</div>
+                        <div class="certificate-detail-value">@Model.CompletionDurationDays days</div>
+                    </div>
+                </div>
+            </div>
+            <div class="certificate-footer">
+                <div class="certificate-signature">BrainStormEra Team</div>
+                <div class="certificate-organization">BrainStormEra Academy</div>
+            </div>
+            <div class="certificate-code">
+                Certificate Code: @Model.CertificateCode
+            </div>
+        </div>
+    </div>
+    <script src="/js/pages/Certificates/certificate-pdf.js"></script>
+</body>
+</html> 

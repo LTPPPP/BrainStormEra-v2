@@ -8,6 +8,7 @@ using Microsoft.Extensions.FileProviders;
 using BusinessLogicLayer;
 using BusinessLogicLayer.Utilities;
 using BusinessLogicLayer.Extensions;
+using Rotativa.AspNetCore;
 
 namespace BrainStormEra_MVC
 {
@@ -272,6 +273,9 @@ namespace BrainStormEra_MVC
                     ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000");
                 }
             });
+
+            // Configure Rotativa for PDF generation
+            RotativaConfiguration.Setup(app.Environment.WebRootPath, "Rotativa");
 
             app.UseRouting();
 

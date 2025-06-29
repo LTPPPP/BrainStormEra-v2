@@ -658,6 +658,36 @@ namespace BusinessLogicLayer.Services
                 }
                 enrollment.EnrollmentUpdatedAt = DateTime.UtcNow;
 
+                // Check if course is completed (progress = 100%) and certificate should be issued
+                if (progressPercentage >= 100 && oldProgress < 100)
+                {
+                    // Update enrollment status to completed
+                    enrollment.EnrollmentStatus = 3; // Completed status
+
+                    // Issue certificate if not already issued
+                    if (!enrollment.CertificateIssuedDate.HasValue)
+                    {
+                        enrollment.CertificateIssuedDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+                        // Create certificate record
+                        var certificate = new Certificate
+                        {
+                            CertificateId = Guid.NewGuid().ToString(),
+                            EnrollmentId = enrollment.EnrollmentId,
+                            UserId = userId,
+                            CourseId = courseId,
+                            CertificateCode = GenerateCertificateCode(),
+                            CertificateName = "Certificate of Completion",
+                            IssueDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                            IsValid = true,
+                            FinalScore = progressPercentage,
+                            CertificateCreatedAt = DateTime.UtcNow
+                        };
+
+                        _context.Certificates.Add(certificate);
+                    }
+                }
+
                 await _context.SaveChangesAsync();
 
                 // Log successful update
@@ -667,6 +697,11 @@ namespace BusinessLogicLayer.Services
             {
                 return false;
             }
+        }
+
+        private string GenerateCertificateCode()
+        {
+            return Guid.NewGuid().ToString("N")[..8].ToUpper();
         }
 
         private string GetLessonTypeIcon(string lessonTypeName)
@@ -703,7 +738,7 @@ namespace BusinessLogicLayer.Services
                 var previousLesson = await _context.Lessons
                     .Where(l => l.ChapterId == lesson.ChapterId &&
                                l.LessonOrder < lesson.LessonOrder &&
-                               l.LessonType.LessonTypeName != "Quiz")
+                               l.LessonType != null && l.LessonType.LessonTypeName != "Quiz")
                     .OrderByDescending(l => l.LessonOrder)
                     .FirstOrDefaultAsync();
 

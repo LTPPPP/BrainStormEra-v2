@@ -12,6 +12,7 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<string> GenerateCertificateCodeAsync(string courseId, string userId);
         Task InvalidateCacheAsync(string userId);
         Task<List<CertificateSummaryViewModel>> GetCachedUserCertificatesAsync(string userId);
+        Task<bool> ProcessPendingCertificatesAsync(string userId);
     }
 }
 

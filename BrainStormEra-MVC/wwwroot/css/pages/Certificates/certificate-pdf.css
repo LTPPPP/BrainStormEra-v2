@@ -1,0 +1,176 @@
+/* Certificate PDF Styles */
+body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    margin: 0;
+    padding: 0;
+    background: #f7f6f2;
+}
+
+.certificate-outer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.certificate-container {
+    background: #fffbe9;
+    border: 8px solid #e0b84c;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    padding: 48px 56px 40px 56px;
+    max-width: 900px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.certificate-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.08;
+    z-index: 0;
+    width: 60%;
+    max-width: 400px;
+}
+
+.certificate-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 2;
+}
+
+.certificate-logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    margin-right: 18px;
+}
+
+.certificate-title {
+    font-family: 'Georgia', serif;
+    font-size: 2.7rem;
+    color: #bfa13a;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 8px #e0b84c44;
+}
+
+.certificate-body {
+    text-align: center;
+    position: relative;
+    z-index: 2;
+}
+
+.certificate-presented {
+    font-size: 1.1rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+}
+
+.certificate-learner {
+    font-family: 'Georgia', serif;
+    font-size: 2.2rem;
+    color: #2d2d2d;
+    font-weight: 700;
+    margin: 0.2rem 0 0.7rem 0;
+    letter-spacing: 1px;
+}
+
+.certificate-course-label {
+    font-size: 1.1rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+}
+
+.certificate-course {
+    font-size: 1.5rem;
+    color: #3a3a3a;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+}
+
+.certificate-details-row {
+    display: flex;
+    justify-content: center;
+    gap: 2.5rem;
+    margin: 1.5rem 0 1.2rem 0;
+}
+
+.certificate-detail {
+    background: #fff8d6;
+    border-radius: 8px;
+    padding: 0.7rem 1.2rem;
+    box-shadow: 0 2px 8px #e0b84c22;
+    min-width: 120px;
+}
+
+.certificate-detail-label {
+    color: #bfa13a;
+    font-size: 0.95rem;
+    margin-bottom: 0.2rem;
+}
+
+.certificate-detail-value {
+    color: #2d2d2d;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.certificate-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 2.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.certificate-signature {
+    font-family: 'Georgia', serif;
+    font-size: 1.2rem;
+    color: #bfa13a;
+    font-weight: 700;
+    border-top: 2px solid #e0b84c;
+    padding-top: 0.3rem;
+    width: 180px;
+    text-align: center;
+}
+
+.certificate-organization {
+    font-size: 1.1rem;
+    color: #888;
+    text-align: right;
+    width: 180px;
+}
+
+.certificate-code {
+    position: absolute;
+    bottom: 18px;
+    right: 32px;
+    font-size: 0.95rem;
+    color: #bfa13a;
+    opacity: 0.8;
+    z-index: 2;
+}
+
+/* Print styles for PDF generation */
+@media print {
+    body {
+        background: white;
+    }
+    
+    .certificate-outer {
+        min-height: auto;
+    }
+    
+    .certificate-container {
+        box-shadow: none;
+        border: 6px solid #e0b84c;
+    }
+} 

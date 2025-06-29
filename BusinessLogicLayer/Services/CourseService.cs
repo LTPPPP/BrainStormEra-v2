@@ -229,6 +229,16 @@ namespace BusinessLogicLayer.Services
                     CourseUpdatedAt = course.CourseUpdatedAt
                 };
 
+                // Get progress percentage if user is enrolled
+                if (!string.IsNullOrEmpty(currentUserId))
+                {
+                    var enrollment = course.Enrollments.FirstOrDefault(e => e.UserId == currentUserId);
+                    if (enrollment != null)
+                    {
+                        viewModel.ProgressPercentage = enrollment.ProgressPercentage ?? 0;
+                    }
+                }
+
                 if (course.Feedbacks.Any(f => f.StarRating.HasValue))
                 {
                     viewModel.AverageRating = (double)Math.Round((decimal)course.Feedbacks.Where(f => f.StarRating.HasValue).Average(f => f.StarRating!.Value), 1);

@@ -50,6 +50,7 @@ namespace DataAccessLayer.Models.ViewModels
         public string? ApprovalStatus { get; set; }
         public DateTime CourseCreatedAt { get; set; }
         public DateTime CourseUpdatedAt { get; set; }
+        public decimal ProgressPercentage { get; set; } = 0;
 
         // Additional properties for view compatibility
         public List<string> CourseCategories => Categories;
