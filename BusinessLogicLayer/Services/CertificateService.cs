@@ -4,6 +4,9 @@ using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using BusinessLogicLayer.Constants;
+using Microsoft.EntityFrameworkCore;
+using DataAccessLayer.Data;
+using DataAccessLayer.Models;
 
 namespace BusinessLogicLayer.Services
 {
@@ -13,18 +16,21 @@ namespace BusinessLogicLayer.Services
         private readonly ICourseRepo _courseRepo;
         private readonly IMemoryCache _cache;
         private readonly ILogger<CertificateService> _logger;
+        private readonly BrainStormEraContext _context;
         private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(15);
 
         public CertificateService(
             ICertificateRepo certificateRepo,
             ICourseRepo courseRepo,
             IMemoryCache cache,
-            ILogger<CertificateService> logger)
+            ILogger<CertificateService> logger,
+            BrainStormEraContext context)
         {
             _certificateRepo = certificateRepo;
             _courseRepo = courseRepo;
             _cache = cache;
             _logger = logger;
+            _context = context;
         }
 
         public async Task<List<CertificateSummaryViewModel>> GetUserCertificatesAsync(string userId)
@@ -190,6 +196,68 @@ namespace BusinessLogicLayer.Services
                     TotalPages = 0
                 };
             }
+        }
+
+        public async Task<bool> ProcessPendingCertificatesAsync(string userId)
+        {
+            try
+            {
+                // Get all enrollments with 100% progress but no certificate
+                var pendingEnrollments = await _context.Enrollments
+                    .Include(e => e.Course)
+                    .Where(e => e.UserId == userId &&
+                               e.ProgressPercentage >= 100 &&
+                               !e.CertificateIssuedDate.HasValue)
+                    .ToListAsync();
+
+                var certificatesIssued = 0;
+
+                foreach (var enrollment in pendingEnrollments)
+                {
+                    // Update enrollment status and certificate date
+                    enrollment.EnrollmentStatus = 3; // Completed
+                    enrollment.CertificateIssuedDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+                    // Create certificate record
+                    var certificate = new Certificate
+                    {
+                        CertificateId = Guid.NewGuid().ToString(),
+                        EnrollmentId = enrollment.EnrollmentId,
+                        UserId = userId,
+                        CourseId = enrollment.CourseId,
+                        CertificateCode = GenerateCertificateCode(),
+                        CertificateName = "Certificate of Completion",
+                        IssueDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                        IsValid = true,
+                        FinalScore = enrollment.ProgressPercentage ?? 100,
+                        CertificateCreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.Certificates.Add(certificate);
+                    certificatesIssued++;
+                }
+
+                if (certificatesIssued > 0)
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Issued {Count} certificates for user {UserId}", certificatesIssued, userId);
+
+                    // Invalidate cache for this user
+                    await InvalidateCacheAsync(userId);
+                }
+
+                return certificatesIssued > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing pending certificates for user {UserId}", userId);
+                return false;
+            }
+        }
+
+        private string GenerateCertificateCode()
+        {
+            return Guid.NewGuid().ToString("N")[..8].ToUpper();
         }
     }
 }

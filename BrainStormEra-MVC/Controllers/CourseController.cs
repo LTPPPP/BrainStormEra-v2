@@ -83,6 +83,28 @@ namespace BrainStormEra_MVC.Controllers
                     }
                 }
 
+                // Check if user has certificate for this course
+                if (User.Identity?.IsAuthenticated == true && result.ViewModel.IsEnrolled)
+                {
+                    try
+                    {
+                        using var scope = HttpContext.RequestServices.CreateScope();
+                        var certificateRepo = scope.ServiceProvider.GetRequiredService<DataAccessLayer.Repositories.Interfaces.ICertificateRepo>();
+                        var userId = User.FindFirst("UserId")?.Value;
+
+                        if (!string.IsNullOrEmpty(userId))
+                        {
+                            var hasCertificate = await certificateRepo.HasValidCertificateAsync(userId, id);
+                            ViewBag.HasCertificate = hasCertificate;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Could not check certificate status for course details");
+                        ViewBag.HasCertificate = false;
+                    }
+                }
+
                 return View(result.ViewModel);
             }
             catch (Exception ex)

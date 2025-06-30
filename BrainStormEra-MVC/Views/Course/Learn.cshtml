@@ -145,6 +145,19 @@
                                                                 <i class="fas fa-lock"></i>
                                                                 Locked
                                                             </button>
+                                                            <div class="lock-info">
+                                                                <small class="text-muted">
+                                                                    <i class="fas fa-info-circle"></i>
+                                                                    @if (lesson.HasPrerequisite && !string.IsNullOrEmpty(lesson.PrerequisiteLessonName))
+                                                                    {
+                                                                        <span>Complete "@lesson.PrerequisiteLessonName" to unlock</span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span>Complete previous lesson to unlock</span>
+                                                                    }
+                                                                </small>
+                                                            </div>
                                                         }
                                                         else if (lesson.IsCompleted)
                                                         {
@@ -170,10 +183,108 @@
                                         }
                                     </div>
                                 }
-                                else
+
+                                @if (chapter.Quizzes.Any())
                                 {
-                                    <div class="no-lessons">
-                                        <p>No lessons available in this chapter yet.</p>
+                                    <div class="quizzes-list">
+                                        <h4 class="quizzes-section-title">
+                                            <i class="fas fa-question-circle"></i>
+                                            Quizzes
+                                        </h4>
+                                        @foreach (var quiz in chapter.Quizzes)
+                                        {
+                                            <div class="quiz-item @(quiz.IsCompleted ? "completed" : "")">
+                                                <div class="quiz-content">
+                                                    <div class="quiz-icon">
+                                                        <i class="@quiz.QuizTypeIcon"></i>
+                                                    </div>
+                                                    <div class="quiz-info">
+                                                        <div class="quiz-header">
+                                                            <h4 class="quiz-title">
+                                                                @quiz.QuizName
+                                                                @if (quiz.IsFinalQuiz)
+                                                                {
+                                                                    <span class="final-quiz-badge">Final Quiz</span>
+                                                                }
+                                                                @if (quiz.IsPrerequisiteQuiz)
+                                                                {
+                                                                    <span class="prerequisite-quiz-badge">Prerequisite</span>
+                                                                }
+                                                            </h4>
+                                                            <div class="quiz-meta">
+                                                                <span class="quiz-type">Quiz</span>
+                                                                @if (quiz.TimeLimit.HasValue && quiz.TimeLimit > 0)
+                                                                {
+                                                                    <span class="quiz-time-limit">
+                                                                        <i class="fas fa-clock"></i>
+                                                                        @quiz.TimeLimit min
+                                                                    </span>
+                                                                }
+                                                                @if (quiz.PassingScore.HasValue)
+                                                                {
+                                                                    <span class="quiz-passing-score">
+                                                                        <i class="fas fa-trophy"></i>
+                                                                        Pass: @quiz.PassingScore%
+                                                                    </span>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(quiz.QuizDescription))
+                                                        {
+                                                            <p class="quiz-description">@quiz.QuizDescription</p>
+                                                        }
+                                                        @if (quiz.IsCompleted && quiz.BestScore.HasValue)
+                                                        {
+                                                            <div class="quiz-progress">
+                                                                <div class="progress-bar mini">
+                                                                    <div class="progress-fill" style="width: @quiz.BestScore%"></div>
+                                                                </div>
+                                                                <span class="progress-text">Best Score: @quiz.BestScore%</span>
+                                                            </div>
+                                                        }
+                                                        @if (quiz.AttemptsUsed > 0)
+                                                        {
+                                                            <div class="quiz-attempts">
+                                                                <small class="text-muted">
+                                                                    Attempts: @quiz.AttemptsUsed
+                                                                    @if (quiz.MaxAttempts.HasValue)
+                                                                    {
+                                                                        <span>/ @quiz.MaxAttempts</span>
+                                                                    }
+                                                                </small>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    <div class="quiz-actions">
+                                                        @if (quiz.IsCompleted)
+                                                        {
+                                                            <button class="btn btn-completed">
+                                                                <i class="fas fa-check"></i>
+                                                                Completed
+                                                            </button>
+                                                            <button class="btn btn-review" onclick="startQuiz('@quiz.QuizId')">
+                                                                <i class="fas fa-redo"></i>
+                                                                Retake
+                                                            </button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button class="btn btn-start" onclick="startQuiz('@quiz.QuizId')">
+                                                                <i class="fas fa-play"></i>
+                                                                Start Quiz
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+
+                                @if (!chapter.Lessons.Any() && !chapter.Quizzes.Any())
+                                {
+                                    <div class="no-content">
+                                        <p>No lessons or quizzes available in this chapter yet.</p>
                                     </div>
                                 }
                             </div>
@@ -203,6 +314,11 @@
     function startLesson(lessonHashId) {
         // Redirect to lesson learning page with already encoded hash ID
         window.location.href = '@Url.Action("Learn", "Lesson")' + '?id=' + encodeURIComponent(lessonHashId);
+    }
+
+    function startQuiz(quizId) {
+        // Redirect to quiz take page
+        window.location.href = '@Url.Action("Take", "Quiz")' + '?id=' + encodeURIComponent(quizId);
     }
 
     function handleImageError(img) {

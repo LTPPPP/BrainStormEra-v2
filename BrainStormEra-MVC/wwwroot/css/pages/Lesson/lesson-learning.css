@@ -296,6 +296,52 @@
     color: white;
 }
 
+/* Quiz Item Styling */
+.lesson-item.quiz-item {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+    border-left: 4px solid #28a745;
+    position: relative;
+}
+
+.lesson-item.quiz-item:hover {
+    background: linear-gradient(135deg, #d4edda 0%, #e6f4e6 100%);
+    transform: translateX(2px);
+}
+
+.lesson-item.quiz-item::after {
+    content: "QUIZ";
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+    padding: 0.15rem 0.4rem;
+    border-radius: 8px;
+    letter-spacing: 0.5px;
+}
+
+.lesson-item.quiz-item .lesson-icon {
+    background: #28a745;
+    color: white;
+}
+
+.lesson-item.quiz-item.completed {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    border-left-color: #17a2b8;
+}
+
+.lesson-item.quiz-item.completed::after {
+    content: "COMPLETED";
+    color: #17a2b8;
+    background: rgba(23, 162, 184, 0.1);
+}
+
+.lesson-item.quiz-item.completed .lesson-icon {
+    background: #17a2b8;
+}
+
 /* Main Content Area */
 .lesson-content-area {
     flex: 1;

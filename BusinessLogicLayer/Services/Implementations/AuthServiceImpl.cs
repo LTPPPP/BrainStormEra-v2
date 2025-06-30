@@ -26,6 +26,7 @@ namespace BusinessLogicLayer.Services.Implementations
         private readonly BrainStormEraContext _context;
         private readonly IAvatarService _avatarService;
         private readonly IMediaPathService _mediaPathService;
+        private readonly IEmailService _emailService;
         // Cache for OTP codes (in a production environment, use a more robust solution like Redis)
         private static Dictionary<string, (string otp, DateTime expiry)> _otpCache = new();
 
@@ -34,13 +35,15 @@ namespace BusinessLogicLayer.Services.Implementations
             ILogger<AuthServiceImpl> logger,
             BrainStormEraContext context,
             IAvatarService avatarService,
-            IMediaPathService mediaPathService)
+            IMediaPathService mediaPathService,
+            IEmailService emailService)
         {
             _userService = userService;
             _logger = logger;
             _context = context;
             _avatarService = avatarService;
             _mediaPathService = mediaPathService;
+            _emailService = emailService;
         }
 
         #region Login Operations        /// <summary>
@@ -332,6 +335,21 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
+                // Send welcome email
+                if (_emailService != null)
+                {
+                    var emailResult = await _emailService.SendWelcomeEmailAsync(
+                        model.Email ?? "",
+                        model.FullName ?? "User",
+                        model.Username ?? model.Email ?? "User");
+
+                    if (!emailResult.IsSuccess)
+                    {
+                        _logger.LogWarning("Failed to send welcome email to {Email}: {Error}",
+                            model.Email, emailResult.Message);
+                    }
+                }
+
                 return new RegisterResult
                 {
                     Success = true,
@@ -474,14 +492,35 @@ namespace BusinessLogicLayer.Services.Implementations
                 // Store OTP in cache with 10-minute expiry
                 _otpCache[model.Email] = (otp, DateTime.UtcNow.AddMinutes(10));
 
-                // In a real application, send email with OTP
-                // For demo purposes, we'll just log it
-                _logger.LogInformation("OTP for {Email}: {OTP}", model.Email, otp);
+                // Send email with OTP using EmailService
+                var emailResult = await _emailService.SendForgotPasswordEmailAsync(
+                    model.Email,
+                    user.FullName ?? user.Username,
+                    otp,
+                    10);
+
+                if (!emailResult.IsSuccess)
+                {
+                    _logger.LogError("Failed to send forgot password email to {Email}: {Error}",
+                        model.Email, emailResult.Message);
+
+                    // Remove OTP from cache since email failed
+                    _otpCache.Remove(model.Email);
+
+                    return new ForgotPasswordResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Failed to send verification email. Please try again later.",
+                        ViewModel = model
+                    };
+                }
+
+                _logger.LogInformation("Forgot password email sent successfully to {Email}", model.Email);
 
                 return new ForgotPasswordResult
                 {
                     Success = true,
-                    RedirectAction = "VerifyOtp",
+                    RedirectAction = "ForgotPasswordConfirmation",
                     Email = model.Email
                 };
             }
@@ -669,6 +708,24 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 // Remove token from cache
                 _otpCache.Remove(model.Email);
+
+                // Send password reset confirmation email
+                var resetTime = DateTime.UtcNow;
+                var emailResult = await _emailService.SendPasswordResetConfirmationEmailAsync(
+                    model.Email,
+                    user.FullName ?? user.Username,
+                    resetTime);
+
+                if (!emailResult.IsSuccess)
+                {
+                    _logger.LogWarning("Failed to send password reset confirmation email to {Email}: {Error}",
+                        model.Email, emailResult.Message);
+                    // Don't fail the password reset if email fails, just log it
+                }
+                else
+                {
+                    _logger.LogInformation("Password reset confirmation email sent successfully to {Email}", model.Email);
+                }
 
                 return new ResetPasswordResult
                 {

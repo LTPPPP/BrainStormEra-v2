@@ -1,0 +1,284 @@
+@model DataAccessLayer.Models.ViewModels.QuizResultViewModel
+
+@{
+    ViewData["Title"] = "Quiz Result - " + Model.QuizName;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isPassed = Model.IsPassed == true;
+    var resultClass = isPassed ? "passed" : "failed";
+}
+
+<div class="quiz-result-container">
+    <!-- Result Header -->
+    <div class="result-header @resultClass">
+        <div class="result-icon">
+            @if (isPassed)
+            {
+                <i class="fas fa-check-circle"></i>
+            }
+            else
+            {
+                <i class="fas fa-times-circle"></i>
+            }
+        </div>
+        
+        <div class="result-info">
+            <h1 class="quiz-title">@Model.QuizName</h1>
+            <div class="result-status">
+                @if (isPassed)
+                {
+                    <span class="status-text passed">Congratulations! You passed!</span>
+                }
+                else
+                {
+                    <span class="status-text failed">Unfortunately, you didn't pass this time.</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Score Summary -->
+    <div class="score-summary">
+        <div class="score-card main-score">
+            <div class="score-label">Your Score</div>
+            <div class="score-value">
+                <span class="score">@(Model.PercentageScore?.ToString("F1") ?? "0")%</span>
+                <span class="score-fraction">(@Model.Score/@Model.TotalPoints points)</span>
+            </div>
+        </div>
+
+        <div class="score-details">
+            <div class="score-item">
+                <div class="score-label">Passing Score</div>
+                <div class="score-value">@(Model.PassingScore?.ToString("F1") ?? "0")%</div>
+            </div>
+            
+            <div class="score-item">
+                <div class="score-label">Time Spent</div>
+                <div class="score-value">
+                    @if (Model.TimeSpent.HasValue)
+                    {
+                        var timeSpan = TimeSpan.FromMinutes(Model.TimeSpent.Value);
+                        @($"{(int)timeSpan.TotalMinutes}:{timeSpan.Seconds:D2}")
+                    }
+                    else
+                    {
+                        @("N/A")
+                    }
+                </div>
+            </div>
+            
+            <div class="score-item">
+                <div class="score-label">Attempt</div>
+                <div class="score-value">@Model.AttemptNumber of @Model.MaxAttempts</div>
+            </div>
+            
+            @if (Model.RemainingAttempts > 0)
+            {
+                <div class="score-item">
+                    <div class="score-label">Remaining Attempts</div>
+                    <div class="score-value">@Model.RemainingAttempts</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="result-actions">
+        @if (Model.CanRetake && !isPassed)
+        {
+            <a href="@Url.Action("Take", "Quiz", new { id = Model.QuizId })" class="btn btn-primary">
+                <i class="fas fa-redo"></i>
+                Retake Quiz
+            </a>
+        }
+        
+        @if (!string.IsNullOrEmpty(Model.LessonId))
+        {
+            <a href="@Url.Action("Learning", "Lesson", new { id = Model.LessonId })" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Lesson
+            </a>
+        }
+        else if (!string.IsNullOrEmpty(Model.CourseId))
+        {
+            <a href="@Url.Action("Details", "Course", new { id = Model.CourseId })" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Course
+            </a>
+        }
+        
+        <button type="button" class="btn btn-info" id="toggle-review">
+            <i class="fas fa-eye"></i>
+            Review Answers
+        </button>
+    </div>
+
+    <!-- Question Review Section -->
+    <div class="questions-review" id="questions-review" style="display: none;">
+        <h3>Question Review</h3>
+        
+        @for (int i = 0; i < Model.QuestionResults.Count; i++)
+        {
+            var question = Model.QuestionResults[i];
+            var isCorrect = question.IsCorrect == true;
+            
+            <div class="question-review-card @(isCorrect ? "correct" : "incorrect")">
+                <div class="question-header">
+                    <div class="question-info">
+                        <span class="question-number">Question @(i + 1)</span>
+                        @if (question.Points.HasValue)
+                        {
+                            <span class="question-points">
+                                @(question.PointsEarned?.ToString("F1") ?? "0")/@question.Points points
+                            </span>
+                        }
+                    </div>
+                    <div class="question-status">
+                        @if (isCorrect)
+                        {
+                            <i class="fas fa-check-circle text-success"></i>
+                            <span class="status-text">Correct</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-times-circle text-danger"></i>
+                            <span class="status-text">Incorrect</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="question-content">
+                    <div class="question-text">
+                        @Html.Raw(question.QuestionText)
+                    </div>
+
+                    @if (question.QuestionType == "multiple_choice")
+                    {
+                        <div class="answer-options-review">
+                            @for (int j = 0; j < question.AnswerOptions.Count; j++)
+                            {
+                                var option = question.AnswerOptions[j];
+                                var optionClass = "";
+                                if (option.IsCorrect) optionClass += " correct-answer";
+                                if (option.IsSelected) optionClass += " selected-answer";
+                                if (option.IsSelected && !option.IsCorrect) optionClass += " wrong-selection";
+                                
+                                <div class="answer-option-review@(optionClass)">
+                                    <div class="option-content">
+                                        <span class="option-letter">@(((char)('A' + j)).ToString())</span>
+                                        <span class="option-text">@option.OptionText</span>
+                                    </div>
+                                    <div class="option-indicators">
+                                        @if (option.IsCorrect)
+                                        {
+                                            <i class="fas fa-check text-success" title="Correct Answer"></i>
+                                        }
+                                        @if (option.IsSelected)
+                                        {
+                                            <i class="fas fa-user-check text-primary" title="Your Answer"></i>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (question.QuestionType == "true_false")
+                    {
+                        <div class="answer-options-review">
+                            @for (int j = 0; j < question.AnswerOptions.Count; j++)
+                            {
+                                var option = question.AnswerOptions[j];
+                                var optionClass = "";
+                                if (option.IsCorrect) optionClass += " correct-answer";
+                                if (option.IsSelected) optionClass += " selected-answer";
+                                if (option.IsSelected && !option.IsCorrect) optionClass += " wrong-selection";
+                                
+                                <div class="answer-option-review@(optionClass)">
+                                    <div class="option-content">
+                                        <span class="option-text">@option.OptionText</span>
+                                    </div>
+                                    <div class="option-indicators">
+                                        @if (option.IsCorrect)
+                                        {
+                                            <i class="fas fa-check text-success" title="Correct Answer"></i>
+                                        }
+                                        @if (option.IsSelected)
+                                        {
+                                            <i class="fas fa-user-check text-primary" title="Your Answer"></i>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (question.QuestionType == "essay" || question.QuestionType == "fill_blank")
+                    {
+                        <div class="text-answer-review">
+                            <div class="your-answer">
+                                <strong>Your Answer:</strong>
+                                <div class="answer-content">@(question.UserAnswer ?? "No answer provided")</div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(question.CorrectAnswer))
+                            {
+                                <div class="correct-answer">
+                                    <strong>Sample Answer:</strong>
+                                    <div class="answer-content">@question.CorrectAnswer</div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(question.Explanation))
+                    {
+                        <div class="question-explanation">
+                            <div class="explanation-header">
+                                <i class="fas fa-lightbulb"></i>
+                                <strong>Explanation:</strong>
+                            </div>
+                            <div class="explanation-content">
+                                @Html.Raw(question.Explanation)
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Performance Analysis -->
+    <div class="performance-analysis" id="performance-analysis" style="display: none;">
+        <h3>Performance Analysis</h3>
+        
+        <div class="analysis-cards">
+            <div class="analysis-card">
+                <div class="analysis-label">Correct Answers</div>
+                <div class="analysis-value">
+                    @Model.QuestionResults.Count(q => q.IsCorrect == true) / @Model.QuestionResults.Count
+                </div>
+            </div>
+            
+            <div class="analysis-card">
+                <div class="analysis-label">Average Time per Question</div>
+                <div class="analysis-value">
+                    @if (Model.TimeSpent.HasValue && Model.QuestionResults.Count > 0)
+                    {
+                        var avgTime = Model.TimeSpent.Value / Model.QuestionResults.Count;
+                        @($"{avgTime:F1} min")
+                    }
+                    else
+                    {
+                        @("N/A")
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/Quiz/quiz-result.css" />
+}
+
+@section Scripts {
+    <script src="~/js/pages/Quiz/quiz-result.js"></script>
+}

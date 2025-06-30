@@ -59,7 +59,9 @@
 
     <!-- Main Content -->
     <div class="certificates-page">
-        <div class="container"> <!-- Page Header -->
+        <div class="container">
+            @Html.AntiForgeryToken()
+            <!-- Page Header -->
             <div class="page-header index-page">
                 <div class="row align-items-center">
                     <div class="col-md-8">
@@ -73,6 +75,11 @@
                         <div class="stats-card">
                             <div class="stat-number">@(ViewBag.TotalCertificates ?? 0)</div>
                             <div class="stat-label">Total Certificates</div>
+                        </div>
+                        <div class="mt-2">
+                            <button id="processCertificatesBtn" class="btn btn-warning btn-sm" onclick="processPendingCertificates()">
+                                <i class="fas fa-sync-alt"></i> Process Pending Certificates
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -339,6 +346,44 @@
                 const toast = document.querySelector('.toast-notification:last-child');
                 if (toast) toast.remove();
             }, 3000);
+        }
+
+        // Process pending certificates function
+        function processPendingCertificates() {
+            const button = document.getElementById('processCertificatesBtn');
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            }
+
+            fetch('@Url.Action("ProcessPendingCertificates", "Certificate")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', data.message || 'Certificates processed successfully!');
+                    // Reload page after a short delay to show new certificates
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showToast('info', data.message || 'No pending certificates found');
+                }
+            })
+            .catch(error => {
+                showToast('error', 'An error occurred while processing certificates');
+            })
+            .finally(() => {
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-sync-alt"></i> Process Pending Certificates';
+                }
+            });
         }
     </script>
 </body>

@@ -26,6 +26,7 @@ namespace DataAccessLayer.Models.ViewModels
         public int ChapterNumber => ChapterOrder;
         public bool IsLocked { get; set; }
         public List<LearnLessonViewModel> Lessons { get; set; } = new List<LearnLessonViewModel>();
+        public List<LearnQuizViewModel> Quizzes { get; set; } = new List<LearnQuizViewModel>();
         public bool IsCompleted => Lessons.All(l => l.IsCompleted);
         public decimal CompletionPercentage => Lessons.Count > 0 ? (Lessons.Count(l => l.IsCompleted) * 100m / Lessons.Count) : 0;
     }
@@ -43,6 +44,29 @@ namespace DataAccessLayer.Models.ViewModels
         public bool IsCompleted { get; set; }
         public int EstimatedDuration { get; set; } // in minutes
         public decimal ProgressPercentage { get; set; }
+
+        // Prerequisite information
+        public string? PrerequisiteLessonId { get; set; }
+        public string? PrerequisiteLessonName { get; set; }
+        public bool HasPrerequisite => !string.IsNullOrEmpty(PrerequisiteLessonId);
+    }
+
+    public class LearnQuizViewModel
+    {
+        public string QuizId { get; set; } = string.Empty;
+        public string QuizName { get; set; } = string.Empty;
+        public string QuizDescription { get; set; } = string.Empty;
+        public string LessonId { get; set; } = string.Empty;
+        public string LessonName { get; set; } = string.Empty;
+        public int? TimeLimit { get; set; }
+        public decimal? PassingScore { get; set; }
+        public int? MaxAttempts { get; set; }
+        public bool IsFinalQuiz { get; set; }
+        public bool IsPrerequisiteQuiz { get; set; }
+        public bool IsCompleted { get; set; }
+        public int? AttemptsUsed { get; set; }
+        public decimal? BestScore { get; set; }
+        public string QuizTypeIcon => "fas fa-question-circle";
     }
 
     public class LearnManagementResult

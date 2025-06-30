@@ -8,6 +8,7 @@ using Microsoft.Extensions.FileProviders;
 using BusinessLogicLayer;
 using BusinessLogicLayer.Utilities;
 using BusinessLogicLayer.Extensions;
+using Rotativa.AspNetCore;
 
 namespace BrainStormEra_MVC
 {
@@ -89,6 +90,12 @@ namespace BrainStormEra_MVC
             // Register Achievement Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AchievementServiceImpl>();
 
+            // Register Achievement Unlock Service for automatic achievement unlocking
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementUnlockService, BusinessLogicLayer.Services.Implementations.AchievementUnlockServiceImpl>();
+
+            // Register Achievement Notification Service for achievement notifications
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementNotificationService, BusinessLogicLayer.Services.Implementations.AchievementNotificationServiceImpl>();
+
             // Register Certificate Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.CertificateServiceImpl>();
 
@@ -125,6 +132,9 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseImageService, BusinessLogicLayer.Services.CourseImageService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
             builder.Services.AddSingleton<BusinessLogicLayer.Services.Interfaces.ICacheService, BusinessLogicLayer.Services.CacheService>();
+
+            // Add Email Service
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEmailService, BusinessLogicLayer.Services.EmailService>();
 
             // Add Safe Delete Service for secure delete operations
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ISafeDeleteService, BusinessLogicLayer.Services.SafeDeleteService>();
@@ -272,6 +282,9 @@ namespace BrainStormEra_MVC
                     ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000");
                 }
             });
+
+            // Configure Rotativa for PDF generation
+            RotativaConfiguration.Setup(app.Environment.WebRootPath, "Rotativa");
 
             app.UseRouting();
 

@@ -1,0 +1,36 @@
+@model DataAccessLayer.Models.ViewModels.CertificateDetailsViewModel
+@{
+    ViewBag.Title = "Certificate Details";
+    Layout = "~/Views/Shared/_CertificateLayout.cshtml";
+}
+<link rel="stylesheet" href="/css/pages/Certificates/certificate-details.css" />
+<link rel="stylesheet" href="/css/pages/Certificates/certificate-pdf.css" />
+<div class="certificate-container">
+    <div class="certificate-frame">
+        <div class="certificate-header">
+            <img src="/SharedMedia/logo/logowithoutbackground.png" alt="Logo" class="certificate-logo" />
+            <h2 class="certificate-title">Certificate of Completion</h2>
+        </div>
+        <div class="certificate-body">
+            <p class="certificate-presented">This is to certify that</p>
+            <h3 class="certificate-learner">@Model.LearnerName</h3>
+            <p class="certificate-course-label">has successfully completed the course</p>
+            <h2 class="certificate-course">@Model.CourseName</h2>
+            <p class="certificate-date">Date Completed: <strong>@Model.FormattedCompletedDate</strong></p>
+            <p class="certificate-code">Certificate Code: <strong>@Model.CertificateCode</strong></p>
+            <p class="certificate-score">Final Score: <strong>@Model.ProgressPercentage%</strong></p>
+        </div>
+        <div class="certificate-footer">
+            <span class="certificate-signature">BrainStormEra Team</span>
+        </div>
+    </div>
+    <div class="text-center mt-4">
+        <form asp-action="Download" asp-controller="Certificate" method="post">
+            <input type="hidden" name="courseId" value="@Model.CourseId" />
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-download"></i> Download PDF
+            </button>
+        </form>
+    </div>
+</div>
+<script src="/js/pages/Certificates/certificate-pdf.js"></script> 

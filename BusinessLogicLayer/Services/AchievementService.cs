@@ -6,6 +6,7 @@ using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Interfaces;
 using BusinessLogicLayer.Constants;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.EntityFrameworkCore;
 
 namespace BusinessLogicLayer.Services
 {
@@ -13,17 +14,23 @@ namespace BusinessLogicLayer.Services
     {
         private readonly IAchievementRepo _achievementRepo;
         private readonly ICourseRepo _courseRepo;
+        private readonly IAchievementUnlockService _achievementUnlockService;
+        private readonly BrainStormEraContext _context;
         private readonly IMemoryCache _cache;
         private readonly ILogger<AchievementService> _logger;
 
         public AchievementService(
             IAchievementRepo achievementRepo,
             ICourseRepo courseRepo,
+            IAchievementUnlockService achievementUnlockService,
+            BrainStormEraContext context,
             IMemoryCache cache,
             ILogger<AchievementService> logger)
         {
             _achievementRepo = achievementRepo;
             _courseRepo = courseRepo;
+            _achievementUnlockService = achievementUnlockService;
+            _context = context;
             _cache = cache;
             _logger = logger;
         }
@@ -32,7 +39,8 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                await AssignAchievementsAsync(userId);
+                // Check for new achievements before returning
+                await _achievementUnlockService.CheckAllAchievementsAsync(userId);
                 return await _achievementRepo.GetUserAchievementsAsync(userId);
             }
             catch (Exception ex)
@@ -77,31 +85,8 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                var achievements = await _achievementRepo.GetAllAchievementsAsync();
-                var userCompletedCourses = await _achievementRepo.GetUserCompletedCoursesCountAsync();
-
-                if (!userCompletedCourses.TryGetValue(userId, out int completedCount))
-                    return;
-
-                var tasks = achievements
-                    .Where(a => ShouldAssignAchievement(a, completedCount))
-                    .Select(async a =>
-                    {
-                        if (!await _achievementRepo.HasUserAchievementAsync(userId, a.AchievementId))
-                        {
-                            var userAchievement = new UserAchievement
-                            {
-                                UserId = userId,
-                                AchievementId = a.AchievementId,
-                                ReceivedDate = DateOnly.FromDateTime(DateTime.Today),
-                                PointsEarned = a.PointsReward
-                            };
-
-                            await _achievementRepo.AddUserAchievementAsync(userAchievement);
-                        }
-                    });
-
-                await Task.WhenAll(tasks);
+                // Use the new achievement unlock service
+                await _achievementUnlockService.CheckAllAchievementsAsync(userId);
             }
             catch (Exception ex)
             {
@@ -113,29 +98,16 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                var achievements = await _achievementRepo.GetAllAchievementsAsync();
-                var userCompletedCourses = await _achievementRepo.GetUserCompletedCoursesCountAsync();
+                // Get all users who have enrollments
+                var userIds = await _context.Enrollments
+                    .Select(e => e.UserId)
+                    .Distinct()
+                    .ToListAsync();
 
-                var tasks = userCompletedCourses.Select(async user =>
-                {
-                    foreach (var achievement in achievements.Where(a => ShouldAssignAchievement(a, user.Value)))
-                    {
-                        if (!await _achievementRepo.HasUserAchievementAsync(user.Key, achievement.AchievementId))
-                        {
-                            var userAchievement = new UserAchievement
-                            {
-                                UserId = user.Key,
-                                AchievementId = achievement.AchievementId,
-                                ReceivedDate = DateOnly.FromDateTime(DateTime.Today),
-                                PointsEarned = achievement.PointsReward
-                            };
-
-                            await _achievementRepo.AddUserAchievementAsync(userAchievement);
-                        }
-                    }
-                });
-
+                var tasks = userIds.Select(userId => _achievementUnlockService.CheckAllAchievementsAsync(userId));
                 await Task.WhenAll(tasks);
+
+                _logger.LogInformation("Bulk achievement assignment completed for {UserCount} users", userIds.Count);
             }
             catch (Exception ex)
             {
@@ -147,7 +119,8 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                await AssignAchievementsAsync(userId);
+                // Check for new achievements before getting the list
+                await _achievementUnlockService.CheckAllAchievementsAsync(userId);
 
                 var cacheKey = $"UserAchievementsList_{userId}_{search}_{page}_{pageSize}";
                 if (_cache.TryGetValue(cacheKey, out AchievementListViewModel? cached))
@@ -196,6 +169,38 @@ namespace BusinessLogicLayer.Services
                     TotalPages = 0
                 };
             }
+        }
+
+        /// <summary>
+        /// Check and unlock achievements for course completion
+        /// </summary>
+        public async Task<List<Achievement>> CheckCourseCompletionAchievementsAsync(string userId, string courseId)
+        {
+            return await _achievementUnlockService.CheckCourseCompletionAchievementsAsync(userId, courseId);
+        }
+
+        /// <summary>
+        /// Check and unlock achievements for quiz performance
+        /// </summary>
+        public async Task<List<Achievement>> CheckQuizAchievementsAsync(string userId, string quizId, decimal score, bool isPassed)
+        {
+            return await _achievementUnlockService.CheckQuizAchievementsAsync(userId, quizId, score, isPassed);
+        }
+
+        /// <summary>
+        /// Check and unlock achievements for learning streak
+        /// </summary>
+        public async Task<List<Achievement>> CheckStreakAchievementsAsync(string userId)
+        {
+            return await _achievementUnlockService.CheckStreakAchievementsAsync(userId);
+        }
+
+        /// <summary>
+        /// Get newly unlocked achievements for a user
+        /// </summary>
+        public async Task<List<Achievement>> GetNewlyUnlockedAchievementsAsync(string userId, TimeSpan timeWindow)
+        {
+            return await _achievementUnlockService.GetNewlyUnlockedAchievementsAsync(userId, timeWindow);
         }
 
         private string? GetCourseNameFromCache(string courseId)

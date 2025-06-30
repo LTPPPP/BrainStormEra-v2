@@ -25,7 +25,7 @@ namespace BrainStormEra_MVC.Controllers
 
         [HttpGet]
         [Authorize(Roles = "instructor")]
-        public async Task<IActionResult> CreateQuiz(string chapterId)
+        public async Task<IActionResult> Create(string chapterId)
         {
             // Use chapter ID directly without decoding
             var realChapterId = chapterId;
@@ -78,7 +78,7 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["SuccessMessage"] = result.SuccessMessage;
             }
 
-            return RedirectToAction(result.RedirectAction, result.QuizId);
+            return RedirectToAction("Details", "Quiz", new { id = result.QuizId });
         }
 
         // GET: Quiz/Edit/5
@@ -232,6 +232,113 @@ namespace BrainStormEra_MVC.Controllers
                 if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
                 {
                     return RedirectToAction(result.RedirectAction, result.RedirectController);
+                }
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    TempData["ErrorMessage"] = result.ErrorMessage;
+                    return RedirectToAction("Index", "Home");
+                }
+            }
+
+            return View(result.ViewModel);
+        }
+
+        // GET: Quiz/Take/5
+        [RequireAuthentication("You need to login to take the quiz. Please login to continue.")]
+        [Authorize(Roles = "learner")]
+        public async Task<IActionResult> Take(string id)
+        {
+            // Use ID directly without decoding
+            var result = await _quizServiceImpl.GetQuizTakeAsync(User, id);
+
+            if (!result.Success)
+            {
+                if (result.IsNotFound)
+                {
+                    return NotFound();
+                }
+                if (result.IsForbidden)
+                {
+                    return Forbid();
+                }
+                if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
+                {
+                    TempData["ErrorMessage"] = result.ErrorMessage;
+                    return RedirectToAction(result.RedirectAction, result.RedirectController, result.RouteValues);
+                }
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    TempData["ErrorMessage"] = result.ErrorMessage;
+                    return RedirectToAction("Index", "Home");
+                }
+            }
+
+            return View(result.ViewModel);
+        }
+
+        // POST: Quiz/Submit
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "learner")]
+        public async Task<IActionResult> Submit(QuizTakeSubmitViewModel model)
+        {
+            var result = await _quizServiceImpl.SubmitQuizAsync(User, model, ModelState);
+
+            if (!result.Success)
+            {
+                if (result.IsNotFound)
+                {
+                    return NotFound();
+                }
+                if (result.IsForbidden)
+                {
+                    return Forbid();
+                }
+                if (result.ReturnView)
+                {
+                    // Return to take quiz view with errors
+                    var takeResult = await _quizServiceImpl.GetQuizTakeAsync(User, model.QuizId);
+                    if (takeResult.Success)
+                    {
+                        return View("Take", takeResult.ViewModel);
+                    }
+                }
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    TempData["ErrorMessage"] = result.ErrorMessage;
+                    return RedirectToAction("Index", "Home");
+                }
+            }
+
+            if (!string.IsNullOrEmpty(result.SuccessMessage))
+            {
+                TempData["SuccessMessage"] = result.SuccessMessage;
+            }
+
+            return RedirectToAction("Result", new { id = result.AttemptId });
+        }
+
+        // GET: Quiz/Result/5
+        [RequireAuthentication("You need to login to view quiz results. Please login to continue.")]
+        [Authorize(Roles = "learner")]
+        public async Task<IActionResult> Result(string id)
+        {
+            // Use ID directly without decoding (attempt ID)
+            var result = await _quizServiceImpl.GetQuizResultAsync(User, id);
+
+            if (!result.Success)
+            {
+                if (result.IsNotFound)
+                {
+                    return NotFound();
+                }
+                if (result.IsForbidden)
+                {
+                    return Forbid();
+                }
+                if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
+                {
+                    return RedirectToAction(result.RedirectAction, result.RedirectController, result.RouteValues);
                 }
                 if (!string.IsNullOrEmpty(result.ErrorMessage))
                 {

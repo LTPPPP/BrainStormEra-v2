@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using DataAccessLayer.Models.ViewModels;
+
 namespace DataAccessLayer.Models.ViewModels
 {
     public class AdminDashboardViewModel
