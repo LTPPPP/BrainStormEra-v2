@@ -1,4 +1,4 @@
-namespace BrainStormEra_MVC.Models
+namespace DataAccessLayer.Models.ViewModels
 {
     public class ErrorViewModel
     {

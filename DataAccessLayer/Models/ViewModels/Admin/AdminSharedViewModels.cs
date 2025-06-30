@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BrainStormEra_Razor.ViewModels
+namespace DataAccessLayer.Models.ViewModels
 {
     // Admin Header Component ViewModel
     public class AdminHeaderViewModel
