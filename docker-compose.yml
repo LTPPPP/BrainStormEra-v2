@@ -1,71 +1,86 @@
 version: '3.8'
 
 services:
-  # BrainStormEra MVC Application
-  mvc:
-    build:
-      context: .
-      dockerfile: ./BrainStormEra-MVC/Dockerfile
-    container_name: brainstormera-mvc
-    ports:
-      - "5000:5000"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:5000
-      - ConnectionStrings__DefaultConnection=Server=database,1433;Database=BrainStormEra;User Id=sa;Password=YourStrong!Password123;TrustServerCertificate=true;MultipleActiveResultSets=true
-    depends_on:
-      database:
-        condition: service_healthy
-    networks:
-      - brainstormera-network
-    restart: unless-stopped
-
-  # BrainStormEra Razor Pages Application
-  razor:
-    build:
-      context: .
-      dockerfile: ./BrainStormEra-Razor/Dockerfile
-    container_name: brainstormera-razor
-    ports:
-      - "5001:5001"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:5001
-      - ConnectionStrings__DefaultConnection=Server=database,1433;Database=BrainStormEra;User Id=sa;Password=YourStrong!Password123;TrustServerCertificate=true;MultipleActiveResultSets=true
-    depends_on:
-      database:
-        condition: service_healthy
-    networks:
-      - brainstormera-network
-    restart: unless-stopped
-
   # SQL Server Database
   database:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: sqlserver-brainstormera
+    container_name: brainstormera-db
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_PID=Express
     ports:
       - "1433:1433"
-    environment:
-      SA_PASSWORD: "YourStrong!Password123"
-      ACCEPT_EULA: "Y"
-      MSSQL_PID: "Express"
     volumes:
       - sql_data:/var/opt/mssql
-      - ./init_script:/docker-entrypoint-initdb.d
+      - ./init_script:/docker-entrypoint-initdb.d:ro
     networks:
       - brainstormera-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Password123 -Q 'SELECT 1' || exit 1"]
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -Q 'SELECT 1'"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 30s
 
-volumes:
-  sql_data:
-    driver: local
+  # MVC Application
+  mvc:
+    build:
+      context: .
+      dockerfile: BrainStormEra-MVC/Dockerfile
+    container_name: brainstormera-mvc
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      - ConnectionStrings__DefaultConnection=Server=database;Database=BrainStormEra;User ID=sa;Password=YourStrong@Passw0rd;Trust Server Certificate=True;MultipleActiveResultSets=true
+    ports:
+      - "5000:5000"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - brainstormera-network
+    restart: unless-stopped
+    volumes:
+      - ./SharedMedia:/app/SharedMedia
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # Razor Pages Application  
+  razor:
+    build:
+      context: .
+      dockerfile: BrainStormEra-Razor/Dockerfile
+    container_name: brainstormera-razor
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5001
+      - ConnectionStrings__DefaultConnection=Server=database;Database=BrainStormEra;User ID=sa;Password=YourStrong@Passw0rd;Trust Server Certificate=True;MultipleActiveResultSets=true
+    ports:
+      - "5001:5001"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - brainstormera-network
+    restart: unless-stopped
+    volumes:
+      - ./SharedMedia:/app/SharedMedia
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# Networks
 networks:
   brainstormera-network:
     driver: bridge
+
+# Volumes
+volumes:
+  sql_data:
+    driver: local
