@@ -280,7 +280,7 @@ namespace BusinessLogicLayer.Services
             <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
             
             <p>Best regards,<br>
-            <strong>The BrainStormEra Team</strong></p>
+            <strong>The BrainStormEra</strong></p>
         </div>
         
         <div class='footer'>

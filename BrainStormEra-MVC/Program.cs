@@ -90,6 +90,12 @@ namespace BrainStormEra_MVC
             // Register Achievement Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AchievementServiceImpl>();
 
+            // Register Achievement Unlock Service for automatic achievement unlocking
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementUnlockService, BusinessLogicLayer.Services.Implementations.AchievementUnlockServiceImpl>();
+
+            // Register Achievement Notification Service for achievement notifications
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementNotificationService, BusinessLogicLayer.Services.Implementations.AchievementNotificationServiceImpl>();
+
             // Register Certificate Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.CertificateServiceImpl>();
 

@@ -336,20 +336,18 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
 
                 // Send welcome email
-                var emailResult = await _emailService.SendWelcomeEmailAsync(
-                    model.Email,
-                    model.FullName,
-                    model.Username);
+                if (_emailService != null)
+                {
+                    var emailResult = await _emailService.SendWelcomeEmailAsync(
+                        model.Email ?? "",
+                        model.FullName ?? "User",
+                        model.Username ?? model.Email ?? "User");
 
-                if (!emailResult.IsSuccess)
-                {
-                    _logger.LogWarning("Failed to send welcome email to {Email}: {Error}",
-                        model.Email, emailResult.Message);
-                    // Don't fail the registration if email fails, just log it
-                }
-                else
-                {
-                    _logger.LogInformation("Welcome email sent successfully to {Email}", model.Email);
+                    if (!emailResult.IsSuccess)
+                    {
+                        _logger.LogWarning("Failed to send welcome email to {Email}: {Error}",
+                            model.Email, emailResult.Message);
+                    }
                 }
 
                 return new RegisterResult

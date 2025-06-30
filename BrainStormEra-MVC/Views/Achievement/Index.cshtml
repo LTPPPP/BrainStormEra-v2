@@ -1,0 +1,250 @@
+@model DataAccessLayer.Models.ViewModels.AchievementListViewModel
+@{
+    ViewData["Title"] = "My Achievements";
+    ViewData["ActivePage"] = "Achievements";
+}
+
+<div class="achievement-container">
+    <!-- Header Section -->
+    <div class="achievement-header">
+        <div class="header-content">
+            <h1 class="achievement-title">
+                <i class="fas fa-trophy text-warning me-3"></i>
+                My Achievements
+            </h1>
+            <p class="achievement-subtitle">
+                Track your learning progress and celebrate your accomplishments
+            </p>
+        </div>
+        <div class="achievement-stats">
+            <div class="stat-item">
+                <div class="stat-number">@Model.TotalAchievements</div>
+                <div class="stat-label">Total Achievements</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">@Model.Achievements.Sum(a => a.PointsReward ?? 0)</div>
+                <div class="stat-label">Total Points</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="achievement-filters">
+        <form method="get" class="search-form">
+            <div class="input-group">
+                <input type="text" 
+                       class="form-control" 
+                       name="search" 
+                       value="@ViewBag.SearchQuery" 
+                       placeholder="Search achievements...">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Achievements Grid -->
+    @if (Model.Achievements.Any())
+    {
+        <div class="achievements-grid">
+            @foreach (var achievement in Model.Achievements)
+            {
+                <div class="achievement-card" data-achievement-id="@achievement.AchievementId">
+                    <div class="achievement-icon">
+                        <i class="@achievement.AchievementIcon"></i>
+                    </div>
+                    <div class="achievement-content">
+                        <h3 class="achievement-name">@achievement.AchievementName</h3>
+                        <p class="achievement-description">@achievement.AchievementDescription</p>
+                        <div class="achievement-meta">
+                            <span class="achievement-date">
+                                <i class="fas fa-calendar-alt"></i>
+                                @achievement.FormattedReceivedDate
+                            </span>
+                            <span class="achievement-points">
+                                <i class="fas fa-star"></i>
+                                @(achievement.PointsReward ?? 0) points
+                            </span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(achievement.RelatedCourseName))
+                        {
+                            <div class="achievement-course">
+                                <i class="fas fa-book"></i>
+                                @achievement.RelatedCourseName
+                            </div>
+                        }
+                    </div>
+                    <div class="achievement-badge">
+                        <span class="badge bg-success">@achievement.AchievementType</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.TotalPages > 1)
+        {
+            <nav aria-label="Achievement pagination" class="achievement-pagination">
+                <ul class="pagination justify-content-center">
+                    @if (ViewBag.CurrentPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { search = ViewBag.SearchQuery, page = ViewBag.CurrentPage - 1 })">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    }
+
+                    @for (int i = Math.Max(1, ViewBag.CurrentPage - 2); i <= Math.Min(Model.TotalPages, ViewBag.CurrentPage + 2); i++)
+                    {
+                        <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { search = ViewBag.SearchQuery, page = i })">@i</a>
+                        </li>
+                    }
+
+                    @if (ViewBag.CurrentPage < Model.TotalPages)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { search = ViewBag.SearchQuery, page = ViewBag.CurrentPage + 1 })">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="no-achievements">
+            <div class="no-achievements-content">
+                <i class="fas fa-trophy text-muted"></i>
+                <h3>No Achievements Yet</h3>
+                <p>Start learning to unlock your first achievement!</p>
+                <a href="@Url.Action("Index", "Course")" class="btn btn-primary">
+                    <i class="fas fa-play me-2"></i>
+                    Explore Courses
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Achievement Detail Modal -->
+<div class="modal fade" id="achievementModal" tabindex="-1" aria-labelledby="achievementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="achievementModalLabel">Achievement Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="achievementModalBody">
+                <!-- Achievement details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Achievement Notification Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="achievementToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fas fa-trophy text-warning me-2"></i>
+            <strong class="me-auto">New Achievement!</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="achievementToastBody">
+            <!-- Achievement notification content -->
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Achievement card click handler
+            $('.achievement-card').click(function() {
+                var achievementId = $(this).data('achievement-id');
+                loadAchievementDetails(achievementId);
+            });
+
+            // Load achievement details
+            function loadAchievementDetails(achievementId) {
+                $.get('@Url.Action("GetAchievementDetails")', { achievementId: achievementId })
+                    .done(function(response) {
+                        if (response.success) {
+                            var data = response.data;
+                            var modalBody = `
+                                <div class="achievement-detail">
+                                    <div class="achievement-icon-large">
+                                        <i class="${data.achievementIcon}"></i>
+                                    </div>
+                                    <h4>${data.achievementName}</h4>
+                                    <p class="achievement-description">${data.achievementDescription}</p>
+                                    <div class="achievement-info">
+                                        <div class="info-item">
+                                            <strong>Points Earned:</strong> ${data.pointsEarned}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>Received:</strong> ${new Date(data.receivedDate).toLocaleDateString()}
+                                        </div>
+                                        ${data.relatedCourseName ? `<div class="info-item"><strong>Course:</strong> ${data.relatedCourseName}</div>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                            $('#achievementModalBody').html(modalBody);
+                            $('#achievementModal').modal('show');
+                        } else {
+                            showToast('Error', response.message, 'error');
+                        }
+                    })
+                    .fail(function() {
+                        showToast('Error', 'Failed to load achievement details', 'error');
+                    });
+            }
+
+            // Check for new achievements periodically
+            function checkNewAchievements() {
+                $.get('@Url.Action("GetNewAchievements")')
+                    .done(function(response) {
+                        if (response.success && response.achievements.length > 0) {
+                            response.achievements.forEach(function(achievement) {
+                                showAchievementNotification(achievement);
+                            });
+                        }
+                    });
+            }
+
+            // Show achievement notification
+            function showAchievementNotification(achievement) {
+                var toastBody = `
+                    <div class="achievement-notification">
+                        <div class="achievement-icon">
+                            <i class="${achievement.achievementIcon}"></i>
+                        </div>
+                        <div class="achievement-info">
+                            <h6>${achievement.achievementName}</h6>
+                            <p>${achievement.achievementDescription}</p>
+                            <small>+${achievement.pointsReward} points</small>
+                        </div>
+                    </div>
+                `;
+                $('#achievementToastBody').html(toastBody);
+                var toast = new bootstrap.Toast(document.getElementById('achievementToast'));
+                toast.show();
+            }
+
+            // Show toast notification
+            function showToast(title, message, type) {
+                // Implementation for generic toast notifications
+            }
+
+            // Check for new achievements every 30 seconds
+            setInterval(checkNewAchievements, 30000);
+
+            // Initial check
+            checkNewAchievements();
+        });
+    </script>
+} 

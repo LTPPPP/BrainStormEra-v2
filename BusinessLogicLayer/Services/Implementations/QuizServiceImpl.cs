@@ -19,12 +19,18 @@ namespace BusinessLogicLayer.Services.Implementations
     {
         private readonly BrainStormEraContext _context;
         private readonly ILessonService _lessonService;
+        private readonly IAchievementUnlockService _achievementUnlockService;
         private readonly ILogger<QuizServiceImpl> _logger;
 
-        public QuizServiceImpl(BrainStormEraContext context, ILessonService lessonService, ILogger<QuizServiceImpl> logger)
+        public QuizServiceImpl(
+            BrainStormEraContext context,
+            ILessonService lessonService,
+            IAchievementUnlockService achievementUnlockService,
+            ILogger<QuizServiceImpl> logger)
         {
             _context = context;
             _lessonService = lessonService;
+            _achievementUnlockService = achievementUnlockService;
             _logger = logger;
         }
 
@@ -1315,6 +1321,23 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Check and unlock quiz achievements
+                try
+                {
+                    var unlockedAchievements = await _achievementUnlockService.CheckQuizAchievementsAsync(
+                        userId, attempt.QuizId, percentageScore, isPassed);
+
+                    if (unlockedAchievements.Any())
+                    {
+                        _logger.LogInformation("Unlocked {AchievementCount} quiz achievements for user {UserId} on quiz {QuizId}",
+                            unlockedAchievements.Count, userId, attempt.QuizId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error checking quiz achievements for user {UserId}, quiz {QuizId}", userId, attempt.QuizId);
+                }
 
                 return new QuizSubmitResult
                 {

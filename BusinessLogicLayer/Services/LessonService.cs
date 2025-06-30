@@ -6,6 +6,7 @@ using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace BusinessLogicLayer.Services
 {
@@ -14,15 +15,21 @@ namespace BusinessLogicLayer.Services
         private readonly ILessonRepo _lessonRepo;
         private readonly IChapterRepo _chapterRepo;
         private readonly BrainStormEraContext _context;
+        private readonly IAchievementUnlockService _achievementUnlockService;
+        private readonly ILogger<LessonService> _logger;
 
         public LessonService(
             ILessonRepo lessonRepo,
             IChapterRepo chapterRepo,
-            BrainStormEraContext context)
+            BrainStormEraContext context,
+            IAchievementUnlockService achievementUnlockService,
+            ILogger<LessonService> logger)
         {
             _lessonRepo = lessonRepo;
             _chapterRepo = chapterRepo;
             _context = context;
+            _achievementUnlockService = achievementUnlockService;
+            _logger = logger;
         }
         public async Task<bool> CreateLessonAsync(Lesson lesson)
         {
@@ -685,6 +692,21 @@ namespace BusinessLogicLayer.Services
                         };
 
                         _context.Certificates.Add(certificate);
+
+                        // Check and unlock course completion achievements
+                        try
+                        {
+                            var unlockedAchievements = await _achievementUnlockService.CheckCourseCompletionAchievementsAsync(userId, courseId);
+                            if (unlockedAchievements.Any())
+                            {
+                                _logger.LogInformation("Unlocked {AchievementCount} achievements for user {UserId} completing course {CourseId}",
+                                    unlockedAchievements.Count, userId, courseId);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error checking achievements for course completion: user {UserId}, course {CourseId}", userId, courseId);
+                        }
                     }
                 }
 
@@ -693,8 +715,9 @@ namespace BusinessLogicLayer.Services
                 // Log successful update
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating enrollment progress for user {UserId}, course {CourseId}", userId, courseId);
                 return false;
             }
         }
