@@ -1415,254 +1415,290 @@
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-  .achievements-management .achievements-grid {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
-  }
-
-  .achievements-management .achievement-card {
-    min-height: 420px; /* Slightly reduce height for smaller screens */
-  }
-
-  .achievements-management .create-modal-content {
-    width: 85%;
-    max-width: 600px;
-  }
-
-  .achievements-management .form-row {
-    grid-template-columns: 1fr;
-    gap: 16px;
+  .achievements-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
   }
 }
 
 @media (max-width: 768px) {
-  .achievements-management .page-header {
+  .achievements-management {
+    padding: 1rem;
+  }
+
+  .page-header {
     flex-direction: column;
-    gap: 20px;
+    gap: 1rem;
     text-align: center;
   }
 
-  .achievements-management .page-title h1 {
-    font-size: 2rem;
+  .page-title {
+    flex-direction: column;
+    text-align: center;
   }
 
-  .achievements-management .filters-row {
+  .filters-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .achievements-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 1rem;
   }
 
-  .achievements-management .filter-actions {
-    justify-content: stretch;
-  }
-
-  .achievements-management .filter-actions .btn-filter,
-  .achievements-management .filter-actions .btn-clear {
-    flex: 1;
-  }
-
-  .achievements-management .stats-cards {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 16px;
-  }
-
-  .achievements-management .stat-number {
-    font-size: 2rem;
-  }
-
-  .achievements-management .achievements-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .achievements-management .achievement-card {
-    min-height: 400px; /* Consistent height for mobile */
-  }
-
-  .achievements-management .achievement-actions {
+  .achievement-actions {
     flex-direction: column;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
-  .achievements-management .modal-content {
-    width: 95%;
-    margin: 2% auto;
-  }
-
-  .achievements-management .modal-actions {
-    flex-direction: column;
-  }
-
-  /* Create Modal Mobile Styles */
-  .achievements-management .create-modal-content {
-    width: 95%;
-    max-height: 95vh;
-    margin: 2.5% auto;
-  }
-
-  .achievements-management .create-modal-header {
-    padding: 24px 20px;
-  }
-
-  .achievements-management .create-modal-header h3 {
-    font-size: 1.6rem;
-  }
-
-  .achievements-management .create-modal-body {
-    padding: 24px 20px;
-  }
-
-  .achievements-management .form-row {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .achievements-management .icon-selection-section {
-    padding: 16px;
-  }
-
-  .achievements-management .icon-input-group {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .achievements-management .btn-upload-icon,
-  .achievements-management .btn-browse-icons {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .achievements-management .icon-gallery {
-    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-  }
-
-  .achievements-management .icon-option {
-    width: 50px;
-    height: 50px;
-    font-size: 1.4rem;
-  }
-
-  .achievements-management .create-modal-footer {
-    padding: 20px;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .achievements-management .btn-create-submit,
-  .achievements-management .btn-create-cancel {
+  .btn-action {
     width: 100%;
     justify-content: center;
   }
 }
 
-@media (max-width: 480px) {
-  .achievements-management .page-header {
-    padding: 20px;
+/* Enhanced Delete Confirmation Modal */
+#deleteModal.modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  animation: modalFadeIn 0.3s ease;
+}
+
+#deleteModal.modal.show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#deleteModal .modal-content {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 0;
+  width: 90%;
+  max-width: 480px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+  animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  position: relative;
+  margin: auto;
+}
+
+#deleteModal .modal-header {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  padding: 2rem;
+  text-align: center;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+#deleteModal .modal-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  pointer-events: none;
+}
+
+#deleteModal .modal-header h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+#deleteModal .modal-header h3 i {
+  font-size: 1.8rem;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+#deleteModal .modal-header p {
+  margin: 0;
+  opacity: 0.95;
+  position: relative;
+  z-index: 1;
+  line-height: 1.6;
+  background: rgba(255, 255, 255, 0.95);
+  color: #2c3e50;
+  padding: 1.5rem;
+  border-radius: 15px;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+#deleteModal .modal-header p strong {
+  color: #e74c3c;
+  font-weight: 700;
+}
+
+#deleteModal .modal-header p small {
+  display: block;
+  margin-top: 0.75rem;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  padding: 0.75rem;
+  background: rgba(231, 76, 60, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #e74c3c;
+}
+
+#deleteModal .modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+#deleteModal .btn-confirm,
+#deleteModal .btn-cancel {
+  padding: 0.875rem 2rem;
+  border-radius: 12px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 140px;
+  justify-content: center;
+  text-decoration: none;
+}
+
+#deleteModal .btn-confirm {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+#deleteModal .btn-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4);
+}
+
+#deleteModal .btn-confirm:active {
+  transform: translateY(0);
+}
+
+#deleteModal .btn-confirm.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+#deleteModal .btn-confirm.loading::after {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border: 2px solid white;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 0.5rem;
+}
+
+#deleteModal .btn-cancel {
+  background: rgba(255, 255, 255, 0.9);
+  color: #666;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+#deleteModal .btn-cancel:hover {
+  background: rgba(255, 255, 255, 1);
+  color: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+#deleteModal .btn-cancel:active {
+  transform: translateY(0);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Modal */
+@media (max-width: 768px) {
+  #deleteModal .modal-content {
+    width: 95%;
+    margin: 1rem;
   }
 
-  .achievements-management .page-title h1 {
-    font-size: 1.8rem;
+  #deleteModal .modal-header {
+    padding: 1.5rem;
   }
 
-  .achievements-management .filters-section {
-    padding: 20px;
+  #deleteModal .modal-header h3 {
+    font-size: 1.3rem;
   }
 
-  .achievements-management .achievement-card {
-    border-radius: 16px;
-  }
-
-  .achievements-management .achievement-header {
-    padding: 20px;
-  }
-
-  .achievements-management .achievement-content {
-    padding: 20px;
-  }
-
-  .achievements-management .achievement-icon {
-    font-size: 2.5rem;
-  }
-
-  .achievements-management .achievement-title {
-    font-size: 1.2rem;
-  }
-
-  .achievements-management .no-achievements {
-    padding: 60px 20px;
-  }
-
-  .achievements-management .no-achievements .icon {
-    font-size: 3rem;
-  }
-
-  .achievements-management .no-achievements h3 {
+  #deleteModal .modal-header h3 i {
     font-size: 1.5rem;
   }
 
-  /* Create Modal Extra Small Screens */
-  .achievements-management .create-modal-content {
-    width: 98%;
-    margin: 1% auto;
-    border-radius: 16px;
-  }
-
-  .achievements-management .create-modal-header {
-    padding: 20px 16px;
-    border-radius: 16px 16px 0 0;
-  }
-
-  .achievements-management .create-modal-header h3 {
-    font-size: 1.4rem;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .achievements-management .create-modal-body {
-    padding: 20px 16px;
-    max-height: 70vh;
-  }
-
-  .achievements-management .section-title {
+  #deleteModal .modal-header p {
+    padding: 1rem;
     font-size: 1rem;
   }
 
-  .achievements-management .create-form-group label {
-    font-size: 0.9rem;
+  #deleteModal .modal-actions {
+    flex-direction: column;
+    padding: 1.5rem;
   }
 
-  .achievements-management .create-form-group input,
-  .achievements-management .create-form-group select,
-  .achievements-management .create-form-group textarea {
-    padding: 14px 16px;
-    font-size: 0.95rem;
-  }
-
-  .achievements-management .icon-selection-section {
-    padding: 12px;
-  }
-
-  .achievements-management .icon-method {
-    padding: 16px;
-  }
-
-  .achievements-management .icon-gallery {
-    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
-    gap: 8px;
-  }
-
-  .achievements-management .icon-option {
-    width: 45px;
-    height: 45px;
-    font-size: 1.2rem;
-  }
-
-  .achievements-management .create-modal-footer {
-    padding: 16px;
-  }
-
-  .achievements-management .btn-create-submit,
-  .achievements-management .btn-create-cancel {
-    padding: 14px 24px;
-    font-size: 0.9rem;
+  #deleteModal .btn-confirm,
+  #deleteModal .btn-cancel {
+    width: 100%;
   }
 }
