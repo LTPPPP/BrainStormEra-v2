@@ -571,11 +571,24 @@ namespace BusinessLogicLayer.Services
             }
         }
 
-        public async Task<bool> BanCourseAsync(string courseId, string? adminId = null)
+        public async Task<bool> RejectCourseAsync(string courseId, string reason, string? adminId = null)
         {
             try
             {
-                return await _adminRepo.BanCourseAsync(courseId, adminId ?? "system", "Course banned by admin");
+                return await _adminRepo.RejectCourseAsync(courseId, adminId ?? "system", reason);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting course for courseId: {CourseId}", courseId);
+                throw;
+            }
+        }
+
+        public async Task<bool> BanCourseAsync(string courseId, string reason, string? adminId = null)
+        {
+            try
+            {
+                return await _adminRepo.BanCourseAsync(courseId, adminId ?? "system", reason);
             }
             catch (Exception ex)
             {

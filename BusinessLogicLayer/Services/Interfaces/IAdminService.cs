@@ -17,7 +17,8 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<bool> UpdateUserPointsAsync(string userId, decimal pointsChange);
         Task<bool> DeleteUserAsync(string userId);
         Task<bool> UpdateCourseStatusAsync(string courseId, bool isApproved, string? adminId = null);
-        Task<bool> BanCourseAsync(string courseId, string? adminId = null);
+        Task<bool> RejectCourseAsync(string courseId, string reason, string? adminId = null);
+        Task<bool> BanCourseAsync(string courseId, string reason, string? adminId = null);
         Task<bool> DeleteCourseAsync(string courseId);
 
         // Achievement Management

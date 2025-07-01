@@ -123,8 +123,15 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return BadRequest("Course ID is required");
                 }
 
+                // Get UserId from claims for POST request
+                var currentUserId = HttpContext.User?.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _logger.LogWarning("Admin UserId not found in claims during course approval for course: {CourseId}", courseId);
+                    return new JsonResult(new { success = false, message = "Authentication error: Admin ID not found" });
+                }
 
-                var result = await _adminService.UpdateCourseStatusAsync(courseId, isApproved, UserId);
+                var result = await _adminService.UpdateCourseStatusAsync(courseId, isApproved, currentUserId);
 
                 if (result)
                 {
@@ -144,7 +151,7 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
         }
 
-        public async Task<IActionResult> OnPostBanCourseAsync(string courseId)
+        public async Task<IActionResult> OnPostRejectCourseAsync(string courseId, string reason)
         {
             try
             {
@@ -153,13 +160,67 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return BadRequest("Course ID is required");
                 }
 
+                if (string.IsNullOrEmpty(reason))
+                {
+                    return BadRequest("Rejection reason is required");
+                }
 
-                var result = await _adminService.BanCourseAsync(courseId, UserId);
+                // Get UserId from claims for POST request
+                var currentUserId = HttpContext.User?.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _logger.LogWarning("Admin UserId not found in claims during course rejection for course: {CourseId}", courseId);
+                    return new JsonResult(new { success = false, message = "Authentication error: Admin ID not found" });
+                }
+
+                var result = await _adminService.RejectCourseAsync(courseId, reason, currentUserId);
 
                 if (result)
                 {
-                    _logger.LogInformation("Course banned successfully by admin {AdminName} for course {CourseId}",
-                        HttpContext.User?.Identity?.Name, courseId);
+                    _logger.LogInformation("Course rejected successfully by admin {AdminName} for course {CourseId} with reason: {Reason}",
+                        HttpContext.User?.Identity?.Name, courseId, reason);
+                    return new JsonResult(new { success = true, message = "Course rejected successfully" });
+                }
+                else
+                {
+                    return new JsonResult(new { success = false, message = "Failed to reject course" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting course: {CourseId}", courseId);
+                return new JsonResult(new { success = false, message = "An error occurred while rejecting course" });
+            }
+        }
+
+        public async Task<IActionResult> OnPostBanCourseAsync(string courseId, string reason)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(courseId))
+                {
+                    return BadRequest("Course ID is required");
+                }
+
+                if (string.IsNullOrEmpty(reason))
+                {
+                    return BadRequest("Ban reason is required");
+                }
+
+                // Get UserId from claims for POST request
+                var currentUserId = HttpContext.User?.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _logger.LogWarning("Admin UserId not found in claims during course ban for course: {CourseId}", courseId);
+                    return new JsonResult(new { success = false, message = "Authentication error: Admin ID not found" });
+                }
+
+                var result = await _adminService.BanCourseAsync(courseId, reason, currentUserId);
+
+                if (result)
+                {
+                    _logger.LogInformation("Course banned successfully by admin {AdminName} for course {CourseId} with reason: {Reason}",
+                        HttpContext.User?.Identity?.Name, courseId, reason);
                     return new JsonResult(new { success = true, message = "Course banned successfully" });
                 }
                 else

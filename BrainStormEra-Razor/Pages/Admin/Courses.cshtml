@@ -20,11 +20,6 @@
                     <p class="hero-subtitle">Manage course approvals, content moderation, and instructor oversight</p>
                 </div>
             </div>
-            <div class="dashboard-actions">
-                <a href="/admin" class="action-btn secondary">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
-                </a>
-            </div>
             <div class="quick-stats">
                 <div class="stat-badge">
                     <span class="stat-value">@Model.CoursesData.TotalCourses</span>
@@ -168,13 +163,55 @@
         </form>
     </div>
 
+    <!-- Bulk Actions Bar -->
+    <div id="bulkActionsBar" class="bulk-actions-bar" style="display: none;">
+        <div class="bulk-actions-content">
+            <div class="bulk-selection-info">
+                <span id="selectedCount">0</span> courses selected
+            </div>
+            <div class="bulk-actions-buttons">
+                <button type="button" class="btn btn-success bulk-action-btn" id="bulkApproveBtn">
+                    <i class="fas fa-check"></i> Approve Selected
+                </button>
+                <button type="button" class="btn btn-warning bulk-action-btn" id="bulkRejectBtn">
+                    <i class="fas fa-times"></i> Reject Selected
+                </button>
+                <button type="button" class="btn btn-danger bulk-action-btn" id="bulkBanBtn">
+                    <i class="fas fa-ban"></i> Ban Selected
+                </button>
+                <button type="button" class="btn btn-secondary" id="clearSelectionBtn">
+                    <i class="fas fa-times"></i> Clear Selection
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Courses Grid -->
     @if (Model.CoursesData.Courses.Any())
     {
-        <div class="courses-grid">
+        <div class="courses-grid-container">
+            <div class="courses-grid-header">
+                <div class="grid-header-left">
+                    <label class="bulk-select-all">
+                        <input type="checkbox" id="selectAllCourses">
+                        <span class="checkmark"></span>
+                        Select All
+                    </label>
+                </div>
+                <div class="grid-header-right">
+                    <span class="courses-count">
+                        Showing @Model.CoursesData.Courses.Count of @Model.CoursesData.TotalCourses courses
+                    </span>
+                </div>
+            </div>
+            
+            <div class="courses-grid">
             @foreach (var course in Model.CoursesData.Courses)
             {
-                <div class="course-card">
+                <div class="course-card" data-course-id="@course.CourseId">
+                    <div class="course-selection">
+                        <input type="checkbox" class="course-select" value="@course.CourseId" data-course-name="@course.CourseName" data-status="@course.StatusText.ToLower()">
+                    </div>
                     <div class="course-image">
                         <img src="@course.CoursePicture" alt="@course.CourseName"
                              onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';" />
@@ -324,6 +361,7 @@
                     </div>
                 </div>
             }
+            </div>
         </div>
 
         <!-- Enhanced Pagination -->
