@@ -281,6 +281,50 @@ namespace BusinessLogicLayer.Services
             }
         }
 
+        public async Task<AdminUserViewModel?> GetUserDetailAsync(string userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return null;
+                }
+
+                var user = await _adminRepo.GetUserWithDetailsAsync(userId);
+                if (user == null)
+                {
+                    return null;
+                }
+
+                return new AdminUserViewModel
+                {
+                    UserId = user.UserId,
+                    Username = user.Username,
+                    FullName = user.FullName ?? "",
+                    UserEmail = user.UserEmail,
+                    UserRole = user.UserRole,
+                    UserImage = user.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
+                    AccountCreatedAt = user.AccountCreatedAt,
+                    LastLoginDate = user.LastLogin,
+                    IsBanned = user.IsBanned ?? false,
+                    IsActive = !(user.IsBanned ?? false),
+                    PhoneNumber = user.PhoneNumber,
+                    UserAddress = user.UserAddress,
+                    DateOfBirth = user.DateOfBirth,
+                    Gender = user.Gender,
+                    PaymentPoint = user.PaymentPoint,
+                    BankName = user.BankName,
+                    BankAccountNumber = user.BankAccountNumber,
+                    AccountHolderName = user.AccountHolderName
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user detail for userId: {UserId}", userId);
+                throw;
+            }
+        }
+
         public async Task<AdminCoursesViewModel> GetAllCoursesAsync(string? search = null, string? categoryFilter = null, string? statusFilter = null, string? priceFilter = null, string? difficultyFilter = null, string? instructorFilter = null, string? sortBy = null, int page = 1, int pageSize = 12)
         {
             try

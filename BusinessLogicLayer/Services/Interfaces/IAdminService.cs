@@ -10,6 +10,7 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<List<CourseViewModel>> GetRecentCoursesAsync(int count);
         Task<decimal> GetTotalRevenueAsync();
         Task<AdminUsersViewModel> GetAllUsersAsync(string? search = null, string? roleFilter = null, int page = 1, int pageSize = 10);
+        Task<AdminUserViewModel?> GetUserDetailAsync(string userId);
         Task<AdminCoursesViewModel> GetAllCoursesAsync(string? search = null, string? categoryFilter = null, string? statusFilter = null, string? priceFilter = null, string? difficultyFilter = null, string? instructorFilter = null, string? sortBy = null, int page = 1, int pageSize = 12);
         Task<AdminCourseDetailsViewModel?> GetCourseDetailsAsync(string courseId);
         Task<bool> UpdateUserStatusAsync(string userId, bool isBanned);

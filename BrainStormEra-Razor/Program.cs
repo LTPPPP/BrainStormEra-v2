@@ -56,6 +56,7 @@ namespace BrainStormEra_Razor
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementIconService, BusinessLogicLayer.Services.AchievementIconService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAdminService, BusinessLogicLayer.Services.AdminService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEmailService, BusinessLogicLayer.Services.EmailService>();
 
             // Register other Services from BusinessLogicLayer
             builder.Services.AddScoped<BusinessLogicLayer.Services.UserService>();
@@ -63,6 +64,7 @@ namespace BrainStormEra_Razor
             builder.Services.AddScoped<BusinessLogicLayer.Services.AchievementIconService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.MediaPathService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.AdminService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.EmailService>();
 
             // Register ServiceImpls from BusinessLogicLayer  
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();
