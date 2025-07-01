@@ -1,0 +1,337 @@
+<!-- Create Achievement Modal Example -->
+<!-- Add this to your Achievements.cshtml page -->
+
+<div class="create-achievement-modal" id="createAchievementModal">
+    <div class="create-modal-content">
+        <!-- Header -->
+        <div class="create-modal-header">
+            <button class="create-modal-close" onclick="closeCreateModal()">&times;</button>
+            <h3>
+                <i class="fas fa-plus-circle icon"></i>
+                Create New Achievement
+            </h3>
+            <p>Design and configure a new achievement for the system</p>
+        </div>
+
+        <!-- Body -->
+        <div class="create-modal-body">
+            <form class="create-form" id="createAchievementForm">
+                <!-- Basic Information Section -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Basic Information
+                    </h4>
+
+                    <div class="form-row">
+                        <div class="create-form-group">
+                            <label for="achievementName">
+                                <i class="fas fa-tag"></i>
+                                Achievement Name
+                                <span class="required">*</span>
+                            </label>
+                            <input type="text" id="achievementName" name="achievementName"
+                                placeholder="Enter achievement name..." required>
+                        </div>
+
+                        <div class="create-form-group">
+                            <label for="achievementType">
+                                <i class="fas fa-category"></i>
+                                Achievement Type
+                                <span class="required">*</span>
+                            </label>
+                            <select id="achievementType" name="achievementType" required>
+                                <option value="">Select type...</option>
+                                <option value="course_completion">Course Completion</option>
+                                <option value="first_course">First Course</option>
+                                <option value="quiz_master">Quiz Master</option>
+                                <option value="streak">Streak Achievement</option>
+                                <option value="instructor">Instructor Achievement</option>
+                                <option value="student_engagement">Student Engagement</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row full-width">
+                        <div class="create-form-group">
+                            <label for="achievementDescription">
+                                <i class="fas fa-align-left"></i>
+                                Description
+                                <span class="required">*</span>
+                            </label>
+                            <textarea id="achievementDescription" name="achievementDescription"
+                                placeholder="Describe what this achievement represents and how to earn it..."
+                                required></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Achievement Settings Section -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-cogs"></i>
+                        Achievement Settings
+                    </h4>
+
+                    <div class="form-row">
+                        <div class="create-form-group">
+                            <label for="pointsReward">
+                                <i class="fas fa-coins"></i>
+                                Points Reward
+                            </label>
+                            <input type="number" id="pointsReward" name="pointsReward" placeholder="0" min="0"
+                                max="10000">
+                        </div>
+
+                        <div class="create-form-group">
+                            <label for="badgeColor">
+                                <i class="fas fa-palette"></i>
+                                Badge Color
+                            </label>
+                            <select id="badgeColor" name="badgeColor">
+                                <option value="gold">Gold</option>
+                                <option value="silver">Silver</option>
+                                <option value="bronze">Bronze</option>
+                                <option value="blue">Blue</option>
+                                <option value="green">Green</option>
+                                <option value="purple">Purple</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="create-form-group">
+                            <label for="difficultyLevel">
+                                <i class="fas fa-signal"></i>
+                                Difficulty Level
+                            </label>
+                            <select id="difficultyLevel" name="difficultyLevel">
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
+                                <option value="expert">Expert</option>
+                            </select>
+                        </div>
+
+                        <div class="create-form-group">
+                            <label for="isActive">
+                                <i class="fas fa-toggle-on"></i>
+                                Status
+                            </label>
+                            <select id="isActive" name="isActive">
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Icon Selection Section -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-image"></i>
+                        Achievement Icon
+                    </h4>
+
+                    <div class="icon-selection-section">
+                        <div class="icon-selection-methods">
+                            <!-- FontAwesome Icon Method -->
+                            <div class="icon-method">
+                                <div class="icon-method-title">
+                                    <i class="fas fa-icons"></i>
+                                    FontAwesome Icon
+                                </div>
+                                <div class="icon-input-group">
+                                    <input type="text" id="iconClass" name="iconClass"
+                                        placeholder="e.g., fas fa-trophy, fas fa-star, fas fa-medal...">
+                                    <button type="button" class="btn-browse-icons" onclick="showIconGallery()">
+                                        <i class="fas fa-search"></i>
+                                        Browse Icons
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Image Upload Method -->
+                            <div class="icon-method">
+                                <div class="icon-method-title">
+                                    <i class="fas fa-upload"></i>
+                                    Custom Image
+                                </div>
+                                <div class="icon-input-group">
+                                    <input type="file" id="iconImage" name="iconImage" accept="image/*"
+                                        style="display: none;">
+                                    <input type="text" id="iconImagePath" name="iconImagePath"
+                                        placeholder="Upload a custom icon image..." readonly>
+                                    <button type="button" class="btn-upload-icon"
+                                        onclick="document.getElementById('iconImage').click()">
+                                        <i class="fas fa-upload"></i>
+                                        Upload Image
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Icon Gallery (Hidden by default) -->
+                        <div class="icon-gallery" id="iconGallery" style="display: none;">
+                            <div class="icon-option" onclick="selectIcon('fas fa-trophy')">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-medal')">
+                                <i class="fas fa-medal"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-star')">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-crown')">
+                                <i class="fas fa-crown"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-gem')">
+                                <i class="fas fa-gem"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-award')">
+                                <i class="fas fa-award"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-certificate')">
+                                <i class="fas fa-certificate"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-graduation-cap')">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-book')">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-bookmark')">
+                                <i class="fas fa-bookmark"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-thumbs-up')">
+                                <i class="fas fa-thumbs-up"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-heart')">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-fire')">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-lightning-bolt')">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-diamond')">
+                                <i class="fas fa-diamond"></i>
+                            </div>
+                            <div class="icon-option" onclick="selectIcon('fas fa-shield-alt')">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                        </div>
+
+                        <!-- Icon Preview -->
+                        <div class="icon-preview-section">
+                            <div class="preview-title">Preview</div>
+                            <div class="icon-preview">
+                                <i class="fas fa-trophy" id="iconPreview"></i>
+                                <span class="preview-text" id="namePreview">Achievement Name</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="create-modal-footer">
+            <button type="button" class="btn-create-cancel" onclick="closeCreateModal()">
+                <i class="fas fa-times"></i>
+                Cancel
+            </button>
+            <button type="submit" class="btn-create-submit" form="createAchievementForm">
+                <i class="fas fa-plus"></i>
+                Create Achievement
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Example JavaScript functions for the modal
+    function openCreateModal() {
+        document.getElementById('createAchievementModal').classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeCreateModal() {
+        document.getElementById('createAchievementModal').classList.remove('show');
+        document.body.style.overflow = 'auto';
+        resetForm();
+    }
+
+    function showIconGallery() {
+        const gallery = document.getElementById('iconGallery');
+        gallery.style.display = gallery.style.display === 'none' ? 'grid' : 'none';
+    }
+
+    function selectIcon(iconClass) {
+        document.getElementById('iconClass').value = iconClass;
+        document.getElementById('iconPreview').className = iconClass;
+
+        // Remove selected class from all icons
+        document.querySelectorAll('.icon-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+
+        // Add selected class to clicked icon
+        event.target.closest('.icon-option').classList.add('selected');
+    }
+
+    function resetForm() {
+        document.getElementById('createAchievementForm').reset();
+        document.getElementById('iconPreview').className = 'fas fa-trophy';
+        document.getElementById('namePreview').textContent = 'Achievement Name';
+        document.querySelectorAll('.icon-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+    }
+
+    // Real-time preview updates
+    document.getElementById('achievementName').addEventListener('input', function () {
+        const preview = document.getElementById('namePreview');
+        preview.textContent = this.value || 'Achievement Name';
+    });
+
+    document.getElementById('iconClass').addEventListener('input', function () {
+        const preview = document.getElementById('iconPreview');
+        preview.className = this.value || 'fas fa-trophy';
+    });
+
+    // Form submission
+    document.getElementById('createAchievementForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const submitBtn = document.querySelector('.btn-create-submit');
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+
+        // Simulate API call
+        setTimeout(() => {
+            alert('Achievement created successfully!');
+            closeCreateModal();
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+        }, 2000);
+    });
+
+    // File upload handler
+    document.getElementById('iconImage').addEventListener('change', function () {
+        const file = this.files[0];
+        if (file) {
+            document.getElementById('iconImagePath').value = file.name;
+
+            // You would typically upload the file here and get back a URL
+            // For demo purposes, we'll just show the file name
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const preview = document.getElementById('iconPreview');
+                preview.innerHTML = `<img src="${e.target.result}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>

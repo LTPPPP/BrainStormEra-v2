@@ -23,7 +23,7 @@
             </div>
         </div>
         <div class="header-actions">
-            <a href="#" class="btn-create" onclick="openCreateModal()">
+            <a href="/admin/achievements/create" class="btn-create">
                 <i class="fas fa-plus"></i> Create Achievement
             </a>
         </div>
@@ -256,6 +256,7 @@
                         <div class="icon-input-group">
                             <input type="text" id="createIcon" name="AchievementIcon" value="fas fa-trophy" 
                                    placeholder="FontAwesome class or upload custom icon">
+                            <input type="file" id="createIconFile" accept="image/*" style="display: none;" onchange="handleIconUpload(this, 'create')">
                             <button type="button" class="btn-upload-icon" onclick="triggerIconUpload('create')">
                                 <i class="fas fa-upload"></i> Upload
                             </button>
@@ -331,6 +332,7 @@
                         <div class="icon-input-group">
                             <input type="text" id="editIcon" name="AchievementIcon" value="fas fa-trophy" 
                                    placeholder="FontAwesome class or upload custom icon">
+                            <input type="file" id="editIconFile" accept="image/*" style="display: none;" onchange="handleIconUpload(this, 'edit')">
                             <button type="button" class="btn-upload-icon" onclick="triggerIconUpload('edit')">
                                 <i class="fas fa-upload"></i> Upload
                             </button>
