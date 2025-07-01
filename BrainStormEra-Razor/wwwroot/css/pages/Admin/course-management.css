@@ -274,6 +274,10 @@
 }
 
 .stat-card.revenue::before {
+  background: var(--success-color);
+}
+
+.stat-card.enrollments::before {
   background: var(--info-color);
 }
 
@@ -533,6 +537,117 @@
 
 .course-stats i {
   color: var(--primary-color);
+}
+
+/* Enhanced Course Meta for Approved Courses */
+.course-meta {
+  margin-bottom: 1rem;
+}
+
+.meta-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--bg-glass-light);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-light);
+}
+
+.meta-item i {
+  font-size: 0.7rem;
+  color: var(--primary-color);
+}
+
+.course-categories {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.category-tag {
+  font-size: 0.7rem;
+  background: var(--primary-color);
+  color: white;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.category-more {
+  font-size: 0.7rem;
+  background: var(--text-muted);
+  color: white;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+/* Enhanced Stats for Approved Courses */
+.course-stats.approved {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.course-stats.approved .stat-item {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  background: var(--bg-glass);
+  padding: 0.5rem 0.25rem;
+  border-radius: 8px;
+  transition: var(--transition-fast);
+}
+
+.course-stats.approved .stat-item:hover {
+  background: var(--bg-light);
+  transform: translateY(-1px);
+}
+
+.course-stats.approved .stat-item.primary {
+  border-color: var(--primary-color);
+}
+
+.course-stats.approved .stat-item.revenue {
+  border-color: var(--success-color);
+  background: var(--bg-success-light);
+  grid-column: span 2;
+}
+
+.course-stats.approved .stat-item i {
+  font-size: 0.9rem;
+  margin-bottom: 0.2rem;
+}
+
+.course-stats.approved .stat-item small {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: 0.1rem;
+}
+
+/* Basic Stats for Non-Approved Courses */
+.course-stats.basic {
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.course-stats.basic span {
+  font-size: 0.8rem;
+  background: var(--bg-glass-subtle);
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
 }
 
 .course-price {

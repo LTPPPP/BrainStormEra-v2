@@ -342,28 +342,60 @@ namespace BusinessLogicLayer.Services
 
                 var totalCourses = await _adminRepo.GetTotalCoursesCountAsync();
 
+                var courseViewModels = courses.Select(c =>
+{
+    var enrollmentCount = c.Enrollments?.Count ?? 0;
+    var feedbacks = c.Feedbacks?.Where(f => f.StarRating.HasValue).ToList() ?? new List<DataAccessLayer.Models.Feedback>();
+    var averageRating = feedbacks.Any() ? (decimal)feedbacks.Average(f => f.StarRating!.Value) : 0;
+    var reviewCount = feedbacks.Count;
+
+    // Calculate revenue (Price * EnrollmentCount for paid courses)
+    var revenue = c.Price > 0 ? c.Price * enrollmentCount : 0;
+
+    return new AdminCourseViewModel
+    {
+        CourseId = c.CourseId,
+        CourseName = c.CourseName ?? "",
+        CourseDescription = c.CourseDescription ?? "",
+        CoursePicture = c.CourseImage ?? "/SharedMedia/defaults/default-course.svg",
+        Price = c.Price,
+        DifficultyLevel = c.DifficultyLevel?.ToString(),
+        EstimatedDuration = c.EstimatedDuration,
+        CreatedAt = c.CourseCreatedAt,
+        UpdatedAt = c.CourseUpdatedAt,
+        ApprovalStatus = c.ApprovalStatus,
+        IsApproved = c.ApprovalStatus == "Approved",
+        IsFeatured = c.IsFeatured ?? false,
+        IsActive = c.CourseStatus == 1,
+        InstructorId = c.AuthorId,
+        InstructorName = c.Author?.FullName ?? "",
+        InstructorEmail = c.Author?.UserEmail ?? "",
+        EnrollmentCount = enrollmentCount,
+        AverageRating = averageRating,
+        ReviewCount = reviewCount,
+        Revenue = revenue,
+        Categories = c.CourseCategories?.Select(cc => cc.CourseCategoryName ?? "").ToList() ?? new List<string>()
+    };
+}).ToList();
+
+                // Calculate summary statistics
+                var approvedCourses = courseViewModels.Count(c => c.ApprovalStatus?.ToLower() == "approved");
+                var pendingCourses = courseViewModels.Count(c => c.ApprovalStatus?.ToLower() == "pending");
+                var rejectedCourses = courseViewModels.Count(c => c.ApprovalStatus?.ToLower() == "rejected");
+                var freeCourses = courseViewModels.Count(c => c.Price == 0);
+                var paidCourses = courseViewModels.Count(c => c.Price > 0);
+                var totalRevenue = courseViewModels.Sum(c => c.Revenue);
+
                 return new AdminCoursesViewModel
                 {
-                    Courses = courses.Select(c => new AdminCourseViewModel
-                    {
-                        CourseId = c.CourseId,
-                        CourseName = c.CourseName ?? "",
-                        CourseDescription = c.CourseDescription ?? "",
-                        CoursePicture = c.CourseImage ?? "/SharedMedia/defaults/default-course.svg",
-                        Price = c.Price,
-                        CreatedAt = c.CourseCreatedAt,
-                        UpdatedAt = c.CourseUpdatedAt,
-                        ApprovalStatus = c.ApprovalStatus,
-                        IsApproved = c.ApprovalStatus == "Approved",
-                        IsFeatured = c.IsFeatured ?? false,
-                        IsActive = c.CourseStatus == 1, // Assuming 1 means active
-                        InstructorId = c.AuthorId,
-                        InstructorName = c.Author?.FullName ?? "",
-                        EnrollmentCount = c.Enrollments?.Count ?? 0,
-                        AverageRating = 0, // Will be calculated from feedback
-                        Revenue = 0 // Will be calculated from payments
-                    }).ToList(),
+                    Courses = courseViewModels,
                     TotalCourses = totalCourses,
+                    ApprovedCourses = approvedCourses,
+                    PendingCourses = pendingCourses,
+                    RejectedCourses = rejectedCourses,
+                    FreeCourses = freeCourses,
+                    PaidCourses = paidCourses,
+                    TotalRevenue = totalRevenue,
                     CurrentPage = page,
                     PageSize = pageSize,
                     TotalPages = (int)Math.Ceiling((double)totalCourses / pageSize)

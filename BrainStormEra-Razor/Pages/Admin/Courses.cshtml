@@ -197,11 +197,72 @@
                         <div class="course-instructor">
                             <i class="fas fa-user"></i> @course.InstructorName
                         </div>
-                        <div class="course-stats">
-                            <span><i class="fas fa-users"></i> @course.EnrollmentCount</span>
-                            <span><i class="fas fa-star"></i> @course.AverageRating.ToString("F1")</span>
-                            <span><i class="fas fa-comments"></i> @course.ReviewCount</span>
-                        </div>
+                        
+                        @if (course.StatusText.ToLower() == "approved")
+                        {
+                            <!-- Enhanced stats for approved courses -->
+                            <div class="course-meta">
+                                <div class="meta-row">
+                                    <span class="meta-item">
+                                        <i class="fas fa-signal"></i> @course.DifficultyText
+                                    </span>
+                                    @if (course.EstimatedDuration.HasValue)
+                                    {
+                                        <span class="meta-item">
+                                            <i class="fas fa-clock"></i> @course.EstimatedDuration h
+                                        </span>
+                                    }
+                                </div>
+                                @if (course.Categories.Any())
+                                {
+                                    <div class="course-categories">
+                                        @foreach (var category in course.Categories.Take(2))
+                                        {
+                                            <span class="category-tag">@category</span>
+                                        }
+                                        @if (course.Categories.Count > 2)
+                                        {
+                                            <span class="category-more">+@(course.Categories.Count - 2)</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            
+                            <div class="course-stats approved">
+                                <span class="stat-item primary">
+                                    <i class="fas fa-users"></i> @course.EnrollmentCount
+                                    <small>enrolled</small>
+                                </span>
+                                <span class="stat-item primary">
+                                    <i class="fas fa-star"></i> @course.AverageRating.ToString("F1")
+                                    <small>rating</small>
+                                </span>
+                                <span class="stat-item primary">
+                                    <i class="fas fa-comments"></i> @course.ReviewCount
+                                    <small>reviews</small>
+                                </span>
+                                @if (course.Revenue > 0)
+                                {
+                                    <span class="stat-item revenue">
+                                        <i class="fas fa-dollar-sign"></i> @course.Revenue.ToString("N0")
+                                        <small>revenue</small>
+                                    </span>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Basic stats for non-approved courses -->
+                            <div class="course-stats basic">
+                                <span><i class="fas fa-calendar"></i> Created @course.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                @if (course.EstimatedDuration.HasValue)
+                                {
+                                    <span><i class="fas fa-clock"></i> @course.EstimatedDuration hours</span>
+                                }
+                                <span><i class="fas fa-signal"></i> @course.DifficultyText</span>
+                            </div>
+                        }
+                        
                         <div class="course-price">@course.PriceText</div>
                         <div class="course-actions">
                             <button type="button" class="btn-action btn-details" 

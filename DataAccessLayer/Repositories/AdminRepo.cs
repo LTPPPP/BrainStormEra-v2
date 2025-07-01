@@ -549,6 +549,9 @@ namespace DataAccessLayer.Repositories
                                !string.IsNullOrEmpty(c.ApprovalStatus) && // Must have approval status
                                c.ApprovalStatus.ToLower() != "draft") // Exclude draft courses
                     .Include(c => c.Author)
+                    .Include(c => c.Enrollments)
+                    .Include(c => c.Feedbacks)
+                    .Include(c => c.CourseCategories)
                     .OrderByDescending(c => c.CourseCreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -745,6 +748,8 @@ namespace DataAccessLayer.Repositories
                                !string.IsNullOrEmpty(c.ApprovalStatus) && // Must have approval status
                                c.ApprovalStatus.ToLower() != "draft") // Exclude draft courses
                     .Include(c => c.Author)
+                    .Include(c => c.Enrollments)
+                    .Include(c => c.Feedbacks)
                     .Include(c => c.CourseCategories) // Include categories for search
                     .Where(c => c.CourseName.Contains(searchTerm) ||
                                (c.CourseDescription != null && c.CourseDescription.Contains(searchTerm)) ||
