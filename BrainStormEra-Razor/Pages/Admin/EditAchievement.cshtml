@@ -1,0 +1,271 @@
+@page "/admin/achievements/edit/{id}"
+@model BrainStormEra_Razor.Pages.Admin.EditAchievementModel
+@{
+    ViewData["Title"] = "Edit Achievement";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pages/Admin/edit-achievement.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+}
+
+<div class="edit-achievement-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-title">
+            <i class="fas fa-edit icon"></i>
+            <div>
+                <h1>Edit Achievement</h1>
+                <p>Update achievement details and settings</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="/admin/achievements" class="btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Achievements
+            </a>
+        </div>
+    </div>
+
+    @if (Model.AchievementNotFound)
+    {
+        <div class="not-found-container">
+            <div class="not-found-content">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h2>Achievement Not Found</h2>
+                <p>The achievement you're trying to edit doesn't exist or may have been deleted.</p>
+                <a href="/admin/achievements" class="btn-primary">
+                    <i class="fas fa-arrow-left"></i> Back to Achievements
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="edit-achievement-container">
+            <div class="edit-achievement-form-section">
+                <div class="form-container">
+                    <form method="post" enctype="multipart/form-data" class="achievement-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Achievement.AchievementId" />
+
+                        <!-- Basic Information -->
+                        <div class="form-section">
+                            <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
+
+                            <div class="form-group">
+                                <label asp-for="Achievement.AchievementName" class="form-label">
+                                    <i class="fas fa-heading"></i> Achievement Name *
+                                </label>
+                                <input asp-for="Achievement.AchievementName" class="form-input"
+                                    placeholder="Enter achievement name..." maxlength="100" required />
+                                <span asp-validation-for="Achievement.AchievementName" class="validation-error"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="Achievement.AchievementDescription" class="form-label">
+                                    <i class="fas fa-align-left"></i> Description
+                                </label>
+                                <textarea asp-for="Achievement.AchievementDescription" class="form-textarea"
+                                placeholder="Enter achievement description..." rows="4" maxlength="500"></textarea>
+                                <span asp-validation-for="Achievement.AchievementDescription"
+                                    class="validation-error"></span>
+                                <div class="char-counter">
+                                    <span id="descCharCount">0</span>/500 characters
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Achievement Type -->
+                        <div class="form-section">
+                            <h3><i class="fas fa-tags"></i> Achievement Type</h3>
+
+                            <div class="form-group">
+                                <label asp-for="Achievement.AchievementType" class="form-label">
+                                    <i class="fas fa-tag"></i> Type *
+                                </label>
+                                <select asp-for="Achievement.AchievementType" class="form-select" required>
+                                    <option value="">Select achievement type</option>
+                                    <option value="course_completion">Course Completion</option>
+                                    <option value="quiz_master">Quiz Master</option>
+                                    <option value="streak">Learning Streak</option>
+                                    <option value="first_course">First Course</option>
+                                    <option value="instructor">Instructor Achievement</option>
+                                    <option value="student_engagement">Student Engagement</option>
+                                </select>
+                                <span asp-validation-for="Achievement.AchievementType" class="validation-error"></span>
+                            </div>
+                        </div>
+
+                        <!-- Icon Selection -->
+                        <div class="form-section">
+                            <h3><i class="fas fa-icons"></i> Achievement Icon</h3>
+
+                            <div class="icon-selection-container">
+                                <!-- Icon Type Selection -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-image"></i> Icon Type
+                                    </label>
+                                    <div class="icon-type-tabs">
+                                        <button type="button" class="icon-tab active" data-type="predefined">
+                                            <i class="fas fa-icons"></i> Predefined Icons
+                                        </button>
+                                        <button type="button" class="icon-tab" data-type="custom">
+                                            <i class="fas fa-upload"></i> Custom Upload
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Predefined Icons Section -->
+                                <div class="predefined-icons-section">
+                                    <div class="icons-grid">
+                                        <div class="icon-option" data-icon="fas fa-trophy">
+                                            <i class="fas fa-trophy"></i>
+                                        </div>
+                                        <div class="icon-option" data-icon="fas fa-medal">
+                                            <i class="fas fa-medal"></i>
+                                        </div>
+                                        <div class="icon-option" data-icon="fas fa-crown">
+                                            <i class="fas fa-crown"></i>
+                                        </div>
+                                        <div class="icon-option" data-icon="fas fa-star">
+                                            <i class="fas fa-star"></i>
+                                        </div>
+                                        <div class="icon-option" data-icon="fas fa-award">
+                                            <i class="fas fa-award"></i>
+                                        </div>
+                                        <div class="icon-option" data-icon="fas fa-gem">
+                                            <i class="fas fa-gem"></i>
+                                        </div>
+                                        <div class="icon-option" data-icon="fas fa-fire">
+                                            <i class="fas fa-fire"></i>
+                                        </div>
+                                        <div class="icon-option" data-icon="fas fa-bolt">
+                                            <i class="fas fa-bolt"></i>
+                                        </div>
+                                        <div class="icon-option" data-icon="fas fa-graduation-cap">
+                                            <i class="fas fa-graduation-cap"></i>
+                                        </div>
+                                        <div class="icon-option" data-icon="fas fa-book">
+                                            <i class="fas fa-book"></i>
+                                        </div>
+                                        <div class="icon-option" data-icon="fas fa-certificate">
+                                            <i class="fas fa-certificate"></i>
+                                        </div>
+                                        <div class="icon-option" data-icon="fas fa-ribbon">
+                                            <i class="fas fa-ribbon"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Custom Upload Section -->
+                                <div class="custom-upload-section" style="display: none;">
+                                    <div class="upload-container">
+                                        <div class="upload-area" id="uploadArea">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                            <h4>Upload Custom Icon</h4>
+                                            <p>Drag and drop an image here, or click to browse</p>
+                                            <small>Supports PNG, JPG, SVG, WEBP • Max 2MB</small>
+                                            <input type="file" asp-for="IconFile" id="iconFile" accept="image/*"
+                                                style="display: none;" />
+                                        </div>
+                                        <div class="upload-preview" id="uploadPreview" style="display: none;">
+                                            <img id="previewImage" src="" alt="Preview" />
+                                            <div class="preview-actions">
+                                                <button type="button" class="btn-remove" id="removeUpload">
+                                                    <i class="fas fa-times"></i> Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Hidden field for selected icon -->
+                                <input type="hidden" asp-for="Achievement.AchievementIcon" id="selectedIcon" />
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="cancelEdit()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn-primary" id="updateBtn">
+                                <i class="fas fa-save"></i> Update Achievement
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Live Preview Section -->
+            <div class="preview-section">
+                <div class="preview-container">
+                    <div class="preview-header">
+                        <h3><i class="fas fa-eye"></i> Live Preview</h3>
+                        <p>See how your achievement will look</p>
+                    </div>
+
+                    <div class="achievement-preview">
+                        <div class="achievement-card preview-card">
+                            <div class="achievement-icon-wrapper">
+                                <i class="fas fa-trophy preview-icon"></i>
+                                <img class="preview-custom-icon" style="display: none;" src="" alt="Custom Icon" />
+                            </div>
+                            <div class="achievement-content">
+                                <h4 class="preview-name">Achievement Name</h4>
+                                <p class="preview-description">Achievement description will appear here</p>
+                                <div class="achievement-meta">
+                                    <span class="achievement-type">
+                                        <i class="fas fa-tag"></i>
+                                        <span class="preview-type">Type</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="achievement-status unlocked">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Unlocked</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="preview-info">
+                        <h4><i class="fas fa-info-circle"></i> Preview Information</h4>
+                        <ul>
+                            <li>This is how the achievement will appear to users</li>
+                            <li>Icons are displayed at 48x48 pixels</li>
+                            <li>Custom icons will be automatically resized</li>
+                            <li>Achievement type affects the visual styling</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Success/Error Messages -->
+@if (Model.SuccessMessage != null)
+{
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i>
+        @Model.SuccessMessage
+    </div>
+}
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-error">
+        <i class="fas fa-exclamation-circle"></i>
+        @Model.ErrorMessage
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/pages/Admin/edit-achievement.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+}

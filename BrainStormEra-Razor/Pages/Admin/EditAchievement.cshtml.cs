@@ -8,17 +8,18 @@ using System.ComponentModel.DataAnnotations;
 namespace BrainStormEra_Razor.Pages.Admin
 {
     [Authorize(Roles = "admin")]
-    public class CreateAchievementModel : PageModel
+    public class EditAchievementModel : PageModel
     {
-        private readonly ILogger<CreateAchievementModel> _logger;
+        private readonly ILogger<EditAchievementModel> _logger;
         private readonly IAdminService _adminService;
 
         public string? AdminName { get; set; }
         public string? UserId { get; set; }
 
         [BindProperty]
-        public CreateAchievementRequest Achievement { get; set; } = new CreateAchievementRequest
+        public EditAchievementRequest Achievement { get; set; } = new EditAchievementRequest
         {
+            AchievementId = "",
             AchievementName = "",
             AchievementType = "",
             AchievementIcon = "fas fa-trophy",
@@ -34,25 +35,56 @@ namespace BrainStormEra_Razor.Pages.Admin
         [TempData]
         public string? ErrorMessage { get; set; }
 
-        public CreateAchievementModel(ILogger<CreateAchievementModel> logger, IAdminService adminService)
+        public bool AchievementNotFound { get; set; } = false;
+
+        public EditAchievementModel(ILogger<EditAchievementModel> logger, IAdminService adminService)
         {
             _logger = logger;
             _adminService = adminService;
         }
 
-        public void OnGet()
+        public async Task<IActionResult> OnGetAsync(string id)
         {
             try
             {
                 AdminName = HttpContext.User?.Identity?.Name ?? "Admin";
                 UserId = HttpContext.User?.FindFirst("UserId")?.Value ?? "";
 
-                _logger.LogInformation("Create achievement page accessed by admin: {AdminName} at {AccessTime}", AdminName, DateTime.UtcNow);
+                if (string.IsNullOrEmpty(id))
+                {
+                    _logger.LogWarning("Edit achievement accessed without ID by admin: {AdminName}", AdminName);
+                    return RedirectToPage("/Admin/Achievements");
+                }
+
+                // Load existing achievement data
+                var existingAchievement = await _adminService.GetAchievementByIdAsync(id);
+                if (existingAchievement == null)
+                {
+                    _logger.LogWarning("Achievement not found: {AchievementId} by admin: {AdminName}", id, AdminName);
+                    AchievementNotFound = true;
+                    return Page();
+                }
+
+                // Map to edit model
+                Achievement = new EditAchievementRequest
+                {
+                    AchievementId = existingAchievement.AchievementId,
+                    AchievementName = existingAchievement.AchievementName,
+                    AchievementDescription = existingAchievement.AchievementDescription,
+                    AchievementIcon = existingAchievement.AchievementIcon,
+                    AchievementType = existingAchievement.AchievementType
+                };
+
+                _logger.LogInformation("Edit achievement page accessed by admin: {AdminName} for achievement: {AchievementId} at {AccessTime}",
+                    AdminName, id, DateTime.UtcNow);
+
+                return Page();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading create achievement page for admin: {UserId}", UserId);
-                ErrorMessage = "An error occurred while loading the page.";
+                _logger.LogError(ex, "Error loading edit achievement page for admin: {UserId}, AchievementId: {AchievementId}", UserId, id);
+                ErrorMessage = "An error occurred while loading the achievement data.";
+                return Page();
             }
         }
 
@@ -64,7 +96,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 UserId = HttpContext.User?.FindFirst("UserId")?.Value ?? "";
                 AdminName = HttpContext.User?.Identity?.Name ?? "Admin";
 
-                _logger.LogInformation("Create achievement form submitted by admin: {AdminName}, Request: {@Request}", AdminName, Achievement);
+                _logger.LogInformation("Edit achievement form submitted by admin: {AdminName}, Request: {@Request}", AdminName, Achievement);
 
                 if (string.IsNullOrEmpty(UserId))
                 {
@@ -116,25 +148,31 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return Page();
                 }
 
-                // Normalize achievement type to lowercase
-                if (!string.IsNullOrEmpty(Achievement.AchievementType))
+                // Get current achievement to preserve existing icon if no new upload
+                var currentAchievement = await _adminService.GetAchievementByIdAsync(Achievement.AchievementId);
+                if (currentAchievement == null)
                 {
-                    Achievement.AchievementType = Achievement.AchievementType.ToLower();
+                    _logger.LogError("Achievement not found during update: {AchievementId}", Achievement.AchievementId);
+                    ErrorMessage = "Achievement not found. It may have been deleted.";
+                    return Page();
                 }
 
-                // Set default icon if empty
-                if (string.IsNullOrWhiteSpace(Achievement.AchievementIcon))
-                {
-                    Achievement.AchievementIcon = "fas fa-trophy";
-                }
+                string iconToUse = Achievement.AchievementIcon ?? currentAchievement.AchievementIcon;
+                string? oldCustomIconPath = null;
 
-                // Handle file upload if present
-                if (IconFile != null && Achievement.AchievementIcon.StartsWith("CUSTOM_UPLOAD:"))
+                // Handle file upload if present and icon indicates custom upload
+                if (IconFile != null && Achievement.AchievementIcon?.StartsWith("CUSTOM_UPLOAD:") == true)
                 {
+                    // Store old custom icon path for cleanup if it's a custom upload
+                    if (currentAchievement.AchievementIcon?.StartsWith("/uploads/") == true)
+                    {
+                        oldCustomIconPath = currentAchievement.AchievementIcon;
+                    }
+
                     var uploadResult = await HandleIconUploadAsync(IconFile);
                     if (uploadResult.Success)
                     {
-                        Achievement.AchievementIcon = uploadResult.IconPath ?? "fas fa-trophy";
+                        iconToUse = uploadResult.IconPath ?? currentAchievement?.AchievementIcon ?? "fas fa-trophy";
                         _logger.LogInformation("Icon uploaded successfully: {IconPath}", uploadResult.IconPath);
                     }
                     else
@@ -145,29 +183,51 @@ namespace BrainStormEra_Razor.Pages.Admin
                     }
                 }
 
-                var (success, achievementId) = await _adminService.CreateAchievementAsync(Achievement, UserId);
+                // Normalize achievement type to lowercase
+                if (!string.IsNullOrEmpty(Achievement.AchievementType))
+                {
+                    Achievement.AchievementType = Achievement.AchievementType.ToLower();
+                }
+
+                // Create update request
+                var updateRequest = new UpdateAchievementRequest
+                {
+                    AchievementId = Achievement.AchievementId ?? "",
+                    AchievementName = Achievement.AchievementName ?? "",
+                    AchievementDescription = Achievement.AchievementDescription ?? "",
+                    AchievementIcon = iconToUse ?? "fas fa-trophy",
+                    AchievementType = Achievement.AchievementType ?? ""
+                };
+
+                var success = await _adminService.UpdateAchievementAsync(updateRequest, UserId);
 
                 if (success)
                 {
-                    _logger.LogInformation("Achievement created successfully by admin {AdminName}: {AchievementName}, ID: {AchievementId}",
-                        AdminName, Achievement.AchievementName, achievementId);
+                    // Clean up old custom icon if a new one was uploaded
+                    if (!string.IsNullOrEmpty(oldCustomIconPath) && iconToUse != oldCustomIconPath)
+                    {
+                        await CleanupOldIconAsync(oldCustomIconPath);
+                    }
 
-                    SuccessMessage = $"Achievement '{Achievement.AchievementName}' has been created successfully!";
+                    _logger.LogInformation("Achievement updated successfully by admin {AdminName}: {AchievementName}, ID: {AchievementId}",
+                        AdminName, Achievement.AchievementName, Achievement.AchievementId);
+
+                    SuccessMessage = $"Achievement '{Achievement.AchievementName}' has been updated successfully!";
 
                     // Redirect to achievements list page
                     return RedirectToPage("/Admin/Achievements");
                 }
                 else
                 {
-                    _logger.LogError("Failed to create achievement: {AchievementName}", Achievement.AchievementName);
-                    ErrorMessage = "Failed to create achievement. Please try again.";
+                    _logger.LogError("Failed to update achievement: {AchievementName}", Achievement.AchievementName);
+                    ErrorMessage = "Failed to update achievement. Please try again.";
                     return Page();
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating achievement: {AchievementName}", Achievement?.AchievementName);
-                ErrorMessage = "An error occurred while creating the achievement. Please try again.";
+                _logger.LogError(ex, "Error updating achievement: {AchievementName}", Achievement?.AchievementName);
+                ErrorMessage = "An error occurred while updating the achievement. Please try again.";
                 return Page();
             }
         }
@@ -240,5 +300,47 @@ namespace BrainStormEra_Razor.Pages.Admin
                 };
             }
         }
+
+        private async Task CleanupOldIconAsync(string iconPath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(iconPath) || !iconPath.StartsWith("/uploads/"))
+                    return;
+
+                var fullPath = Path.Combine("wwwroot", iconPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                if (System.IO.File.Exists(fullPath))
+                {
+                    await Task.Run(() => System.IO.File.Delete(fullPath));
+                    _logger.LogInformation("Cleaned up old achievement icon: {IconPath}", iconPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to cleanup old achievement icon: {IconPath}", iconPath);
+                // Don't fail the operation for cleanup issues
+            }
+        }
     }
+
+    public class EditAchievementRequest
+    {
+        [Required]
+        public string AchievementId { get; set; } = "";
+
+        [Required]
+        [StringLength(100)]
+        public string AchievementName { get; set; } = "";
+
+        [StringLength(500)]
+        public string? AchievementDescription { get; set; }
+
+        [StringLength(255)]
+        public string AchievementIcon { get; set; } = "fas fa-trophy";
+
+        [Required]
+        [StringLength(50)]
+        public string AchievementType { get; set; } = "";
+    }
+
 }
