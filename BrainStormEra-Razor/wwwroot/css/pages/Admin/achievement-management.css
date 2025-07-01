@@ -331,9 +331,10 @@
 /* Achievements Grid */
 .achievements-management .achievements-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 28px;
   margin-bottom: 40px;
+  align-items: stretch; /* Ensures all cards stretch to the same height */
 }
 
 .achievements-management .achievement-card {
@@ -346,6 +347,10 @@
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Ensures cards take full available height */
+  min-height: 450px; /* Set a consistent minimum height */
 }
 
 .achievements-management .achievement-card::before {
@@ -381,6 +386,12 @@
   text-align: center;
   position: relative;
   overflow: hidden;
+  flex-shrink: 0; /* Prevents header from shrinking */
+  min-height: 160px; /* Set consistent header height */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .achievements-management .achievement-header::before {
@@ -448,6 +459,10 @@
 
 .achievements-management .achievement-content {
   padding: 28px;
+  flex: 1; /* Takes up remaining space to push actions to bottom */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .achievements-management .achievement-description {
@@ -455,8 +470,11 @@
   font-size: 1.1rem;
   line-height: 1.7;
   margin-bottom: 24px;
-  min-height: 54px;
+  min-height: 60px; /* Set consistent description height */
   font-weight: 500;
+  flex-grow: 1; /* Allows description to grow to fill space */
+  display: flex;
+  align-items: flex-start;
 }
 
 .achievements-management .achievement-stats {
@@ -491,6 +509,8 @@
   display: flex;
   gap: 10px;
   justify-content: center;
+  margin-top: auto; /* Pushes actions to bottom of card */
+  flex-shrink: 0; /* Prevents actions from shrinking */
 }
 
 .achievements-management .btn-action {
@@ -879,6 +899,10 @@
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 20px;
   }
+
+  .achievements-management .achievement-card {
+    min-height: 420px; /* Slightly reduce height for smaller screens */
+  }
 }
 
 @media (max-width: 768px) {
@@ -918,6 +942,10 @@
   .achievements-management .achievements-grid {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .achievements-management .achievement-card {
+    min-height: 400px; /* Consistent height for mobile */
   }
 
   .achievements-management .achievement-actions {
