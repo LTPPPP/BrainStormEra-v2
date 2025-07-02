@@ -1,0 +1,331 @@
+@page
+@model BrainStormEra_Razor.Pages.Admin.NotificationsModel
+@{
+    ViewData["Title"] = "Notifications Management";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/Notifications/notification-index.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/pages/Admin/notifications.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/components/page-header-themes.css" asp-append-version="true">
+    <!-- Toast notifications CSS -->
+    <link rel="stylesheet" href="~/css/components/toast-notifications.css" asp-append-version="true">
+}
+
+<div class="notification-page">
+    <!-- Display toast notifications from TempData -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <div class="container main-content">
+        <!-- Enhanced Page Header -->
+        <div class="page-header index-page">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="page-title" style="color: #000000;">
+                        <i class="fas fa-bell"></i>
+                        Notifications Management
+                    </h1>
+                    <p class="page-subtitle">Manage and monitor all platform notifications and user communications</p>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <div class="d-flex align-items-center justify-content-end gap-3">
+                        <div class="stats-card">
+                            <div class="stat-number">@Model.NotificationData.UnreadCount</div>
+                            <div class="stat-label">Unread Messages</div>
+                        </div>
+                        @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                        {
+                            <button type="button" class="btn btn-primary create-notification-btn" data-bs-toggle="modal" data-bs-target="#createNotificationModal" title="Create New Notification">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Notifications Content -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-inbox me-2"></i>All Notifications
+                            @if (Model.NotificationData.UnreadCount > 0)
+                            {
+                                <span class="badge bg-danger ms-2">@Model.NotificationData.UnreadCount New</span>
+                            }
+                        </h5>
+                        <div class="notification-controls">
+                            @if (Model.NotificationData.UnreadCount > 0)
+                            {
+                                <button id="markAllRead" class="btn btn-outline-primary btn-sm me-2">
+                                    <i class="fas fa-check-double me-1"></i>Mark All Read
+                                </button>
+                            }
+                            <button id="refreshNotifications" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.NotificationData.Notifications.Any())
+                        {
+                            <div id="notificationsList" class="list-group list-group-flush">
+                                @foreach (var notification in Model.NotificationData.Notifications)
+                                {
+                                    <div class="list-group-item notification-item @(notification.IsRead == false ? "unread" : "")" 
+                                         data-notification-id="@notification.NotificationId">
+                                        <div class="d-flex w-100 justify-content-between align-items-start">
+                                            <div class="notification-content flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="mb-0 fw-bold notification-title">@notification.NotificationTitle</h6>
+                                                    <div class="notification-meta d-flex align-items-center">
+                                                        @if (!string.IsNullOrEmpty(notification.NotificationType))
+                                                        {
+                                                            <span class="badge bg-secondary me-2">@notification.NotificationType</span>
+                                                        }
+                                                        @if (notification.CreatedBy == Model.NotificationData.CurrentUserId)
+                                                        {
+                                                            <span class="badge bg-info me-2">Created by you</span>
+                                                        }
+                                                        @if (notification.IsRead == false)
+                                                        {
+                                                            <span class="badge bg-primary me-2">New</span>
+                                                        }
+                                                        <small class="text-muted">@notification.NotificationCreatedAt.ToString("MMM dd, yyyy • HH:mm")</small>
+                                                    </div>
+                                                </div>
+                                                <p class="mb-2 notification-message">@notification.NotificationContent</p>
+                                                @if (!string.IsNullOrEmpty(notification.CourseId) && notification.Course != null)
+                                                {
+                                                    <div class="course-reference">
+                                                        <i class="fas fa-graduation-cap me-1"></i>
+                                                        <span class="text-muted">Related to: <strong>@notification.Course.CourseName</strong></span>
+                                                    </div>
+                                                }
+                                            </div>
+                                            <div class="notification-actions ms-3 d-flex">
+                                                @if (notification.IsRead == false)
+                                                {
+                                                    <button class="btn btn-sm mark-read-btn" 
+                                                            data-notification-id="@notification.NotificationId"
+                                                            title="Mark as read">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                                @if (notification.CreatedBy == Model.NotificationData.CurrentUserId && (User.IsInRole("admin") || User.IsInRole("instructor")))
+                                                {
+                                                    <button class="btn btn-sm edit-btn" 
+                                                            data-notification-id="@notification.NotificationId"
+                                                            title="Edit notification">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                }
+                                                <button class="btn btn-sm delete-btn" 
+                                                        data-notification-id="@notification.NotificationId"
+                                                        title="Delete notification">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            
+                            @if (Model.NotificationData.HasNextPage)
+                            {
+                                <div class="card-footer text-center">
+                                    <button id="loadMore" class="btn btn-outline-primary" data-page="@(Model.NotificationData.CurrentPage + 1)">
+                                        <i class="fas fa-chevron-down me-2"></i>Load More Notifications
+                                    </button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <i class="fas fa-bell-slash"></i>
+                                <h5>Your inbox is empty</h5>
+                                <p>No notifications to display. You'll receive updates here as they become available.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container for real-time notifications -->
+    <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
+</div>
+
+<!-- Create Notification Modal -->
+<div class="modal fade" id="createNotificationModal" tabindex="-1" aria-labelledby="createNotificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createNotificationModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i>Create New Notification
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createNotificationForm" method="post">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="notificationTitle" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="notificationTitle" name="Title" required maxlength="200">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="notificationType" class="form-label">Type</label>
+                            <select class="form-select" id="notificationType" name="Type">
+                                <option value="General">General</option>
+                                <option value="Course">Course</option>
+                                <option value="System">System</option>
+                                <option value="Achievement">Achievement</option>
+                                <option value="Payment">Payment</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="targetType" class="form-label">Target</label>
+                            <select class="form-select" id="targetType" name="TargetType">
+                                <option value="0">Specific User</option>
+                                <option value="1">Multiple Users</option>
+                                <option value="2">Course</option>
+                                <option value="3">Role</option>
+                                <option value="4">All Users</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12 mb-3" id="targetUserContainer">
+                            <label for="targetUserId" class="form-label">Target User</label>
+                            <input type="text" class="form-control" id="targetUserId" name="TargetUserId" placeholder="Search for user...">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="notificationContent" class="form-label">Content <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="notificationContent" name="Content" rows="4" required maxlength="1000"></textarea>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-1"></i>Create Notification
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Notification Modal -->
+<div class="modal fade" id="editNotificationModal" tabindex="-1" aria-labelledby="editNotificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editNotificationModalLabel">
+                    <i class="fas fa-edit me-2"></i>Edit Notification
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editNotificationForm" method="post">
+                <input type="hidden" id="editNotificationId" name="NotificationId">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="editNotificationTitle" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="editNotificationTitle" name="Title" required maxlength="200">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editNotificationType" class="form-label">Type</label>
+                            <select class="form-select" id="editNotificationType" name="Type">
+                                <option value="General">General</option>
+                                <option value="Course">Course</option>
+                                <option value="System">System</option>
+                                <option value="Achievement">Achievement</option>
+                                <option value="Payment">Payment</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editRecipientUser" class="form-label">Recipient</label>
+                            <input type="text" class="form-control" id="editRecipientUser" readonly>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="editNotificationContent" class="form-label">Content <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="editNotificationContent" name="Content" rows="4" required maxlength="1000"></textarea>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Update Notification
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/shared/toast-notifications.js" asp-append-version="true"></script>
+    <script src="~/js/pages/Admin/notifications.js" asp-append-version="true"></script>
+
+    <!-- Add anti-forgery token for CSRF protection -->
+    @Html.AntiForgeryToken()
+
+    <script>
+        // Initialize notification styling on page load
+        $(document).ready(function() {
+            // Ensure proper styling is applied
+            $('.notification-item').each(function() {
+                const $item = $(this);
+                if ($item.hasClass('unread')) {
+                    $item.css('transition', 'all 0.3s ease');
+                }
+            });
+
+            // Initialize toast notifications from TempData
+            if ($('[data-toast-success]').length) {
+                showToast($('[data-toast-success]').attr('data-toast-success'), 'success');
+            }
+            if ($('[data-toast-error]').length) {
+                showToast($('[data-toast-error]').attr('data-toast-error'), 'error');
+            }
+            if ($('[data-toast-warning]').length) {
+                showToast($('[data-toast-warning]').attr('data-toast-warning'), 'warning');
+            }
+            if ($('[data-toast-info]').length) {
+                showToast($('[data-toast-info]').attr('data-toast-info'), 'info');
+            }
+        });
+
+        // Back to top function
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+    </script>
+}
