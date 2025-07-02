@@ -1,4 +1,9 @@
 // Admin Notifications Page JavaScript
+$(document).ready(function() {
+  // Initialize the notification system
+  const adminNotifications = new AdminNotifications();
+});
+
 class AdminNotifications {
   constructor() {
     this.antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
@@ -6,50 +11,60 @@ class AdminNotifications {
   }
 
   init() {
-    this.bindEvents();
+    this.setupEventHandlers();
     this.setupSignalR();
-    this.initializeComponents();
+    this.updateHeaderNotificationBell();
+    this.initializeNotificationStates();
   }
 
-  bindEvents() {
-    // Mark as read buttons
+  setupEventHandlers() {
+    // Mark as read functionality
     $(document).on("click", ".mark-read-btn", (e) => {
-      const notificationId = $(e.target)
-        .closest("button")
-        .data("notification-id");
-      this.markAsRead(notificationId);
+      e.preventDefault();
+      const notificationId = $(e.currentTarget).data("notification-id");
+      this.markAsRead(notificationId, e.currentTarget);
+    });
+    
+    // Delete notification functionality
+    $(document).on("click", ".delete-btn", (e) => {
+      e.preventDefault();
+      const element = e.currentTarget;
+      const notificationId = $(element).data("notification-id");
+      console.log("Delete button clicked, notification ID:", notificationId);
+
+      if (!notificationId) {
+        console.error("No notification ID found");
+        showToast("Notification ID not found", "error");
+        return;
+      }
+
+      this.showDeleteConfirmation(notificationId, element);
     });
 
-    // Mark all as read button
-    $("#markAllRead").on("click", () => {
+    // Load more functionality
+    $(document).on("click", "#loadMore", (e) => {
+      e.preventDefault();
+      const page = $(e.currentTarget).data("page");
+      this.loadMoreNotifications(page);
+    });
+    
+    // Mark all as read functionality
+    $(document).on("click", "#markAllRead", (e) => {
+      e.preventDefault();
       this.markAllAsRead();
     });
 
-    // Refresh notifications button
-    $("#refreshNotifications").on("click", () => {
+    // Refresh notifications functionality
+    $(document).on("click", "#refreshNotifications", (e) => {
+      e.preventDefault();
       this.refreshNotifications();
     });
-
-    // Delete notification buttons
-    $(document).on("click", ".delete-btn", (e) => {
-      const notificationId = $(e.target)
-        .closest("button")
-        .data("notification-id");
-      this.deleteNotification(notificationId);
-    });
-
+    
     // Edit notification buttons
     $(document).on("click", ".edit-btn", (e) => {
-      const notificationId = $(e.target)
-        .closest("button")
-        .data("notification-id");
+      e.preventDefault();
+      const notificationId = $(e.currentTarget).data("notification-id");
       this.showEditModal(notificationId);
-    });
-
-    // Load more button
-    $("#loadMore").on("click", (e) => {
-      const page = $(e.target).data("page");
-      this.loadMoreNotifications(page);
     });
 
     // Create notification form
@@ -70,12 +85,9 @@ class AdminNotifications {
     });
 
     // User search
-    $("#targetUserId").on(
-      "input",
-      debounce((e) => {
-        this.searchUsers($(e.target).val());
-      }, 300)
-    );
+    $("#targetUserId").on("input", this.debounce((e) => {
+      this.searchUsers($(e.target).val());
+    }, 300));
   }
 
   setupSignalR() {
@@ -99,575 +111,689 @@ class AdminNotifications {
         console.log("SignalR Connected for Admin Notifications");
       })
       .catch((err) => {
-        console.error("SignalR Connection Error:", err);
+        console.error("SignalR Connection Error: ", err);
       });
 
-    // Handle new notifications
+    // Handle incoming notifications
     connection.on("ReceiveNotification", (notification) => {
       this.handleNewNotification(notification);
     });
 
-    // Handle notification updates
-    connection.on("NotificationUpdated", (notification) => {
-      this.handleUpdatedNotification(notification);
-    });
-
-    // Handle unread count updates
-    connection.on("UpdateUnreadCount", (count) => {
-      this.updateUnreadCountDisplay(count);
-    });
+    // Store connection
+    this.connection = connection;
   }
 
-  initializeComponents() {
-    // Initialize tooltips
-    const tooltipTriggerList = [].slice.call(
-      document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    );
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Initialize target type visibility
-    this.handleTargetTypeChange($("#targetType").val());
+  initializeNotificationStates() {
+    // Check for unread notifications
+    const hasUnread = $(".notification-item.unread").length > 0;
+    if (!hasUnread) {
+      $("#markAllRead").hide();
+    }
   }
 
-  async markAsRead(notificationId) {
+  updateHeaderNotificationBell() {
+    const unreadCount = $(".notification-item.unread").length;
+    const bellIcon = $(".notification-bell-count");
+    if (bellIcon.length) {
+      if (unreadCount > 0) {
+        bellIcon.text(unreadCount).show();
+      } else {
+        bellIcon.hide();
+      }
+    }
+  }
+
+  async markAsRead(notificationId, buttonElement) {
+    // Immediately update UI for better UX
+    const notificationCard = $(buttonElement).closest(".notification-item");
+    const originalBackground = notificationCard.css("background");
+
+    // Show loading state
+    $(buttonElement)
+      .prop("disabled", true)
+      .html('<i class="fas fa-spinner fa-spin"></i>');
+
+    // Apply immediate visual feedback
+    notificationCard.css("transition", "all 0.3s ease");
+    notificationCard.removeClass("unread").addClass("read");
+
     try {
       const response = await fetch("/Admin/Notifications?handler=MarkAsRead", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          RequestVerificationToken: this.antiForgeryToken,
+          "Content-Type": "application/x-www-form-urlencoded",
+          "RequestVerificationToken": this.antiForgeryToken
         },
-        body: JSON.stringify(notificationId),
+        body: `notificationId=${encodeURIComponent(notificationId)}`
       });
 
-      const result = await response.json();
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Remove the mark as read button with animation
+          $(buttonElement).fadeOut(300, function () {
+            $(this).remove();
+          });
 
-      if (result.success) {
-        // Update UI
-        const notificationItem = $(
-          `.notification-item[data-notification-id="${notificationId}"]`
-        );
-        notificationItem.removeClass("unread");
-        notificationItem.find(".mark-read-btn").remove();
-        notificationItem.find('.badge.bg-primary:contains("New")').remove();
+          // Remove the "New" badge if present with animation
+          notificationCard.find(".badge.bg-primary").fadeOut(300, function () {
+            $(this).remove();
+          });
 
-        // Update unread count
-        this.updateUnreadCount();
-        this.showToast("Notification marked as read", "success");
+          // Show success animation
+          notificationCard.addClass("read-success");
+          setTimeout(() => {
+            notificationCard.removeClass("read-success");
+          }, 1500);
+
+          // Update notification bell count
+          this.updateHeaderNotificationBell();
+          
+          // Show toast notification
+          showToast("Notification marked as read", "success");
+          
+          // Hide the "Mark All Read" button if no more unread notifications
+          if ($(".notification-item.unread").length === 0) {
+            $("#markAllRead").fadeOut(300);
+          }
+        } else {
+          // Revert UI changes on error
+          notificationCard.css("background", originalBackground);
+          notificationCard.removeClass("read").addClass("unread");
+          $(buttonElement)
+            .prop("disabled", false)
+            .html('<i class="fas fa-check"></i>');
+          showToast(result.message || "Error marking notification as read", "error");
+        }
       } else {
-        this.showToast(
-          result.message || "Failed to mark notification as read",
-          "error"
-        );
+        throw new Error("Server returned an error");
       }
     } catch (error) {
       console.error("Error marking notification as read:", error);
-      this.showToast(
-        "An error occurred while marking notification as read",
-        "error"
-      );
+      // Revert UI changes on error
+      notificationCard.css("background", originalBackground);
+      notificationCard.removeClass("read").addClass("unread");
+      $(buttonElement)
+        .prop("disabled", false)
+        .html('<i class="fas fa-check"></i>');
+      showToast("Failed to mark notification as read", "error");
     }
   }
 
   async markAllAsRead() {
+    // Show loading state
+    const originalButtonHtml = $("#markAllRead").html();
+    $("#markAllRead")
+      .prop("disabled", true)
+      .html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+    
+    // Apply immediate visual feedback to all unread notifications
+    $(".notification-item.unread").each(function() {
+      $(this).css("transition", "all 0.3s ease");
+      $(this).removeClass("unread").addClass("read");
+      
+      // Hide the mark as read buttons with animation
+      $(this).find(".mark-read-btn").fadeOut(300);
+      
+      // Hide the "New" badges with animation
+      $(this).find(".badge.bg-primary").fadeOut(300);
+    });
+
     try {
-      const response = await fetch(
-        "/Admin/Notifications?handler=MarkAllAsRead",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            RequestVerificationToken: this.antiForgeryToken,
-          },
+      const response = await fetch("/Admin/Notifications?handler=MarkAllAsRead", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "RequestVerificationToken": this.antiForgeryToken
         }
-      );
+      });
 
-      const result = await response.json();
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Update UI
+          $("#markAllRead").fadeOut(300);
+          
+          // Show success animation on all notifications
+          $(".notification-item").addClass("read-success");
+          setTimeout(() => {
+            $(".notification-item").removeClass("read-success");
+          }, 1500);
 
-      if (result.success) {
-        // Update UI
-        $(".notification-item.unread").removeClass("unread");
-        $(".mark-read-btn").remove();
-        $('.badge.bg-primary:contains("New")').remove();
-        $("#markAllRead").hide();
-
-        // Update unread count
-        this.updateUnreadCountDisplay(0);
-        this.showToast("All notifications marked as read", "success");
+          // Update notification bell count
+          this.updateHeaderNotificationBell();
+          
+          // Show toast notification
+          showToast("All notifications marked as read", "success");
+          
+          // Remove all mark as read buttons
+          $(".mark-read-btn").remove();
+          
+          // Remove all "New" badges
+          $(".badge.bg-primary").remove();
+        } else {
+          // Revert UI changes on error
+          $(".notification-item.read")
+            .removeClass("read")
+            .addClass("unread")
+            .find(".mark-read-btn")
+            .fadeIn(300);
+            
+          $(".notification-item.unread")
+            .find(".badge.bg-primary")
+            .fadeIn(300);
+            
+          $("#markAllRead")
+            .prop("disabled", false)
+            .html(originalButtonHtml);
+            
+          showToast(result.message || "Error marking all notifications as read", "error");
+        }
       } else {
-        this.showToast(
-          result.message || "Failed to mark all notifications as read",
-          "error"
-        );
+        throw new Error("Server returned an error");
       }
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
-      this.showToast(
-        "An error occurred while marking all notifications as read",
-        "error"
-      );
+      
+      // Revert UI changes on error
+      $(".notification-item.read")
+        .removeClass("read")
+        .addClass("unread")
+        .find(".mark-read-btn")
+        .fadeIn(300);
+        
+      $(".notification-item.unread")
+        .find(".badge.bg-primary")
+        .fadeIn(300);
+        
+      $("#markAllRead")
+        .prop("disabled", false)
+        .html(originalButtonHtml);
+        
+      showToast("Failed to mark all notifications as read", "error");
     }
   }
 
-  async deleteNotification(notificationId) {
-    if (!confirm("Are you sure you want to delete this notification?")) {
-      return;
+  showDeleteConfirmation(notificationId, buttonElement) {
+    if (confirm("Are you sure you want to delete this notification? This action cannot be undone.")) {
+      this.deleteNotification(notificationId, buttonElement);
     }
+  }
+
+  async deleteNotification(notificationId, buttonElement) {
+    // Show loading state
+    $(buttonElement)
+      .prop("disabled", true)
+      .html('<i class="fas fa-spinner fa-spin"></i>');
 
     try {
-      const response = await fetch("/Admin/Notifications?handler=Delete", {
+      const response = await fetch("/Admin/Notifications?handler=DeleteNotification", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          RequestVerificationToken: this.antiForgeryToken,
+          "Content-Type": "application/x-www-form-urlencoded",
+          "RequestVerificationToken": this.antiForgeryToken
         },
-        body: JSON.stringify(notificationId),
+        body: `notificationId=${encodeURIComponent(notificationId)}`
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        // Remove from UI
-        const notificationItem = $(
-          `.notification-item[data-notification-id="${notificationId}"]`
-        );
-        notificationItem.fadeOut(300, function () {
-          $(this).remove();
-
-          // Check if list is empty
-          if ($(".notification-item").length === 0) {
-            $("#notificationsList").html(`
-                            <div class="empty-state">
-                                <i class="fas fa-bell-slash"></i>
-                                <h5>Your inbox is empty</h5>
-                                <p>No notifications to display. You'll receive updates here as they become available.</p>
-                            </div>
-                        `);
-          }
-        });
-
-        // Update unread count
-        this.updateUnreadCount();
-        this.showToast("Notification deleted successfully", "success");
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Remove the notification with animation
+          const notificationItem = $(buttonElement).closest(".notification-item");
+          notificationItem.slideUp(400, function() {
+            $(this).remove();
+            
+            // Check if notifications list is empty
+            if ($("#notificationsList").children().length === 0) {
+              $("#notificationsList").html(`
+                <div class="empty-state">
+                  <i class="fas fa-bell-slash"></i>
+                  <h5>Your inbox is empty</h5>
+                  <p>No notifications to display. You'll receive updates here as they become available.</p>
+                </div>
+              `);
+            }
+          });
+          
+          // Update notification bell count
+          this.updateHeaderNotificationBell();
+          
+          // Show toast notification
+          showToast("Notification deleted successfully", "success");
+        } else {
+          // Reset button state on error
+          $(buttonElement)
+            .prop("disabled", false)
+            .html('<i class="fas fa-trash"></i>');
+            
+          showToast(result.message || "Error deleting notification", "error");
+        }
       } else {
-        this.showToast(
-          result.message || "Failed to delete notification",
-          "error"
-        );
+        throw new Error("Server returned an error");
       }
     } catch (error) {
       console.error("Error deleting notification:", error);
-      this.showToast("An error occurred while deleting notification", "error");
+      
+      // Reset button state on error
+      $(buttonElement)
+        .prop("disabled", false)
+        .html('<i class="fas fa-trash"></i>');
+        
+      showToast("Failed to delete notification", "error");
+    }
+  }
+
+  async refreshNotifications() {
+    // Show loading state
+    const originalButtonHtml = $("#refreshNotifications").html();
+    $("#refreshNotifications")
+      .prop("disabled", true)
+      .html('<i class="fas fa-spinner fa-spin"></i>');
+
+    try {
+      const response = await fetch("/Admin/Notifications?handler=RefreshNotifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "RequestVerificationToken": this.antiForgeryToken
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Replace notifications list with new content
+          $("#notificationsList").html(result.html);
+          
+          // Update notification counts
+          if (result.unreadCount > 0) {
+            $("#markAllRead").fadeIn(300);
+            $(".badge.bg-danger").text(result.unreadCount + " New").fadeIn(300);
+          } else {
+            $("#markAllRead").fadeOut(300);
+            $(".badge.bg-danger").fadeOut(300);
+          }
+
+          // Update notification bell count
+          this.updateHeaderNotificationBell();
+          
+          // Show toast notification
+          showToast("Notifications refreshed", "success");
+          
+          // Apply animations
+          $(".notification-item").addClass("new-notification");
+          setTimeout(() => {
+            $(".notification-item").removeClass("new-notification");
+          }, 1000);
+        } else {
+          showToast(result.message || "Error refreshing notifications", "error");
+        }
+      } else {
+        throw new Error("Server returned an error");
+      }
+    } catch (error) {
+      console.error("Error refreshing notifications:", error);
+      showToast("Failed to refresh notifications", "error");
+    } finally {
+      // Reset button state
+      $("#refreshNotifications")
+        .prop("disabled", false)
+        .html(originalButtonHtml);
     }
   }
 
   async showEditModal(notificationId) {
     try {
-      const response = await fetch(
-        `/Admin/Notifications?handler=NotificationForEdit&notificationId=${notificationId}`
-      );
-      const result = await response.json();
+      const response = await fetch(`/Admin/Notifications?handler=GetNotificationDetails&notificationId=${notificationId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
 
-      if (result.success && result.notification) {
-        const notification = result.notification;
-
-        // Populate edit form
+      if (response.ok) {
+        const notification = await response.json();
+        
+        // Populate the edit form
         $("#editNotificationId").val(notification.notificationId);
-        $("#editNotificationTitle").val(notification.title);
-        $("#editNotificationContent").val(notification.content);
-        $("#editNotificationType").val(notification.type || "General");
-        $("#editRecipientUser").val(notification.recipientUserName);
-
-        // Show modal
-        $("#editNotificationModal").modal("show");
+        $("#editNotificationTitle").val(notification.notificationTitle);
+        $("#editNotificationType").val(notification.notificationType || "General");
+        $("#editRecipientUser").val(notification.recipientName || "All Users");
+        $("#editNotificationContent").val(notification.notificationContent);
+        
+        // Show the modal
+        new bootstrap.Modal(document.getElementById("editNotificationModal")).show();
       } else {
-        this.showToast(
-          result.message || "Failed to load notification for editing",
-          "error"
-        );
+        throw new Error("Server returned an error");
       }
     } catch (error) {
-      console.error("Error loading notification for edit:", error);
-      this.showToast("An error occurred while loading notification", "error");
+      console.error("Error fetching notification details:", error);
+      showToast("Failed to load notification details", "error");
     }
   }
 
   async createNotification() {
-    try {
-      const formData = new FormData(
-        document.getElementById("createNotificationForm")
-      );
+    // Validate form
+    if (!this.validateForm("#createNotificationForm")) {
+      return;
+    }
 
-      const response = await fetch("/Admin/Notifications?handler=Create", {
+    // Disable form submission and show loading
+    const submitBtn = $("#createNotificationForm button[type='submit']");
+    const originalBtnHtml = submitBtn.html();
+    submitBtn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+
+    try {
+      // Serialize form data
+      const formData = new FormData(document.getElementById("createNotificationForm"));
+      
+      const response = await fetch("/Admin/Notifications?handler=CreateNotification", {
         method: "POST",
         headers: {
-          RequestVerificationToken: this.antiForgeryToken,
+          "RequestVerificationToken": this.antiForgeryToken
         },
-        body: formData,
+        body: formData
       });
 
       if (response.ok) {
-        $("#createNotificationModal").modal("hide");
-        this.showToast("Notification created successfully!", "success");
-        this.refreshNotifications();
-        document.getElementById("createNotificationForm").reset();
+        const result = await response.json();
+        if (result.success) {
+          // Reset form
+          $("#createNotificationForm")[0].reset();
+          
+          // Hide modal
+          bootstrap.Modal.getInstance(document.getElementById("createNotificationModal")).hide();
+          
+          // Show success message
+          showToast("Notification created successfully", "success");
+          
+          // Refresh notifications
+          this.refreshNotifications();
+        } else {
+          showToast(result.message || "Error creating notification", "error");
+        }
       } else {
-        this.showToast("Failed to create notification", "error");
+        throw new Error("Server returned an error");
       }
     } catch (error) {
       console.error("Error creating notification:", error);
-      this.showToast("An error occurred while creating notification", "error");
+      showToast("Failed to create notification", "error");
+    } finally {
+      // Reset button state
+      submitBtn.prop("disabled", false).html(originalBtnHtml);
     }
   }
 
   async updateNotification() {
-    try {
-      const formData = new FormData(
-        document.getElementById("editNotificationForm")
-      );
+    // Validate form
+    if (!this.validateForm("#editNotificationForm")) {
+      return;
+    }
 
-      const response = await fetch("/Admin/Notifications?handler=Edit", {
+    // Disable form submission and show loading
+    const submitBtn = $("#editNotificationForm button[type='submit']");
+    const originalBtnHtml = submitBtn.html();
+    submitBtn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+
+    try {
+      // Serialize form data
+      const formData = new FormData(document.getElementById("editNotificationForm"));
+      
+      const response = await fetch("/Admin/Notifications?handler=UpdateNotification", {
         method: "POST",
         headers: {
-          RequestVerificationToken: this.antiForgeryToken,
+          "RequestVerificationToken": this.antiForgeryToken
         },
-        body: formData,
+        body: formData
       });
 
       if (response.ok) {
-        $("#editNotificationModal").modal("hide");
-        this.showToast("Notification updated successfully!", "success");
-        this.refreshNotifications();
+        const result = await response.json();
+        if (result.success) {
+          // Hide modal
+          bootstrap.Modal.getInstance(document.getElementById("editNotificationModal")).hide();
+          
+          // Show success message
+          showToast("Notification updated successfully", "success");
+          
+          // Refresh notifications
+          this.refreshNotifications();
+        } else {
+          showToast(result.message || "Error updating notification", "error");
+        }
       } else {
-        this.showToast("Failed to update notification", "error");
+        throw new Error("Server returned an error");
       }
     } catch (error) {
       console.error("Error updating notification:", error);
-      this.showToast("An error occurred while updating notification", "error");
+      showToast("Failed to update notification", "error");
+    } finally {
+      // Reset button state
+      submitBtn.prop("disabled", false).html(originalBtnHtml);
     }
   }
 
-  async refreshNotifications() {
-    try {
-      const response = await fetch(
-        "/Admin/Notifications?handler=Notifications&page=1&pageSize=10"
-      );
-      const result = await response.json();
-
-      if (result.success) {
-        this.updateNotificationsList(result.notifications);
-        this.updateUnreadCountDisplay(result.unreadCount);
-        this.showToast("Notifications refreshed", "info");
+  validateForm(formSelector) {
+    const form = $(formSelector);
+    let isValid = true;
+    
+    // Check required fields
+    form.find("[required]").each(function() {
+      if (!$(this).val()) {
+        $(this).addClass("is-invalid");
+        $(this).next(".invalid-feedback").text("This field is required");
+        isValid = false;
       } else {
-        this.showToast(
-          result.message || "Failed to refresh notifications",
-          "error"
-        );
+        $(this).removeClass("is-invalid");
+        $(this).next(".invalid-feedback").text("");
       }
-    } catch (error) {
-      console.error("Error refreshing notifications:", error);
-      this.showToast(
-        "An error occurred while refreshing notifications",
-        "error"
-      );
+    });
+    
+    return isValid;
+  }
+
+  handleTargetTypeChange(targetType) {
+    // Adjust form fields based on target type
+    switch (targetType) {
+      case "0": // Specific User
+        $("#targetUserContainer").show();
+        break;
+      case "1": // Multiple Users
+        $("#targetUserContainer").show();
+        break;
+      default:
+        $("#targetUserContainer").hide();
+        break;
     }
   }
 
-  async loadMoreNotifications(page) {
-    try {
-      const response = await fetch(
-        `/Admin/Notifications?handler=Notifications&page=${page}&pageSize=10`
-      );
-      const result = await response.json();
-
-      if (result.success && result.notifications.length > 0) {
-        result.notifications.forEach((notification) => {
-          const notificationHtml = this.createNotificationHtml(notification);
-          $("#notificationsList").append(notificationHtml);
-        });
-
-        // Update load more button
-        if (result.hasNextPage) {
-          $("#loadMore").data("page", result.currentPage + 1);
-        } else {
-          $("#loadMore").parent().remove();
-        }
-      } else {
-        $("#loadMore").parent().remove();
-      }
-    } catch (error) {
-      console.error("Error loading more notifications:", error);
-      this.showToast(
-        "An error occurred while loading more notifications",
-        "error"
-      );
-    }
-  }
-
-  async searchUsers(searchTerm) {
-    try {
-      const response = await fetch(
-        `/Admin/Notifications?handler=SearchUsers&searchTerm=${encodeURIComponent(
-          searchTerm
-        )}`
-      );
-      const users = await response.json();
-
-      // Create dropdown with user suggestions
-      const dropdown = $('<div class="user-suggestions"></div>');
-      users.forEach((user) => {
-        const userOption = $(`
-                    <div class="user-suggestion" data-user-id="${user.id}">
-                        <strong>${user.name}</strong><br>
-                        <small>${user.email}</small>
-                    </div>
-                `);
-        dropdown.append(userOption);
-      });
-
-      // Replace existing dropdown
+  async searchUsers(query) {
+    if (!query || query.length < 2) {
       $(".user-suggestions").remove();
-      $("#targetUserId").after(dropdown);
-
-      // Handle user selection
-      $(".user-suggestion").on("click", function () {
-        const userId = $(this).data("user-id");
-        const userName = $(this).find("strong").text();
-        $("#targetUserId").val(userName).data("user-id", userId);
-        $(".user-suggestions").remove();
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/Admin/Notifications?handler=SearchUsers&query=${encodeURIComponent(query)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
       });
+
+      if (response.ok) {
+        const users = await response.json();
+        
+        // Remove existing suggestions
+        $(".user-suggestions").remove();
+        
+        if (users.length > 0) {
+          // Create suggestions dropdown
+          const suggestionsHtml = `
+            <div class="user-suggestions">
+              ${users.map(user => `
+                <div class="user-suggestion" data-user-id="${user.id}">
+                  <strong>${user.name}</strong>
+                  <small>${user.email}</small>
+                </div>
+              `).join("")}
+            </div>
+          `;
+          
+          $("#targetUserContainer").append(suggestionsHtml);
+          
+          // Add click handlers
+          $(".user-suggestion").on("click", (e) => {
+            const userId = $(e.currentTarget).data("user-id");
+            const userName = $(e.currentTarget).find("strong").text();
+            
+            $("#targetUserId").val(userId);
+            $(".user-suggestions").remove();
+          });
+        }
+      }
     } catch (error) {
       console.error("Error searching users:", error);
     }
   }
 
-  handleTargetTypeChange(targetType) {
-    const targetUserContainer = $("#targetUserContainer");
-    const targetUserId = $("#targetUserId");
-
-    switch (targetType) {
-      case "0": // Specific User
-        targetUserContainer.show();
-        targetUserId.attr("placeholder", "Search for user...");
-        break;
-      case "1": // Multiple Users
-        targetUserContainer.show();
-        targetUserId.attr(
-          "placeholder",
-          "Search for users (separate with commas)..."
-        );
-        break;
-      case "2": // Course
-        targetUserContainer.show();
-        targetUserId.attr("placeholder", "Search for course...");
-        break;
-      case "3": // Role
-        targetUserContainer.show();
-        targetUserId.attr(
-          "placeholder",
-          "Enter role (admin, instructor, learner)..."
-        );
-        break;
-      case "4": // All Users
-        targetUserContainer.hide();
-        break;
-      default:
-        targetUserContainer.show();
-        break;
-    }
-  }
-
-  updateNotificationsList(notifications) {
-    if (notifications.length === 0) {
-      $("#notificationsList").html(`
-                <div class="empty-state">
-                    <i class="fas fa-bell-slash"></i>
-                    <h5>Your inbox is empty</h5>
-                    <p>No notifications to display. You'll receive updates here as they become available.</p>
-                </div>
-            `);
+  handleNewNotification(notification) {
+    // Check if notification already exists
+    if ($(`[data-notification-id="${notification.notificationId}"]`).length > 0) {
       return;
     }
-
-    const notificationsHtml = notifications
-      .map((notification) => this.createNotificationHtml(notification))
-      .join("");
-
-    $("#notificationsList").html(notificationsHtml);
+    
+    // Create notification HTML
+    const notificationHtml = this.createNotificationHtml(notification);
+    
+    // Add to top of list
+    $("#notificationsList").prepend(notificationHtml);
+    
+    // Remove empty state if it exists
+    $(".empty-state").remove();
+    
+    // Apply animation
+    $(`[data-notification-id="${notification.notificationId}"]`).addClass("new-notification");
+    setTimeout(() => {
+      $(`[data-notification-id="${notification.notificationId}"]`).removeClass("new-notification");
+    }, 1000);
+    
+    // Update counts
+    const unreadCount = $(".notification-item.unread").length;
+    if (unreadCount > 0) {
+      $("#markAllRead").fadeIn(300);
+      $(".badge.bg-danger").text(unreadCount + " New").fadeIn(300);
+    }
+    
+    // Update bell icon
+    this.updateHeaderNotificationBell();
+    
+    // Show toast notification
+    showToast("New notification received", "info");
   }
 
   createNotificationHtml(notification) {
-    const isUnread = !notification.isRead;
-    const badges = [];
-
-    if (notification.notificationType) {
-      badges.push(
-        `<span class="badge bg-secondary me-2">${notification.notificationType}</span>`
-      );
-    }
-
-    if (isUnread) {
-      badges.push(`<span class="badge bg-primary me-2">New</span>`);
-    }
-
-    const courseReference = notification.course
-      ? `<div class="course-reference">
-                <i class="fas fa-graduation-cap me-1"></i>
-                <span class="text-muted">Related to: <strong>${notification.course.courseName}</strong></span>
-            </div>`
-      : "";
-
-    const markReadBtn = isUnread
-      ? `<button class="btn btn-sm mark-read-btn" data-notification-id="${notification.notificationId}" title="Mark as read">
-                <i class="fas fa-check"></i>
-            </button>`
-      : "";
-
     return `
-            <div class="list-group-item notification-item ${
-              isUnread ? "unread" : ""
-            }" data-notification-id="${notification.notificationId}">
-                <div class="d-flex w-100 justify-content-between align-items-start">
-                    <div class="notification-content flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="mb-0 fw-bold notification-title">${
-                              notification.notificationTitle
-                            }</h6>
-                            <div class="notification-meta d-flex align-items-center">
-                                ${badges.join("")}
-                                <small class="text-muted">${new Date(
-                                  notification.notificationCreatedAt
-                                ).toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}</small>
-                            </div>
-                        </div>
-                        <p class="mb-2 notification-message">${
-                          notification.notificationContent
-                        }</p>
-                        ${courseReference}
-                    </div>
-                    <div class="notification-actions ms-3 d-flex">
-                        ${markReadBtn}
-                        <button class="btn btn-sm edit-btn" data-notification-id="${
-                          notification.notificationId
-                        }" title="Edit notification">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm delete-btn" data-notification-id="${
-                          notification.notificationId
-                        }" title="Delete notification">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
+      <div class="list-group-item notification-item unread" data-notification-id="${notification.notificationId}">
+        <div class="d-flex w-100 justify-content-between align-items-start">
+          <div class="notification-content flex-grow-1">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="mb-0 fw-bold notification-title">${notification.notificationTitle}</h6>
+              <div class="notification-meta d-flex align-items-center">
+                ${notification.notificationType ? 
+                  `<span class="badge bg-secondary me-2">${notification.notificationType}</span>` : ''}
+                ${notification.createdBy === notification.currentUserId ? 
+                  `<span class="badge bg-info me-2">Created by you</span>` : ''}
+                <span class="badge bg-primary me-2">New</span>
+                <small class="text-muted">${notification.createdAtFormatted}</small>
+              </div>
             </div>
-        `;
+            <p class="mb-2 notification-message">${notification.notificationContent}</p>
+            ${notification.courseName ? 
+              `<div class="course-reference">
+                <i class="fas fa-graduation-cap me-1"></i>
+                <span class="text-muted">Related to: <strong>${notification.courseName}</strong></span>
+              </div>` : ''}
+          </div>
+          <div class="notification-actions ms-3 d-flex">
+            <button class="btn btn-sm mark-read-btn" data-notification-id="${notification.notificationId}" title="Mark as read">
+              <i class="fas fa-check"></i>
+            </button>
+            ${notification.createdBy === notification.currentUserId ? 
+              `<button class="btn btn-sm edit-btn" data-notification-id="${notification.notificationId}" title="Edit notification">
+                <i class="fas fa-edit"></i>
+              </button>` : ''}
+            <button class="btn btn-sm delete-btn" data-notification-id="${notification.notificationId}" title="Delete notification">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
-  handleNewNotification(notification) {
-    // Add new notification to the top of the list
-    const notificationHtml = this.createNotificationHtml(notification);
+  async loadMoreNotifications(page) {
+    // Show loading state
+    const loadMoreBtn = $("#loadMore");
+    const originalBtnHtml = loadMoreBtn.html();
+    loadMoreBtn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
 
-    // Remove empty state if it exists
-    $(".empty-state").remove();
-
-    $("#notificationsList").prepend(notificationHtml);
-
-    // Show toast for new notification
-    this.showToast(`New notification: ${notification.title}`, "info");
-
-    // Update unread count
-    this.updateUnreadCount();
-  }
-
-  handleUpdatedNotification(notification) {
-    // Find and update the existing notification
-    const existingNotification = $(
-      `.notification-item[data-notification-id="${notification.id}"]`
-    );
-    if (existingNotification.length) {
-      existingNotification.find(".notification-title").text(notification.title);
-      existingNotification
-        .find(".notification-message")
-        .text(notification.content);
-
-      // Update type badge if it exists
-      const typeBadge = existingNotification.find(".badge.bg-secondary");
-      if (typeBadge.length && notification.type) {
-        typeBadge.text(notification.type);
-      }
-
-      this.showToast("Notification updated", "info");
-    }
-  }
-
-  async updateUnreadCount() {
     try {
-      const response = await fetch("/Admin/Notifications?handler=UnreadCount");
-      const result = await response.json();
-      this.updateUnreadCountDisplay(result.count);
-    } catch (error) {
-      console.error("Error updating unread count:", error);
-    }
-  }
+      const response = await fetch(`/Admin/Notifications?handler=LoadMoreNotifications&page=${page}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
 
-  updateUnreadCountDisplay(count) {
-    $(".stat-number").text(count);
-
-    const badgeText = count > 0 ? `${count} New` : "";
-    const existingBadge = $(".card-header .badge.bg-danger");
-
-    if (count > 0) {
-      if (existingBadge.length) {
-        existingBadge.text(badgeText);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Append new notifications
+          $("#notificationsList").append(result.html);
+          
+          // Update load more button
+          if (result.hasNextPage) {
+            loadMoreBtn.data("page", page + 1).html(originalBtnHtml);
+          } else {
+            loadMoreBtn.parent().fadeOut(300, function() {
+              $(this).remove();
+            });
+          }
+          
+          // Apply animations
+          $(".notification-item").addClass("new-notification");
+          setTimeout(() => {
+            $(".notification-item").removeClass("new-notification");
+          }, 1000);
+        } else {
+          loadMoreBtn.html(originalBtnHtml);
+          showToast(result.message || "Error loading more notifications", "error");
+        }
       } else {
-        $(".card-header h5").append(
-          `<span class="badge bg-danger ms-2">${badgeText}</span>`
-        );
+        throw new Error("Server returned an error");
       }
-      $("#markAllRead").show();
-    } else {
-      existingBadge.remove();
-      $("#markAllRead").hide();
+    } catch (error) {
+      console.error("Error loading more notifications:", error);
+      loadMoreBtn.html(originalBtnHtml);
+      showToast("Failed to load more notifications", "error");
+    } finally {
+      // Reset button state
+      loadMoreBtn.prop("disabled", false);
     }
   }
 
-  showToast(message, type = "info") {
-    // Use the global toast function if available
-    if (typeof showToast === "function") {
-      showToast(message, type);
-    } else {
-      // Fallback to console log
-      console.log(`${type.toUpperCase()}: ${message}`);
-    }
-  }
-}
-
-// Utility function for debouncing
-function debounce(func, wait, immediate) {
-  let timeout;
-  return function executedFunction() {
-    const context = this;
-    const args = arguments;
-    const later = function () {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
+  // Utility function for debouncing
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
     };
-    const callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(context, args);
-  };
+  }
 }
-
-// Initialize when DOM is ready
-$(document).ready(function () {
-  window.adminNotifications = new AdminNotifications();
-});
