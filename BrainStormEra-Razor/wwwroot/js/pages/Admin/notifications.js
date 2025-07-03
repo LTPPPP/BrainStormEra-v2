@@ -67,18 +67,6 @@ class AdminNotifications {
       this.showEditModal(notificationId);
     });
 
-    // Create notification form
-    $("#createNotificationForm").on("submit", (e) => {
-      e.preventDefault();
-      this.createNotification();
-    });
-
-    // Edit notification form
-    $("#editNotificationForm").on("submit", (e) => {
-      e.preventDefault();
-      this.updateNotification();
-    });
-
     // Target type change
     $("#targetType").on("change", (e) => {
       this.handleTargetTypeChange($(e.target).val());
@@ -88,6 +76,39 @@ class AdminNotifications {
     $("#targetUserId").on("input", this.debounce((e) => {
       this.searchUsers($(e.target).val());
     }, 300));
+
+    // Form validation before submit
+    $("#createNotificationForm").on("submit", (e) => {
+      console.log("Create form submitting...");
+      console.log("Form data:", {
+        title: $("#notificationTitle").val(),
+        content: $("#notificationContent").val(),
+        type: $("#notificationType").val(),
+        targetType: $("#targetType").val(),
+        targetUserId: $("#targetUserId").val(),
+        targetRole: $("#targetRole").val(),
+        courseId: $("#targetCourse").val()
+      });
+      
+      if (!this.validateForm("#createNotificationForm")) {
+        console.log("Form validation failed");
+        e.preventDefault();
+        return false;
+      }
+      console.log("Form validation passed, submitting...");
+      // Let the form submit normally
+    });
+
+    $("#editNotificationForm").on("submit", (e) => {
+      console.log("Edit form submitting...");
+      if (!this.validateForm("#editNotificationForm")) {
+        console.log("Edit form validation failed");
+        e.preventDefault();
+        return false;
+      }
+      console.log("Edit form validation passed, submitting...");
+      // Let the form submit normally
+    });
   }
 
   setupSignalR() {
@@ -221,6 +242,19 @@ class AdminNotifications {
   }
 
   async markAllAsRead() {
+    console.log("🔔 Mark All as Read clicked");
+    console.log("Anti-forgery token:", this.antiForgeryToken);
+    
+    // Check if there are unread notifications
+    const unreadNotifications = $(".notification-item.unread");
+    console.log("🔍 Found unread notifications:", unreadNotifications.length);
+    
+    if (unreadNotifications.length === 0) {
+      console.log("⚠️ No unread notifications found");
+      showToast("No unread notifications to mark", "info");
+      return;
+    }
+    
     // Show loading state
     const originalButtonHtml = $("#markAllRead").html();
     $("#markAllRead")
@@ -228,7 +262,8 @@ class AdminNotifications {
       .html('<i class="fas fa-spinner fa-spin"></i> Processing...');
     
     // Apply immediate visual feedback to all unread notifications
-    $(".notification-item.unread").each(function() {
+    unreadNotifications.each(function() {
+      console.log("🎨 Updating notification:", $(this).data("notification-id"));
       $(this).css("transition", "all 0.3s ease");
       $(this).removeClass("unread").addClass("read");
       
@@ -240,6 +275,8 @@ class AdminNotifications {
     });
 
     try {
+      console.log("📡 Sending mark all as read request...");
+      
       const response = await fetch("/Admin/Notifications?handler=MarkAllAsRead", {
         method: "POST",
         headers: {
@@ -248,9 +285,16 @@ class AdminNotifications {
         }
       });
 
+      console.log("📥 Response status:", response.status);
+      console.log("📥 Response ok:", response.ok);
+
       if (response.ok) {
         const result = await response.json();
+        console.log("📊 Response result:", result);
+        
         if (result.success) {
+          console.log("✅ Mark all as read successful");
+          
           // Update UI
           $("#markAllRead").fadeOut(300);
           
@@ -272,6 +316,7 @@ class AdminNotifications {
           // Remove all "New" badges
           $(".badge.bg-primary").remove();
         } else {
+          console.error("❌ Backend returned error:", result.message);
           // Revert UI changes on error
           $(".notification-item.read")
             .removeClass("read")
@@ -290,10 +335,11 @@ class AdminNotifications {
           showToast(result.message || "Error marking all notifications as read", "error");
         }
       } else {
-        throw new Error("Server returned an error");
+        console.error("❌ HTTP Error:", response.status, response.statusText);
+        throw new Error(`Server returned status ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
-      console.error("Error marking all notifications as read:", error);
+      console.error("💥 Error marking all notifications as read:", error);
       
       // Revert UI changes on error
       $(".notification-item.read")
@@ -327,13 +373,13 @@ class AdminNotifications {
       .html('<i class="fas fa-spinner fa-spin"></i>');
 
     try {
-      const response = await fetch("/Admin/Notifications?handler=DeleteNotification", {
+      const response = await fetch("/Admin/Notifications?handler=Delete", {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
           "RequestVerificationToken": this.antiForgeryToken
         },
-        body: `notificationId=${encodeURIComponent(notificationId)}`
+        body: JSON.stringify(notificationId)
       });
 
       if (response.ok) {
@@ -392,50 +438,12 @@ class AdminNotifications {
       .html('<i class="fas fa-spinner fa-spin"></i>');
 
     try {
-      const response = await fetch("/Admin/Notifications?handler=RefreshNotifications", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "RequestVerificationToken": this.antiForgeryToken
-        }
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          // Replace notifications list with new content
-          $("#notificationsList").html(result.html);
-          
-          // Update notification counts
-          if (result.unreadCount > 0) {
-            $("#markAllRead").fadeIn(300);
-            $(".badge.bg-danger").text(result.unreadCount + " New").fadeIn(300);
-          } else {
-            $("#markAllRead").fadeOut(300);
-            $(".badge.bg-danger").fadeOut(300);
-          }
-
-          // Update notification bell count
-          this.updateHeaderNotificationBell();
-          
-          // Show toast notification
-          showToast("Notifications refreshed", "success");
-          
-          // Apply animations
-          $(".notification-item").addClass("new-notification");
-          setTimeout(() => {
-            $(".notification-item").removeClass("new-notification");
-          }, 1000);
-        } else {
-          showToast(result.message || "Error refreshing notifications", "error");
-        }
-      } else {
-        throw new Error("Server returned an error");
-      }
+      // Simply reload the page for refresh functionality
+      window.location.reload();
     } catch (error) {
       console.error("Error refreshing notifications:", error);
       showToast("Failed to refresh notifications", "error");
-    } finally {
+      
       // Reset button state
       $("#refreshNotifications")
         .prop("disabled", false)
@@ -445,7 +453,7 @@ class AdminNotifications {
 
   async showEditModal(notificationId) {
     try {
-      const response = await fetch(`/Admin/Notifications?handler=GetNotificationDetails&notificationId=${notificationId}`, {
+      const response = await fetch(`/Admin/Notifications?handler=NotificationForEdit&notificationId=${notificationId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"
@@ -453,124 +461,28 @@ class AdminNotifications {
       });
 
       if (response.ok) {
-        const notification = await response.json();
-        
-        // Populate the edit form
-        $("#editNotificationId").val(notification.notificationId);
-        $("#editNotificationTitle").val(notification.notificationTitle);
-        $("#editNotificationType").val(notification.notificationType || "General");
-        $("#editRecipientUser").val(notification.recipientName || "All Users");
-        $("#editNotificationContent").val(notification.notificationContent);
-        
-        // Show the modal
-        new bootstrap.Modal(document.getElementById("editNotificationModal")).show();
+        const result = await response.json();
+        if (result.success && result.notification) {
+          const notification = result.notification;
+          
+          // Populate the edit form
+          $("#editNotificationId").val(notification.NotificationId);
+          $("#editNotificationTitle").val(notification.Title);
+          $("#editNotificationType").val(notification.Type || "General");
+          $("#editRecipientUser").val(notification.RecipientUserName || "All Users");
+          $("#editNotificationContent").val(notification.Content);
+          
+          // Show the modal
+          new bootstrap.Modal(document.getElementById("editNotificationModal")).show();
+        } else {
+          showToast(result.message || "Failed to load notification details", "error");
+        }
       } else {
         throw new Error("Server returned an error");
       }
     } catch (error) {
       console.error("Error fetching notification details:", error);
       showToast("Failed to load notification details", "error");
-    }
-  }
-
-  async createNotification() {
-    // Validate form
-    if (!this.validateForm("#createNotificationForm")) {
-      return;
-    }
-
-    // Disable form submission and show loading
-    const submitBtn = $("#createNotificationForm button[type='submit']");
-    const originalBtnHtml = submitBtn.html();
-    submitBtn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
-
-    try {
-      // Serialize form data
-      const formData = new FormData(document.getElementById("createNotificationForm"));
-      
-      const response = await fetch("/Admin/Notifications?handler=CreateNotification", {
-        method: "POST",
-        headers: {
-          "RequestVerificationToken": this.antiForgeryToken
-        },
-        body: formData
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          // Reset form
-          $("#createNotificationForm")[0].reset();
-          
-          // Hide modal
-          bootstrap.Modal.getInstance(document.getElementById("createNotificationModal")).hide();
-          
-          // Show success message
-          showToast("Notification created successfully", "success");
-          
-          // Refresh notifications
-          this.refreshNotifications();
-        } else {
-          showToast(result.message || "Error creating notification", "error");
-        }
-      } else {
-        throw new Error("Server returned an error");
-      }
-    } catch (error) {
-      console.error("Error creating notification:", error);
-      showToast("Failed to create notification", "error");
-    } finally {
-      // Reset button state
-      submitBtn.prop("disabled", false).html(originalBtnHtml);
-    }
-  }
-
-  async updateNotification() {
-    // Validate form
-    if (!this.validateForm("#editNotificationForm")) {
-      return;
-    }
-
-    // Disable form submission and show loading
-    const submitBtn = $("#editNotificationForm button[type='submit']");
-    const originalBtnHtml = submitBtn.html();
-    submitBtn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
-
-    try {
-      // Serialize form data
-      const formData = new FormData(document.getElementById("editNotificationForm"));
-      
-      const response = await fetch("/Admin/Notifications?handler=UpdateNotification", {
-        method: "POST",
-        headers: {
-          "RequestVerificationToken": this.antiForgeryToken
-        },
-        body: formData
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          // Hide modal
-          bootstrap.Modal.getInstance(document.getElementById("editNotificationModal")).hide();
-          
-          // Show success message
-          showToast("Notification updated successfully", "success");
-          
-          // Refresh notifications
-          this.refreshNotifications();
-        } else {
-          showToast(result.message || "Error updating notification", "error");
-        }
-      } else {
-        throw new Error("Server returned an error");
-      }
-    } catch (error) {
-      console.error("Error updating notification:", error);
-      showToast("Failed to update notification", "error");
-    } finally {
-      // Reset button state
-      submitBtn.prop("disabled", false).html(originalBtnHtml);
     }
   }
 
@@ -594,7 +506,12 @@ class AdminNotifications {
   }
 
   handleTargetTypeChange(targetType) {
-    // Adjust form fields based on target type
+    // Hide all target containers first
+    $("#targetUserContainer").hide();
+    $("#targetRoleContainer").hide();
+    $("#targetCourseContainer").hide();
+    
+    // Show appropriate container based on target type
     switch (targetType) {
       case "0": // Specific User
         $("#targetUserContainer").show();
@@ -602,8 +519,16 @@ class AdminNotifications {
       case "1": // Multiple Users
         $("#targetUserContainer").show();
         break;
+      case "2": // Course Students
+        $("#targetCourseContainer").show();
+        break;
+      case "3": // Role
+        $("#targetRoleContainer").show();
+        break;
+      case "4": // All Users
+        // No additional fields needed
+        break;
       default:
-        $("#targetUserContainer").hide();
         break;
     }
   }
@@ -615,7 +540,7 @@ class AdminNotifications {
     }
     
     try {
-      const response = await fetch(`/Admin/Notifications?handler=SearchUsers&query=${encodeURIComponent(query)}`, {
+      const response = await fetch(`/Admin/Notifications?handler=SearchUsers&searchTerm=${encodeURIComponent(query)}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"

@@ -186,17 +186,19 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="createNotificationForm" method="post">
+            <form id="createNotificationForm" asp-page-handler="Create" method="post">
+                @Html.AntiForgeryToken()
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-12 mb-3">
-                            <label for="notificationTitle" class="form-label">Title <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="notificationTitle" name="Title" required maxlength="200">
+                            <label asp-for="CreateModel.Title" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input asp-for="CreateModel.Title" class="form-control" id="notificationTitle" required maxlength="200">
+                            <span asp-validation-for="CreateModel.Title" class="text-danger"></span>
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="notificationType" class="form-label">Type</label>
-                            <select class="form-select" id="notificationType" name="Type">
+                            <label asp-for="CreateModel.Type" class="form-label">Type</label>
+                            <select asp-for="CreateModel.Type" class="form-select" id="notificationType">
                                 <option value="General">General</option>
                                 <option value="Course">Course</option>
                                 <option value="System">System</option>
@@ -205,22 +207,38 @@
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="targetType" class="form-label">Target</label>
-                            <select class="form-select" id="targetType" name="TargetType">
+                            <label asp-for="CreateModel.TargetType" class="form-label">Target</label>
+                            <select asp-for="CreateModel.TargetType" class="form-select" id="targetType">
+                                <option value="4">All Users</option>
+                                <option value="3">Role (Admin/Instructor/Learner)</option>
                                 <option value="0">Specific User</option>
                                 <option value="1">Multiple Users</option>
-                                <option value="2">Course</option>
-                                <option value="3">Role</option>
-                                <option value="4">All Users</option>
+                                <option value="2">Course Students</option>
                             </select>
                         </div>
-                        <div class="col-md-12 mb-3" id="targetUserContainer">
-                            <label for="targetUserId" class="form-label">Target User</label>
-                            <input type="text" class="form-control" id="targetUserId" name="TargetUserId" placeholder="Search for user...">
+                        <div class="col-md-12 mb-3" id="targetUserContainer" style="display: none;">
+                            <label asp-for="CreateModel.TargetUserId" class="form-label">Target User</label>
+                            <input asp-for="CreateModel.TargetUserId" class="form-control" id="targetUserId" placeholder="Search for user...">
+                        </div>
+                        <div class="col-md-12 mb-3" id="targetRoleContainer" style="display: none;">
+                            <label asp-for="CreateModel.TargetRole" class="form-label">Target Role</label>
+                            <select asp-for="CreateModel.TargetRole" class="form-select" id="targetRole">
+                                <option value="">Select role...</option>
+                                <option value="admin">Admin</option>
+                                <option value="instructor">Instructor</option>
+                                <option value="learner">Learner</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12 mb-3" id="targetCourseContainer" style="display: none;">
+                            <label asp-for="CreateModel.CourseId" class="form-label">Target Course</label>
+                            <select asp-for="CreateModel.CourseId" class="form-select" id="targetCourse">
+                                <option value="">Select course...</option>
+                            </select>
                         </div>
                         <div class="col-md-12 mb-3">
-                            <label for="notificationContent" class="form-label">Content <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="notificationContent" name="Content" rows="4" required maxlength="1000"></textarea>
+                            <label asp-for="CreateModel.Content" class="form-label">Content <span class="text-danger">*</span></label>
+                            <textarea asp-for="CreateModel.Content" class="form-control" id="notificationContent" rows="4" required maxlength="1000"></textarea>
+                            <span asp-validation-for="CreateModel.Content" class="text-danger"></span>
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
@@ -246,18 +264,20 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="editNotificationForm" method="post">
-                <input type="hidden" id="editNotificationId" name="NotificationId">
+            <form id="editNotificationForm" asp-page-handler="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="EditModel.NotificationId" id="editNotificationId">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-12 mb-3">
-                            <label for="editNotificationTitle" class="form-label">Title <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="editNotificationTitle" name="Title" required maxlength="200">
+                            <label asp-for="EditModel.Title" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input asp-for="EditModel.Title" class="form-control" id="editNotificationTitle" required maxlength="200">
+                            <span asp-validation-for="EditModel.Title" class="text-danger"></span>
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="editNotificationType" class="form-label">Type</label>
-                            <select class="form-select" id="editNotificationType" name="Type">
+                            <label asp-for="EditModel.Type" class="form-label">Type</label>
+                            <select asp-for="EditModel.Type" class="form-select" id="editNotificationType">
                                 <option value="General">General</option>
                                 <option value="Course">Course</option>
                                 <option value="System">System</option>
@@ -270,8 +290,9 @@
                             <input type="text" class="form-control" id="editRecipientUser" readonly>
                         </div>
                         <div class="col-md-12 mb-3">
-                            <label for="editNotificationContent" class="form-label">Content <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="editNotificationContent" name="Content" rows="4" required maxlength="1000"></textarea>
+                            <label asp-for="EditModel.Content" class="form-label">Content <span class="text-danger">*</span></label>
+                            <textarea asp-for="EditModel.Content" class="form-control" id="editNotificationContent" rows="4" required maxlength="1000"></textarea>
+                            <span asp-validation-for="EditModel.Content" class="text-danger"></span>
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
@@ -291,41 +312,84 @@
     <script src="~/js/shared/toast-notifications.js" asp-append-version="true"></script>
     <script src="~/js/pages/Admin/notifications.js" asp-append-version="true"></script>
 
-    <!-- Add anti-forgery token for CSRF protection -->
-    @Html.AntiForgeryToken()
-
     <script>
         // Initialize notification styling on page load
         $(document).ready(function() {
+            console.log("🚀 Admin Notifications page loaded");
+            console.log("📊 Page stats:", {
+                totalNotifications: $('.notification-item').length,
+                unreadNotifications: $('.notification-item.unread').length,
+                readNotifications: $('.notification-item.read').length
+            });
+            
+            // Debug: List all notification IDs and their read status
+            $('.notification-item').each(function(index) {
+                const notificationId = $(this).data('notification-id');
+                const isUnread = $(this).hasClass('unread');
+                console.log(`📧 Notification ${index + 1}: ID=${notificationId}, Unread=${isUnread}`);
+            });
+            
             // Ensure proper styling is applied
             $('.notification-item').each(function() {
                 const $item = $(this);
                 if ($item.hasClass('unread')) {
                     $item.css('transition', 'all 0.3s ease');
+                    console.log(`🎨 Applied unread styling to notification: ${$item.data('notification-id')}`);
                 }
             });
 
             // Initialize toast notifications from TempData
             if ($('[data-toast-success]').length) {
-                showToast($('[data-toast-success]').attr('data-toast-success'), 'success');
+                showToast($('[data-toast-success]').data('toast-success'), 'success');
             }
             if ($('[data-toast-error]').length) {
-                showToast($('[data-toast-error]').attr('data-toast-error'), 'error');
+                showToast($('[data-toast-error]').data('toast-error'), 'error');
             }
-            if ($('[data-toast-warning]').length) {
-                showToast($('[data-toast-warning]').attr('data-toast-warning'), 'warning');
-            }
-            if ($('[data-toast-info]').length) {
-                showToast($('[data-toast-info]').attr('data-toast-info'), 'info');
-            }
+            
+            // Debug function to manually test mark all as read
+            window.debugMarkAllAsRead = function() {
+                console.log("🧪 DEBUG: Manual Mark All as Read test");
+                if (window.adminNotifications) {
+                    window.adminNotifications.markAllAsRead();
+                } else {
+                    console.error("❌ AdminNotifications instance not found");
+                }
+            };
+            
+            // Debug function to manually check notification states
+            window.debugNotificationStates = function() {
+                console.log("🔍 DEBUG: Current notification states:");
+                $('.notification-item').each(function(index) {
+                    const $item = $(this);
+                    console.log(`Notification ${index + 1}:`, {
+                        id: $item.data('notification-id'),
+                        classes: $item.attr('class'),
+                        isUnread: $item.hasClass('unread'),
+                        hasMarkReadBtn: $item.find('.mark-read-btn').length > 0,
+                        hasNewBadge: $item.find('.badge.bg-primary').length > 0
+                    });
+                });
+            };
+            
+            console.log("🛠️ Debug functions available: debugMarkAllAsRead(), debugNotificationStates()");
         });
 
-        // Back to top function
-        function scrollToTop() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
+        // Store instance globally for debugging
+        $(document).ready(function() {
+            // Only create instance if not already created
+            if (!window.adminNotifications) {
+                window.adminNotifications = new AdminNotifications();
+                console.log("✅ AdminNotifications instance created and stored globally");
+            }
+        });
     </script>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display: none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display: none;"></div>
+    }
 }

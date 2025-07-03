@@ -777,8 +777,10 @@ namespace BusinessLogicLayer.Services.Implementations
         /// </summary>
         private static bool IsAuthorizedToCreateNotifications(string? userRole)
         {
-            return userRole?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true ||
-                   userRole?.Equals("Instructor", StringComparison.OrdinalIgnoreCase) == true;
+            if (string.IsNullOrEmpty(userRole)) return false;
+
+            return userRole.Equals("admin", StringComparison.OrdinalIgnoreCase) ||
+                   userRole.Equals("instructor", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -787,7 +789,7 @@ namespace BusinessLogicLayer.Services.Implementations
         private static bool IsAuthorizedToEditNotification(Notification notification, string userId, string? userRole)
         {
             // Admin can edit all notifications
-            if (userRole?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true)
+            if (!string.IsNullOrEmpty(userRole) && userRole.Equals("admin", StringComparison.OrdinalIgnoreCase))
                 return true;
 
             // Creator can edit their own notifications
@@ -807,7 +809,7 @@ namespace BusinessLogicLayer.Services.Implementations
         private static bool IsAuthorizedToDeleteNotification(Notification notification, string userId, string? userRole)
         {
             // Admin can delete all notifications
-            if (userRole?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true)
+            if (!string.IsNullOrEmpty(userRole) && userRole.Equals("admin", StringComparison.OrdinalIgnoreCase))
                 return true;
 
             // Creator can delete their own notifications
@@ -853,7 +855,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// </summary>
         private static bool IsValidRole(string role)
         {
-            var validRoles = new[] { "Admin", "Instructor", "Learner" };
+            var validRoles = new[] { "admin", "instructor", "learner" };
             return validRoles.Contains(role, StringComparer.OrdinalIgnoreCase);
         }
 
@@ -862,7 +864,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// </summary>
         private static bool IsValidNotificationType(string type)
         {
-            var validTypes = new[] { "info", "warning", "success", "urgent", "course", "announcement" };
+            var validTypes = new[] { "General", "Course", "System", "Achievement", "Payment", "info", "warning", "success", "urgent", "course", "announcement" };
             return validTypes.Contains(type, StringComparer.OrdinalIgnoreCase);
         }
 
