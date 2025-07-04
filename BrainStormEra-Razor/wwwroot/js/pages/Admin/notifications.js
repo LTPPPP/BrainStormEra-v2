@@ -114,7 +114,53 @@ class AdminNotifications {
         e.preventDefault();
         return false;
       }
+
+      // Show loading state on submit button
+      const submitBtn = $("#saveEditBtn");
+      const originalText = submitBtn.html();
+      submitBtn
+        .prop("disabled", true)
+        .html('<i class="fas fa-spinner fa-spin me-1"></i>Updating...');
+
+      // Re-enable button after 10 seconds (failsafe)
+      setTimeout(() => {
+        submitBtn.prop("disabled", false).html(originalText);
+      }, 10000);
+
       // Let the form submit normally
+    });
+
+    // Real-time character count for edit form
+    $("#edit_Title").on("input", function () {
+      const current = $(this).val().length;
+      const max = 200;
+      const remaining = max - current;
+      const color =
+        remaining < 20
+          ? "text-danger"
+          : remaining < 50
+          ? "text-warning"
+          : "text-muted";
+
+      $(this)
+        .siblings(".form-text")
+        .html(`<span class="${color}">${current}/${max} characters</span>`);
+    });
+
+    $("#edit_Content").on("input", function () {
+      const current = $(this).val().length;
+      const max = 1000;
+      const remaining = max - current;
+      const color =
+        remaining < 50
+          ? "text-danger"
+          : remaining < 100
+          ? "text-warning"
+          : "text-muted";
+
+      $(this)
+        .siblings(".form-text")
+        .html(`<span class="${color}">${current}/${max} characters</span>`);
     });
   }
 
@@ -259,6 +305,12 @@ class AdminNotifications {
   }
 
   async markAsRead(notificationId, buttonElement) {
+    // Validate input
+    if (!notificationId || !buttonElement) {
+      showToast("Invalid notification data", "error");
+      return;
+    }
+
     // Immediately update UI for better UX
     const notificationCard = $(buttonElement).closest(".notification-item");
     const originalClasses = notificationCard.attr("class");
@@ -273,7 +325,7 @@ class AdminNotifications {
     notificationCard.removeClass("unread").addClass("read");
 
     try {
-      // Use form data instead of JSON for better compatibility
+      // Use form data for better compatibility and CSRF protection
       const formData = new FormData();
       formData.append("notificationId", notificationId);
 
@@ -304,7 +356,7 @@ class AdminNotifications {
                 $(this).remove();
               });
 
-            // Remove "Created by you" badge if present
+            // Remove "Created by you" badge if present for cleaner UI
             notificationCard.find(".badge.bg-info").fadeOut(300, function () {
               $(this).remove();
             });
@@ -328,9 +380,18 @@ class AdminNotifications {
               unreadCountElement.fadeOut(300);
             }
 
+            // Update stats card
+            const statsNumber = $(".stats-card .stat-number");
+            if (statsNumber.length) {
+              const currentCount = parseInt(statsNumber.text()) || 0;
+              if (currentCount > 0) {
+                statsNumber.text(currentCount - 1);
+              }
+            }
+
             // Show toast notification
             showToast(
-              "Notification marked as read and saved to database",
+              result.message || "Notification marked as read successfully",
               "success"
             );
 
@@ -338,6 +399,9 @@ class AdminNotifications {
             if ($(".notification-item.unread").length === 0) {
               $("#markAllRead").fadeOut(300);
             }
+
+            // Update page title if needed
+            this.updatePageTitle();
           } else {
             // Revert UI changes on error
             notificationCard.attr("class", originalClasses);
@@ -353,12 +417,23 @@ class AdminNotifications {
           throw new Error("Server returned non-JSON response");
         }
       } else {
+        if (response.status === 401) {
+          showToast("Authentication required. Please login again.", "error");
+          // Optionally redirect to login
+          setTimeout(() => {
+            window.location.href = "/Login";
+          }, 2000);
+          return;
+        }
+
         const errorText = await response.text();
         throw new Error(
           `Server returned status ${response.status}: ${errorText}`
         );
       }
     } catch (error) {
+      console.error("Error marking notification as read:", error);
+
       // Revert UI changes on error
       notificationCard.attr("class", originalClasses);
       $(buttonElement)
@@ -377,6 +452,15 @@ class AdminNotifications {
 
     if (unreadNotifications.length === 0) {
       showToast("No unread notifications to mark", "info");
+      return;
+    }
+
+    // Show confirmation dialog for bulk action
+    if (
+      !confirm(
+        `Are you sure you want to mark all ${unreadNotifications.length} notifications as read?`
+      )
+    ) {
       return;
     }
 
@@ -426,9 +510,18 @@ class AdminNotifications {
           // Update notification bell count
           this.updateHeaderNotificationBell();
 
+          // Update stats card
+          const statsNumber = $(".stats-card .stat-number");
+          if (statsNumber.length) {
+            statsNumber.text("0");
+          }
+
+          // Update unread count badge
+          $(".badge.bg-danger").fadeOut(300);
+
           // Show toast notification
           showToast(
-            "All notifications marked as read and saved to database",
+            result.message || "All notifications marked as read successfully",
             "success"
           );
 
@@ -437,6 +530,9 @@ class AdminNotifications {
 
           // Remove all "New" badges
           $(".badge.bg-primary").remove();
+
+          // Update page title
+          this.updatePageTitle();
         } else {
           // Revert UI changes on error
           $(".notification-item.read")
@@ -455,11 +551,21 @@ class AdminNotifications {
           );
         }
       } else {
+        if (response.status === 401) {
+          showToast("Authentication required. Please login again.", "error");
+          setTimeout(() => {
+            window.location.href = "/Login";
+          }, 2000);
+          return;
+        }
+
         throw new Error(
           `Server returned status ${response.status}: ${response.statusText}`
         );
       }
     } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+
       // Revert UI changes on error
       $(".notification-item.read")
         .removeClass("read")
@@ -471,16 +577,32 @@ class AdminNotifications {
 
       $("#markAllRead").prop("disabled", false).html(originalButtonHtml);
 
-      showToast("Failed to mark all notifications as read", "error");
+      showToast(
+        "Failed to mark all notifications as read: " + error.message,
+        "error"
+      );
     }
   }
 
   showDeleteConfirmation(notificationId, buttonElement) {
-    if (
-      confirm(
-        "Are you sure you want to delete this notification? This action cannot be undone."
-      )
-    ) {
+    // Check if user is admin/instructor by looking for admin-specific elements
+    const isAdminPage = window.location.href.includes("/Admin/");
+
+    let confirmMessage;
+    if (isAdminPage) {
+      confirmMessage =
+        "⚠️ ADMIN ACTION: Are you sure you want to delete this notification?\n\n" +
+        "🌐 This will delete the notification for ALL USERS who received it.\n" +
+        "📝 This action cannot be undone.\n\n" +
+        "Click OK to proceed with global deletion.";
+    } else {
+      confirmMessage =
+        "Are you sure you want to delete this notification?\n" +
+        "This will only remove it from your inbox.\n" +
+        "This action cannot be undone.";
+    }
+
+    if (confirm(confirmMessage)) {
       this.deleteNotification(notificationId, buttonElement);
     }
   }
@@ -525,8 +647,20 @@ class AdminNotifications {
           // Update notification bell count
           this.updateHeaderNotificationBell();
 
-          // Show toast notification
-          showToast("Notification deleted successfully", "success");
+          // Show different messages based on whether it was global delete or single delete
+          const message = result.message || "Notification deleted successfully";
+          if (message.includes("globally")) {
+            showToast("🌐 " + message, "success");
+          } else {
+            showToast("📤 " + message, "success");
+          }
+
+          // If it was a global delete, refresh the page to show updated state
+          if (message.includes("globally")) {
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          }
         } else {
           // Reset button state on error
           $(buttonElement)
@@ -536,15 +670,25 @@ class AdminNotifications {
           showToast(result.message || "Error deleting notification", "error");
         }
       } else {
+        if (response.status === 401) {
+          showToast("Authentication required. Please login again.", "error");
+          setTimeout(() => {
+            window.location.href = "/Login";
+          }, 2000);
+          return;
+        }
+
         throw new Error("Server returned an error");
       }
     } catch (error) {
+      console.error("Error deleting notification:", error);
+
       // Reset button state on error
       $(buttonElement)
         .prop("disabled", false)
         .html('<i class="fas fa-trash"></i>');
 
-      showToast("Failed to delete notification", "error");
+      showToast("Failed to delete notification: " + error.message, "error");
     }
   }
 
@@ -570,6 +714,9 @@ class AdminNotifications {
 
   async showEditModal(notificationId) {
     try {
+      // Show loading state
+      const loadingToast = showToast("Loading notification details...", "info");
+
       const response = await fetch(
         `/Admin/Notifications?handler=NotificationForEdit&notificationId=${notificationId}`,
         {
@@ -585,19 +732,32 @@ class AdminNotifications {
         if (result.success && result.notification) {
           const notification = result.notification;
 
-          // Populate the edit form
-          $("#editNotificationId").val(notification.NotificationId);
-          $("#editNotificationTitle").val(notification.Title);
-          $("#editNotificationType").val(notification.Type || "General");
-          $("#editRecipientUser").val(
-            notification.RecipientUserName || "All Users"
-          );
-          $("#editNotificationContent").val(notification.Content);
+          // Clear any previous validation errors
+          $("#editNotificationForm .is-invalid").removeClass("is-invalid");
+          $("#editNotificationForm .invalid-feedback").text("");
+
+          // Populate the edit form with correct field names
+          $("#edit_NotificationId").val(notification.notificationId);
+          $("#edit_Title").val(notification.title);
+          $("#edit_Type").val(notification.type || "General");
+          $("#edit_Content").val(notification.content);
+
+          // Show current notification info
+          $("#editNotificationModalLabel").html(`
+            <i class="fas fa-edit me-2"></i>Edit Notification
+            <small class="text-muted ms-2">(Global Update - affects all users)</small>
+          `);
 
           // Show the modal
-          new bootstrap.Modal(
+          const modal = new bootstrap.Modal(
             document.getElementById("editNotificationModal")
-          ).show();
+          );
+          modal.show();
+
+          // Hide loading toast
+          if (loadingToast && loadingToast.hide) {
+            loadingToast.hide();
+          }
         } else {
           showToast(
             result.message || "Failed to load notification details",
@@ -605,10 +765,22 @@ class AdminNotifications {
           );
         }
       } else {
-        throw new Error("Server returned an error");
+        if (response.status === 401) {
+          showToast("Authentication required. Please login again.", "error");
+          setTimeout(() => {
+            window.location.href = "/Login";
+          }, 2000);
+          return;
+        }
+
+        throw new Error(`Server returned status ${response.status}`);
       }
     } catch (error) {
-      showToast("Failed to load notification details", "error");
+      console.error("Error loading notification for edit:", error);
+      showToast(
+        "Failed to load notification details: " + error.message,
+        "error"
+      );
     }
   }
 
@@ -616,17 +788,62 @@ class AdminNotifications {
     const form = $(formSelector);
     let isValid = true;
 
+    // Clear previous validation
+    form.find(".is-invalid").removeClass("is-invalid");
+    form.find(".invalid-feedback").text("");
+
     // Check required fields
     form.find("[required]").each(function () {
-      if (!$(this).val()) {
-        $(this).addClass("is-invalid");
-        $(this).next(".invalid-feedback").text("This field is required");
+      const $field = $(this);
+      const value = $field.val().trim();
+
+      if (!value) {
+        $field.addClass("is-invalid");
+        $field.siblings(".invalid-feedback").text("This field is required");
         isValid = false;
       } else {
-        $(this).removeClass("is-invalid");
-        $(this).next(".invalid-feedback").text("");
+        $field.removeClass("is-invalid");
+        $field.siblings(".invalid-feedback").text("");
       }
     });
+
+    // Specific validation for edit form
+    if (formSelector === "#editNotificationForm") {
+      const title = $("#edit_Title").val().trim();
+      const content = $("#edit_Content").val().trim();
+
+      // Title validation
+      if (title.length > 200) {
+        $("#edit_Title").addClass("is-invalid");
+        $("#edit_Title")
+          .siblings(".invalid-feedback")
+          .text("Title must be 200 characters or less");
+        isValid = false;
+      }
+
+      // Content validation
+      if (content.length > 1000) {
+        $("#edit_Content").addClass("is-invalid");
+        $("#edit_Content")
+          .siblings(".invalid-feedback")
+          .text("Content must be 1000 characters or less");
+        isValid = false;
+      }
+
+      // Minimum content length
+      if (content.length < 10) {
+        $("#edit_Content").addClass("is-invalid");
+        $("#edit_Content")
+          .siblings(".invalid-feedback")
+          .text("Content must be at least 10 characters");
+        isValid = false;
+      }
+    }
+
+    // Show validation summary if there are errors
+    if (!isValid) {
+      showToast("Please fix the validation errors before submitting", "error");
+    }
 
     return isValid;
   }
@@ -880,6 +1097,18 @@ class AdminNotifications {
     } finally {
       // Reset button state
       loadMoreBtn.prop("disabled", false);
+    }
+  }
+
+  updatePageTitle() {
+    // Update the page title to reflect current unread count
+    const unreadCount = $(".notification-item.unread").length;
+    const baseTitle = "Notifications Management";
+
+    if (unreadCount > 0) {
+      document.title = `(${unreadCount}) ${baseTitle} - BrainStormEra`;
+    } else {
+      document.title = `${baseTitle} - BrainStormEra`;
     }
   }
 

@@ -98,6 +98,119 @@ namespace BusinessLogicLayer.Services
             await _notificationRepo.DeleteNotificationAsync(notificationId, userId);
         }
 
+        /// <summary>
+        /// Admin function to delete notification globally (affects all users who received this notification)
+        /// </summary>
+        public async Task<bool> AdminDeleteNotificationGloballyAsync(string notificationId, string adminUserId)
+        {
+            try
+            {
+                // First get the notification to identify related notifications
+                var notification = await _notificationRepo.GetNotificationByIdAsync(notificationId);
+                if (notification == null)
+                {
+                    _logger.LogWarning("Notification {NotificationId} not found for global delete", notificationId);
+                    return false;
+                }
+
+                // Find all notifications with same title, content, and created time (batch notifications)
+                var relatedNotifications = await _notificationRepo.GetRelatedNotificationsAsync(
+                    notification.NotificationTitle,
+                    notification.NotificationContent,
+                    notification.NotificationCreatedAt,
+                    notification.CourseId
+                );
+
+                if (relatedNotifications.Any())
+                {
+                    // Delete all related notifications
+                    var deleteResult = await _notificationRepo.DeleteNotificationsBatchAsync(
+                        relatedNotifications.Select(n => n.NotificationId).ToList()
+                    );
+
+                    _logger.LogInformation("Admin {AdminUserId} globally deleted {Count} related notifications for notification {NotificationId}",
+                        adminUserId, relatedNotifications.Count, notificationId);
+
+                    // Send real-time notifications to affected users
+                    foreach (var relatedNotification in relatedNotifications)
+                    {
+                        await _hubContext.Clients.Group($"User_{relatedNotification.UserId}")
+                            .SendAsync("NotificationDeleted", new { id = relatedNotification.NotificationId });
+                    }
+
+                    return deleteResult;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in admin global delete for notification {NotificationId}", notificationId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Admin function to update notification globally (affects all users who received this notification)
+        /// </summary>
+        public async Task<bool> AdminUpdateNotificationGloballyAsync(string notificationId, string adminUserId, string newTitle, string newContent, string? newType = null)
+        {
+            try
+            {
+                // First get the notification to identify related notifications
+                var notification = await _notificationRepo.GetNotificationByIdAsync(notificationId);
+                if (notification == null)
+                {
+                    _logger.LogWarning("Notification {NotificationId} not found for global update", notificationId);
+                    return false;
+                }
+
+                // Find all notifications with same title, content, and created time (batch notifications)
+                var relatedNotifications = await _notificationRepo.GetRelatedNotificationsAsync(
+                    notification.NotificationTitle,
+                    notification.NotificationContent,
+                    notification.NotificationCreatedAt,
+                    notification.CourseId
+                );
+
+                if (relatedNotifications.Any())
+                {
+                    // Update all related notifications
+                    var updateResult = await _notificationRepo.UpdateNotificationsBatchAsync(
+                        relatedNotifications.Select(n => n.NotificationId).ToList(),
+                        newTitle,
+                        newContent,
+                        newType
+                    );
+
+                    _logger.LogInformation("Admin {AdminUserId} globally updated {Count} related notifications for notification {NotificationId}",
+                        adminUserId, relatedNotifications.Count, notificationId);
+
+                    // Send real-time notifications to affected users
+                    foreach (var relatedNotification in relatedNotifications)
+                    {
+                        await _hubContext.Clients.Group($"User_{relatedNotification.UserId}")
+                            .SendAsync("NotificationUpdated", new
+                            {
+                                id = relatedNotification.NotificationId,
+                                title = newTitle,
+                                content = newContent,
+                                type = newType ?? relatedNotification.NotificationType
+                            });
+                    }
+
+                    return updateResult;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in admin global update for notification {NotificationId}", notificationId);
+                return false;
+            }
+        }
+
         public async Task<bool> SendToUserAsync(string userId, string title, string content, string? type = null, string? courseId = null, string? createdBy = null)
         {
             try

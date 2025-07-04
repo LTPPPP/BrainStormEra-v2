@@ -167,6 +167,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 else
                 {
                     // Try to read from JSON body
+                    Request.Body.Position = 0; // Reset position if possible
                     using var reader = new StreamReader(Request.Body);
                     var body = await reader.ReadToEndAsync();
 
@@ -197,20 +198,50 @@ namespace BrainStormEra_Razor.Pages.Admin
 
                 if (string.IsNullOrEmpty(notificationId))
                 {
+                    _logger.LogWarning("Mark as read attempted without notification ID");
                     return new JsonResult(new { success = false, message = "Notification ID is required" });
+                }
+
+                // Validate user authentication
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                }
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    _logger.LogWarning("Mark as read attempted by unauthenticated user for notification {NotificationId}", notificationId);
+                    return new JsonResult(new { success = false, message = "User authentication required" });
                 }
 
                 var result = await _notificationServiceImpl.MarkAsReadAsync(User, notificationId);
 
-                _logger.LogInformation("Mark as read result for notification {NotificationId}: Success={Success}, Message={Message}",
-                    notificationId, result.Success, result.Message);
+                _logger.LogInformation("Mark as read result for notification {NotificationId} by user {UserId}: Success={Success}, Message={Message}",
+                    notificationId, userId, result.Success, result.Message);
 
-                return new JsonResult(new { success = result.Success, message = result.Message });
+                if (result.Success)
+                {
+                    return new JsonResult(new
+                    {
+                        success = true,
+                        message = result.Message ?? "Notification marked as read successfully",
+                        notificationId = notificationId
+                    });
+                }
+                else
+                {
+                    return new JsonResult(new
+                    {
+                        success = false,
+                        message = result.Message ?? "Failed to mark notification as read"
+                    });
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error marking notification as read");
-                return new JsonResult(new { success = false, message = "An error occurred" });
+                return new JsonResult(new { success = false, message = "An error occurred while marking notification as read" });
             }
         }
 
@@ -218,13 +249,45 @@ namespace BrainStormEra_Razor.Pages.Admin
         {
             try
             {
+                // Validate user authentication
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                }
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    _logger.LogWarning("Mark all as read attempted by unauthenticated user");
+                    return new JsonResult(new { success = false, message = "User authentication required" });
+                }
+
                 var result = await _notificationServiceImpl.MarkAllAsReadAsync(User);
-                return new JsonResult(new { success = result.Success, message = result.Message });
+
+                _logger.LogInformation("Mark all as read result for user {UserId}: Success={Success}, Message={Message}",
+                    userId, result.Success, result.Message);
+
+                if (result.Success)
+                {
+                    return new JsonResult(new
+                    {
+                        success = true,
+                        message = result.Message ?? "All notifications marked as read successfully"
+                    });
+                }
+                else
+                {
+                    return new JsonResult(new
+                    {
+                        success = false,
+                        message = result.Message ?? "Failed to mark all notifications as read"
+                    });
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error marking all notifications as read");
-                return new JsonResult(new { success = false, message = "An error occurred" });
+                return new JsonResult(new { success = false, message = "An error occurred while marking all notifications as read" });
             }
         }
 
@@ -353,6 +416,93 @@ namespace BrainStormEra_Razor.Pages.Admin
             {
                 _logger.LogError(ex, "Error getting notifications via AJAX");
                 return new JsonResult(new { success = false, message = "An error occurred" });
+            }
+        }
+
+        // GET: Get notification count for real-time updates
+        public async Task<IActionResult> OnGetNotificationCountAsync()
+        {
+            try
+            {
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                }
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new JsonResult(new { count = 0, success = false, message = "User not authenticated" });
+                }
+
+                var count = await _notificationService.GetUnreadNotificationCountAsync(userId);
+                return new JsonResult(new { count = count, success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting notification count");
+                return new JsonResult(new { count = 0, success = false, message = "An error occurred" });
+            }
+        }
+
+        // POST: Bulk mark notifications as read
+        public async Task<IActionResult> OnPostBulkMarkAsReadAsync([FromBody] List<string> notificationIds)
+        {
+            try
+            {
+                if (notificationIds == null || !notificationIds.Any())
+                {
+                    return new JsonResult(new { success = false, message = "No notification IDs provided" });
+                }
+
+                var userId = User.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                }
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new JsonResult(new { success = false, message = "User authentication required" });
+                }
+
+                var successCount = 0;
+                var errors = new List<string>();
+
+                foreach (var notificationId in notificationIds)
+                {
+                    try
+                    {
+                        var result = await _notificationServiceImpl.MarkAsReadAsync(User, notificationId);
+                        if (result.Success)
+                        {
+                            successCount++;
+                        }
+                        else
+                        {
+                            errors.Add($"Failed to mark notification {notificationId}: {result.Message}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error marking notification {NotificationId} as read", notificationId);
+                        errors.Add($"Error processing notification {notificationId}");
+                    }
+                }
+
+                return new JsonResult(new
+                {
+                    success = successCount > 0,
+                    message = $"Successfully marked {successCount} notifications as read",
+                    successCount = successCount,
+                    errorCount = errors.Count,
+                    errors = errors
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in bulk mark as read");
+                return new JsonResult(new { success = false, message = "An error occurred during bulk operation" });
             }
         }
 
