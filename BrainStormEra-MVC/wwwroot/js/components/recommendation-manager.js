@@ -22,14 +22,12 @@ class RecommendationManager {
         stats.stats.featuredCourses === 0 &&
         stats.stats.totalActiveCourses > 0
       ) {
-
         await this.initialize();
         return true;
       }
 
       return false;
     } catch (error) {
-
       return false;
     }
   }
@@ -78,7 +76,6 @@ class RecommendationManager {
       const result = await response.json();
 
       if (result.success) {
-
         this.initialized = true;
 
         // Refresh the page to show updated recommendations
@@ -86,12 +83,10 @@ class RecommendationManager {
           window.location.reload();
         }
       } else {
-
       }
 
       return result;
     } catch (error) {
-
       return { success: false, message: error.message };
     }
   }
@@ -126,7 +121,6 @@ class RecommendationManager {
         "info"
       );
     } else {
-
     }
   }
 
@@ -177,7 +171,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     const emptyState = recommendedCoursesSection?.querySelector(".empty-state");
 
     if (emptyState) {
-
       const initialized =
         await window.recommendationManager.initializeIfNeeded();
 
@@ -212,12 +205,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Always get and show stats for debugging
     try {
       const stats = await window.recommendationManager.getStats();
-      console.log("Recommendation Stats:", stats);
       window.recommendationManager.showRecommendationStatus(stats);
     } catch (error) {
-      console.log(
-        "Could not get recommendation stats (user may not be authenticated)"
-      );
+      // Could not get recommendation stats (user may not be authenticated)
     }
   }
 });

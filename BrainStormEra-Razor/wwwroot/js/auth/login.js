@@ -8,8 +8,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function initializeLoginForm() {
-  console.log("Login form initialized");
-
   // Focus on username field
   const usernameInput = document.querySelector(
     'input[name="LoginData.Username"]'
@@ -131,5 +129,4 @@ function showLoadingState() {
 function setupPasswordVisibility() {
   // This could be enhanced to add show/hide password functionality
   // For now, it's just a placeholder for future enhancement
-  console.log("Password visibility setup complete");
 }

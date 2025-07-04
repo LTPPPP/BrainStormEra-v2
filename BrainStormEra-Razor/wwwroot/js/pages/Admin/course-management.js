@@ -326,7 +326,6 @@ class CourseManagement {
         );
       }
     } catch (error) {
-      console.error("Error updating course status:", error);
       this.showToast("An error occurred while updating course status", "error");
     } finally {
       this.hideLoading();
@@ -359,7 +358,6 @@ class CourseManagement {
         this.showToast(data.message || "Failed to ban course", "error");
       }
     } catch (error) {
-      console.error("Error banning course:", error);
       this.showToast("An error occurred while banning course", "error");
     } finally {
       this.hideLoading();
@@ -392,7 +390,6 @@ class CourseManagement {
         this.showToast(data.message || "Failed to reject course", "error");
       }
     } catch (error) {
-      console.error("Error rejecting course:", error);
       this.showToast("An error occurred while rejecting course", "error");
     } finally {
       this.hideLoading();
@@ -414,7 +411,6 @@ class CourseManagement {
         this.showToast("Failed to load course details", "error");
       }
     } catch (error) {
-      console.error("Error loading course details:", error);
       this.showToast("An error occurred while loading course details", "error");
     } finally {
       this.hideLoading();
@@ -1483,10 +1479,6 @@ class CourseManagement {
           failCount++;
         }
       } catch (error) {
-        console.error(
-          `Error processing ${operation} for course ${course.id}:`,
-          error
-        );
         failCount++;
       }
     }
@@ -1526,7 +1518,6 @@ class CourseManagement {
       const data = await response.json();
       return data.success;
     } catch (error) {
-      console.error("Error approving course:", error);
       return false;
     }
   }
@@ -1546,7 +1537,6 @@ class CourseManagement {
       const data = await response.json();
       return data.success;
     } catch (error) {
-      console.error("Error rejecting course:", error);
       return false;
     }
   }
@@ -1566,7 +1556,6 @@ class CourseManagement {
       const data = await response.json();
       return data.success;
     } catch (error) {
-      console.error("Error banning course:", error);
       return false;
     }
   }

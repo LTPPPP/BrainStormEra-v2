@@ -4,8 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function initializeEditAchievement() {
-  console.log("Initializing Edit Achievement page...");
-
   // Initialize components
   initializeIconSelection();
   initializeFileUpload();
@@ -15,8 +13,6 @@ function initializeEditAchievement() {
 
   // Load existing data into preview
   loadExistingDataIntoPreview();
-
-  console.log("Edit Achievement page initialized successfully");
 }
 
 // Icon Selection Management

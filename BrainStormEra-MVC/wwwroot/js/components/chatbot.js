@@ -239,8 +239,8 @@ class ChatbotManager {
     });
 
     const avatarSrc = isUser
-                      ? this.getUserAvatar() || "/SharedMedia/defaults/default-avatar.svg"
-                : "/SharedMedia/logo/logowithoutbackground.png";
+      ? this.getUserAvatar() || "/SharedMedia/defaults/default-avatar.svg"
+      : "/SharedMedia/logo/logowithoutbackground.png";
 
     const messageHTML = `
             <div class="message ${
@@ -248,7 +248,7 @@ class ChatbotManager {
             }" data-conversation-id="${conversationId || ""}">
                 <img src="${avatarSrc}" alt="${
       isUser ? "User" : "Bot"
-                }" class="message-avatar" onerror="this.src='/SharedMedia/defaults/default-avatar.svg'" />
+    }" class="message-avatar" onerror="this.src='/SharedMedia/defaults/default-avatar.svg'" />
                 <div class="message-wrapper">
                     <div class="message-content" id="message-${Date.now()}"></div>
                     <div class="message-time">${timestamp}</div>
@@ -360,7 +360,6 @@ class ChatbotManager {
     }
   } // Simple error handling with typewriter effect
   handleError(error, userMessage) {
-    console.error("Chatbot error:", error);
     let errorMessage = "Sorry, an error occurred. Please try again later.";
     this.addMessage(errorMessage, "bot");
     // Ensure input is enabled after error
@@ -618,10 +617,16 @@ class ChatbotManager {
           );
         }, 500);
       } else {
-        console.error("Failed to start new conversation");
+        this.addMessage(
+          "Unable to start new conversation. Please try again.",
+          "bot"
+        );
       }
     } catch (error) {
-      console.error("Error starting new chat:", error);
+      this.addMessage(
+        "Error starting new conversation. Please try again.",
+        "bot"
+      );
     }
   }
 }

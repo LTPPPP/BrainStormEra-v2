@@ -75,7 +75,6 @@ document.addEventListener("DOMContentLoaded", function () {
           document.querySelector('input[name="QuizId"]')?.value;
 
         if (!quizId) {
-          console.error("Quiz ID not found");
           return;
         }
 
@@ -121,7 +120,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           })
           .catch((error) => {
-            console.error("Error:", error);
             showToast(
               "error",
               "An error occurred while updating question order."

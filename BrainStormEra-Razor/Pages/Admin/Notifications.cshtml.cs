@@ -153,16 +153,58 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
         }
 
-        public async Task<IActionResult> OnPostMarkAsReadAsync([FromBody] string notificationId)
+        public async Task<IActionResult> OnPostMarkAsReadAsync()
         {
             try
             {
+                string? notificationId = null;
+
+                // Try to get from form data first
+                if (Request.Form.ContainsKey("notificationId"))
+                {
+                    notificationId = Request.Form["notificationId"];
+                }
+                else
+                {
+                    // Try to read from JSON body
+                    using var reader = new StreamReader(Request.Body);
+                    var body = await reader.ReadToEndAsync();
+
+                    if (!string.IsNullOrEmpty(body))
+                    {
+                        // Remove quotes if it's a JSON string
+                        notificationId = body.Trim('"');
+
+                        // Try to parse as JSON object
+                        if (body.StartsWith("{"))
+                        {
+                            try
+                            {
+                                var json = System.Text.Json.JsonDocument.Parse(body);
+                                if (json.RootElement.TryGetProperty("notificationId", out var idProperty))
+                                {
+                                    notificationId = idProperty.GetString();
+                                }
+                            }
+                            catch
+                            {
+                                // If JSON parsing fails, use body as-is
+                                notificationId = body.Trim('"');
+                            }
+                        }
+                    }
+                }
+
                 if (string.IsNullOrEmpty(notificationId))
                 {
                     return new JsonResult(new { success = false, message = "Notification ID is required" });
                 }
 
                 var result = await _notificationServiceImpl.MarkAsReadAsync(User, notificationId);
+
+                _logger.LogInformation("Mark as read result for notification {NotificationId}: Success={Success}, Message={Message}",
+                    notificationId, result.Success, result.Message);
+
                 return new JsonResult(new { success = result.Success, message = result.Message });
             }
             catch (Exception ex)

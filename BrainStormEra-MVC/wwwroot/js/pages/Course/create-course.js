@@ -186,7 +186,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function selectCategory(category) {
     // Validate category object
     if (!category || !category.CategoryId || !category.CategoryName) {
-      console.error("Invalid category object:", category);
+      // Invalid category object
       return;
     }
 
@@ -408,7 +408,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Let the form submit naturally
     });
   } else {
-    console.error("Form with ID 'createCourseForm' not found!");
+    // Form with ID 'createCourseForm' not found!
   }
 
   // Initialize everything

@@ -63,7 +63,11 @@
 .modal-header {
   border-bottom: 1px solid #e9ecef;
   border-radius: var(--notification-radius) var(--notification-radius) 0 0;
-  background: linear-gradient(135deg, var(--notification-primary), var(--notification-secondary));
+  background: linear-gradient(
+    135deg,
+    var(--notification-primary),
+    var(--notification-secondary)
+  );
   color: white;
   padding: 1.5rem;
 }
@@ -95,7 +99,11 @@
 
 /* Enhanced buttons */
 .create-notification-btn {
-  background: linear-gradient(135deg, var(--notification-primary), var(--notification-secondary));
+  background: linear-gradient(
+    135deg,
+    var(--notification-primary),
+    var(--notification-secondary)
+  );
   border: none;
   border-radius: 50%;
   width: 45px;
@@ -129,7 +137,8 @@
   margin-bottom: 0.5rem;
 }
 
-.form-control, .form-select {
+.form-control,
+.form-select {
   border: 1px solid var(--notification-border);
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;
@@ -137,7 +146,8 @@
   box-shadow: none;
 }
 
-.form-control:focus, .form-select:focus {
+.form-control:focus,
+.form-select:focus {
   border-color: var(--notification-primary);
   box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
 }
@@ -154,7 +164,11 @@ textarea.form-control {
 }
 
 .modal-footer .btn-primary {
-  background: linear-gradient(135deg, var(--notification-primary), var(--notification-secondary));
+  background: linear-gradient(
+    135deg,
+    var(--notification-primary),
+    var(--notification-secondary)
+  );
   color: white;
   border: none;
   display: flex;
@@ -178,36 +192,199 @@ textarea.form-control {
   }
 }
 
+/* Enhanced Notification States */
+.notification-item {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.notification-item.unread {
+  background: linear-gradient(
+    135deg,
+    rgba(52, 152, 219, 0.12),
+    rgba(41, 128, 185, 0.06)
+  ) !important;
+  border-left: 4px solid #3498db !important;
+  font-weight: 500 !important;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.15);
+}
+
+.notification-item.unread .notification-title {
+  color: #2980b9 !important;
+  font-weight: 700 !important;
+}
+
+.notification-item.unread .notification-content {
+  color: #34495e !important;
+}
+
+.notification-item.read {
+  background: #ffffff !important;
+  border-left: 4px solid transparent !important;
+  font-weight: 400 !important;
+  color: #6c757d !important;
+}
+
+.notification-item.read .notification-title {
+  color: #495057 !important;
+  font-weight: 600 !important;
+}
+
+.notification-item.read .notification-content {
+  color: #6c757d !important;
+}
+
+/* Mark as Read Button Styling */
+.mark-read-btn {
+  background: linear-gradient(135deg, #00b894, #00a085);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+  box-shadow: 0 2px 6px rgba(0, 184, 148, 0.25);
+}
+
+.mark-read-btn:hover {
+  background: linear-gradient(135deg, #00a085, #008f72);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 184, 148, 0.35);
+  color: white;
+}
+
+.mark-read-btn:active {
+  transform: translateY(0);
+}
+
+/* Edit and Delete Button Styling */
+.edit-btn {
+  background: linear-gradient(135deg, #fdcb6e, #e17055);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 6px rgba(253, 203, 110, 0.25);
+}
+
+.edit-btn:hover {
+  background: linear-gradient(135deg, #e17055, #d63031);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(253, 203, 110, 0.35);
+  color: white;
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #e17055, #d63031);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 6px rgba(225, 112, 85, 0.25);
+}
+
+.delete-btn:hover {
+  background: linear-gradient(135deg, #d63031, #b71c1c);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(225, 112, 85, 0.35);
+  color: white;
+}
+
+/* Success Animation */
+.notification-item.read-success {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 184, 148, 0.15),
+    rgba(0, 166, 134, 0.08)
+  ) !important;
+  transform: scale(1.01);
+  box-shadow: 0 4px 20px rgba(0, 184, 148, 0.3);
+  border-left: 4px solid #00b894 !important;
+}
+
+/* Badge Styling */
+.notification-item .badge.bg-primary {
+  background: linear-gradient(135deg, #3498db, #2980b9) !important;
+  animation: pulse 1.5s infinite;
+}
+
+.notification-item .badge.bg-info {
+  background: linear-gradient(135deg, #74b9ff, #0984e3) !important;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Notification Actions Container */
+.notification-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Enhanced hover effects */
+.notification-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.notification-item.unread:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(52, 152, 219, 0.18),
+    rgba(41, 128, 185, 0.1)
+  ) !important;
+  box-shadow: 0 4px 20px rgba(52, 152, 219, 0.25);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .modal-dialog {
     margin: 1rem;
   }
-  
+
   .page-header {
     padding: 1.5rem;
   }
-  
+
   .page-title {
     font-size: 2rem;
   }
-  
+
   .stats-card {
     padding: 1.5rem;
   }
-  
+
   .stat-number {
     font-size: 2rem;
   }
-  
-  .form-control, .form-select {
+
+  .form-control,
+  .form-select {
     padding: 0.5rem 0.75rem;
   }
-  
+
   .modal-body {
     padding: 1.5rem;
   }
-  
+
   .btn {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
@@ -218,20 +395,20 @@ textarea.form-control {
   .row > [class*="col-"] {
     margin-bottom: 1rem;
   }
-  
+
   .modal-title {
     font-size: 1.2rem;
   }
-  
+
   .modal-body {
     padding: 1rem;
   }
-  
+
   .notification-controls {
     flex-wrap: wrap;
     gap: 0.5rem;
   }
-  
+
   .notification-controls .btn {
     width: 100%;
     margin-bottom: 0.5rem;

@@ -62,7 +62,6 @@ class ChatUrlManager {
    */
   async generateConversationUrls(userId) {
     // Share conversation functionality removed
-    console.log("Conversation URL generation has been disabled");
     return null;
   }
 
@@ -89,7 +88,6 @@ class ChatUrlManager {
         throw new Error(result.message || "Failed to generate message URL");
       }
     } catch (error) {
-      console.error("Error generating message URL:", error);
       this.showError("Failed to generate message URL");
       return null;
     }
@@ -117,7 +115,6 @@ class ChatUrlManager {
         throw new Error(result.message || "Failed to generate quick chat URL");
       }
     } catch (error) {
-      console.error("Error generating quick chat URL:", error);
       this.showError("Failed to generate quick chat URL");
       return null;
     }
@@ -130,7 +127,6 @@ class ChatUrlManager {
    */
   async showShareModal(userId) {
     // Share conversation functionality removed
-    console.log("Share conversation functionality has been disabled");
     return;
   }
 
