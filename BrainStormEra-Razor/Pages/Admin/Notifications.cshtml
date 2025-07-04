@@ -315,29 +315,18 @@
     <script>
         // Initialize notification styling on page load
         $(document).ready(function() {
-            console.log("🚀 Admin Notifications page loaded");
-            console.log("📊 Page stats:", {
-                totalNotifications: $('.notification-item').length,
-                unreadNotifications: $('.notification-item.unread').length,
-                readNotifications: $('.notification-item.read').length
-            });
-            
             // Ensure proper styling is applied to all notifications
             $('.notification-item').each(function(index) {
                 const $item = $(this);
                 const notificationId = $item.data('notification-id');
                 const isUnread = $item.hasClass('unread');
                 
-                console.log(`📧 Notification ${index + 1}: ID=${notificationId}, Unread=${isUnread}`);
-                
                 // Apply appropriate styling based on read status
                 if (isUnread) {
                     $item.css('transition', 'all 0.3s ease');
-                    console.log(`🎨 Applied unread styling to notification: ${notificationId}`);
                 } else {
                     // Ensure read notifications have proper styling
                     $item.addClass('read');
-                    console.log(`👁️ Applied read styling to notification: ${notificationId}`);
                 }
             });
 
@@ -357,22 +346,16 @@
             
             // Debug function to manually test mark as read
             window.debugMarkAsRead = function(notificationId) {
-                console.log("🧪 DEBUG: Manual Mark as Read test for notification:", notificationId);
                 const button = $(`.mark-read-btn[data-notification-id="${notificationId}"]`);
                 if (button.length && window.adminNotifications) {
                     window.adminNotifications.markAsRead(notificationId, button[0]);
-                } else {
-                    console.error("❌ Button or AdminNotifications instance not found");
                 }
             };
             
             // Debug function to manually test mark all as read
             window.debugMarkAllAsRead = function() {
-                console.log("🧪 DEBUG: Manual Mark All as Read test");
                 if (window.adminNotifications) {
                     window.adminNotifications.markAllAsRead();
-                } else {
-                    console.error("❌ AdminNotifications instance not found");
                 }
             };
             
@@ -380,52 +363,33 @@
             window.debugNotificationStates = function() {
                 if (window.adminNotifications) {
                     window.adminNotifications.debugNotificationStates();
-                } else {
-                    console.error("❌ AdminNotifications instance not found");
                 }
             };
             
-            console.log("🛠️ Debug functions available:");
-            console.log("   - debugMarkAsRead(notificationId)");
-            console.log("   - debugMarkAllAsRead()");
-            console.log("   - debugNotificationStates()");
-            console.log("   - debugCheckDatabaseState()");
-            console.log("   - debugDOMElements()");
-            console.log("   - debugTriggerEvent(notificationId, eventType)");
             
             // Debug function to check database state
             window.debugCheckDatabaseState = function() {
-                console.log("🔍 DEBUG: Checking database state...");
                 if (window.adminNotifications) {
                     window.adminNotifications.debugCheckDatabaseState();
-                } else {
-                    console.error("❌ AdminNotifications instance not found");
                 }
             };
             
             // Debug function to inspect DOM
             window.debugDOMElements = function() {
-                console.log("🔍 DEBUG: Inspecting DOM elements...");
                 if (window.adminNotifications) {
                     window.adminNotifications.debugDOMElements();
-                } else {
-                    console.error("❌ AdminNotifications instance not found");
                 }
             };
             
             // Debug function to manually trigger events
             window.debugTriggerEvent = function(notificationId, eventType = "mark-read") {
-                console.log(`🧪 DEBUG: Manually triggering ${eventType} event...`);
                 if (window.adminNotifications) {
                     window.adminNotifications.debugTriggerEvent(notificationId, eventType);
-                } else {
-                    console.error("❌ AdminNotifications instance not found");
                 }
             };
             
             // Quick debug function to test all functionality
             window.debugTestAll = function() {
-                console.log("🧪 DEBUG: Testing all functionality...");
                 debugDOMElements();
                 debugNotificationStates();
                 
@@ -434,15 +398,8 @@
                 const editBtn = $(".edit-btn").first();
                 const deleteBtn = $(".delete-btn").first();
                 
-                console.log("🎯 Testing button clicks:");
-                console.log("  Mark Read buttons available:", $(".mark-read-btn").length);
-                console.log("  Edit buttons available:", $(".edit-btn").length);
-                console.log("  Delete buttons available:", $(".delete-btn").length);
-                
                 if (markReadBtn.length > 0) {
-                    console.log("  Testing mark-read button click simulation...");
                     const notificationId = markReadBtn.data("notification-id");
-                    console.log("  Would test notification ID:", notificationId);
                 }
             };
         });
@@ -452,7 +409,6 @@
             // Only create instance if not already created
             if (!window.adminNotifications) {
                 window.adminNotifications = new AdminNotifications();
-                console.log("✅ AdminNotifications instance created and stored globally");
             }
         });
     </script>
