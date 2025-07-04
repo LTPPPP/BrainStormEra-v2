@@ -1,0 +1,3 @@
+# Ignore uploaded achievement icons but keep the directory structure
+*
+!.gitignore

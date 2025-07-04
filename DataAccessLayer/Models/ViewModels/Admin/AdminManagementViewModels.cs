@@ -496,4 +496,12 @@ namespace DataAccessLayer.Models.ViewModels
         [StringLength(200)]
         public string? Description { get; set; }
     }
+
+    // Shared utility classes for admin operations
+    public class IconUploadResult
+    {
+        public bool Success { get; set; }
+        public string? IconPath { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
 }

@@ -57,5 +57,11 @@ namespace DataAccessLayer.Repositories.Interfaces
         // Soft delete support methods
         Task<bool> RestoreNotificationAsync(string notificationId, string userId);
         Task<List<Notification>> GetDeletedNotificationsAsync(string userId, int page = 1, int pageSize = 20);
+
+        // Admin global operations for notifications
+        Task<Notification?> GetNotificationByIdAsync(string notificationId);
+        Task<List<Notification>> GetRelatedNotificationsAsync(string title, string content, DateTime createdAt, string? courseId = null);
+        Task<bool> DeleteNotificationsBatchAsync(List<string> notificationIds);
+        Task<bool> UpdateNotificationsBatchAsync(List<string> notificationIds, string newTitle, string newContent, string? newType = null);
     }
 }

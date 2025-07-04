@@ -14,8 +14,6 @@ let currentTargetType = "MultipleUsers";
 
 // Initialize notification create page
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("Notification Create page loaded");
-
   // Get current user ID from meta tag or session
   currentUserId =
     document.querySelector('meta[name="user-id"]')?.getAttribute("content") ||
@@ -91,7 +89,7 @@ function initializeUserTable() {
 // Load all users from server
 function loadAllUsers() {
   if (!getAllUsersUrl) {
-    console.warn("Get all users URL not configured, using mock data");
+    // Get all users URL not configured, using mock data
     loadMockUsers();
     return;
   }
@@ -123,8 +121,7 @@ function loadAllUsers() {
       }
     })
     .catch((error) => {
-      console.error("Error loading users:", error);
-      console.log("Falling back to mock data");
+      // Falling back to mock data
       loadMockUsers();
     });
 }
@@ -416,7 +413,7 @@ function loadCourses() {
   const courseFilterUsers = document.getElementById("courseFilterUsers");
 
   if (!getCoursesUrl) {
-    console.warn("Get courses URL not configured, using mock data");
+    // Get courses URL not configured, using mock data
     loadMockCourses();
     return;
   }
@@ -431,7 +428,6 @@ function loadCourses() {
       populateCourseFilters();
     })
     .catch((error) => {
-      console.error("Error loading courses:", error);
       loadMockCourses();
     });
 }

@@ -490,5 +490,132 @@ namespace DataAccessLayer.Repositories
                 throw;
             }
         }
+
+        #region Admin Global Operations
+
+        public async Task<Notification?> GetNotificationByIdAsync(string notificationId)
+        {
+            try
+            {
+                return await _dbSet
+                    .Include(n => n.Course)
+                    .Include(n => n.User)
+                    .FirstOrDefaultAsync(n => n.NotificationId == notificationId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting notification by ID: {NotificationId}", notificationId);
+                throw;
+            }
+        }
+
+        public async Task<List<Notification>> GetRelatedNotificationsAsync(string title, string content, DateTime createdAt, string? courseId = null)
+        {
+            try
+            {
+                // Find notifications with same title, content, and created within a small time window (same batch)
+                var timeWindow = TimeSpan.FromMinutes(5); // 5-minute window for batch operations
+                var startTime = createdAt.AddTicks(-timeWindow.Ticks);
+                var endTime = createdAt.AddTicks(timeWindow.Ticks);
+
+                var query = _dbSet
+                    .Where(n => n.NotificationTitle == title &&
+                               n.NotificationContent == content &&
+                               n.NotificationCreatedAt >= startTime &&
+                               n.NotificationCreatedAt <= endTime &&
+                               n.NotificationType != "DELETED");
+
+                // If courseId is specified, include it in the filter
+                if (!string.IsNullOrEmpty(courseId))
+                {
+                    query = query.Where(n => n.CourseId == courseId);
+                }
+
+                return await query
+                    .Include(n => n.Course)
+                    .Include(n => n.User)
+                    .OrderBy(n => n.NotificationCreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting related notifications for title: {Title}", title);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteNotificationsBatchAsync(List<string> notificationIds)
+        {
+            try
+            {
+                if (notificationIds == null || !notificationIds.Any())
+                    return false;
+
+                var notifications = await _dbSet
+                    .Where(n => notificationIds.Contains(n.NotificationId))
+                    .ToListAsync();
+
+                if (!notifications.Any())
+                    return false;
+
+                // Soft delete: Mark as deleted
+                foreach (var notification in notifications)
+                {
+                    notification.NotificationType = "DELETED";
+                    notification.ReadAt = DateTime.UtcNow;
+                    notification.IsRead = true;
+                }
+
+                var result = await SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error batch deleting notifications");
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateNotificationsBatchAsync(List<string> notificationIds, string newTitle, string newContent, string? newType = null)
+        {
+            try
+            {
+                if (notificationIds == null || !notificationIds.Any())
+                    return false;
+
+                var notifications = await _dbSet
+                    .Where(n => notificationIds.Contains(n.NotificationId) && n.NotificationType != "DELETED")
+                    .ToListAsync();
+
+                if (!notifications.Any())
+                    return false;
+
+                // Update all notifications
+                foreach (var notification in notifications)
+                {
+                    notification.NotificationTitle = newTitle;
+                    notification.NotificationContent = newContent;
+
+                    if (!string.IsNullOrEmpty(newType))
+                    {
+                        notification.NotificationType = newType;
+                    }
+
+                    // Reset read status for updated notifications to ensure users see the changes
+                    notification.IsRead = false;
+                    notification.ReadAt = null;
+                }
+
+                var result = await SaveChangesAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error batch updating notifications");
+                throw;
+            }
+        }
+
+        #endregion
     }
 }

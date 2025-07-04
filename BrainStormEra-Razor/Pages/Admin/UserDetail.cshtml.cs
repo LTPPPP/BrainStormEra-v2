@@ -30,19 +30,16 @@ namespace BrainStormEra_Razor.Pages.Admin
                 {
                     TempData["ErrorMessage"] = "User ID is required.";
                     return RedirectToPage("/Admin/Users");
-                }                // Use user ID directly
-                _logger.LogInformation("Using userId: {UserId}", userId);
+                }
 
-                // Get user details
-                var allUsers = await _adminService.GetAllUsersAsync();
-                _logger.LogInformation("Retrieved {UserCount} users from service", allUsers.Users.Count);
+                // Use user ID directly to get user details
+                _logger.LogInformation("Getting user details for userId: {UserId}", userId);
 
-                UserDetail = allUsers.Users.FirstOrDefault(u => u.UserId == userId);
+                UserDetail = await _adminService.GetUserDetailAsync(userId);
 
                 if (UserDetail == null)
                 {
-                    _logger.LogWarning("User not found with userId: {UserId}. Available user IDs: {UserIds}",
-                        userId, string.Join(", ", allUsers.Users.Select(u => u.UserId).Take(5)));
+                    _logger.LogWarning("User not found with userId: {UserId}", userId);
                     TempData["ErrorMessage"] = "User not found.";
                     return RedirectToPage("/Admin/Users");
                 }
@@ -50,8 +47,8 @@ namespace BrainStormEra_Razor.Pages.Admin
                 // Store user ID for UI
                 UserId = userId;
 
-                _logger.LogInformation("Admin {AdminName} viewed details for user {UserId}",
-                    HttpContext.User?.Identity?.Name, userId);
+                _logger.LogInformation("Admin {AdminName} viewed details for user {UserId} - {UserName}",
+                    HttpContext.User?.Identity?.Name, userId, UserDetail.FullName);
 
                 return Page();
             }

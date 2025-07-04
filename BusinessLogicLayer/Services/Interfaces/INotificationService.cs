@@ -9,6 +9,7 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<List<Notification>> GetAllNotificationsForUserAsync(string userId, int page = 1, int pageSize = 10);
         Task<int> GetUnreadNotificationCountAsync(string userId);
         Task<Notification> CreateNotificationAsync(string userId, string title, string content, string? type = null, string? courseId = null, string? createdBy = null);
+        Task<List<Notification>> CreateBulkNotificationsAsync(List<string> userIds, string title, string content, string? type = null, string? courseId = null, string? createdBy = null);
         Task<Notification?> GetNotificationForEditAsync(string notificationId, string userId);
         Task<bool> UpdateNotificationAsync(string notificationId, string userId, string title, string content, string? type);
         Task MarkAsReadAsync(string notificationId, string userId);
@@ -22,6 +23,10 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<bool> RestoreNotificationAsync(string notificationId, string userId);
         Task<List<Notification>> GetDeletedNotificationsAsync(string userId, int page = 1, int pageSize = 20);
         Task<List<Account>> SearchUsersAsync(string searchTerm);
+
+        // Admin global operations
+        Task<bool> AdminDeleteNotificationGloballyAsync(string notificationId, string adminUserId);
+        Task<bool> AdminUpdateNotificationGloballyAsync(string notificationId, string adminUserId, string newTitle, string newContent, string? newType = null);
     }
 }
 

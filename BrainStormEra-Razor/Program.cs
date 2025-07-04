@@ -15,11 +15,17 @@ namespace BrainStormEra_Razor
             // Add services to the container.
             builder.Services.AddRazorPages();
 
+            // Add SignalR
+            builder.Services.AddSignalR();
+
             // Add HttpContextAccessor
             builder.Services.AddHttpContextAccessor();
 
             // Add Memory Cache
             builder.Services.AddMemoryCache();
+
+            // Add SignalR
+            builder.Services.AddSignalR();
 
             // Add Entity Framework
             builder.Services.AddDbContext<BrainStormEraContext>(options =>
@@ -50,12 +56,18 @@ namespace BrainStormEra_Razor
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.INotificationRepo, DataAccessLayer.Repositories.NotificationRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IQuestionRepo, DataAccessLayer.Repositories.QuestionRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IQuizRepo, DataAccessLayer.Repositories.QuizRepo>();
-            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();            // Register Service Interfaces and Implementations
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();
+
+            // Register Service Interfaces and Implementations
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.UserService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAvatarService, BusinessLogicLayer.Services.AvatarService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementIconService, BusinessLogicLayer.Services.AchievementIconService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAdminService, BusinessLogicLayer.Services.AdminService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEmailService, BusinessLogicLayer.Services.EmailService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.INotificationService, BusinessLogicLayer.Services.NotificationService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseService, BusinessLogicLayer.Services.CourseService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.EnrollmentService>();
 
             // Register other Services from BusinessLogicLayer
             builder.Services.AddScoped<BusinessLogicLayer.Services.UserService>();
@@ -63,9 +75,14 @@ namespace BrainStormEra_Razor
             builder.Services.AddScoped<BusinessLogicLayer.Services.AchievementIconService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.MediaPathService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.AdminService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.EmailService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.NotificationService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.CourseService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.EnrollmentService>();
 
             // Register ServiceImpls from BusinessLogicLayer  
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.NotificationServiceImpl>();
 
 
 
@@ -106,6 +123,9 @@ namespace BrainStormEra_Razor
             app.UseAuthorization();
 
             app.MapRazorPages();
+
+            // Map SignalR hubs
+            app.MapHub<BusinessLogicLayer.Hubs.NotificationHub>("/notificationHub");
 
             // Debug endpoint for SharedMedia
             app.MapGet("/debug/sharedmedia", () =>

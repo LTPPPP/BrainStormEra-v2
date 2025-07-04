@@ -45,6 +45,25 @@ namespace BusinessLogicLayer.Services
             return await _notificationRepo.GetUnreadNotificationCountAsync(userId);
         }
 
+        public async Task<List<Notification>> CreateBulkNotificationsAsync(List<string> userIds, string title, string content, string? type = null, string? courseId = null, string? createdBy = null)
+        {
+            var notifications = userIds.Select(userId => new Notification
+            {
+                NotificationId = Guid.NewGuid().ToString(),
+                UserId = userId,
+                CourseId = courseId,
+                NotificationTitle = title,
+                NotificationContent = content,
+                NotificationType = type ?? "General",
+                IsRead = false,
+                NotificationCreatedAt = DateTime.Now,
+                CreatedBy = createdBy
+            }).ToList();
+
+            await _notificationRepo.CreateBulkNotificationsAsync(notifications);
+            return notifications;
+        }
+
         public async Task<Notification> CreateNotificationAsync(string userId, string title, string content, string? type = null, string? courseId = null, string? createdBy = null)
         {
             var notification = new Notification
@@ -77,6 +96,119 @@ namespace BusinessLogicLayer.Services
         public async Task DeleteNotificationAsync(string notificationId, string userId)
         {
             await _notificationRepo.DeleteNotificationAsync(notificationId, userId);
+        }
+
+        /// <summary>
+        /// Admin function to delete notification globally (affects all users who received this notification)
+        /// </summary>
+        public async Task<bool> AdminDeleteNotificationGloballyAsync(string notificationId, string adminUserId)
+        {
+            try
+            {
+                // First get the notification to identify related notifications
+                var notification = await _notificationRepo.GetNotificationByIdAsync(notificationId);
+                if (notification == null)
+                {
+                    _logger.LogWarning("Notification {NotificationId} not found for global delete", notificationId);
+                    return false;
+                }
+
+                // Find all notifications with same title, content, and created time (batch notifications)
+                var relatedNotifications = await _notificationRepo.GetRelatedNotificationsAsync(
+                    notification.NotificationTitle,
+                    notification.NotificationContent,
+                    notification.NotificationCreatedAt,
+                    notification.CourseId
+                );
+
+                if (relatedNotifications.Any())
+                {
+                    // Delete all related notifications
+                    var deleteResult = await _notificationRepo.DeleteNotificationsBatchAsync(
+                        relatedNotifications.Select(n => n.NotificationId).ToList()
+                    );
+
+                    _logger.LogInformation("Admin {AdminUserId} globally deleted {Count} related notifications for notification {NotificationId}",
+                        adminUserId, relatedNotifications.Count, notificationId);
+
+                    // Send real-time notifications to affected users
+                    foreach (var relatedNotification in relatedNotifications)
+                    {
+                        await _hubContext.Clients.Group($"User_{relatedNotification.UserId}")
+                            .SendAsync("NotificationDeleted", new { id = relatedNotification.NotificationId });
+                    }
+
+                    return deleteResult;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in admin global delete for notification {NotificationId}", notificationId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Admin function to update notification globally (affects all users who received this notification)
+        /// </summary>
+        public async Task<bool> AdminUpdateNotificationGloballyAsync(string notificationId, string adminUserId, string newTitle, string newContent, string? newType = null)
+        {
+            try
+            {
+                // First get the notification to identify related notifications
+                var notification = await _notificationRepo.GetNotificationByIdAsync(notificationId);
+                if (notification == null)
+                {
+                    _logger.LogWarning("Notification {NotificationId} not found for global update", notificationId);
+                    return false;
+                }
+
+                // Find all notifications with same title, content, and created time (batch notifications)
+                var relatedNotifications = await _notificationRepo.GetRelatedNotificationsAsync(
+                    notification.NotificationTitle,
+                    notification.NotificationContent,
+                    notification.NotificationCreatedAt,
+                    notification.CourseId
+                );
+
+                if (relatedNotifications.Any())
+                {
+                    // Update all related notifications
+                    var updateResult = await _notificationRepo.UpdateNotificationsBatchAsync(
+                        relatedNotifications.Select(n => n.NotificationId).ToList(),
+                        newTitle,
+                        newContent,
+                        newType
+                    );
+
+                    _logger.LogInformation("Admin {AdminUserId} globally updated {Count} related notifications for notification {NotificationId}",
+                        adminUserId, relatedNotifications.Count, notificationId);
+
+                    // Send real-time notifications to affected users
+                    foreach (var relatedNotification in relatedNotifications)
+                    {
+                        await _hubContext.Clients.Group($"User_{relatedNotification.UserId}")
+                            .SendAsync("NotificationUpdated", new
+                            {
+                                id = relatedNotification.NotificationId,
+                                title = newTitle,
+                                content = newContent,
+                                type = newType ?? relatedNotification.NotificationType
+                            });
+                    }
+
+                    return updateResult;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in admin global update for notification {NotificationId}", notificationId);
+                return false;
+            }
         }
 
         public async Task<bool> SendToUserAsync(string userId, string title, string content, string? type = null, string? courseId = null, string? createdBy = null)
@@ -123,13 +255,14 @@ namespace BusinessLogicLayer.Services
                     enrolledUsers = enrolledUsers.Where(u => u != excludeUserId).ToList();
                 }
 
-                // Create notifications for all enrolled users
-                var tasks = enrolledUsers.Select(async userId =>
+                if (!enrolledUsers.Any())
                 {
-                    await CreateNotificationAsync(userId, title, content, type, courseId, createdBy);
-                });
+                    _logger.LogWarning("No enrolled users found for course {CourseId}", courseId);
+                    return true; // Not an error, just no users to notify
+                }
 
-                await Task.WhenAll(tasks);
+                // Create notifications in bulk (single transaction)
+                var notifications = await CreateBulkNotificationsAsync(enrolledUsers, title, content, type, courseId, createdBy);
 
                 // Send real-time notifications via SignalR
                 await _hubContext.Clients.Group($"Course_{courseId}").SendAsync("ReceiveNotification", new
@@ -142,20 +275,18 @@ namespace BusinessLogicLayer.Services
                 });
 
                 // Update unread counts for affected users
-                foreach (var userId in enrolledUsers)
+                foreach (var notification in notifications)
                 {
-                    if (excludeUserId == null || userId != excludeUserId)
-                    {
-                        var unreadCount = await GetUnreadNotificationCountAsync(userId);
-                        await _hubContext.Clients.Group($"User_{userId}").SendAsync("UpdateUnreadCount", unreadCount);
-                    }
+                    var unreadCount = await GetUnreadNotificationCountAsync(notification.UserId);
+                    await _hubContext.Clients.Group($"User_{notification.UserId}").SendAsync("UpdateUnreadCount", unreadCount);
                 }
 
+                _logger.LogInformation("Successfully sent notification to {Count} users in course {CourseId}", enrolledUsers.Count, courseId);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error sending notification to course {courseId}");
+                _logger.LogError(ex, "Error sending notification to course {CourseId}", courseId);
                 return false;
             }
         }
@@ -170,28 +301,26 @@ namespace BusinessLogicLayer.Services
                     return false;
                 }
 
-                // Create notifications for all specified users
-                var tasks = userIds.Select(async userId =>
-                {
-                    await CreateNotificationAsync(userId, title, content, type, courseId, createdBy);
-                });
-
-                await Task.WhenAll(tasks);
+                // Create notifications in bulk (single transaction)
+                var notifications = await CreateBulkNotificationsAsync(userIds, title, content, type, courseId, createdBy);
 
                 // Send real-time notifications via SignalR to each user
-                foreach (var userId in userIds)
+                foreach (var notification in notifications)
                 {
-                    await _hubContext.Clients.Group($"User_{userId}").SendAsync("ReceiveNotification", new
+                    await _hubContext.Clients.Group($"User_{notification.UserId}").SendAsync("ReceiveNotification", new
                     {
-                        title = title,
-                        content = content,
-                        type = type,
-                        createdAt = DateTime.Now
+                        id = notification.NotificationId,
+                        title = notification.NotificationTitle,
+                        content = notification.NotificationContent,
+                        type = notification.NotificationType,
+                        courseId = notification.CourseId,
+                        createdAt = notification.NotificationCreatedAt,
+                        isRead = notification.IsRead
                     });
 
                     // Update unread count for each user
-                    var unreadCount = await GetUnreadNotificationCountAsync(userId);
-                    await _hubContext.Clients.Group($"User_{userId}").SendAsync("UpdateUnreadCount", unreadCount);
+                    var unreadCount = await GetUnreadNotificationCountAsync(notification.UserId);
+                    await _hubContext.Clients.Group($"User_{notification.UserId}").SendAsync("UpdateUnreadCount", unreadCount);
                 }
 
                 _logger.LogInformation("Successfully sent notification to {Count} users", userIds.Count);
@@ -211,13 +340,14 @@ namespace BusinessLogicLayer.Services
                 // Get all users with the specified role
                 var users = await _userRepo.GetUserIdsByRoleAsync(role);
 
-                // Create notifications for all users with the role
-                var tasks = users.Select(async userId =>
+                if (!users.Any())
                 {
-                    await CreateNotificationAsync(userId, title, content, type, null, createdBy);
-                });
+                    _logger.LogWarning("No users found with role {Role}", role);
+                    return true; // Not an error, just no users to notify
+                }
 
-                await Task.WhenAll(tasks);
+                // Create notifications in bulk (single transaction)
+                var notifications = await CreateBulkNotificationsAsync(users, title, content, type, null, createdBy);
 
                 // Send real-time notifications via SignalR
                 await _hubContext.Clients.Group($"Role_{role}").SendAsync("ReceiveNotification", new
@@ -229,17 +359,18 @@ namespace BusinessLogicLayer.Services
                 });
 
                 // Update unread counts for affected users
-                foreach (var userId in users)
+                foreach (var notification in notifications)
                 {
-                    var unreadCount = await GetUnreadNotificationCountAsync(userId);
-                    await _hubContext.Clients.Group($"User_{userId}").SendAsync("UpdateUnreadCount", unreadCount);
+                    var unreadCount = await GetUnreadNotificationCountAsync(notification.UserId);
+                    await _hubContext.Clients.Group($"User_{notification.UserId}").SendAsync("UpdateUnreadCount", unreadCount);
                 }
 
+                _logger.LogInformation("Successfully sent notification to {Count} users with role {Role}", users.Count, role);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error sending notification to role {role}");
+                _logger.LogError(ex, "Error sending notification to role {Role}", role);
                 return false;
             }
         }
@@ -251,13 +382,14 @@ namespace BusinessLogicLayer.Services
                 // Get all active users (not banned)
                 var users = await _userRepo.GetAllActiveUserIdsAsync();
 
-                // Create notifications for all users
-                var tasks = users.Select(async userId =>
+                if (!users.Any())
                 {
-                    await CreateNotificationAsync(userId, title, content, type, null, createdBy);
-                });
+                    _logger.LogWarning("No active users found to send notification to");
+                    return true; // Not an error, just no users to notify
+                }
 
-                await Task.WhenAll(tasks);
+                // Create notifications in bulk (single transaction)
+                var notifications = await CreateBulkNotificationsAsync(users, title, content, type, null, createdBy);
 
                 // Send real-time notifications via SignalR to all connected clients
                 await _hubContext.Clients.All.SendAsync("ReceiveNotification", new
@@ -269,17 +401,18 @@ namespace BusinessLogicLayer.Services
                 });
 
                 // Update unread counts for all users
-                foreach (var userId in users)
+                foreach (var notification in notifications)
                 {
-                    var unreadCount = await GetUnreadNotificationCountAsync(userId);
-                    await _hubContext.Clients.Group($"User_{userId}").SendAsync("UpdateUnreadCount", unreadCount);
+                    var unreadCount = await GetUnreadNotificationCountAsync(notification.UserId);
+                    await _hubContext.Clients.Group($"User_{notification.UserId}").SendAsync("UpdateUnreadCount", unreadCount);
                 }
 
+                _logger.LogInformation("Successfully sent notification to all {Count} active users", users.Count);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error sending notification to all users");
+                _logger.LogError(ex, "Error sending notification to all users");
                 return false;
             }
         }

@@ -141,10 +141,10 @@
                             <input type="number" id="pointsAmount" min="1" step="1" value="100" class="form-control" placeholder="Enter points" />
                         </div>
                         <div class="point-buttons">
-                            <button type="button" class="btn btn-success btn-sm" onclick="updateUserPoints('@Model.EncodedUserId', 'add')">
+                            <button type="button" class="btn btn-success btn-sm" onclick="updateUserPoints('@Model.UserId', 'add')">
                                 <i class="fas fa-plus"></i> Add Points
                             </button>
-                            <button type="button" class="btn btn-warning btn-sm" onclick="updateUserPoints('@Model.EncodedUserId', 'subtract')">
+                            <button type="button" class="btn btn-warning btn-sm" onclick="updateUserPoints('@Model.UserId', 'subtract')">
                                 <i class="fas fa-minus"></i> Subtract Points
                             </button>
                         </div>
@@ -196,13 +196,13 @@
                 
                 @if (Model.UserDetail.IsBanned)
                 {
-                    <button type="button" class="btn btn-unban" onclick="updateUserStatus('@Model.EncodedUserId', false)">
+                    <button type="button" class="btn btn-unban" onclick="updateUserStatus('@Model.UserId', false)">
                         <i class="fas fa-unlock"></i>Unban User
                     </button>
                 }
                 else
                 {
-                    <button type="button" class="btn btn-ban" onclick="updateUserStatus('@Model.EncodedUserId', true)">
+                    <button type="button" class="btn btn-ban" onclick="updateUserStatus('@Model.UserId', true)">
                         <i class="fas fa-ban"></i>Ban User
                     </button>
                 }
@@ -240,7 +240,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     alert('An error occurred while updating user status');
                 });
             }
@@ -276,7 +275,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     alert('An error occurred while updating user points');
                 });
             }

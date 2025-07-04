@@ -20,11 +20,6 @@
                     <p class="hero-subtitle">Manage course approvals, content moderation, and instructor oversight</p>
                 </div>
             </div>
-            <div class="dashboard-actions">
-                <a href="/admin" class="action-btn secondary">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
-                </a>
-            </div>
             <div class="quick-stats">
                 <div class="stat-badge">
                     <span class="stat-value">@Model.CoursesData.TotalCourses</span>
@@ -168,13 +163,55 @@
         </form>
     </div>
 
+    <!-- Bulk Actions Bar -->
+    <div id="bulkActionsBar" class="bulk-actions-bar" style="display: none;">
+        <div class="bulk-actions-content">
+            <div class="bulk-selection-info">
+                <span id="selectedCount">0</span> courses selected
+            </div>
+            <div class="bulk-actions-buttons">
+                <button type="button" class="btn btn-success bulk-action-btn" id="bulkApproveBtn">
+                    <i class="fas fa-check"></i> Approve Selected
+                </button>
+                <button type="button" class="btn btn-warning bulk-action-btn" id="bulkRejectBtn">
+                    <i class="fas fa-times"></i> Reject Selected
+                </button>
+                <button type="button" class="btn btn-danger bulk-action-btn" id="bulkBanBtn">
+                    <i class="fas fa-ban"></i> Ban Selected
+                </button>
+                <button type="button" class="btn btn-secondary" id="clearSelectionBtn">
+                    <i class="fas fa-times"></i> Clear Selection
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Courses Grid -->
     @if (Model.CoursesData.Courses.Any())
     {
-        <div class="courses-grid">
+        <div class="courses-grid-container">
+            <div class="courses-grid-header">
+                <div class="grid-header-left">
+                    <label class="bulk-select-all">
+                        <input type="checkbox" id="selectAllCourses">
+                        <span class="checkmark"></span>
+                        Select All
+                    </label>
+                </div>
+                <div class="grid-header-right">
+                    <span class="courses-count">
+                        Showing @Model.CoursesData.Courses.Count of @Model.CoursesData.TotalCourses courses
+                    </span>
+                </div>
+            </div>
+            
+            <div class="courses-grid">
             @foreach (var course in Model.CoursesData.Courses)
             {
-                <div class="course-card">
+                <div class="course-card" data-course-id="@course.CourseId">
+                    <div class="course-selection">
+                        <input type="checkbox" class="course-select" value="@course.CourseId" data-course-name="@course.CourseName" data-status="@course.StatusText.ToLower()">
+                    </div>
                     <div class="course-image">
                         <img src="@course.CoursePicture" alt="@course.CourseName"
                              onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';" />
@@ -197,11 +234,72 @@
                         <div class="course-instructor">
                             <i class="fas fa-user"></i> @course.InstructorName
                         </div>
-                        <div class="course-stats">
-                            <span><i class="fas fa-users"></i> @course.EnrollmentCount</span>
-                            <span><i class="fas fa-star"></i> @course.AverageRating.ToString("F1")</span>
-                            <span><i class="fas fa-comments"></i> @course.ReviewCount</span>
-                        </div>
+                        
+                        @if (course.StatusText.ToLower() == "approved")
+                        {
+                            <!-- Enhanced stats for approved courses -->
+                            <div class="course-meta">
+                                <div class="meta-row">
+                                    <span class="meta-item">
+                                        <i class="fas fa-signal"></i> @course.DifficultyText
+                                    </span>
+                                    @if (course.EstimatedDuration.HasValue)
+                                    {
+                                        <span class="meta-item">
+                                            <i class="fas fa-clock"></i> @course.EstimatedDuration h
+                                        </span>
+                                    }
+                                </div>
+                                @if (course.Categories.Any())
+                                {
+                                    <div class="course-categories">
+                                        @foreach (var category in course.Categories.Take(2))
+                                        {
+                                            <span class="category-tag">@category</span>
+                                        }
+                                        @if (course.Categories.Count > 2)
+                                        {
+                                            <span class="category-more">+@(course.Categories.Count - 2)</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            
+                            <div class="course-stats approved">
+                                <span class="stat-item primary">
+                                    <i class="fas fa-users"></i> @course.EnrollmentCount
+                                    <small>enrolled</small>
+                                </span>
+                                <span class="stat-item primary">
+                                    <i class="fas fa-star"></i> @course.AverageRating.ToString("F1")
+                                    <small>rating</small>
+                                </span>
+                                <span class="stat-item primary">
+                                    <i class="fas fa-comments"></i> @course.ReviewCount
+                                    <small>reviews</small>
+                                </span>
+                                @if (course.Revenue > 0)
+                                {
+                                    <span class="stat-item revenue">
+                                        <i class="fas fa-dollar-sign"></i> @course.Revenue.ToString("N0")
+                                        <small>revenue</small>
+                                    </span>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Basic stats for non-approved courses -->
+                            <div class="course-stats basic">
+                                <span><i class="fas fa-calendar"></i> Created @course.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                @if (course.EstimatedDuration.HasValue)
+                                {
+                                    <span><i class="fas fa-clock"></i> @course.EstimatedDuration hours</span>
+                                }
+                                <span><i class="fas fa-signal"></i> @course.DifficultyText</span>
+                            </div>
+                        }
+                        
                         <div class="course-price">@course.PriceText</div>
                         <div class="course-actions">
                             <button type="button" class="btn-action btn-details" 
@@ -263,6 +361,7 @@
                     </div>
                 </div>
             }
+            </div>
         </div>
 
         <!-- Enhanced Pagination -->

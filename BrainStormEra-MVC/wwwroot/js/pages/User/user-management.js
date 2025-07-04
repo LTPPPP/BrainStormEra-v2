@@ -37,7 +37,7 @@ class UserManagement {
         img.onerror = () => {
           // If image fails to load, use default avatar
           const defaultAvatar = "/SharedMedia/defaults/default-avatar.svg";
-    const SHARED_MEDIA_AVATARS = "/SharedMedia/avatars/";
+          const SHARED_MEDIA_AVATARS = "/SharedMedia/avatars/";
           this.avatarCache.set(userId, defaultAvatar);
           if (avatarImg.src !== defaultAvatar) {
             avatarImg.src = defaultAvatar;
@@ -597,7 +597,10 @@ class UserManagement {
                 avatarImg.onerror = function () {
                   this.onerror = null;
                   this.src = "/SharedMedia/defaults/default-avatar.svg";
-                  avatarCache.set(userId, "/SharedMedia/defaults/default-avatar.svg");
+                  avatarCache.set(
+                    userId,
+                    "/SharedMedia/defaults/default-avatar.svg"
+                  );
                 };
               }
             } else if (userId && avatarImg) {
@@ -605,7 +608,10 @@ class UserManagement {
               avatarImg.onerror = function () {
                 this.onerror = null;
                 this.src = "/SharedMedia/defaults/default-avatar.svg";
-                avatarCache.set(userId, "/SharedMedia/defaults/default-avatar.svg");
+                avatarCache.set(
+                  userId,
+                  "/SharedMedia/defaults/default-avatar.svg"
+                );
               };
             }
           });
@@ -615,7 +621,6 @@ class UserManagement {
         }
       })
       .catch((error) => {
-        console.error("Load users error:", error);
         this.showAlert("danger", "Failed to load users");
         throw error; // Re-throw for search feedback
       })
@@ -637,7 +642,6 @@ class UserManagement {
         }
       })
       .catch((error) => {
-        console.error("Load user data error:", error);
         this.showAlert("danger", "An error occurred while loading user data");
       });
   }
@@ -683,7 +687,6 @@ class UserManagement {
         }
       })
       .catch((error) => {
-        console.error("Submit form error:", error);
         this.showModalAlert(
           modal,
           "danger",
@@ -832,8 +835,6 @@ class UserManagement {
 
   // Enhanced error handling
   handleSearchError(error) {
-    console.error("Search error:", error);
-
     const searchIndicator = document.querySelector("#searchIndicator");
     if (searchIndicator) {
       searchIndicator.innerHTML =
@@ -851,7 +852,6 @@ class UserManagement {
 
   // Debug method to check avatar cache state
   debugAvatarCache() {
-    
     document.querySelectorAll(".user-details").forEach((userDetail) => {
       const userId = userDetail
         .closest("tr")

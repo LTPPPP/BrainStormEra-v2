@@ -463,27 +463,73 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var success = await _notificationService.UpdateNotificationAsync(notificationId, userId, model.Title, model.Content, model.Type);
-
-                if (success)
+                // Check if user is admin - if so, perform global update
+                if (userRole == "admin" || userRole == "instructor")
                 {
-                    return new EditNotificationResult
+                    var globalUpdateResult = await _notificationService.AdminUpdateNotificationGloballyAsync(notificationId, userId, model.Title, model.Content, model.Type);
+
+                    if (globalUpdateResult)
                     {
-                        Success = true,
-                        SuccessMessage = "Notification updated successfully!",
-                        RedirectAction = "Index",
-                        RedirectController = "Notification"
-                    };
+                        return new EditNotificationResult
+                        {
+                            Success = true,
+                            SuccessMessage = "Notification updated globally for all users successfully!",
+                            RedirectAction = "Index",
+                            RedirectController = "Notification"
+                        };
+                    }
+                    else
+                    {
+                        // Fallback to single user update
+                        var success = await _notificationService.UpdateNotificationAsync(notificationId, userId, model.Title, model.Content, model.Type);
+
+                        if (success)
+                        {
+                            return new EditNotificationResult
+                            {
+                                Success = true,
+                                SuccessMessage = "Notification updated successfully!",
+                                RedirectAction = "Index",
+                                RedirectController = "Notification"
+                            };
+                        }
+                        else
+                        {
+                            return new EditNotificationResult
+                            {
+                                Success = false,
+                                ErrorMessage = "Failed to update notification. Please try again.",
+                                ViewModel = model,
+                                ReturnView = true
+                            };
+                        }
+                    }
                 }
                 else
                 {
-                    return new EditNotificationResult
+                    // Regular user - only update their copy
+                    var success = await _notificationService.UpdateNotificationAsync(notificationId, userId, model.Title, model.Content, model.Type);
+
+                    if (success)
                     {
-                        Success = false,
-                        ErrorMessage = "Failed to update notification. Please try again.",
-                        ViewModel = model,
-                        ReturnView = true
-                    };
+                        return new EditNotificationResult
+                        {
+                            Success = true,
+                            SuccessMessage = "Notification updated successfully!",
+                            RedirectAction = "Index",
+                            RedirectController = "Notification"
+                        };
+                    }
+                    else
+                    {
+                        return new EditNotificationResult
+                        {
+                            Success = false,
+                            ErrorMessage = "Failed to update notification. Please try again.",
+                            ViewModel = model,
+                            ReturnView = true
+                        };
+                    }
                 }
             }
             catch (Exception ex)
@@ -555,13 +601,40 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                await _notificationService.DeleteNotificationAsync(notificationId, userId);
-
-                return new DeleteNotificationResult
+                // Check if user is admin - if so, perform global delete
+                if (userRole == "admin" || userRole == "instructor")
                 {
-                    Success = true,
-                    Message = "Notification removed from your inbox successfully!"
-                };
+                    var globalDeleteResult = await _notificationService.AdminDeleteNotificationGloballyAsync(notificationId, userId);
+
+                    if (globalDeleteResult)
+                    {
+                        return new DeleteNotificationResult
+                        {
+                            Success = true,
+                            Message = "Notification deleted globally for all users successfully!"
+                        };
+                    }
+                    else
+                    {
+                        // Fallback to single user delete
+                        await _notificationService.DeleteNotificationAsync(notificationId, userId);
+                        return new DeleteNotificationResult
+                        {
+                            Success = true,
+                            Message = "Notification removed from your inbox successfully!"
+                        };
+                    }
+                }
+                else
+                {
+                    // Regular user - only delete from their inbox
+                    await _notificationService.DeleteNotificationAsync(notificationId, userId);
+                    return new DeleteNotificationResult
+                    {
+                        Success = true,
+                        Message = "Notification removed from your inbox successfully!"
+                    };
+                }
             }
             catch (Exception ex)
             {
@@ -777,8 +850,10 @@ namespace BusinessLogicLayer.Services.Implementations
         /// </summary>
         private static bool IsAuthorizedToCreateNotifications(string? userRole)
         {
-            return userRole?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true ||
-                   userRole?.Equals("Instructor", StringComparison.OrdinalIgnoreCase) == true;
+            if (string.IsNullOrEmpty(userRole)) return false;
+
+            return userRole.Equals("admin", StringComparison.OrdinalIgnoreCase) ||
+                   userRole.Equals("instructor", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -787,7 +862,7 @@ namespace BusinessLogicLayer.Services.Implementations
         private static bool IsAuthorizedToEditNotification(Notification notification, string userId, string? userRole)
         {
             // Admin can edit all notifications
-            if (userRole?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true)
+            if (!string.IsNullOrEmpty(userRole) && userRole.Equals("admin", StringComparison.OrdinalIgnoreCase))
                 return true;
 
             // Creator can edit their own notifications
@@ -807,7 +882,7 @@ namespace BusinessLogicLayer.Services.Implementations
         private static bool IsAuthorizedToDeleteNotification(Notification notification, string userId, string? userRole)
         {
             // Admin can delete all notifications
-            if (userRole?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true)
+            if (!string.IsNullOrEmpty(userRole) && userRole.Equals("admin", StringComparison.OrdinalIgnoreCase))
                 return true;
 
             // Creator can delete their own notifications
@@ -853,7 +928,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// </summary>
         private static bool IsValidRole(string role)
         {
-            var validRoles = new[] { "Admin", "Instructor", "Learner" };
+            var validRoles = new[] { "admin", "instructor", "learner" };
             return validRoles.Contains(role, StringComparer.OrdinalIgnoreCase);
         }
 
@@ -862,7 +937,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// </summary>
         private static bool IsValidNotificationType(string type)
         {
-            var validTypes = new[] { "info", "warning", "success", "urgent", "course", "announcement" };
+            var validTypes = new[] { "General", "Course", "System", "Achievement", "Payment", "info", "warning", "success", "urgent", "course", "announcement" };
             return validTypes.Contains(type, StringComparer.OrdinalIgnoreCase);
         }
 

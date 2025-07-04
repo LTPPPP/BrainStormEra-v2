@@ -26,10 +26,8 @@ class NotificationIndex {
       this.debugNotificationElement(element);
 
       const notificationId = $(element).data("notification-id");
-      console.log("Delete button clicked, notification ID:", notificationId);
 
       if (!notificationId) {
-        console.error("No notification ID found");
         this.showToast("Notification ID not found", "error");
         return;
       }
@@ -121,7 +119,6 @@ class NotificationIndex {
         this.showToast("Error marking notification as read", "error");
       }
     } catch (error) {
-      console.error("Error marking notification as read:", error);
       // Revert UI changes on error
       notificationCard.removeClass("read").addClass("unread");
       $(buttonElement)
@@ -182,7 +179,6 @@ class NotificationIndex {
         await this.deleteNotification(notificationId, buttonElement);
         bootstrapModal.hide();
       } catch (error) {
-        console.error("Error in delete confirmation:", error);
         // Re-enable button on error
         const confirmBtn = modal.find("#confirmDelete");
         confirmBtn
@@ -198,18 +194,12 @@ class NotificationIndex {
   }
 
   async deleteNotification(notificationId, buttonElement) {
-    console.log("Attempting to delete notification:", notificationId);
-
     // Temporary: Comment out checks to test direct delete
     // // Check if notification exists before attempting delete
-    // console.log("Checking if notification exists...");
     // const exists = await this.testNotificationExists(notificationId);
-    // console.log("Notification exists:", exists);
 
     // Test authorization
-    console.log("Testing delete authorization...");
     const authTest = await this.testDeleteAuthorization(notificationId);
-    console.log("Authorization test result:", authTest);
 
     // if (!exists) {
     //   console.error("Notification does not exist or is not accessible");
@@ -227,10 +217,7 @@ class NotificationIndex {
         token = $('[name="__RequestVerificationToken"]').val();
       }
 
-      console.log("CSRF Token:", token ? "Found" : "Not found");
-
       if (!token) {
-        console.error("CSRF Token not found in DOM");
         this.showToast(
           "Security token not found. Please refresh the page.",
           "error"
@@ -249,12 +236,8 @@ class NotificationIndex {
         )}&__RequestVerificationToken=${encodeURIComponent(token)}`,
       });
 
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
-
       if (response.ok) {
         const result = await response.json();
-        console.log("Delete result:", result);
 
         if (result.success) {
           // Animate and remove the notification card
@@ -278,7 +261,6 @@ class NotificationIndex {
           this.showToast("Notification removed from your inbox", "success");
           this.updateUnreadCount();
         } else {
-          console.error("Delete failed:", result.message);
           this.showToast(
             result.message || "Failed to remove notification",
             "error"
@@ -286,11 +268,9 @@ class NotificationIndex {
         }
       } else {
         const errorText = await response.text();
-        console.error("HTTP Error:", response.status, errorText);
         this.showToast("Error removing notification", "error");
       }
     } catch (error) {
-      console.error("Error removing notification:", error);
       this.showToast("Error removing notification", "error");
     }
   }
@@ -364,7 +344,6 @@ class NotificationIndex {
         this.showToast("Error marking all notifications as read", "error");
       }
     } catch (error) {
-      console.error("Error marking all notifications as read:", error);
       // Revert UI changes on error
       $(".notification-item.read").removeClass("read").addClass("unread");
       markAllBtn.prop("disabled", false).html(originalText);
@@ -386,7 +365,6 @@ class NotificationIndex {
       // Reload the page to get fresh data
       window.location.reload();
     } catch (error) {
-      console.error("Error refreshing notifications:", error);
       this.showToast("Error refreshing notifications", "error");
     }
   }
@@ -434,7 +412,6 @@ class NotificationIndex {
         this.showToast("Error loading more notifications", "error");
       }
     } catch (error) {
-      console.error("Error loading more notifications:", error);
       this.showToast("Error loading more notifications", "error");
     } finally {
       // Reset button state
@@ -466,7 +443,7 @@ class NotificationIndex {
           result.count > 0 ? `(${result.count}) ${baseTitle}` : baseTitle;
       }
     } catch (error) {
-      console.error("Error updating unread count:", error);
+      // Error updating unread count
     }
   }
 
@@ -487,9 +464,6 @@ class NotificationIndex {
   setupSignalR() {
     // Check if SignalR is available
     if (typeof signalR === "undefined") {
-      console.error(
-        "SignalR is not loaded. Please ensure the SignalR library is included before this script."
-      );
       return;
     }
 
@@ -503,7 +477,7 @@ class NotificationIndex {
       .start()
       .then(() => {})
       .catch((err) => {
-        console.error("SignalR Connection Error:", err);
+        // SignalR connection error
       });
 
     // Handle new notifications
@@ -622,12 +596,10 @@ class NotificationIndex {
       );
       if (response.ok) {
         const result = await response.json();
-        console.log("Notification check result:", result);
         return result.exists;
       }
       return false;
     } catch (error) {
-      console.error("Error checking notification:", error);
       return false;
     }
   }
@@ -641,30 +613,16 @@ class NotificationIndex {
       );
       if (response.ok) {
         const result = await response.json();
-        console.log("Delete authorization test result:", result);
         return result;
       }
       return null;
     } catch (error) {
-      console.error("Error testing delete authorization:", error);
       return null;
     }
   }
 
   debugNotificationElement(element) {
-    console.log("Debug notification element:");
-    console.log("Element:", element);
-    console.log("Data attributes:", element.dataset);
-    console.log("data-notification-id:", $(element).data("notification-id"));
-    console.log(
-      "data-notification-id (attr):",
-      $(element).attr("data-notification-id")
-    );
-    console.log(
-      "Closest notification item:",
-      $(element).closest(".notification-item")
-    );
-    console.log("All data attributes:", $(element).data());
+    // Debug function - functionality removed
   }
 }
 

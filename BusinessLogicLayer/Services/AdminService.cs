@@ -281,6 +281,50 @@ namespace BusinessLogicLayer.Services
             }
         }
 
+        public async Task<AdminUserViewModel?> GetUserDetailAsync(string userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return null;
+                }
+
+                var user = await _adminRepo.GetUserWithDetailsAsync(userId);
+                if (user == null)
+                {
+                    return null;
+                }
+
+                return new AdminUserViewModel
+                {
+                    UserId = user.UserId,
+                    Username = user.Username,
+                    FullName = user.FullName ?? "",
+                    UserEmail = user.UserEmail,
+                    UserRole = user.UserRole,
+                    UserImage = user.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
+                    AccountCreatedAt = user.AccountCreatedAt,
+                    LastLoginDate = user.LastLogin,
+                    IsBanned = user.IsBanned ?? false,
+                    IsActive = !(user.IsBanned ?? false),
+                    PhoneNumber = user.PhoneNumber,
+                    UserAddress = user.UserAddress,
+                    DateOfBirth = user.DateOfBirth,
+                    Gender = user.Gender,
+                    PaymentPoint = user.PaymentPoint,
+                    BankName = user.BankName,
+                    BankAccountNumber = user.BankAccountNumber,
+                    AccountHolderName = user.AccountHolderName
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user detail for userId: {UserId}", userId);
+                throw;
+            }
+        }
+
         public async Task<AdminCoursesViewModel> GetAllCoursesAsync(string? search = null, string? categoryFilter = null, string? statusFilter = null, string? priceFilter = null, string? difficultyFilter = null, string? instructorFilter = null, string? sortBy = null, int page = 1, int pageSize = 12)
         {
             try
@@ -298,28 +342,60 @@ namespace BusinessLogicLayer.Services
 
                 var totalCourses = await _adminRepo.GetTotalCoursesCountAsync();
 
+                var courseViewModels = courses.Select(c =>
+{
+    var enrollmentCount = c.Enrollments?.Count ?? 0;
+    var feedbacks = c.Feedbacks?.Where(f => f.StarRating.HasValue).ToList() ?? new List<DataAccessLayer.Models.Feedback>();
+    var averageRating = feedbacks.Any() ? (decimal)feedbacks.Average(f => f.StarRating!.Value) : 0;
+    var reviewCount = feedbacks.Count;
+
+    // Calculate revenue (Price * EnrollmentCount for paid courses)
+    var revenue = c.Price > 0 ? c.Price * enrollmentCount : 0;
+
+    return new AdminCourseViewModel
+    {
+        CourseId = c.CourseId,
+        CourseName = c.CourseName ?? "",
+        CourseDescription = c.CourseDescription ?? "",
+        CoursePicture = c.CourseImage ?? "/SharedMedia/defaults/default-course.svg",
+        Price = c.Price,
+        DifficultyLevel = c.DifficultyLevel?.ToString(),
+        EstimatedDuration = c.EstimatedDuration,
+        CreatedAt = c.CourseCreatedAt,
+        UpdatedAt = c.CourseUpdatedAt,
+        ApprovalStatus = c.ApprovalStatus,
+        IsApproved = c.ApprovalStatus == "Approved",
+        IsFeatured = c.IsFeatured ?? false,
+        IsActive = c.CourseStatus == 1,
+        InstructorId = c.AuthorId,
+        InstructorName = c.Author?.FullName ?? "",
+        InstructorEmail = c.Author?.UserEmail ?? "",
+        EnrollmentCount = enrollmentCount,
+        AverageRating = averageRating,
+        ReviewCount = reviewCount,
+        Revenue = revenue,
+        Categories = c.CourseCategories?.Select(cc => cc.CourseCategoryName ?? "").ToList() ?? new List<string>()
+    };
+}).ToList();
+
+                // Calculate summary statistics
+                var approvedCourses = courseViewModels.Count(c => c.ApprovalStatus?.ToLower() == "approved");
+                var pendingCourses = courseViewModels.Count(c => c.ApprovalStatus?.ToLower() == "pending");
+                var rejectedCourses = courseViewModels.Count(c => c.ApprovalStatus?.ToLower() == "rejected");
+                var freeCourses = courseViewModels.Count(c => c.Price == 0);
+                var paidCourses = courseViewModels.Count(c => c.Price > 0);
+                var totalRevenue = courseViewModels.Sum(c => c.Revenue);
+
                 return new AdminCoursesViewModel
                 {
-                    Courses = courses.Select(c => new AdminCourseViewModel
-                    {
-                        CourseId = c.CourseId,
-                        CourseName = c.CourseName ?? "",
-                        CourseDescription = c.CourseDescription ?? "",
-                        CoursePicture = c.CourseImage ?? "/SharedMedia/defaults/default-course.svg",
-                        Price = c.Price,
-                        CreatedAt = c.CourseCreatedAt,
-                        UpdatedAt = c.CourseUpdatedAt,
-                        ApprovalStatus = c.ApprovalStatus,
-                        IsApproved = c.ApprovalStatus == "Approved",
-                        IsFeatured = c.IsFeatured ?? false,
-                        IsActive = c.CourseStatus == 1, // Assuming 1 means active
-                        InstructorId = c.AuthorId,
-                        InstructorName = c.Author?.FullName ?? "",
-                        EnrollmentCount = c.Enrollments?.Count ?? 0,
-                        AverageRating = 0, // Will be calculated from feedback
-                        Revenue = 0 // Will be calculated from payments
-                    }).ToList(),
+                    Courses = courseViewModels,
                     TotalCourses = totalCourses,
+                    ApprovedCourses = approvedCourses,
+                    PendingCourses = pendingCourses,
+                    RejectedCourses = rejectedCourses,
+                    FreeCourses = freeCourses,
+                    PaidCourses = paidCourses,
+                    TotalRevenue = totalRevenue,
                     CurrentPage = page,
                     PageSize = pageSize,
                     TotalPages = (int)Math.Ceiling((double)totalCourses / pageSize)
@@ -495,11 +571,24 @@ namespace BusinessLogicLayer.Services
             }
         }
 
-        public async Task<bool> BanCourseAsync(string courseId, string? adminId = null)
+        public async Task<bool> RejectCourseAsync(string courseId, string reason, string? adminId = null)
         {
             try
             {
-                return await _adminRepo.BanCourseAsync(courseId, adminId ?? "system", "Course banned by admin");
+                return await _adminRepo.RejectCourseAsync(courseId, adminId ?? "system", reason);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting course for courseId: {CourseId}", courseId);
+                throw;
+            }
+        }
+
+        public async Task<bool> BanCourseAsync(string courseId, string reason, string? adminId = null)
+        {
+            try
+            {
+                return await _adminRepo.BanCourseAsync(courseId, adminId ?? "system", reason);
             }
             catch (Exception ex)
             {
