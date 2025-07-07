@@ -146,8 +146,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPageContextService, BusinessLogicLayer.Services.PageContextService>();
             builder.Services.AddHttpClient<BusinessLogicLayer.Services.ChatbotService>();
 
-            // Add Chat URL Hashing Services
-            builder.Services.AddChatUrlServices();
+
 
             // Seed services
             builder.Services.AddScoped<BusinessLogicLayer.Services.StatusSeedService>();
