@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.FileProviders;
 using BusinessLogicLayer;
 using BusinessLogicLayer.Utilities;
-using BusinessLogicLayer.Extensions;
 using Rotativa.AspNetCore;
 
 namespace BrainStormEra_MVC
