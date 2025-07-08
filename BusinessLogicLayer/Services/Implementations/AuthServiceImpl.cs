@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using BusinessLogicLayer.Utilities;
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using BusinessLogicLayer.DTOs.Security;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
@@ -27,6 +28,7 @@ namespace BusinessLogicLayer.Services.Implementations
         private readonly IAvatarService _avatarService;
         private readonly IMediaPathService _mediaPathService;
         private readonly IEmailService _emailService;
+        private readonly ISecurityService _securityService;
         // Cache for OTP codes (in a production environment, use a more robust solution like Redis)
         private static Dictionary<string, (string otp, DateTime expiry)> _otpCache = new();
 
@@ -36,7 +38,8 @@ namespace BusinessLogicLayer.Services.Implementations
             BrainStormEraContext context,
             IAvatarService avatarService,
             IMediaPathService mediaPathService,
-            IEmailService emailService)
+            IEmailService emailService,
+            ISecurityService securityService)
         {
             _userService = userService;
             _logger = logger;
@@ -44,6 +47,7 @@ namespace BusinessLogicLayer.Services.Implementations
             _avatarService = avatarService;
             _mediaPathService = mediaPathService;
             _emailService = emailService;
+            _securityService = securityService;
         }
 
         #region Login Operations        /// <summary>
@@ -82,13 +86,40 @@ namespace BusinessLogicLayer.Services.Implementations
         }
 
         /// <summary>
-        /// Authenticate user with comprehensive validation
+        /// Authenticate user with comprehensive validation and security checks
         /// </summary>
         public async Task<LoginResult> AuthenticateUserAsync(HttpContext httpContext, LoginViewModel model)
         {
+            var ipAddress = GetClientIpAddress(httpContext);
+
             try
             {
-                _logger.LogInformation("Login attempt for username: {Username}", model.Username);
+                _logger.LogInformation("Login attempt for username: {Username} from IP: {IpAddress}", model.Username, ipAddress);
+
+                // SECURITY CHECK: Verify if this login attempt should be allowed
+                var securityCheck = await _securityService.CheckLoginAttemptAsync(model.Username, ipAddress);
+                if (!securityCheck.IsAllowed)
+                {
+                    _logger.LogWarning("Login attempt blocked by security service - Username: {Username}, IP: {IpAddress}, Reason: {Reason}",
+                        model.Username, ipAddress, securityCheck.BlockReason);
+
+                    // Log the blocked attempt
+                    await _securityService.LogLoginAttemptAsync(new LoginAttemptRequest
+                    {
+                        Username = model.Username,
+                        IpAddress = ipAddress,
+                        UserAgent = httpContext.Request.Headers["User-Agent"].ToString(),
+                        IsSuccessful = false,
+                        FailureReason = "Blocked by security service: " + securityCheck.BlockReason
+                    });
+
+                    return new LoginResult
+                    {
+                        Success = false,
+                        ErrorMessage = securityCheck.ErrorMessage ?? "Too many failed login attempts. Please try again later.",
+                        ViewModel = model
+                    };
+                }
 
                 // Find user by username using service
                 var user = await _userService.GetUserByUsernameAsync(model.Username);
@@ -96,6 +127,17 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (user == null)
                 {
                     _logger.LogWarning("User not found: {Username}", model.Username);
+
+                    // Log failed attempt
+                    await _securityService.LogLoginAttemptAsync(new LoginAttemptRequest
+                    {
+                        Username = model.Username,
+                        IpAddress = ipAddress,
+                        UserAgent = httpContext.Request.Headers["User-Agent"].ToString(),
+                        IsSuccessful = false,
+                        FailureReason = "User not found"
+                    });
+
                     return new LoginResult
                     {
                         Success = false,
@@ -108,6 +150,17 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (user.IsBanned == true)
                 {
                     _logger.LogWarning("Banned user attempted login: {Username}", user.Username);
+
+                    // Log failed attempt
+                    await _securityService.LogLoginAttemptAsync(new LoginAttemptRequest
+                    {
+                        Username = model.Username,
+                        IpAddress = ipAddress,
+                        UserAgent = httpContext.Request.Headers["User-Agent"].ToString(),
+                        IsSuccessful = false,
+                        FailureReason = "User account is banned"
+                    });
+
                     return new LoginResult
                     {
                         Success = false,
@@ -120,6 +173,17 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (string.IsNullOrEmpty(model.Password) || !await _userService.VerifyPasswordAsync(model.Password, user.PasswordHash))
                 {
                     _logger.LogWarning("Invalid password for user: {Username}", user.Username);
+
+                    // Log failed attempt
+                    await _securityService.LogLoginAttemptAsync(new LoginAttemptRequest
+                    {
+                        Username = model.Username,
+                        IpAddress = ipAddress,
+                        UserAgent = httpContext.Request.Headers["User-Agent"].ToString(),
+                        IsSuccessful = false,
+                        FailureReason = "Invalid password"
+                    });
+
                     return new LoginResult
                     {
                         Success = false,
@@ -134,6 +198,17 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (string.Equals(user.UserRole, "admin", StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogWarning("Admin login attempt blocked for user: {Username}", user.Username);
+
+                    // Log failed attempt
+                    await _securityService.LogLoginAttemptAsync(new LoginAttemptRequest
+                    {
+                        Username = model.Username,
+                        IpAddress = ipAddress,
+                        UserAgent = httpContext.Request.Headers["User-Agent"].ToString(),
+                        IsSuccessful = false,
+                        FailureReason = "Admin login blocked"
+                    });
+
                     return new LoginResult
                     {
                         Success = false,
@@ -219,6 +294,16 @@ namespace BusinessLogicLayer.Services.Implementations
                 // Update last login time using service
                 await _userService.UpdateLastLoginAsync(user.UserId);
 
+                // Log successful login attempt
+                await _securityService.LogLoginAttemptAsync(new LoginAttemptRequest
+                {
+                    Username = model.Username,
+                    IpAddress = ipAddress,
+                    UserAgent = httpContext.Request.Headers["User-Agent"].ToString(),
+                    IsSuccessful = true,
+                    FailureReason = null
+                });
+
                 _logger.LogInformation("User {Username} logged in at {Time}.", user.Username, DateTime.UtcNow);
 
                 return new LoginResult
@@ -232,6 +317,24 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during login attempt for user {Username}", model.Username);
+
+                // Log error attempt
+                try
+                {
+                    await _securityService.LogLoginAttemptAsync(new LoginAttemptRequest
+                    {
+                        Username = model.Username,
+                        IpAddress = ipAddress,
+                        UserAgent = httpContext.Request.Headers["User-Agent"].ToString(),
+                        IsSuccessful = false,
+                        FailureReason = "System error: " + ex.Message
+                    });
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogError(logEx, "Failed to log error attempt for user {Username}", model.Username);
+                }
+
                 return new LoginResult
                 {
                     Success = false,
@@ -1264,6 +1367,30 @@ namespace BusinessLogicLayer.Services.Implementations
                 _logger.LogError(ex, "Error getting user info for userId: {UserId}", userId);
                 return null;
             }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// Get client IP address from HttpContext with proxy support
+        /// </summary>
+        private static string GetClientIpAddress(HttpContext httpContext)
+        {
+            // Try to get IP from various headers (for proxy scenarios)
+            var ipAddress = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (string.IsNullOrEmpty(ipAddress))
+            {
+                ipAddress = httpContext.Request.Headers["X-Real-IP"].FirstOrDefault();
+            }
+            if (string.IsNullOrEmpty(ipAddress))
+            {
+                ipAddress = httpContext.Connection.RemoteIpAddress?.ToString();
+            }
+
+            // Default to localhost if nothing is found
+            return ipAddress ?? "127.0.0.1";
         }
 
         #endregion
