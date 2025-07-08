@@ -3,6 +3,7 @@ using DataAccessLayer.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using BusinessLogicLayer;
 using BusinessLogicLayer.Constants;
+using BrainStormEra_Razor.Middlewares;
 
 namespace BrainStormEra_Razor
 {
@@ -84,6 +85,11 @@ namespace BrainStormEra_Razor
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.NotificationServiceImpl>();
 
+            // Register Security Service for brute force protection and rate limiting
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ISecurityService, BusinessLogicLayer.Services.Implementations.SecurityServiceInMemory>();
+
+            // Register Security Cleanup Background Service
+            builder.Services.AddHostedService<BrainStormEra_Razor.Services.SecurityCleanupService>();
 
 
             var app = builder.Build();
@@ -118,6 +124,9 @@ namespace BrainStormEra_Razor
             }
 
             app.UseRouting();
+
+            // Add Security middleware for brute force protection
+            app.UseSecurityMiddleware();
 
             app.UseAuthentication();
             app.UseAuthorization();

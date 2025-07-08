@@ -5,9 +5,9 @@ using DataAccessLayer.Data;
 using DataAccessLayer.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.FileProviders;
-using BusinessLogicLayer;
-using BusinessLogicLayer.Utilities;
 using Rotativa.AspNetCore;
+using BrainStormEra_MVC.Middlewares;
+using BusinessLogicLayer.Utilities;
 
 namespace BrainStormEra_MVC
 {
@@ -97,6 +97,12 @@ namespace BrainStormEra_MVC
 
             // Register Certificate Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.CertificateServiceImpl>();
+
+            // Register Security Service for brute force protection and rate limiting
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ISecurityService, BusinessLogicLayer.Services.Implementations.SecurityServiceInMemory>();
+
+            // Register Security Cleanup Background Service
+            builder.Services.AddHostedService<BrainStormEra_MVC.Services.SecurityCleanupService>();
 
             // Register Feedback Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IFeedbackService, BusinessLogicLayer.Services.Implementations.FeedbackServiceImpl>();
@@ -285,6 +291,9 @@ namespace BrainStormEra_MVC
             RotativaConfiguration.Setup(app.Environment.WebRootPath, "Rotativa");
 
             app.UseRouting();
+
+            // Add Security middleware for brute force protection
+            app.UseSecurityMiddleware();
 
             // Add Session middleware before Authentication
             app.UseSession();
