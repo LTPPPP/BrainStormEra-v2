@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  chat-service:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://brainstorm:password@postgres:5432/brainstormera
+      - DATABASE_URL_SYNC=postgresql://brainstorm:password@postgres:5432/brainstormera
+      - REDIS_URL=redis://redis:6379/0
+      - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - DEBUG=true
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    networks:
+      - chat-network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: brainstormera
+      POSTGRES_USER: brainstorm
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - chat-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - chat-network
+
+  # Optional: Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - chat-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  chat-network:
+    driver: bridge 
