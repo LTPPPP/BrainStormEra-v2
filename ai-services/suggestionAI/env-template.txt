@@ -1,0 +1,80 @@
+# Database Configuration
+DATABASE_URL=mssql+pyodbc://sa:01654460072ltp@localhost/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes
+
+# Server Configuration
+HOST=0.0.0.0
+PORT=7000
+
+# AI Configuration
+MAX_SUGGESTIONS=10
+MIN_SIMILARITY_SCORE=0.1
+
+# Gemini AI Configuration
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-pro
+USE_GEMINI=true
+
+# Development Settings
+DEBUG=true
+LOG_LEVEL=INFO
+
+# Optional: Alternative database for testing
+# TEST_DATABASE_URL=mssql+pyodbc://sa:01654460072ltp@LTPP/BrainStormEra_Test?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes
+
+# ========================================
+# INSTRUCTIONS:
+# ========================================
+# 1. Copy this file to .env: cp env-template.txt .env
+# 2. Update GEMINI_API_KEY with your actual API key from Google AI Studio
+# 3. Modify DATABASE_URL if needed for your database setup
+# 4. Adjust other settings as needed
+
+# ========================================
+# EXAMPLE CONFIGURATIONS:
+# ========================================
+
+# ========================================
+# CONNECTION STRING ALTERNATIVES:
+# ========================================
+# If having connection issues, try these alternatives:
+
+# 1. Using localhost instead of computer name:
+# DATABASE_URL=mssql+pyodbc://sa:01654460072ltp@localhost/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes
+
+# 2. Using IP address:
+# DATABASE_URL=mssql+pyodbc://sa:01654460072ltp@127.0.0.1/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes
+
+# 3. With explicit port:
+# DATABASE_URL=mssql+pyodbc://sa:01654460072ltp@localhost:1433/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes
+
+# 4. SQL Server Express (if using Express edition):
+# DATABASE_URL=mssql+pyodbc://sa:01654460072ltp@LTPP\\SQLEXPRESS/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes
+
+# 5. With TCP protocol explicit:
+# DATABASE_URL=mssql+pyodbc://sa:01654460072ltp@localhost/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes&protocol=tcp
+
+# 6. Different ODBC drivers (if Driver 17 not available):
+# DATABASE_URL=mssql+pyodbc://sa:01654460072ltp@localhost/BrainStormEra?driver=SQL+Server&TrustServerCertificate=yes
+# DATABASE_URL=mssql+pyodbc://sa:01654460072ltp@localhost/BrainStormEra?driver=SQL+Server+Native+Client+11.0&TrustServerCertificate=yes
+
+# Azure SQL Database:
+# DATABASE_URL=mssql+pyodbc://username:password@server.database.windows.net/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes
+
+# For production (more secure settings):
+# DEBUG=false
+# LOG_LEVEL=WARNING
+# HOST=127.0.0.1
+# PORT=8000
+
+# For testing without Gemini AI:
+# USE_GEMINI=false
+# GEMINI_API_KEY=
+
+# ========================================
+# HOW TO GET GEMINI API KEY:
+# ========================================
+# 1. Go to https://makersuite.google.com/
+# 2. Sign in with your Google account
+# 3. Create a new API key
+# 4. Copy the API key and replace "your_gemini_api_key_here" above
+# 5. Make sure to keep this key secret and never commit it to version control 
