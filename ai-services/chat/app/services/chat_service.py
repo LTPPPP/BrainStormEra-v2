@@ -5,7 +5,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy import or_, and_, func, desc
 
-from app.models.database import MessageEntity, Conversation, Account
+from app.models.database import MessageEntity, Conversation, Account, ConversationParticipant
 from app.models.chat_models import ChatMessageDTO, ChatUserDTO
 import logging
 import uuid
@@ -131,6 +131,7 @@ class ChatService:
 
             if message:
                 message.is_read = True
+                message.read_at = datetime.utcnow()
                 message.message_updated_at = datetime.utcnow()
                 await self.db.flush()
                 return True
@@ -157,19 +158,18 @@ class ChatService:
             return None
 
     async def get_user_conversations(self, user_id: str) -> List[Conversation]:
-        """Get all conversations for a user"""
+        """Get all conversations for a user using ConversationParticipant"""
         try:
             query = (
                 select(Conversation)
+                .join(ConversationParticipant, Conversation.conversation_id == ConversationParticipant.conversation_id)
                 .options(
-                    selectinload(Conversation.participant1),
-                    selectinload(Conversation.participant2)
+                    selectinload(Conversation.created_by_navigation),
+                    selectinload(Conversation.conversation_participants).selectinload(ConversationParticipant.user)
                 )
                 .where(
-                    or_(
-                        Conversation.participant1_id == user_id,
-                        Conversation.participant2_id == user_id
-                    )
+                    ConversationParticipant.user_id == user_id,
+                    ConversationParticipant.is_active == True
                 )
                 .order_by(desc(Conversation.last_message_at))
             )
@@ -220,19 +220,17 @@ class ChatService:
             return []
 
     async def can_user_access_conversation(self, user_id: str, conversation_id: str) -> bool:
-        """Check if user can access a conversation"""
+        """Check if user can access a conversation using ConversationParticipant"""
         try:
-            query = select(Conversation).where(
-                Conversation.conversation_id == conversation_id,
-                or_(
-                    Conversation.participant1_id == user_id,
-                    Conversation.participant2_id == user_id
-                )
+            query = select(ConversationParticipant).where(
+                ConversationParticipant.conversation_id == conversation_id,
+                ConversationParticipant.user_id == user_id,
+                ConversationParticipant.is_active == True
             )
             
             result = await self.db.execute(query)
-            conversation = result.scalar_one_or_none()
-            return conversation is not None
+            participant = result.scalar_one_or_none()
+            return participant is not None
 
         except Exception as ex:
             logger.error(f"Error checking conversation access for user {user_id} and conversation {conversation_id}: {str(ex)}")
@@ -259,7 +257,7 @@ class ChatService:
                     Account.user_id != current_user_id
                 )
                 .distinct()
-                .order_by(Account.last_active.desc())
+                .order_by(Account.last_login.desc())  # Use last_login instead of last_active
             )
             
             result = await self.db.execute(query)
@@ -298,39 +296,41 @@ class ChatService:
             return None
 
     async def set_user_online_status(self, user_id: str, is_online: bool) -> bool:
-        """Set user online status"""
+        """Update user last login time (MVC doesn't have online status)"""
         try:
             query = select(Account).where(Account.user_id == user_id)
             result = await self.db.execute(query)
             user = result.scalar_one_or_none()
 
             if user:
-                user.is_online = is_online
-                user.last_active = datetime.utcnow() if is_online else user.last_active
+                # Update last_login when user comes online
+                if is_online:
+                    user.last_login = datetime.utcnow()
                 await self.db.flush()
                 return True
             
             return False
 
         except Exception as ex:
-            logger.error(f"Error setting online status for user {user_id}: {str(ex)}")
+            logger.error(f"Error updating login time for user {user_id}: {str(ex)}")
             return False
 
     async def get_or_create_conversation(self, user_id1: str, user_id2: str) -> Optional[Conversation]:
-        """Get existing conversation or create new one between two users"""
+        """Get existing conversation or create new one between two users using ConversationParticipant"""
         try:
-            # Try to find existing conversation
-            query = select(Conversation).where(
-                or_(
-                    and_(
-                        Conversation.participant1_id == user_id1,
-                        Conversation.participant2_id == user_id2
-                    ),
-                    and_(
-                        Conversation.participant1_id == user_id2,
-                        Conversation.participant2_id == user_id1
-                    )
-                )
+            # Try to find existing conversation with both participants
+            subquery = (
+                select(ConversationParticipant.conversation_id)
+                .where(ConversationParticipant.user_id.in_([user_id1, user_id2]))
+                .group_by(ConversationParticipant.conversation_id)
+                .having(func.count(ConversationParticipant.user_id) == 2)
+            )
+            
+            query = (
+                select(Conversation)
+                .where(Conversation.conversation_id.in_(subquery))
+                .order_by(desc(Conversation.conversation_created_at))
+                .limit(1)
             )
             
             result = await self.db.execute(query)
@@ -338,14 +338,38 @@ class ChatService:
 
             if not conversation:
                 # Create new conversation
+                conversation_id = str(uuid.uuid4())
                 conversation = Conversation(
-                    conversation_id=str(uuid.uuid4()),
-                    participant1_id=user_id1,
-                    participant2_id=user_id2,
+                    conversation_id=conversation_id,
+                    conversation_type="direct",  # Type for 1-on-1 chat
+                    created_by=user_id1,
+                    is_active=True,
                     conversation_created_at=datetime.utcnow(),
                     conversation_updated_at=datetime.utcnow()
                 )
                 self.db.add(conversation)
+                await self.db.flush()
+
+                # Add participants
+                participant1 = ConversationParticipant(
+                    conversation_id=conversation_id,
+                    user_id=user_id1,
+                    participant_role="member",
+                    joined_at=datetime.utcnow(),
+                    is_active=True,
+                    is_muted=False
+                )
+                participant2 = ConversationParticipant(
+                    conversation_id=conversation_id,
+                    user_id=user_id2,
+                    participant_role="member", 
+                    joined_at=datetime.utcnow(),
+                    is_active=True,
+                    is_muted=False
+                )
+                
+                self.db.add(participant1)
+                self.db.add(participant2)
                 await self.db.flush()
 
             return conversation
@@ -391,8 +415,13 @@ class ChatService:
             message = result.scalar_one_or_none()
 
             if message:
+                # Store original content if not already stored
+                if not message.original_content:
+                    message.original_content = message.message_content
+                
                 message.message_content = new_content
                 message.is_edited = True
+                message.edited_at = datetime.utcnow()
                 message.message_updated_at = datetime.utcnow()
                 await self.db.flush()
                 return True

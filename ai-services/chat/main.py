@@ -1,4 +1,5 @@
 import logging
+import time
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
@@ -7,7 +8,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.core.database import create_tables
+# Database tables are managed by MVC application
 from app.api.chat_routes import router as chat_router
 from app.api.chatbot_routes import router as chatbot_router
 
@@ -31,11 +32,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting BrainStormEra Chat Service...")
     
     try:
-        # Create database tables
-        await create_tables()
-        logger.info("Database tables created successfully")
+        # Database is already created by MVC, no need to create tables
+        logger.info("Using existing database from MVC application")
     except Exception as e:
-        logger.error(f"Failed to create database tables: {str(e)}")
+        logger.error(f"Failed to initialize chat service: {str(e)}")
         raise
     
     yield

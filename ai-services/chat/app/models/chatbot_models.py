@@ -37,7 +37,6 @@ class ChatbotConversationDTO(BaseModel):
     bot_response: str
     conversation_context: Optional[str] = None
     feedback_rating: Optional[int] = None
-    feedback_comment: Optional[str] = None
 
     class Config:
         from_attributes = True
