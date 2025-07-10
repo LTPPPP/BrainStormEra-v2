@@ -2,6 +2,8 @@
 
 AI-powered chat service for BrainStormEra educational platform, built with Python FastAPI.
 
+**Note**: This service uses the **same SQL Server database** as the main MVC application. No separate database setup required.
+
 ## Features
 
 ### 🔥 Real-time Chat
@@ -10,12 +12,12 @@ AI-powered chat service for BrainStormEra educational platform, built with Pytho
 - **Typing indicators** and read receipts
 - **Message threading** (reply to messages)
 - **Message editing and deletion**
-- **Online/offline status tracking**
+- **User status tracking**
 
 ### 🤖 AI Chatbot
 - **Google AI integration** (Gemini Pro)
 - **Context-aware responses** based on current page/course
-- **Conversation history** and caching
+- **Conversation history** 
 - **Feedback system** (1-5 star ratings)
 - **Educational content optimization**
 
@@ -23,7 +25,7 @@ AI-powered chat service for BrainStormEra educational platform, built with Pytho
 - **Real-time connection tracking**
 - **Conversation statistics**
 - **User engagement metrics**
-- **Admin dashboards**
+- **Integrated with MVC database**
 
 ## Architecture
 
@@ -57,42 +59,42 @@ ai-services/chat/
 ### 1. Prerequisites
 
 - Python 3.11+
-- PostgreSQL 15+
-- Redis 7+
+- **SQL Server** (same as MVC application)
+- **ODBC Driver 17 for SQL Server**
 - Google AI API Key
+- MVC application database already set up
 
 ### 2. Installation
 
 ```bash
-# Clone the repository
+# Navigate to chat service directory
 cd ai-services/chat
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Copy configuration
-cp config.example.py config.py
-# Edit config.py with your settings
+# Copy configuration template
+cp config_example.py config.py
+# Edit config.py with your database settings (same as MVC)
 ```
 
 ### 3. Environment Setup
 
-Create `.env` file or update `config.py`:
+Update `config.py` with your database connection (same as MVC):
 
-```env
-# Database
-DATABASE_URL=postgresql+asyncpg://username:password@localhost:5432/brainstormera
-DATABASE_URL_SYNC=postgresql://username:password@localhost:5432/brainstormera
-
-# Redis
-REDIS_URL=redis://localhost:6379/0
+```python
+# Database Configuration (same as MVC)
+DATABASE_URL = "mssql+aiodbc://YOUR_USER:YOUR_PASSWORD@YOUR_SERVER/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server"
+DATABASE_URL_SYNC = "mssql+pyodbc://YOUR_USER:YOUR_PASSWORD@YOUR_SERVER/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server"
 
 # Google AI
-GOOGLE_AI_API_KEY=your_google_ai_api_key_here
+GOOGLE_AI_API_KEY = "your_google_ai_api_key_here"
 
 # Security
-SECRET_KEY=your_secret_key_here
+SECRET_KEY = "your_secret_key_here"
 ```
+
+**Important**: Use the same database credentials as your MVC application's `appsettings.json`.
 
 ### 4. Run with Docker (Recommended)
 
@@ -192,14 +194,17 @@ curl -X POST "http://localhost:8000/api/v1/chatbot/feedback?current_user_id=user
 
 ## Database Schema
 
-### Key Tables
+**Note**: This service uses the existing MVC database tables. No additional tables are created.
 
-- **accounts** - User information
-- **conversations** - Chat conversations between users
-- **messages** - Individual chat messages
-- **chatbot_conversations** - AI chat conversations
-- **chatbot_cache** - Cached AI responses
-- **user_sessions** - WebSocket connection tracking
+### Used Tables (from MVC)
+
+- **account** - User information (from MVC)
+- **conversation** - Chat conversations  
+- **conversation_participant** - Conversation participants
+- **message_entity** - Individual chat messages
+- **chatbot_conversation** - AI chat conversations
+
+The FastAPI service connects to the same SQL Server database as the MVC application and uses the existing schema.
 
 ## Configuration
 

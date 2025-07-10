@@ -8,7 +8,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy import func, desc
 
-from app.models.database import ChatbotConversation, Account, ChatbotCache
+from app.models.database import ChatbotConversation, Account
 from app.models.chatbot_models import (
     ChatbotConversationDTO, 
     GoogleAIResponse, 
@@ -35,23 +35,9 @@ class ChatbotService:
     ) -> str:
         """Get AI response for user message"""
         try:
-            # Create cache key for similar questions
-            cache_key = self._get_message_hash(user_message.lower().strip())
+            # For now, skip caching since MVC doesn't have ChatbotCache table
+            # We can implement simple in-memory caching later if needed
             
-            # Try to get cached response
-            cached_response = await self._get_cached_response(cache_key)
-            if cached_response:
-                logger.info(f"Using cached response for message: {user_message}")
-                
-                # Still save conversation for tracking
-                await self._save_conversation(
-                    user_id=user_id,
-                    user_message=user_message,
-                    bot_response=cached_response,
-                    context=context
-                )
-                return cached_response
-
             # Get API configuration
             api_key = settings.google_ai_api_key
             if not api_key:
@@ -118,10 +104,6 @@ class ChatbotService:
                     else "Sorry, I couldn't generate a response. Please try again."
                 )
 
-                # Cache common educational responses
-                if self._is_common_educational_question(user_message):
-                    await self._cache_response(cache_key, bot_response)
-
                 # Save conversation
                 await self._save_conversation(
                     user_id=user_id,
@@ -160,8 +142,7 @@ class ChatbotService:
                     user_message=conv.user_message,
                     bot_response=conv.bot_response,
                     conversation_context=conv.conversation_context,
-                    feedback_rating=conv.feedback_rating,
-                    feedback_comment=conv.feedback_comment
+                    feedback_rating=conv.feedback_rating
                 ) for conv in conversations
             ]
 
@@ -190,7 +171,7 @@ class ChatbotService:
 
             if conversation:
                 conversation.feedback_rating = rating
-                conversation.feedback_submitted_at = datetime.utcnow()
+                # MVC schema doesn't have feedback_submitted_at field
                 await self.db.flush()
                 return True
             
@@ -304,10 +285,6 @@ class ChatbotService:
 
         return base_prompt
 
-    def _get_message_hash(self, message: str) -> str:
-        """Generate hash for message caching"""
-        return hashlib.md5(message.encode()).hexdigest()
-
     async def _get_recent_conversation_history(self, user_id: str, limit: int = 3) -> List[ChatbotConversation]:
         """Get recent conversation history for context"""
         try:
@@ -336,49 +313,6 @@ class ChatbotService:
             context_parts.append(f"Assistant: {conv.bot_response}")
 
         return "\n".join(context_parts)
-
-    def _is_common_educational_question(self, message: str) -> bool:
-        """Check if message is a common educational question for caching"""
-        common_patterns = [
-            "what is", "how to", "explain", "definition", "meaning",
-            "difference between", "example", "steps", "process"
-        ]
-        
-        message_lower = message.lower()
-        return any(pattern in message_lower for pattern in common_patterns)
-
-    async def _get_cached_response(self, cache_key: str) -> Optional[str]:
-        """Get cached response if available"""
-        try:
-            query = select(ChatbotCache).where(
-                ChatbotCache.cache_key == cache_key,
-                ChatbotCache.expires_at > datetime.utcnow()
-            )
-            result = await self.db.execute(query)
-            cache_entry = result.scalar_one_or_none()
-
-            return cache_entry.cached_response if cache_entry else None
-
-        except Exception as ex:
-            logger.error(f"Error getting cached response: {str(ex)}")
-            return None
-
-    async def _cache_response(self, cache_key: str, response: str):
-        """Cache response for future use"""
-        try:
-            expires_at = datetime.utcnow() + timedelta(hours=settings.chatbot_cache_hours)
-            
-            cache_entry = ChatbotCache(
-                cache_key=cache_key,
-                cached_response=response,
-                expires_at=expires_at
-            )
-            
-            self.db.add(cache_entry)
-            await self.db.flush()
-
-        except Exception as ex:
-            logger.error(f"Error caching response: {str(ex)}")
 
     async def _save_conversation(
         self, 
