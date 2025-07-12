@@ -27,7 +27,3 @@ class Settings:
     USE_GEMINI: bool = os.getenv("USE_GEMINI", "true").lower() == "true"
 
 settings = Settings()
-
-# Example database URLs for different environments:
-# Local SQL Server: mssql+pyodbc://sa:yourpassword@localhost/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes
-# Remote SQL Server: mssql+pyodbc://username:password@server.database.windows.net/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes 

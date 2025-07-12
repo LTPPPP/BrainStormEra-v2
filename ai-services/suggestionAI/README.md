@@ -37,7 +37,7 @@ pip install -r requirements.txt
 
 2. **Tạo Environment file:**
 ```bash
-cp env-template.txt .env
+cp .env.template .env
 ```
 
 3. **Cấu hình Database và AI:**
@@ -88,13 +88,13 @@ sudo ACCEPT_EULA=Y apt-get install -y msodbcsql17
 
 ```bash
 cd ai-services/suggestionAI
-python main.py
+python run.py
 ```
 
 Hoặc sử dụng uvicorn:
 
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 7000 --reload
 ```
 
 ## API Endpoints
