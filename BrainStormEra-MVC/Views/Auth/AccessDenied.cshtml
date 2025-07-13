@@ -11,16 +11,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Access Denied - BrainStormEra</title>
     <link rel="icon" type="image/x-icon" href="~/SharedMedia/logo/logowithoutbackground.png" sizes="48x48">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-    <!-- Load global CSS variables first -->
-    <link rel="stylesheet" href="~/css/global.css">
-    <!-- Preload key resources for better performance -->
-    <link rel="preload" href="~/css/pages/Auth/login.css" as="style">
-    <link rel="preload" href="/SharedMedia/static/login-bg.jpg" as="image">
-    <link rel="stylesheet" href="~/css/pages/Auth/login.css">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pages/Auth/access-denied.css" asp-append-version="true" />
 </head>
 
 <body>
@@ -42,96 +36,67 @@
         <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
     }
 
-    <!-- Home button -->
-    <a href="@Url.Action("Index", "Home")" class="home-button" title="Return to Home">
-        <i class="fas fa-home"></i>
-    </a>
-
-    <!-- Background Elements -->
-    <div class="login-background">
-        <div class="floating-elements">
-            <div class="floating-icon" style="--delay: 0s; --duration: 8s;">
-                <i class="fas fa-lightbulb"></i>
-            </div>
-            <div class="floating-icon" style="--delay: 2s; --duration: 10s;">
-                <i class="fas fa-graduation-cap"></i>
-            </div>
-            <div class="floating-icon" style="--delay: 4s; --duration: 12s;">
-                <i class="fas fa-book"></i>
-            </div>
-            <div class="floating-icon" style="--delay: 6s; --duration: 9s;">
-                <i class="fas fa-brain"></i>
-            </div>
-            <div class="floating-icon" style="--delay: 1s; --duration: 11s;">
-                <i class="fas fa-atom"></i>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="login-container">
-        <div class="login-card">
+    <div class="access-denied-container">
+        <div class="access-denied-card">
             <!-- Logo -->
-            <div class="logo-section">
-                <img src="~/SharedMedia/logo/logowithoutbackground.png" alt="BrainStormEra Logo" class="logo">
-                <h1 class="brand-name">BrainStormEra</h1>
+            <img src="~/SharedMedia/logo/logowithoutbackground.png" 
+                 alt="BrainStormEra Logo" 
+                 class="access-denied-logo"
+                 onerror="this.onerror=null; this.src='~/SharedMedia/defaults/default-logo.svg';" />
+            
+            <!-- Main Icon -->
+            <i class="fas fa-ban access-denied-icon"></i>
+            
+            <!-- Title and Subtitle -->
+            <h1 class="access-denied-title">Access Denied</h1>
+            <h2 class="access-denied-subtitle">Permission Required</h2>
+            
+            <!-- Main Message -->
+            <p class="access-denied-message">
+                You don't have the necessary permissions to access this resource. 
+                Please contact your administrator if you believe this is an error.
+            </p>
+            
+            <!-- Reasons Section -->
+            <div class="access-denied-reasons">
+                <h4>
+                    <i class="fas fa-info-circle"></i>
+                    This could happen for several reasons:
+                </h4>
+                <ul class="reasons-list">
+                    <li>You don't have the required permissions for this resource</li>
+                    <li>Your session may have expired or become invalid</li>
+                    <li>The resource requires a different user role</li>
+                    <li>Administrative restrictions may be in place</li>
+                </ul>
             </div>
-
-            <!-- Access Denied Content -->
-            <div class="login-form">
-                <h2 class="form-title text-center mb-4">
-                    <i class="fas fa-ban text-danger me-2"></i>
-                    Access Denied
-                </h2>
-
-                <div class="text-center">
-                    <div class="alert alert-danger" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Access Denied!</strong>
-                        <br>
-                        You don't have permission to access this resource.
-                    </div>
-
-                    <div class="mt-4">
-                        <p class="text-muted">
-                            This could happen for several reasons:
-                        </p>
-                        <ul class="list-unstyled text-muted">
-                            <li><i class="fas fa-circle me-2" style="font-size: 0.5rem;"></i>You don't have the required
-                                permissions</li>
-                            <li><i class="fas fa-circle me-2" style="font-size: 0.5rem;"></i>Your session may have
-                                expired</li>
-                            <li><i class="fas fa-circle me-2" style="font-size: 0.5rem;"></i>The resource requires a
-                                different role</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="button-group mt-4">
-                    <a href="@Url.Action("Index", "Home")" class="btn btn-primary btn-lg">
-                        <i class="fas fa-home me-2"></i>
-                        Go to Home
-                    </a>
-                    <a href="@Url.Action("Login", "Auth")" class="btn btn-outline-secondary btn-lg">
-                        <i class="fas fa-sign-in-alt me-2"></i>
-                        Login Again
-                    </a>
-                </div>
-
-                <!-- Support Information -->
-                <div class="mt-4 text-center">
-                    <p class="text-muted small">
-                        Need help? Contact our support team or check your account permissions.
-                    </p>
-                </div>
+            
+            <!-- Action Buttons -->
+            <div class="access-denied-actions">
+                <a href="@Url.Action("Index", "Home")" class="btn-access-denied btn-primary-access">
+                    <i class="fas fa-home"></i>
+                    Go to Home
+                </a>
+                <a href="@Url.Action("Login", "Auth")" class="btn-access-denied btn-secondary-access">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login Again
+                </a>
+            </div>
+            
+            <!-- Support Information -->
+            <div class="access-denied-support">
+                <p class="support-text">
+                    <strong>Need assistance?</strong> Contact our support team or check your account permissions. 
+                    If you believe this is an error, please report it to your system administrator.
+                </p>
             </div>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/global.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/shared/toast-notifications.js" asp-append-version="true"></script>
 </body>
 
 </html>

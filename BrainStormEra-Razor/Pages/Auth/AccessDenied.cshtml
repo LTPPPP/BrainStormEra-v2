@@ -2,73 +2,103 @@
 @model BrainStormEra_Razor.Pages.Auth.AccessDeniedModel
 @{
     ViewData["Title"] = "Access Denied";
-    Layout = "~/Pages/Shared/_Layout.cshtml";
+    Layout = null;
 }
 
-<div class="access-denied-container">
-    <div class="access-denied-box">
-        <img src="/SharedMedia/logo/logowithoutbackground.png" alt="BrainStormEra Logo" 
-             style="height: 60px; margin-bottom: 20px;" 
-             onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-logo.svg';" />
-        <div class="icon">🚫</div>
-        <h2>Access Denied</h2>
-        <p>You don't have permission to access this resource.</p>
-        <p>Please contact your administrator if you believe this is an error.</p>
-        <a href="/auth/login" class="btn-back">Back to Login</a>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Access Denied - BrainStormEra</title>
+    <link rel="icon" type="image/x-icon" href="~/SharedMedia/logo/logowithoutbackground.png" sizes="48x48">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/global.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth/access-denied.css" asp-append-version="true" />
+</head>
+
+<body>
+    <!-- Toast notification data containers -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div data-toast-success="@TempData["SuccessMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div data-toast-error="@TempData["ErrorMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div data-toast-warning="@TempData["WarningMessage"]" style="display:none;"></div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div data-toast-info="@TempData["InfoMessage"]" style="display:none;"></div>
+    }
+
+    <div class="access-denied-container">
+        <div class="access-denied-card">
+            <!-- Logo -->
+            <img src="~/SharedMedia/logo/logowithoutbackground.png" 
+                 alt="BrainStormEra Logo" 
+                 class="access-denied-logo"
+                 onerror="this.onerror=null; this.src='~/SharedMedia/defaults/default-logo.svg';" />
+            
+            <!-- Main Icon -->
+            <i class="fas fa-ban access-denied-icon"></i>
+            
+            <!-- Title and Subtitle -->
+            <h1 class="access-denied-title">Access Denied</h1>
+            <h2 class="access-denied-subtitle">Permission Required</h2>
+            
+            <!-- Main Message -->
+            <p class="access-denied-message">
+                You don't have the necessary permissions to access this resource. 
+                Please contact your administrator if you believe this is an error.
+            </p>
+            
+            <!-- Reasons Section -->
+            <div class="access-denied-reasons">
+                <h4>
+                    <i class="fas fa-info-circle"></i>
+                    This could happen for several reasons:
+                </h4>
+                <ul class="reasons-list">
+                    <li>You don't have the required permissions for this resource</li>
+                    <li>Your session may have expired or become invalid</li>
+                    <li>The resource requires a different user role</li>
+                    <li>Administrative restrictions may be in place</li>
+                </ul>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="access-denied-actions">
+                <a href="/" class="btn-access-denied btn-primary-access">
+                    <i class="fas fa-home"></i>
+                    Go to Home
+                </a>
+                <a href="/auth/login" class="btn-access-denied btn-secondary-access">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login Again
+                </a>
+            </div>
+            
+            <!-- Support Information -->
+            <div class="access-denied-support">
+                <p class="support-text">
+                    <strong>Need assistance?</strong> Contact our support team or check your account permissions. 
+                    If you believe this is an error, please report it to your system administrator.
+                </p>
+            </div>
+        </div>
     </div>
-</div>
 
-<style>
-    .access-denied-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 80vh;
-        background-color: #f5f5f5;
-        padding: 20px;
-    }
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/shared/toast-notifications.js" asp-append-version="true"></script>
+</body>
 
-    .access-denied-box {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        padding: 40px;
-        text-align: center;
-        max-width: 400px;
-        width: 100%;
-    }
-
-    .icon {
-        font-size: 48px;
-        margin-bottom: 20px;
-    }
-
-    .access-denied-box h2 {
-        color: #d32f2f;
-        margin-bottom: 15px;
-        font-size: 24px;
-    }
-
-    .access-denied-box p {
-        color: #666;
-        margin-bottom: 10px;
-        line-height: 1.5;
-    }
-
-    .btn-back {
-        display: inline-block;
-        background-color: #007bff;
-        color: white;
-        text-decoration: none;
-        padding: 10px 20px;
-        border-radius: 4px;
-        margin-top: 20px;
-        transition: background-color 0.3s;
-    }
-
-    .btn-back:hover {
-        background-color: #0056b3;
-        text-decoration: none;
-        color: white;
-    }
-</style>
+</html>
