@@ -571,7 +571,7 @@
   right: 80px;
   width: 6px;
   height: 6px;
-  background: #4CAF50;
+  background: #4caf50;
   border-radius: 50%;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -584,7 +584,7 @@
 /* Conversation Restored Notice */
 .conversation-restored-notice {
   background: #e8f5e8;
-  border: 1px solid #4CAF50;
+  border: 1px solid #4caf50;
   border-radius: 8px;
   padding: 8px 12px;
   margin-bottom: 12px;
@@ -598,7 +598,7 @@
 }
 
 .conversation-restored-notice i {
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 .clear-history-btn {

@@ -9,7 +9,7 @@ class ChatbotManager {
     this.pendingResponse = false;
     this.currentTypewriterTask = null;
     this.queuedResponses = [];
-    this.sessionStorageKey = 'chatbot_conversation_history';
+    this.sessionStorageKey = "chatbot_conversation_history";
     this.init();
   }
   init() {
@@ -145,7 +145,7 @@ class ChatbotManager {
       document.getElementById("chatbot-input").focus();
       // Clear notifications when chatbot is opened
       this.clearNotification();
-      
+
       // Show conversation restored message if there's history
       if (this.messages.length > 1) {
         this.showConversationRestoredNotice();
@@ -238,7 +238,7 @@ class ChatbotManager {
     message = message.replace(/\*(.*?)\*/g, "<em>$1</em>");
 
     return message;
-  }  // Simple message display with typewriter effect
+  } // Simple message display with typewriter effect
   addMessage(content, sender, conversationId = null) {
     const messagesContainer = document.getElementById("chatbot-messages");
     const isUser = sender === "user";
@@ -479,32 +479,32 @@ class ChatbotManager {
       // Show loading state
       const messagesContainer = document.getElementById("chatbot-messages");
       const header = document.querySelector(".chatbot-header");
-      
+
       messagesContainer.classList.add("loading-history");
-      
+
       // Load conversation history from sessionStorage
       const savedHistory = sessionStorage.getItem(this.sessionStorageKey);
       if (savedHistory) {
         const history = JSON.parse(savedHistory);
         this.messages = history;
-        
+
         // Clear loading state
         messagesContainer.classList.remove("loading-history");
-        
+
         // Restore messages to UI
         messagesContainer.innerHTML = "";
-        
+
         history.forEach((msg, index) => {
           setTimeout(() => {
             this.restoreMessageToUI(msg);
           }, index * 50); // Stagger the restoration for smooth effect
         });
-        
+
         // Add history indicator to header
         if (header && history.length > 0) {
           header.classList.add("has-history");
         }
-        
+
         setTimeout(() => {
           this.scrollToBottom();
         }, history.length * 50 + 100);
@@ -513,7 +513,7 @@ class ChatbotManager {
         messagesContainer.classList.remove("loading-history");
       }
     } catch (error) {
-      console.error('Error loading conversation history:', error);
+      console.error("Error loading conversation history:", error);
       // Clear corrupted data and loading state
       sessionStorage.removeItem(this.sessionStorageKey);
       const messagesContainer = document.getElementById("chatbot-messages");
@@ -550,13 +550,15 @@ class ChatbotManager {
         </button>
       </div>
     `;
-    
+
     // Insert at the top of messages
     messagesContainer.insertAdjacentHTML("afterbegin", noticeHTML);
-    
+
     // Auto remove after 5 seconds
     setTimeout(() => {
-      const notice = messagesContainer.querySelector(".conversation-restored-notice");
+      const notice = messagesContainer.querySelector(
+        ".conversation-restored-notice"
+      );
       if (notice) {
         notice.style.opacity = "0";
         setTimeout(() => {
@@ -680,7 +682,7 @@ class ChatbotManager {
       // Reset conversation state
       this.messages = [];
       this.conversationHistory = [];
-      
+
       // Clear saved conversation history
       this.clearConversationHistory();
 
@@ -703,22 +705,28 @@ class ChatbotManager {
       sender: sender,
       conversationId: conversationId,
       timestamp: timestamp,
-      id: Date.now() + Math.random() // unique id
+      id: Date.now() + Math.random(), // unique id
     };
-    
+
     this.messages.push(message);
-    
+
     try {
-      sessionStorage.setItem(this.sessionStorageKey, JSON.stringify(this.messages));
+      sessionStorage.setItem(
+        this.sessionStorageKey,
+        JSON.stringify(this.messages)
+      );
     } catch (error) {
-      console.error('Error saving conversation history:', error);
+      console.error("Error saving conversation history:", error);
       // If storage is full, remove oldest messages
       if (this.messages.length > 50) {
         this.messages = this.messages.slice(-30); // Keep last 30 messages
         try {
-          sessionStorage.setItem(this.sessionStorageKey, JSON.stringify(this.messages));
+          sessionStorage.setItem(
+            this.sessionStorageKey,
+            JSON.stringify(this.messages)
+          );
         } catch (e) {
-          console.error('Error saving trimmed conversation history:', e);
+          console.error("Error saving trimmed conversation history:", e);
         }
       }
     }
@@ -741,7 +749,9 @@ class ChatbotManager {
       isUser ? "User" : "Bot"
     }" class="message-avatar" onerror="this.src='/SharedMedia/defaults/default-avatar.svg'" />
                 <div class="message-wrapper">
-                    <div class="message-content">${this.formatMessage(message.content)}</div>
+                    <div class="message-content">${this.formatMessage(
+                      message.content
+                    )}</div>
                     <div class="message-time">${message.timestamp}</div>
                 </div>
             </div>
@@ -760,7 +770,7 @@ class ChatbotManager {
         header.classList.remove("has-history");
       }
     } catch (error) {
-      console.error('Error clearing conversation history:', error);
+      console.error("Error clearing conversation history:", error);
     }
   }
 }
