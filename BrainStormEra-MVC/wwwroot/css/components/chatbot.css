@@ -246,6 +246,7 @@
 }
 
 .message.user .message-content {
+  padding: 0.5rem 0.75rem;
   background: var(--primary-color, #3498db);
   color: white;
   border-bottom-right-radius: 4px;
