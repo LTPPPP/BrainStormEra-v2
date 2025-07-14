@@ -138,6 +138,8 @@
 
 .chatbot-new-chat-btn:hover {
   background-color: rgba(255, 255, 255, 0.1);
+  transform: rotate(90deg);
+  transition: all 0.3s ease;
 }
 
 /* Chat Messages Area */
@@ -495,11 +497,133 @@
   margin: 10px auto;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
+/* Conversation History Loading */
+.chatbot-messages.loading-history {
+  position: relative;
+}
+
+.chatbot-messages.loading-history::before {
+  content: "Loading conversation history...";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #90949c;
+  font-size: 14px;
+  z-index: 10;
+}
+
+.chatbot-messages.loading-history::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin-top: 25px;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e1e5e9;
+  border-top: 2px solid var(--primary-color, #3498db);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 10;
+}
+
+/* Conversation History Badge */
+.conversation-history-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--primary-color, #3498db);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+/* Message restored state */
+.message.restored {
+  animation: fadeInFromHistory 0.3s ease;
+}
+
+@keyframes fadeInFromHistory {
+  from {
+    opacity: 0.5;
+    transform: translateX(-10px);
   }
-  100% {
-    transform: rotate(360deg);
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Session storage indicator */
+.chatbot-header::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 80px;
+  width: 6px;
+  height: 6px;
+  background: #4CAF50;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.chatbot-header.has-history::after {
+  opacity: 1;
+}
+
+/* Conversation Restored Notice */
+.conversation-restored-notice {
+  background: #e8f5e8;
+  border: 1px solid #4CAF50;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #2e7d32;
+  animation: slideInDown 0.3s ease;
+  transition: opacity 0.3s ease;
+}
+
+.conversation-restored-notice i {
+  color: #4CAF50;
+}
+
+.clear-history-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.clear-history-btn:hover {
+  background: rgba(255, 0, 0, 0.1);
+  color: #f44336;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
