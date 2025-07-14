@@ -1,9 +1,42 @@
 dotnet tool install --global dotnet-ef
-dotnet add package Microsoft.EntityFrameworkCore.Design
-dotnet add package Microsoft.EntityFrameworkCore.SqlServer
-dotnet add package Newtonsoft.Json
-dotnet add package BCrypt.Net-Next
+
+# Core Entity Framework packages
+dotnet add package Microsoft.EntityFrameworkCore.Design --version 9.0.6
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer --version 9.0.6
+
+# JSON serialization
+dotnet add package Newtonsoft.Json --version 13.0.3
+
+# Authentication & Security
+dotnet add package BCrypt.Net-Next --version 4.0.3
+dotnet add package Microsoft.AspNetCore.Authentication.Cookies --version 2.3.0
+
+# Payment integration
 dotnet add package VNPAY.NET --version 8.5.0
-dotnet add package Microsoft.AspNetCore.Http.Abstractions
-dotnet add package Microsoft.AspNetCore.Mvc
-dotnet add package Microsoft.AspNetCore.SignalR
+
+# ASP.NET Core packages
+dotnet add package Microsoft.AspNetCore.Http.Abstractions --version 2.3.0
+dotnet add package Microsoft.AspNetCore.Http --version 2.3.0
+dotnet add package Microsoft.AspNetCore.Mvc --version 2.3.0
+dotnet add package Microsoft.AspNetCore.Hosting.Abstractions --version 2.3.0
+
+# SignalR for real-time communication
+dotnet add package Microsoft.AspNetCore.SignalR --version 1.2.0
+dotnet add package Microsoft.AspNetCore.SignalR.StackExchangeRedis --version 8.0.11
+
+# Redis caching
+dotnet add package StackExchange.Redis --version 2.8.16
+dotnet add package Microsoft.Extensions.Caching.StackExchangeRedis --version 8.0.11
+dotnet add package Microsoft.Extensions.Caching.Memory --version 9.0.6
+
+# Microsoft Extensions
+dotnet add package Microsoft.Extensions.Hosting.Abstractions --version 8.0.1
+dotnet add package Microsoft.Extensions.Logging.Abstractions --version 9.0.6
+dotnet add package Microsoft.Extensions.Configuration.Abstractions --version 9.0.6
+dotnet add package Microsoft.Extensions.DependencyInjection --version 9.0.6
+
+# Environment configuration
+dotnet add package DotNetEnv --version 3.1.1
+
+# PDF generation (for MVC project)
+dotnet add package Rotativa.AspNetCore --version 1.4.0
