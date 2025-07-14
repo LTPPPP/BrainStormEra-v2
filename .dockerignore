@@ -1,13 +1,132 @@
+# BrainStormEra Docker Ignore File
+# This file specifies which files and directories should be excluded when building Docker images
+
 # Git
 .git
 .gitignore
 .gitattributes
 
 # Documentation
-README.md
 *.md
+README*
+docs/
+LICENSE
 
-# Visual Studio
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Environment files (except examples)
+.env
+!.env.example
+
+# IDE and Editor files
+.vscode/
+.vs/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build artifacts - .NET
+**/bin/
+**/obj/
+**/*.user
+
+# Build artifacts - Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+.mypy_cache/
+.tox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Dependencies
+**/node_modules/
+**/packages/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Runtime data
+*.pid
+*.seed
+*.pid.lock
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# AI model files (they should be downloaded in container)
+**/models/*.bin
+**/models/*.safetensors
+**/models/*.pt
+**/models/*.pth
+
+# Data directories (will be mounted as volumes)
+**/data/
+**/uploads/
+**/downloads/
+**/chroma_db/
+
+# Configuration files with sensitive data
+**/config.json
+**/appsettings.Development.json
+**/appsettings.Production.json
+
+# Backup files
+*.bak
+*.backup
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+
+# Large media files
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.mp3
+*.wav
+*.flac
+
+# Generated files
+*.generated.*
 .vs/
 .vscode/
 *.user

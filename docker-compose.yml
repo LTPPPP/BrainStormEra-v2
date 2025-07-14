@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # SQL Server Database
+  # SQL Server Database (Main Database)
   database:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: brainstormera-db
@@ -23,6 +23,18 @@ services:
       timeout: 10s
       retries: 5
 
+  # Redis (For AI Services Caching)
+  redis:
+    image: redis:7-alpine
+    container_name: brainstormera-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - brainstormera-network
+    restart: unless-stopped
+
   # MVC Application
   mvc:
     build:
@@ -31,10 +43,11 @@ services:
     container_name: brainstormera-mvc
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:5000
-      - ConnectionStrings__DefaultConnection=Server=database;Database=BrainStormEra;User ID=sa;Password=YourStrong@Passw0rd;Trust Server Certificate=True;MultipleActiveResultSets=true
+      - ASPNETCORE_URLS=http://+:5216
+      - ConnectionStrings__DefaultConnection=Server=LTP; Database=BrainStormEra;User ID=sa;Password=01654460072ltp;Trust Server Certificate=TrueMultipleActiveResultSets=true
     ports:
-      - "5000:5000"
+      - "5216:5216"
+      - "7162:7162" # Optional port for additional services
     depends_on:
       database:
         condition: service_healthy
@@ -57,10 +70,11 @@ services:
     container_name: brainstormera-razor
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:5001
-      - ConnectionStrings__DefaultConnection=Server=database;Database=BrainStormEra;User ID=sa;Password=YourStrong@Passw0rd;Trust Server Certificate=True;MultipleActiveResultSets=true
+      - ASPNETCORE_URLS=http://+:7289
+      - ConnectionStrings__DefaultConnection=Server=LTP; Database=BrainStormEra;User ID=sa;Password=01654460072ltp;Trust Server Certificate=TrueMultipleActiveResultSets=true
     ports:
-      - "5001:5001"
+      - "7289:7289"
+      - "5274:5274" # Optional port for additional services
     depends_on:
       database:
         condition: service_healthy
@@ -75,12 +89,37 @@ services:
       timeout: 10s
       retries: 3
 
+  # Redis Commander (Optional - for Redis management)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: brainstormera-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - brainstormera-network
+    restart: unless-stopped
+
 # Networks
 networks:
   brainstormera-network:
     driver: bridge
+    name: brainstormera-network
 
 # Volumes
 volumes:
   sql_data:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rag_img_data:
+    driver: local
+  rag_vid_data:
+    driver: local
+  pgadmin_data:
     driver: local

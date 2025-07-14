@@ -9,7 +9,7 @@ import sys
 
 def create_env_file():
     """Create .env file from template"""
-    template_file = "env-template.txt"
+    template_file = ".env.template"
     env_file = ".env"
     
     if os.path.exists(env_file):
@@ -72,12 +72,10 @@ def display_next_steps():
     print("   https://makersuite.google.com/")
     print("\n3. Install dependencies (if not already done):")
     print("   pip install -r requirements.txt")
-    print("\n4. Test the setup:")
-    print("   python run.py check")
-    print("\n5. Run the service:")
-    print("   python run.py dev")
-    print("\n6. Test the API:")
-    print("   python test_service.py")
+    print("\n4. Run the service:")
+    print("   python run.py")
+    print("\n5. Alternative run method:")
+    print("   uvicorn app.main:app --host 0.0.0.0 --port 7000 --reload")
 
 def main():
     """Main setup function"""

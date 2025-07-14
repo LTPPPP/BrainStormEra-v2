@@ -1,0 +1,324 @@
+/* 
+ * ========================================
+ * ACCESS DENIED PAGE STYLES
+ * ========================================
+ * 
+ * Modern, professional styling for the Access Denied page
+ * Following the application's design patterns and using global variables
+ * 
+ * Features:
+ * - Clean, centered layout
+ * - Consistent with application theme
+ * - Responsive design
+ * - Modern card-based interface
+ * - Proper use of global CSS variables
+ * - Standalone page without header/footer
+ * ========================================
+ */
+
+/* Full page styling for standalone page */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-white) 100%);
+}
+
+.access-denied-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+}
+
+.access-denied-card {
+    background: var(--bg-white);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px var(--shadow-light);
+    padding: 40px;
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+    border: 1px solid var(--border-light);
+    position: relative;
+    overflow: hidden;
+}
+
+.access-denied-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--error-color), var(--accent-color));
+}
+
+.access-denied-logo {
+    max-height: 60px;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 2px 4px var(--shadow-color));
+}
+
+.access-denied-icon {
+    font-size: 64px;
+    color: var(--error-color);
+    margin-bottom: 20px;
+    display: block;
+    text-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.access-denied-title {
+    color: var(--text-primary);
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    line-height: 1.2;
+}
+
+.access-denied-subtitle {
+    color: var(--error-color);
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 24px;
+}
+
+.access-denied-message {
+    color: var(--text-gray);
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 32px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.access-denied-reasons {
+    background: var(--bg-error-light);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 32px;
+    border-left: 4px solid var(--error-color);
+}
+
+.access-denied-reasons h4 {
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.reasons-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.reasons-list li {
+    color: var(--text-gray);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.reasons-list li::before {
+    content: '•';
+    color: var(--error-color);
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.access-denied-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-access-denied {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-access-denied::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-access-denied:hover::before {
+    left: 100%;
+}
+
+.btn-primary-access {
+    background: var(--primary-alt);
+    color: var(--text-light);
+    border-color: var(--primary-alt);
+}
+
+.btn-primary-access:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: var(--text-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+.btn-secondary-access {
+    background: var(--bg-white);
+    color: var(--text-gray);
+    border-color: var(--border-color);
+}
+
+.btn-secondary-access:hover {
+    background: var(--bg-light);
+    border-color: var(--border-medium);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-light);
+}
+
+.access-denied-support {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-light);
+}
+
+.support-text {
+    color: var(--text-subtle);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.support-text strong {
+    color: var(--text-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .access-denied-container {
+        min-height: 100vh;
+        padding: 20px 16px;
+    }
+    
+    .access-denied-card {
+        padding: 30px 20px;
+    }
+    
+    .access-denied-title {
+        font-size: 24px;
+    }
+    
+    .access-denied-subtitle {
+        font-size: 16px;
+    }
+    
+    .access-denied-icon {
+        font-size: 48px;
+    }
+    
+    .access-denied-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn-access-denied {
+        width: 100%;
+        max-width: 200px;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .access-denied-card {
+        padding: 24px 16px;
+        margin: 0 8px;
+    }
+    
+    .access-denied-title {
+        font-size: 20px;
+    }
+    
+    .access-denied-message {
+        font-size: 14px;
+    }
+}
+
+/* Animation for smooth entrance */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.access-denied-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Loading state for buttons */
+.btn-access-denied:active {
+    transform: translateY(0);
+}
+
+/* Focus states for accessibility */
+.btn-access-denied:focus {
+    outline: 2px solid var(--primary-alt);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .access-denied-card {
+        border: 2px solid var(--text-primary);
+    }
+    
+    .access-denied-reasons {
+        border-left-width: 6px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .access-denied-card {
+        animation: none;
+    }
+    
+    .btn-access-denied {
+        transition: none;
+    }
+    
+    .btn-access-denied::before {
+        display: none;
+    }
+} 

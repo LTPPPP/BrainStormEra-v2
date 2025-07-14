@@ -2,7 +2,7 @@ import google.generativeai as genai
 import json
 import re
 from typing import List, Dict, Optional
-from config import settings
+from ..core.config import settings
 import logging
 
 # Configure logging

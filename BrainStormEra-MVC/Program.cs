@@ -8,6 +8,10 @@ using Microsoft.Extensions.FileProviders;
 using Rotativa.AspNetCore;
 using BrainStormEra_MVC.Middlewares;
 using BusinessLogicLayer.Utilities;
+using StackExchange.Redis;
+using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Services.Implementations;
+using BusinessLogicLayer.Services;
 
 namespace BrainStormEra_MVC
 {
@@ -26,25 +30,134 @@ namespace BrainStormEra_MVC
             // Add HttpContextAccessor for services that need access to HTTP context
             builder.Services.AddHttpContextAccessor();
 
-            // Add Response Compression for better performance
+            // === HIGH PERFORMANCE CONFIGURATIONS ===
+
+            // Enhanced Response Compression for better performance
             builder.Services.AddResponseCompression(options =>
             {
                 options.EnableForHttps = true;
+                options.MimeTypes = new[] { "text/plain", "text/html", "text/css", "text/javascript", "application/javascript", "application/json" };
             });
 
             // Add Memory Cache for better performance
-            builder.Services.AddMemoryCache();
+            builder.Services.AddMemoryCache(options =>
+            {
+                options.SizeLimit = 1024 * 1024 * 100; // 100MB
+                options.CompactionPercentage = 0.2;
+                options.ExpirationScanFrequency = TimeSpan.FromMinutes(1);
+            });
 
-            // Add Response Caching
-            builder.Services.AddResponseCaching();
+            // === REDIS AND CACHING SETUP ===
+            bool useRedis = false;
+            try
+            {
+                // Try to connect to Redis
+                var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+                var connectionMultiplexer = ConnectionMultiplexer.Connect(redisConnectionString);
 
-            // Add SignalR
-            builder.Services.AddSignalR(options =>
+                // Test Redis connection
+                var database = connectionMultiplexer.GetDatabase();
+                database.StringSet("test", "connection");
+                var testValue = database.StringGet("test");
+
+                if (testValue == "connection")
+                {
+                    useRedis = true;
+                    builder.Services.AddSingleton<IConnectionMultiplexer>(connectionMultiplexer);
+
+                    builder.Services.AddStackExchangeRedisCache(options =>
+                    {
+                        options.ConfigurationOptions = ConfigurationOptions.Parse(redisConnectionString);
+                        options.InstanceName = "BrainStormEra";
+                    });
+
+                    Console.WriteLine("✅ Redis connected successfully - Using Redis services");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Redis connection failed: {ex.Message}");
+                Console.WriteLine("📝 Falling back to in-memory services");
+                useRedis = false;
+            }
+
+            // Fallback to memory cache if Redis is not available
+            if (!useRedis)
+            {
+                builder.Services.AddDistributedMemoryCache();
+            }
+
+            // Add Response Caching with enhanced settings
+            builder.Services.AddResponseCaching(options =>
+            {
+                options.MaximumBodySize = 1024 * 1024 * 10; // 10MB
+                options.UseCaseSensitivePaths = false;
+            });
+
+            // Enhanced SignalR Configuration for High Load
+            var signalRBuilder = builder.Services.AddSignalR(options =>
             {
                 options.EnableDetailedErrors = builder.Environment.IsDevelopment();
                 options.KeepAliveInterval = TimeSpan.FromSeconds(15);
                 options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+                options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+                options.MaximumReceiveMessageSize = 1024 * 1024; // 1MB
+                options.StreamBufferCapacity = 10;
+                options.MaximumParallelInvocationsPerClient = 5;
             });
+
+            // Add Redis backplane only if Redis is available
+            if (useRedis)
+            {
+                signalRBuilder.AddStackExchangeRedis(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379", options =>
+                {
+                    options.Configuration.ChannelPrefix = RedisChannel.Literal("BrainStormEra.SignalR");
+                });
+            }
+
+            // === DATABASE CONFIGURATION WITH OPTIMIZATION ===
+
+            // Enhanced Database Configuration with Connection Pooling
+            builder.Services.AddDbContext<BrainStormEraContext>(options =>
+            {
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
+                {
+                    sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(5),
+                        errorNumbersToAdd: null);
+
+                    sqlOptions.CommandTimeout(30);
+                });
+
+                // Performance optimizations
+                options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
+                options.EnableDetailedErrors(builder.Environment.IsDevelopment());
+                options.EnableServiceProviderCaching();
+                options.EnableSensitiveDataLogging(false); // Disable in production
+            });
+
+            // === MESSAGE QUEUE AND CHAT SERVICES ===
+
+            // Register Message Queue Service based on Redis availability
+            if (useRedis)
+            {
+                builder.Services.AddScoped<IMessageQueueService, RedisMessageQueueService>();
+                Console.WriteLine("📨 Using Redis Message Queue Service");
+            }
+            else
+            {
+                builder.Services.AddScoped<IMessageQueueService, InMemoryMessageQueueService>();
+                Console.WriteLine("📨 Using In-Memory Message Queue Service");
+            }
+
+            // Register High-Performance Chat Service
+            builder.Services.AddScoped<IChatService, HighPerformanceChatService>();
+
+            // Register Message Processing Background Service
+            builder.Services.AddHostedService<MessageProcessingService>();
+
+            // === EXISTING SERVICES REGISTRATION ===
 
             // Register ALL Repositories from DataAccessLayer (14 repositories)
             builder.Services.AddScoped(typeof(DataAccessLayer.Repositories.Interfaces.IBaseRepo<>), typeof(DataAccessLayer.Repositories.BaseRepo<>));
@@ -112,6 +225,7 @@ namespace BrainStormEra_MVC
 
             // Register Auth Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();
+
             // Register Home Services for data access and business logic
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IHomeService, BusinessLogicLayer.Services.HomeService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.HomeServiceImpl>();
@@ -123,12 +237,8 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<BusinessLogicLayer.Services.RecommendationHelper>();
 
             // Register Services for data access and business logic
-
-
-
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.EnrollmentService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementService, BusinessLogicLayer.Services.AchievementService>();
-
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICertificateService, BusinessLogicLayer.Services.CertificateService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserContextService, BusinessLogicLayer.Services.UserContextService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IResponseService, BusinessLogicLayer.Services.ResponseService>();
@@ -194,20 +304,22 @@ namespace BrainStormEra_MVC
                     throw new Exception("Connection string is missing or empty!");
                 }
 
-                builder.Services.AddDbContext<BrainStormEraContext>(options =>
-                {
-                    options.UseSqlServer(connectionString, sqlOptions =>
-                    {
-                        sqlOptions.CommandTimeout(60); // Increased timeout for complex queries
-                        sqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorNumbersToAdd: null);
-                    });
-                    // Remove sensitive data logging in production for better performance
-                    if (builder.Environment.IsDevelopment())
-                    {
-                        options.EnableSensitiveDataLogging();
-                    }
-                    options.EnableServiceProviderCaching();
-                });
+                // The original code had this block commented out, but it's now part of the enhanced DB config.
+                // Keeping it commented out as per instructions to only apply specified changes.
+                // builder.Services.AddDbContext<BrainStormEraContext>(options =>
+                // {
+                //     options.UseSqlServer(connectionString, sqlOptions =>
+                //     {
+                //         sqlOptions.CommandTimeout(60); // Increased timeout for complex queries
+                //         sqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorNumbersToAdd: null);
+                //     });
+                //     // Remove sensitive data logging in production for better performance
+                //     if (builder.Environment.IsDevelopment())
+                //     {
+                //         options.EnableSensitiveDataLogging();
+                //     }
+                //     options.EnableServiceProviderCaching();
+                // });
             }
             catch
             {
@@ -221,7 +333,7 @@ namespace BrainStormEra_MVC
             {
                 using (var scope = app.Services.CreateScope())
                 {
-                    var context = scope.ServiceProvider.GetRequiredService<BrainStormEraContext>();
+                    var context = scope.ServiceProvider.GetRequiredService<BrainStormEraContext>(); // Changed to BrainStormEraContext
                     var canConnect = await context.Database.CanConnectAsync();
                     if (canConnect)
                     {

@@ -1,0 +1,40 @@
+# Environment Configuration Example
+# Copy this content to a file named .env in the same directory
+
+# API Configuration
+HOST=0.0.0.0
+PORT=6767
+RELOAD=true
+
+# CORS Configuration
+ALLOWED_ORIGINS=*
+ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS
+ALLOWED_HEADERS=*
+
+# AI Models
+# Get your Gemini API key from: https://makersuite.google.com/app/apikey
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Whisper Model Configuration
+# Options: tiny, base, small, medium, large
+# tiny: fastest, lowest accuracy (~39MB)
+# base: good balance (default) (~74MB)
+# small: better accuracy (~244MB)
+# medium: high accuracy (~769MB)
+# large: highest accuracy (~1550MB)
+WHISPER_MODEL=base
+
+# Processing Configuration
+# Default processing mode: local or transcript_api
+DEFAULT_PROCESSING_MODE=local
+
+# Video Download Configuration
+# Maximum video quality to download (to save bandwidth and storage)
+MAX_VIDEO_QUALITY=720p
+
+# Storage Configuration
+# Auto cleanup downloaded videos after processing (true/false)
+AUTO_CLEANUP=true
+
+# Logging Configuration
+LOG_LEVEL=INFO 

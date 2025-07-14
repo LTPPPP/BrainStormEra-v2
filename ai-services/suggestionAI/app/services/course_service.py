@@ -1,100 +1,15 @@
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session
-from typing import List, Optional
-import os
-from pydantic import BaseModel
-import re
-from datetime import datetime
-from difflib import SequenceMatcher
-import json
-from config import settings
-from gemini_service import gemini_service
+"""
+Course service for handling course matching and suggestion logic
+"""
 
-# Pydantic models
-class CourseRequest(BaseModel):
-    description: str
+from typing import List
+from sqlalchemy.orm import Session
+from sqlalchemy import text
 
-class CourseResponse(BaseModel):
-    course_id: str
-    course_name: str
-    course_description: Optional[str]
-    author_name: Optional[str]
-    categories: List[str]
-    chapters: List[str]
-    created_at: datetime
-    similarity_score: float
-    match_reasons: List[str]
-    gemini_relevance_score: Optional[float] = None
-    gemini_match_points: Optional[List[str]] = None
+from ..models.response import CourseResponse
+from .analysis_service import extract_keywords, calculate_similarity
+from .gemini_service import gemini_service
 
-class UserAnalysisResponse(BaseModel):
-    main_subjects: List[str]
-    skill_level: str
-    learning_goals: List[str]
-    keywords: List[str]
-    course_type_preference: str
-    technologies: List[str]
-    career_focus: str
-    urgency: str
-
-class EnhancedSuggestionResponse(BaseModel):
-    user_analysis: UserAnalysisResponse
-    suggestions: List[CourseResponse]
-    enhanced_keywords: List[str]
-    smart_query: str
-
-# FastAPI app
-app = FastAPI(
-    title="Course Suggestion AI Service",
-    description="AI service to suggest similar courses based on user description",
-    version="1.0.0"
-)
-
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Database configuration
-engine = create_engine(settings.DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# AI Analysis functions
-def extract_keywords(text: str) -> List[str]:
-    """Extract meaningful keywords from description"""
-    # Convert to lowercase and remove punctuation
-    text = re.sub(r'[^\w\s]', ' ', text.lower())
-    
-    # Common stop words in Vietnamese and English
-    stop_words = {
-        'và', 'các', 'của', 'trong', 'với', 'là', 'có', 'được', 'cho', 'về', 'từ', 'một', 'tôi', 'bạn',
-        'and', 'the', 'in', 'to', 'of', 'a', 'for', 'is', 'on', 'with', 'as', 'by', 'an', 'are', 'this', 'that'
-    }
-    
-    words = text.split()
-    keywords = [word for word in words if len(word) > 2 and word not in stop_words]
-    
-    return keywords
-
-def calculate_similarity(desc1: str, desc2: str) -> float:
-    """Calculate similarity between two descriptions"""
-    if not desc1 or not desc2:
-        return 0.0
-    
-    return SequenceMatcher(None, desc1.lower(), desc2.lower()).ratio()
 
 def find_matching_courses(description: str, db: Session) -> List[CourseResponse]:
     """Find courses matching the description using AI analysis"""
@@ -247,78 +162,4 @@ def find_matching_courses(description: str, db: Session) -> List[CourseResponse]
     
     # Sort by similarity score and return top 10
     suggestions.sort(key=lambda x: x.similarity_score, reverse=True)
-    return suggestions[:10]
-
-@app.get("/")
-async def root():
-    return {"message": "Course Suggestion AI Service is running!"}
-
-@app.post("/suggest-courses", response_model=List[CourseResponse])
-async def suggest_courses(request: CourseRequest, db: Session = Depends(get_db)):
-    """
-    Suggest courses based on user description (Legacy endpoint for backward compatibility)
-    """
-    if not request.description or len(request.description.strip()) < 3:
-        raise HTTPException(status_code=400, detail="Description must be at least 3 characters long")
-    
-    try:
-        suggestions = find_matching_courses(request.description, db)
-        return suggestions
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
-
-@app.post("/suggest-courses-enhanced", response_model=EnhancedSuggestionResponse)
-async def suggest_courses_enhanced(request: CourseRequest, db: Session = Depends(get_db)):
-    """
-    Enhanced course suggestions with Gemini AI analysis and detailed insights
-    """
-    if not request.description or len(request.description.strip()) < 3:
-        raise HTTPException(status_code=400, detail="Description must be at least 3 characters long")
-    
-    try:
-        # Get user analysis
-        user_analysis = gemini_service.analyze_user_intent(request.description)
-        
-        # Get enhanced keywords
-        basic_keywords = extract_keywords(request.description)
-        enhanced_keywords = gemini_service.enhance_keywords(request.description, basic_keywords)
-        
-        # Generate smart query
-        smart_query = gemini_service.generate_smart_query(request.description, user_analysis)
-        
-        # Get course suggestions
-        suggestions = find_matching_courses(request.description, db)
-        
-        # Return enhanced response
-        return EnhancedSuggestionResponse(
-            user_analysis=UserAnalysisResponse(**user_analysis),
-            suggestions=suggestions,
-            enhanced_keywords=enhanced_keywords,
-            smart_query=smart_query
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {
-        "status": "healthy", 
-        "timestamp": datetime.now(),
-        "gemini_enabled": gemini_service.enabled,
-        "gemini_model": settings.GEMINI_MODEL if gemini_service.enabled else None
-    }
-
-@app.get("/gemini-status")
-async def gemini_status():
-    """Check Gemini AI service status"""
-    return {
-        "enabled": gemini_service.enabled,
-        "model": settings.GEMINI_MODEL if gemini_service.enabled else None,
-        "api_key_configured": bool(settings.GEMINI_API_KEY),
-        "use_gemini_setting": settings.USE_GEMINI
-    }
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host=settings.HOST, port=settings.PORT) 
+    return suggestions[:10] 
