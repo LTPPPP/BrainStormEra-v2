@@ -84,7 +84,7 @@ namespace BrainStormEra_MVC.Controllers
                 }
 
                 // Check if user has certificate for this course
-                if (User.Identity?.IsAuthenticated == true && result.ViewModel.IsEnrolled)
+                if (User.Identity?.IsAuthenticated == true && result.ViewModel != null && result.ViewModel.IsEnrolled)
                 {
                     try
                     {
@@ -388,9 +388,9 @@ namespace BrainStormEra_MVC.Controllers
             {
                 var result = await _courseServiceImpl.GetLearnManagementDataAsync(User, courseId);
 
-                if (!result.Success)
+                if (!result.Success || result.ViewModel == null)
                 {
-                    return Json(new { success = false, message = result.ErrorMessage });
+                    return Json(new { success = false, message = result.ErrorMessage ?? "Course data not found" });
                 }
 
                 return Json(new

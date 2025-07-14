@@ -627,7 +627,7 @@
                                                         @{
                                                             var orderedLessons = chapter.Lessons.Where(l => l.LessonType != "Quiz").OrderBy(l => l.LessonOrder).ToList();
                                                             var lessonsByType = orderedLessons.GroupBy(l => l.LessonType).OrderBy(g => g.Key).ToList();
-                                                            bool hasMoreThan5Items = (orderedLessons.Count + chapter.Quizzes.Count) > 5;
+                                                            bool hasMoreThan5Items = (orderedLessons.Count + (chapter.Quizzes != null ? chapter.Quizzes.Count : 0)) > 5;
                                                         }
                                                         <div class="lessons-container @(hasMoreThan5Items ? "scrollable-lessons" : "")">
                                                             @* Display regular lessons *@
@@ -716,7 +716,7 @@
                                                             <div class="lessons-scroll-indicator">
                                                                 <small class="text-muted">
                                                                     <i class="fas fa-info-circle"></i>
-                                                                    Scroll to see all @(orderedLessons.Count + chapter.Quizzes.Count) items
+                                                                    Scroll to see all @(orderedLessons.Count + (chapter.Quizzes != null ? chapter.Quizzes.Count : 0)) items
                                                                 </small>
                                                             </div>
                                                         }

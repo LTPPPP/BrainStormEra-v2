@@ -435,9 +435,9 @@ namespace BrainStormEra_MVC.Controllers
             {
                 var result = await _lessonServiceImpl.GetLessonLearningDataAsync(lessonId, CurrentUserId);
 
-                if (!result.Success)
+                if (!result.Success || result.ViewModel == null)
                 {
-                    return Json(new { success = false, message = result.ErrorMessage });
+                    return Json(new { success = false, message = result.ErrorMessage ?? "Lesson data not found" });
                 }
 
                 // Get course progress
