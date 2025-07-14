@@ -291,6 +291,7 @@ namespace BusinessLogicLayer.Services
             {
                 _logger.LogError(ex, $"Error handling dead letter message {message.MessageId}");
             }
+            await Task.CompletedTask;
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)

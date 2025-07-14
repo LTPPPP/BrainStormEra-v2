@@ -39,9 +39,9 @@ namespace BusinessLogicLayer.Services.Implementations
             try
             {
                 var messageJson = await _database.ListRightPopLeftPushAsync(_queueKey, _processingKey);
-                if (messageJson.HasValue)
+                if (messageJson.HasValue && messageJson != RedisValue.Null)
                 {
-                    var message = JsonSerializer.Deserialize<MessageEntity>(messageJson);
+                    var message = JsonSerializer.Deserialize<MessageEntity>(messageJson.ToString());
                     _logger.LogDebug($"Dequeued message {message?.MessageId}");
                     return message;
                 }
@@ -96,10 +96,14 @@ namespace BusinessLogicLayer.Services.Implementations
                 {
                     if (result.HasValue)
                     {
-                        var message = JsonSerializer.Deserialize<MessageEntity>(result);
-                        if (message != null)
+                        var messageJson = result.ToString();
+                        if (!string.IsNullOrEmpty(messageJson))
                         {
-                            messages.Add(message);
+                            var message = JsonSerializer.Deserialize<MessageEntity>(messageJson);
+                            if (message != null)
+                            {
+                                messages.Add(message);
+                            }
                         }
                     }
                 }

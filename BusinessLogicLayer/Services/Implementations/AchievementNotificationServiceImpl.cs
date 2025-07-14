@@ -432,18 +432,18 @@ namespace BusinessLogicLayer.Services.Implementations
             return baseMessage;
         }
 
-        public async Task<bool> IsAchievementNotificationsEnabledAsync(string userId)
+        public Task<bool> IsAchievementNotificationsEnabledAsync(string userId)
         {
             try
             {
                 // For now, assume all users have notifications enabled
                 // In the future, this could check user preferences
-                return true;
+                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking achievement notification settings for user {UserId}", userId);
-                return true; // Default to enabled if there's an error
+                return Task.FromResult(true); // Default to enabled if there's an error
             }
         }
     }
