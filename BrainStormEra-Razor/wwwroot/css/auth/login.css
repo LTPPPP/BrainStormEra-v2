@@ -3,7 +3,6 @@
   justify-content: center;
   align-items: center;
   min-height: 80vh;
-  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/SharedMedia/static/login-bg.jpg');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
