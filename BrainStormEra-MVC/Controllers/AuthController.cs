@@ -253,8 +253,11 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> VerifyOtp(OtpVerificationViewModel model)
         {
+            _logger.LogInformation("AuthController.VerifyOtp called with Email={Email}, OtpCode={OtpCode}", model?.Email, model?.OtpCode);
+
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("ModelState is invalid for VerifyOtp");
                 return View("~/Views/Auth/VerifyOtp.cshtml", model);
             }
 
