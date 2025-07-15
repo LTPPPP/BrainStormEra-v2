@@ -238,69 +238,6 @@
                             }
                         </div>
                     </div>
-
-                    <!-- Analytics Section -->
-                    <div class="row">
-                        <!-- Course Performance -->
-                        <div class="col-lg-6">
-                            <div class="dashboard-card">
-                                <div class="dashboard-card-header">
-                                    <h2>Course Performance</h2>
-                                </div>
-                                <div class="dashboard-card-body">
-                                    <div class="chart-container">
-                                        <canvas id="enrollmentChart" width="400" height="200"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Income Chart -->
-                        <div class="col-lg-6">
-                            <div class="dashboard-card">
-                                <div class="dashboard-card-header d-flex justify-content-between align-items-center">
-                                    <h2>Income Overview</h2>
-                                    <div class="filter-buttons">
-                                        <button class="btn btn-sm btn-outline-primary filter-btn active"
-                                            data-days="1">1D</button>
-                                        <button class="btn btn-sm btn-outline-primary filter-btn"
-                                            data-days="7">7D</button>
-                                        <button class="btn btn-sm btn-outline-primary filter-btn"
-                                            data-days="30">30D</button>
-                                        <button class="btn btn-sm btn-outline-primary filter-btn"
-                                            data-days="90">90D</button>
-                                    </div>
-                                </div>
-                                <div class="dashboard-card-body">
-                                    <div class="income-summary mb-3">
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <div class="summary-item">
-                                                    <h5 class="text-muted mb-1">Total Income</h5>
-                                                    <h3 class="text-success mb-0" id="totalIncome">$0.00</h3>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="summary-item">
-                                                    <h5 class="text-muted mb-1">Payment Points</h5>
-                                                    <h3 class="text-info mb-0" id="totalPoints">
-                                                        @Model.TotalRevenue.ToString("N0")</h3>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="chart-container">
-                                        <canvas id="incomeChart" width="400" height="200"></canvas>
-                                    </div>
-                                    <div class="loading-spinner text-center" id="incomeLoading" style="display: none;">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
