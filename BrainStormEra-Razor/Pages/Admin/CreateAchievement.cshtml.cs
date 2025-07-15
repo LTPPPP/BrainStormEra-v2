@@ -11,7 +11,7 @@ namespace BrainStormEra_Razor.Pages.Admin
     public class CreateAchievementModel : PageModel
     {
         private readonly ILogger<CreateAchievementModel> _logger;
-        private readonly IAdminService _adminService;
+        private readonly IAchievementService _achievementService;
 
         public string? AdminName { get; set; }
         public string? UserId { get; set; }
@@ -34,10 +34,10 @@ namespace BrainStormEra_Razor.Pages.Admin
         [TempData]
         public string? ErrorMessage { get; set; }
 
-        public CreateAchievementModel(ILogger<CreateAchievementModel> logger, IAdminService adminService)
+        public CreateAchievementModel(ILogger<CreateAchievementModel> logger, IAchievementService achievementService)
         {
             _logger = logger;
-            _adminService = adminService;
+            _achievementService = achievementService;
         }
 
         public void OnGet()
@@ -145,7 +145,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     }
                 }
 
-                var (success, achievementId) = await _adminService.CreateAchievementAsync(Achievement, UserId);
+                var (success, achievementId) = await _achievementService.CreateAchievementAsync(Achievement, UserId);
 
                 if (success)
                 {
