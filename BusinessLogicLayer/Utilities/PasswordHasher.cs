@@ -4,16 +4,16 @@ using System.Text;
 namespace BusinessLogicLayer.Utilities
 {
     /// <summary>
-    /// Utility class for password hashing and verification using MD5 algorithm.
-    /// Note: MD5 is used here for compatibility reasons. For production applications,
+    /// Utility class for password hashing and verification using SHA1 algorithm.
+    /// Note: SHA1 is used here for compatibility reasons. For production applications,
     /// consider using more secure hashing algorithms like bcrypt, scrypt, or Argon2.
     /// </summary>
     public static class PasswordHasher
     {        /// <summary>
-             /// Hashes a password using MD5 algorithm (compatible with SQL Server HASHBYTES)
+             /// Hashes a password using SHA1 algorithm (compatible with SQL Server HASHBYTES)
              /// </summary>
              /// <param name="password">The plain text password to hash</param>
-             /// <returns>The hashed password as a 32-character uppercase hexadecimal string</returns>
+             /// <returns>The hashed password as a 40-character uppercase hexadecimal string</returns>
         public static string HashPassword(string password)
         {
             if (string.IsNullOrEmpty(password))
@@ -21,11 +21,11 @@ namespace BusinessLogicLayer.Utilities
                 throw new ArgumentException("Password cannot be null or empty", nameof(password));
             }
 
-            using var md5 = MD5.Create();
-            var hashedBytes = md5.ComputeHash(Encoding.UTF8.GetBytes(password));
+            using var sha1 = SHA1.Create();
+            var hashedBytes = sha1.ComputeHash(Encoding.UTF8.GetBytes(password));
             // Convert to uppercase hex string
             var hexString = Convert.ToHexString(hashedBytes).ToUpperInvariant();
-            return hexString.Length > 32 ? hexString.Substring(0, 32) : hexString;
+            return hexString;
         }
 
         /// <summary>

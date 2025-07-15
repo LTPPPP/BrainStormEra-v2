@@ -409,21 +409,30 @@ namespace DataAccessLayer.Repositories
             }
         }
 
-        // Helper methods for password hashing using MD5
+        // Helper methods for password hashing using SHA1 algorithm
         private string HashPassword(string password)
         {
-            using (MD5 md5 = MD5.Create())
+            if (string.IsNullOrEmpty(password))
             {
-                byte[] inputBytes = Encoding.UTF8.GetBytes(password);
-                byte[] hashBytes = md5.ComputeHash(inputBytes);
-                return Convert.ToHexString(hashBytes).ToLower();
+                throw new ArgumentException("Password cannot be null or empty", nameof(password));
             }
+
+            using var sha1 = SHA1.Create();
+            var hashedBytes = sha1.ComputeHash(Encoding.UTF8.GetBytes(password));
+            // Convert to uppercase hex string to match PasswordHasher utility
+            var hexString = Convert.ToHexString(hashedBytes).ToUpperInvariant();
+            return hexString;
         }
 
         private bool VerifyPassword(string password, string hashedPassword)
         {
+            if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(hashedPassword))
+            {
+                return false;
+            }
+
             string hashedInput = HashPassword(password);
-            return string.Equals(hashedInput, hashedPassword, StringComparison.OrdinalIgnoreCase);
+            return hashedInput.Equals(hashedPassword, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

@@ -24,15 +24,15 @@ INSERT INTO account (user_id, user_role, username, password_hash, user_email, fu
     payment_point, date_of_birth, gender, phone_number, user_address, is_banned,
     account_created_at, account_updated_at)
 VALUES
-('usr1', 'instructor', 'john_doe', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'john_doe'), 2),
+('usr1', 'instructor', 'john_doe', CONVERT(VARCHAR(40), HASHBYTES('SHA1', 'john_doe'), 2),
  'john.doe@email.com', N'John Doe', 100.00, '1985-03-15', 1, '0901234567', N'123 Main St, HCMC', 0, GETDATE(), GETDATE()),
-('usr2', 'learner', 'jane_smith', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'jane_password'), 2),
+('usr2', 'learner', 'jane_smith', CONVERT(VARCHAR(40), HASHBYTES('SHA1', 'jane_password'), 2),
  'jane.smith@email.com', N'Jane Smith', 50.00, '1992-07-22', 2, '0902345678', N'456 Elm St, HCMC', 0, GETDATE(), GETDATE()),
-('usr3', 'admin', 'admin_user', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'admin123'), 2),
+('usr3', 'admin', 'admin_user', CONVERT(VARCHAR(40), HASHBYTES('SHA1', 'admin123'), 2),
  'admin@platform.com', N'Admin User', 0.00, '1980-01-01', 1, '0903456789', N'789 Admin Ave, HCMC', 0, GETDATE(), GETDATE()),
-('usr4', 'learner', 'mike_wilson', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'mike123'), 2),
+('usr4', 'learner', 'mike_wilson', CONVERT(VARCHAR(40), HASHBYTES('SHA1', 'mike123'), 2),
  'mike.wilson@email.com', N'Mike Wilson', 75.25, '1988-11-10', 1, '0904567890', N'321 Oak St, HCMC', 0, GETDATE(), GETDATE()),
-('usr5', 'instructor', 'sarah_johnson', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'sarah_pw'), 2),
+('usr5', 'instructor', 'sarah_johnson', CONVERT(VARCHAR(40), HASHBYTES('SHA1', 'sarah_pw'), 2),
  'sarah.johnson@email.com', N'Sarah Johnson', 200.00, '1990-05-18', 2, '0905678901', N'654 Pine St, HCMC', 0, GETDATE(), GETDATE());
 
 -- Course category data
