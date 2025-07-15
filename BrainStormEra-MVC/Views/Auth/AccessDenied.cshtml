@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="~/css/global.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/pages/Auth/access-denied.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">
 </head>
 
 <body>
@@ -39,24 +40,22 @@
     <div class="access-denied-container">
         <div class="access-denied-card">
             <!-- Logo -->
-            <img src="~/SharedMedia/logo/logowithoutbackground.png" 
-                 alt="BrainStormEra Logo" 
-                 class="access-denied-logo"
-                 onerror="this.onerror=null; this.src='~/SharedMedia/defaults/default-logo.svg';" />
-            
+            <img src="~/SharedMedia/logo/logowithoutbackground.png" alt="BrainStormEra Logo" class="access-denied-logo"
+                onerror="this.onerror=null; this.src='~/SharedMedia/defaults/default-logo.svg';" />
+
             <!-- Main Icon -->
             <i class="fas fa-ban access-denied-icon"></i>
-            
+
             <!-- Title and Subtitle -->
             <h1 class="access-denied-title">Access Denied</h1>
             <h2 class="access-denied-subtitle">Permission Required</h2>
-            
+
             <!-- Main Message -->
             <p class="access-denied-message">
-                You don't have the necessary permissions to access this resource. 
+                You don't have the necessary permissions to access this resource.
                 Please contact your administrator if you believe this is an error.
             </p>
-            
+
             <!-- Reasons Section -->
             <div class="access-denied-reasons">
                 <h4>
@@ -70,7 +69,7 @@
                     <li>Administrative restrictions may be in place</li>
                 </ul>
             </div>
-            
+
             <!-- Action Buttons -->
             <div class="access-denied-actions">
                 <a href="@Url.Action("Index", "Home")" class="btn-access-denied btn-primary-access">
@@ -82,11 +81,11 @@
                     Login Again
                 </a>
             </div>
-            
+
             <!-- Support Information -->
             <div class="access-denied-support">
                 <p class="support-text">
-                    <strong>Need assistance?</strong> Contact our support team or check your account permissions. 
+                    <strong>Need assistance?</strong> Contact our support team or check your account permissions.
                     If you believe this is an error, please report it to your system administrator.
                 </p>
             </div>
@@ -100,7 +99,3 @@
 </body>
 
 </html>
-
-                               
-                               
-                               

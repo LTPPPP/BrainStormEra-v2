@@ -28,9 +28,11 @@
 </head>
 
 <body>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        @await Html.PartialAsync("~/Pages/Shared/Header/_Header.cshtml")
+    }
     <!-- Include Header partial view -->
-    @await Html.PartialAsync("~/Pages/Shared/Header/_Header.cshtml")
-
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()

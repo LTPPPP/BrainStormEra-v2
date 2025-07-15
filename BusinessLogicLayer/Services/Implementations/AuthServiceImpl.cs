@@ -595,6 +595,8 @@ namespace BusinessLogicLayer.Services.Implementations
                 // Store OTP in cache with 10-minute expiry
                 _otpCache[model.Email] = (otp, DateTime.UtcNow.AddMinutes(10));
 
+                _logger.LogInformation("Generated OTP {OTP} for email {Email}", otp, model.Email);
+
                 // Send email with OTP using EmailService
                 var emailResult = await _emailService.SendForgotPasswordEmailAsync(
                     model.Email,
@@ -623,7 +625,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 return new ForgotPasswordResult
                 {
                     Success = true,
-                    RedirectAction = "ForgotPasswordConfirmation",
+                    RedirectAction = "VerifyOtp",
                     Email = model.Email
                 };
             }
@@ -680,8 +682,15 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
+                _logger.LogInformation("Verifying OTP {OTP} for email {Email}", model.OtpCode, model.Email);
+
                 // Check if OTP exists and is valid
-                if (!_otpCache.TryGetValue(model.Email, out var otpData) ||
+                var cacheFound = _otpCache.TryGetValue(model.Email, out var otpData);
+                _logger.LogInformation("Cache lookup for {Email}: Found={Found}, StoredOTP={StoredOTP}, InputOTP={InputOTP}, Expiry={Expiry}, Now={Now}",
+                    model.Email, cacheFound, cacheFound ? otpData.otp : "null", model.OtpCode,
+                    cacheFound ? otpData.expiry.ToString("yyyy-MM-dd HH:mm:ss") : "null", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
+
+                if (!cacheFound ||
                     otpData.otp != model.OtpCode ||
                     otpData.expiry < DateTime.UtcNow)
                 {

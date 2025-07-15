@@ -59,7 +59,7 @@ namespace DataAccessLayer.Repositories
                 // Point statistics
                 var totalPointsInSystem = await _context.Accounts
                     .Where(a => a.PaymentPoint.HasValue)
-                    .SumAsync(a => a.PaymentPoint.Value);
+                    .SumAsync(a => a.PaymentPoint ?? 0);
                 var averageUserPoints = totalUsers > 0 ? totalPointsInSystem / totalUsers : 0;
 
                 return new Dictionary<string, object>
@@ -167,11 +167,11 @@ namespace DataAccessLayer.Repositories
 
                 // First, get the grouped data from database
                 var revenueData = await _context.PaymentTransactions
-                    .Where(pt => pt.TransactionStatus == "completed" && pt.PaymentDate >= sixMonthsAgo)
+                    .Where(pt => pt.TransactionStatus == "completed" && pt.PaymentDate != null && pt.PaymentDate >= sixMonthsAgo)
                     .GroupBy(pt => new
                     {
-                        Year = pt.PaymentDate.Value.Year,
-                        Month = pt.PaymentDate.Value.Month
+                        Year = pt.PaymentDate!.Value.Year,
+                        Month = pt.PaymentDate!.Value.Month
                     })
                     .Select(g => new
                     {

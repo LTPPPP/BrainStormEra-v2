@@ -133,27 +133,27 @@
                                 </div>
                                 <p class="course-description">@(course.Description?.Length > 100 ?
                                                                 course.Description.Substring(0, 100) + "..." : course.Description)</p>
-                        <div class="course-meta">
-                            <div class="instructor">
-                                <i class="fas fa-user"></i>
-                                <span>@course.CreatedBy</span>
+                                <div class="course-meta">
+                                    <div class="instructor">
+                                        <i class="fas fa-user"></i>
+                                        <span>@course.CreatedBy</span>
+                                    </div>
+                                </div>
+                                <p class="course-students">@course.EnrollmentCount enrolled</p>
+                                <div class="course-actions">
+                                    <a href="javascript:void(0);" onclick="viewDetailCourse('@course.CourseId')"
+                                        class="btn btn-sm btn-outline-info" title="View Course Details">
+                                        <i class="fas fa-eye"></i> Details
+                                    </a>
+                                    <a href="@Url.Action("Index", "Course")" class="btn btn-sm btn-outline-primary"
+                                        title="Explore All Courses">
+                                        <i class="fas fa-search"></i> Explore
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                        <p class="course-students">@course.EnrollmentCount enrolled</p>
-                        <div class="course-actions">
-                            <a href="javascript:void(0);" onclick="viewDetailCourse('@course.CourseId')"
-                                class="btn btn-sm btn-outline-info" title="View Course Details">
-                                <i class="fas fa-eye"></i> Details
-                            </a>
-                            <a href="@Url.Action("Index", "Course")" class="btn btn-sm btn-outline-primary"
-                                title="Explore All Courses">
-                                <i class="fas fa-search"></i> Explore
-                            </a>
-                        </div>
                     </div>
-                </div>
-            </div>
-                        }
+                }
             }
             else
             {
@@ -218,6 +218,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" defer></script>
     <!-- Include toast notifications script -->
     <script src="~/js/shared/toast-notifications.js"></script>
+    <!-- Include chatbot script -->
+    <script src="~/js/components/chatbot.js"></script>
 
     <script>
         // Hide preloader when page is loaded

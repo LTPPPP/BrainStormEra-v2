@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Template Demo - BrainStormEra</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        .demo-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .demo-header h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 2.5em;
+        }
+
+        .demo-header p {
+            color: #7f8c8d;
+            margin: 10px 0 0 0;
+            font-size: 1.1em;
+        }
+
+        .template-section {
+            margin-bottom: 50px;
+        }
+
+        .template-title {
+            font-size: 1.8em;
+            color: #34495e;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .template-preview {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .template-preview iframe {
+            width: 100%;
+            height: 500px;
+            border: none;
+        }
+
+        .template-description {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .template-description h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .feature-list li:before {
+            content: "✅ ";
+            margin-right: 10px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .back-link:hover {
+            transform: translateY(-2px);
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .warning strong {
+            color: #856404;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>📧 Email Template Demo</h1>
+            <p>Preview of email templates sent by BrainStormEra</p>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Demo Purpose:</strong> These are template previews. Actual emails will contain real data like
+            your name, OTP codes, and timestamps.
+        </div>
+
+        <!-- Forgot Password Email -->
+        <div class="template-section">
+            <h2 class="template-title">🔐 Forgot Password Email</h2>
+            <div class="template-description">
+                <h3>When is this sent?</h3>
+                <p>This email is sent when you request a password reset from the "Forgot Password" page.</p>
+                <h3>Features:</h3>
+                <ul class="feature-list">
+                    <li>Contains a 6-digit OTP code</li>
+                    <li>Code expires in 10 minutes</li>
+                    <li>Professional design with security warnings</li>
+                    <li>Clear instructions for next steps</li>
+                </ul>
+            </div>
+            <div class="template-preview">
+                <iframe srcdoc="<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Password Reset Request</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .content { padding: 30px; }
+        .otp-container { text-align: center; margin: 30px 0; }
+        .otp-code { font-size: 36px; font-weight: bold; color: #2c3e50; background: #ecf0f1; padding: 20px; border-radius: 8px; letter-spacing: 5px; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+        .footer { background: #2c3e50; color: white; padding: 20px; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>🔐 Password Reset Request</h1>
+            <p>BrainStormEra Learning Platform</p>
+        </div>
+        <div class='content'>
+            <h2>Hello John Doe!</h2>
+            <p>We received a request to reset your password for your BrainStormEra account.</p>
+            <div class='otp-container'>
+                <h3>Your Verification Code</h3>
+                <div class='otp-code'>123456</div>
+                <p>This code will expire in 10 minutes</p>
+            </div>
+            <div class='warning'>
+                <strong>⚠️ Security Notice:</strong>
+                <ul>
+                    <li>Never share this code with anyone</li>
+                    <li>Our team will never ask for this code</li>
+                    <li>If you didn't request this, please ignore this email</li>
+                </ul>
+            </div>
+            <p><strong>Next Steps:</strong></p>
+            <ol>
+                <li>Copy the verification code above</li>
+                <li>Return to the BrainStormEra website</li>
+                <li>Enter the code in the verification form</li>
+                <li>Create your new password</li>
+            </ol>
+        </div>
+        <div class='footer'>
+            <p>© 2024 BrainStormEra. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>"></iframe>
+            </div>
+        </div>
+
+        <!-- Password Reset Confirmation -->
+        <div class="template-section">
+            <h2 class="template-title">✅ Password Reset Confirmation</h2>
+            <div class="template-description">
+                <h3>When is this sent?</h3>
+                <p>This email is sent immediately after you successfully reset your password.</p>
+                <h3>Features:</h3>
+                <ul class="feature-list">
+                    <li>Confirms password was changed successfully</li>
+                    <li>Shows exact time of password reset</li>
+                    <li>Includes security tips</li>
+                    <li>Contact information for support</li>
+                </ul>
+            </div>
+            <div class="template-preview">
+                <iframe srcdoc="<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Password Reset Successful</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .content { padding: 30px; }
+        .success-container { text-align: center; margin: 30px 0; }
+        .success-icon { font-size: 48px; margin-bottom: 20px; }
+        .info-box { background: #f0f9ff; border: 1px solid #0ea5e9; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .footer { background: #2c3e50; color: white; padding: 20px; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>✅ Password Reset Successful</h1>
+            <p>BrainStormEra Learning Platform</p>
+        </div>
+        <div class='content'>
+            <h2>Hello John Doe!</h2>
+            <div class='success-container'>
+                <div class='success-icon'>🎉</div>
+                <h3>Your password has been successfully reset!</h3>
+                <p>You can now log in to your BrainStormEra account with your new password.</p>
+            </div>
+            <div class='info-box'>
+                <strong>📅 Reset Details:</strong><br>
+                <strong>Time:</strong> Monday, January 15, 2024 at 14:30:25 UTC<br>
+                <strong>Account:</strong> John Doe
+            </div>
+            <p><strong>Security Tips:</strong></p>
+            <ul>
+                <li>Use a strong, unique password</li>
+                <li>Never share your password with anyone</li>
+                <li>Enable two-factor authentication if available</li>
+                <li>Log out from shared devices</li>
+            </ul>
+        </div>
+        <div class='footer'>
+            <p>© 2024 BrainStormEra. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>"></iframe>
+            </div>
+        </div>
+
+        <!-- Welcome Email -->
+        <div class="template-section">
+            <h2 class="template-title">👋 Welcome Email</h2>
+            <div class="template-description">
+                <h3>When is this sent?</h3>
+                <p>This email is sent when you successfully register a new account.</p>
+                <h3>Features:</h3>
+                <ul class="feature-list">
+                    <li>Welcomes new users to the platform</li>
+                    <li>Provides quick start guide</li>
+                    <li>Links to important resources</li>
+                    <li>Contact information for support</li>
+                </ul>
+            </div>
+            <div class="template-preview">
+                <iframe srcdoc="<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Welcome to BrainStormEra</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .content { padding: 30px; }
+        .welcome-container { text-align: center; margin: 30px 0; }
+        .welcome-icon { font-size: 48px; margin-bottom: 20px; }
+        .cta-button { display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; margin: 20px 0; }
+        .footer { background: #2c3e50; color: white; padding: 20px; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>👋 Welcome to BrainStormEra!</h1>
+            <p>Your Learning Journey Starts Here</p>
+        </div>
+        <div class='content'>
+            <div class='welcome-container'>
+                <div class='welcome-icon'>🎓</div>
+                <h2>Hello John Doe!</h2>
+                <p>Welcome to BrainStormEra! We're excited to have you join our learning community.</p>
+            </div>
+            <p><strong>Your Account Details:</strong></p>
+            <ul>
+                <li><strong>Username:</strong> john.doe</li>
+                <li><strong>Email:</strong> john.doe@example.com</li>
+                <li><strong>Registration Date:</strong> January 15, 2024</li>
+            </ul>
+            <p><strong>Getting Started:</strong></p>
+            <ol>
+                <li>Complete your profile setup</li>
+                <li>Browse available courses</li>
+                <li>Start your first lesson</li>
+                <li>Join our community discussions</li>
+            </ol>
+            <div style='text-align: center;'>
+                <a href='#' class='cta-button'>Start Learning Now</a>
+            </div>
+        </div>
+        <div class='footer'>
+            <p>© 2024 BrainStormEra. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>"></iframe>
+            </div>
+        </div>
+
+        <!-- Test Email -->
+        <div class="template-section">
+            <h2 class="template-title">🧪 Test Email</h2>
+            <div class="template-description">
+                <h3>When is this sent?</h3>
+                <p>This email is sent when you use the email test functionality to verify your email configuration.</p>
+                <h3>Features:</h3>
+                <ul class="feature-list">
+                    <li>Confirms email service is working</li>
+                    <li>Shows SMTP configuration details</li>
+                    <li>Includes timestamp of test</li>
+                    <li>Validates email delivery</li>
+                </ul>
+            </div>
+            <div class="template-preview">
+                <iframe srcdoc="<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Email Configuration Test</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .content { padding: 30px; }
+        .test-container { text-align: center; margin: 30px 0; }
+        .test-icon { font-size: 48px; margin-bottom: 20px; }
+        .success-list { background: #f0fdf4; border: 1px solid #22c55e; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .footer { background: #2c3e50; color: white; padding: 20px; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>✅ Email Configuration Test</h1>
+            <p>BrainStormEra Learning Platform</p>
+        </div>
+        <div class='content'>
+            <div class='test-container'>
+                <div class='test-icon'>📧</div>
+                <h3>Email Service is Working!</h3>
+                <p>This is a test email to verify that the email configuration is working correctly.</p>
+            </div>
+            <p><strong>Test Details:</strong></p>
+            <ul>
+                <li><strong>Time:</strong> Monday, January 15, 2024 at 14:30:25 UTC</li>
+                <li><strong>Status:</strong> Email service is operational</li>
+                <li><strong>SMTP Host:</strong> smtp.gmail.com</li>
+                <li><strong>SMTP Port:</strong> 587</li>
+            </ul>
+            <div class='success-list'>
+                <p>If you received this email, it means:</p>
+                <ul>
+                    <li>✅ SMTP configuration is correct</li>
+                    <li>✅ Email credentials are valid</li>
+                    <li>✅ Network connectivity is working</li>
+                    <li>✅ Email templates are functioning</li>
+                </ul>
+            </div>
+        </div>
+        <div class='footer'>
+            <p>© 2024 BrainStormEra. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>"></iframe>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="/email-test.html" class="back-link">← Back to Email Test</a>
+            <a href="/Auth/ForgotPassword" class="back-link">Test Forgot Password</a>
+        </div>
+    </div>
+</body>
+
+</html>

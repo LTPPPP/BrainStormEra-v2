@@ -11,31 +11,28 @@ INSERT INTO status (status_id, status_name) VALUES
 INSERT INTO lesson_type (lesson_type_id, lesson_type_name) VALUES
 (1, N'Video'),
 (2, N'Text'),
-(3, N'File'),
-(4, N'Dicuss');
+(3, N'File')
 
 -- Payment method data
 INSERT INTO payment_method (payment_method_id, method_name, is_active) VALUES
 (1, N'Credit Card', 1),
 (2, N'PayPal', 1),
-(3, N'VNPay', 1),
-(4, N'Bank Transfer', 1),
-(5, N'Momo', 1);
+(3, N'VNPay', 1)
 
 -- Account data with corrected user roles (learner, admin, instructor)
 INSERT INTO account (user_id, user_role, username, password_hash, user_email, full_name,
     payment_point, date_of_birth, gender, phone_number, user_address, is_banned,
     account_created_at, account_updated_at)
 VALUES
-('usr1', 'instructor', 'john_doe', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'john_doe'), 2),
+('usr1', 'instructor', 'john_doe', CONVERT(VARCHAR(40), HASHBYTES('SHA1', 'john_doe'), 2),
  'john.doe@email.com', N'John Doe', 100.00, '1985-03-15', 1, '0901234567', N'123 Main St, HCMC', 0, GETDATE(), GETDATE()),
-('usr2', 'learner', 'jane_smith', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'jane_password'), 2),
+('usr2', 'learner', 'jane_smith', CONVERT(VARCHAR(40), HASHBYTES('SHA1', 'jane_password'), 2),
  'jane.smith@email.com', N'Jane Smith', 50.00, '1992-07-22', 2, '0902345678', N'456 Elm St, HCMC', 0, GETDATE(), GETDATE()),
-('usr3', 'admin', 'admin_user', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'admin123'), 2),
+('usr3', 'admin', 'admin_user', CONVERT(VARCHAR(40), HASHBYTES('SHA1', 'admin123'), 2),
  'admin@platform.com', N'Admin User', 0.00, '1980-01-01', 1, '0903456789', N'789 Admin Ave, HCMC', 0, GETDATE(), GETDATE()),
-('usr4', 'learner', 'mike_wilson', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'mike123'), 2),
+('usr4', 'learner', 'mike_wilson', CONVERT(VARCHAR(40), HASHBYTES('SHA1', 'mike123'), 2),
  'mike.wilson@email.com', N'Mike Wilson', 75.25, '1988-11-10', 1, '0904567890', N'321 Oak St, HCMC', 0, GETDATE(), GETDATE()),
-('usr5', 'instructor', 'sarah_johnson', CONVERT(VARCHAR(32), HASHBYTES('MD5', 'sarah_pw'), 2),
+('usr5', 'instructor', 'sarah_johnson', CONVERT(VARCHAR(40), HASHBYTES('SHA1', 'sarah_pw'), 2),
  'sarah.johnson@email.com', N'Sarah Johnson', 200.00, '1990-05-18', 2, '0905678901', N'654 Pine St, HCMC', 0, GETDATE(), GETDATE());
 
 -- Course category data
@@ -217,15 +214,6 @@ VALUES
 ('conv2', 'usr1', 'admin', GETDATE(), 1, GETDATE()),
 ('conv2', 'usr2', 'member', GETDATE(), 1, GETDATE()),
 ('conv2', 'usr4', 'member', GETDATE(), 1, GETDATE());
-
--- Chatbot conversation data
-INSERT INTO chatbot_conversation (conversation_id, user_id, conversation_time, user_message, bot_response, conversation_context, feedback_rating)
-VALUES
-('bot1', 'usr2', GETDATE(), N'How do I declare a variable in JavaScript?', N'You can declare a variable in JavaScript using var, let, or const keywords. For example: let myVariable = "Hello World";', N'{"topic": "javascript_variables", "lesson_context": "lesson_1"}', 5),
-('bot2', 'usr4', GETDATE(), N'What is the difference between let and var?', N'The main differences are: 1) let has block scope while var has function scope, 2) let cannot be redeclared in the same scope, 3) let creates a temporal dead zone.', N'{"topic": "javascript_scope", "previous_question": "variable_declaration"}', 4),
-('bot3', 'usr2', GETDATE(), N'How to center a div in CSS?', N'You can center a div using: 1) Flexbox: display: flex; justify-content: center; align-items: center; 2) CSS Grid: display: grid; place-items: center; 3) Margin auto with fixed width.', N'{"topic": "css_centering", "course_context": "design_course"}', 5),
-('bot4', 'usr4', GETDATE(), N'What is pandas in Python?', N'Pandas is a powerful Python library for data manipulation and analysis. It provides data structures like DataFrame and Series for handling structured data efficiently.', N'{"topic": "python_pandas", "course_context": "data_science"}', 4),
-('bot5', 'usr2', GETDATE(), N'How to install React?', N'You can install React using: 1) Create React App: npx create-react-app my-app 2) Vite: npm create vite@latest my-react-app -- --template react 3) Manual setup with webpack.', N'{"topic": "react_installation", "user_level": "beginner"}', 3);
 
 -- User answer data (for completed quiz attempts)
 INSERT INTO user_answer (user_id, question_id, attempt_id, selected_option_id, answer_text, is_correct, points_earned)

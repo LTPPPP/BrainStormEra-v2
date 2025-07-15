@@ -100,13 +100,13 @@ namespace BrainStormEra_Razor.Pages.Admin
                     {
                         TempData["ErrorMessage"] = result.ErrorMessage ?? "Failed to change password.";
                     }
-                    
+
                     // Preserve the form data but clear passwords for security
                     ChangePasswordData = result.ViewModel ?? new ChangePasswordViewModel();
                     ChangePasswordData.CurrentPassword = "";
                     ChangePasswordData.NewPassword = "";
                     ChangePasswordData.ConfirmPassword = "";
-                    
+
                     return Page();
                 }
 
@@ -117,7 +117,7 @@ namespace BrainStormEra_Razor.Pages.Admin
             {
                 _logger.LogError(ex, "Error changing password for admin user: {UserId}", User.FindFirst("UserId")?.Value);
                 TempData["ErrorMessage"] = "An error occurred while changing your password. Please try again.";
-                
+
                 // Clear password fields for security
                 ChangePasswordData = new ChangePasswordViewModel();
                 return Page();

@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using BusinessLogicLayer.Services.Implementations;
 
 namespace BrainStormEra_MVC.Controllers
 {
@@ -19,15 +20,17 @@ namespace BrainStormEra_MVC.Controllers
         private readonly ILogger<LoginController> _logger;
         private readonly IConfiguration _configuration;
         private readonly IUserService _userService;
-        // Cache for OTP codes (in a production environment, use a more robust solution like Redis)
-        private static Dictionary<string, (string otp, DateTime expiry)> _otpCache = new();
+        private readonly IEmailService _emailService;
+        private readonly AuthServiceImpl _authServiceImpl;
 
-        public LoginController(BrainStormEraContext context, ILogger<LoginController> logger, IConfiguration configuration, IUserService userService)
+        public LoginController(BrainStormEraContext context, ILogger<LoginController> logger, IConfiguration configuration, IUserService userService, IEmailService emailService, AuthServiceImpl authServiceImpl)
         {
             _context = context;
             _logger = logger;
             _configuration = configuration;
             _userService = userService;
+            _emailService = emailService;
+            _authServiceImpl = authServiceImpl;
         }
         [HttpGet]
         public IActionResult Index(string? returnUrl = null)
@@ -202,36 +205,25 @@ namespace BrainStormEra_MVC.Controllers
                 return View("~/Views/Auth/ForgotPassword.cshtml", model);
             }
 
-            try
-            {
-                // Find user by email using service
-                var user = await _userService.GetUserByEmailAsync(model.Email);
+            var result = await _authServiceImpl.ProcessForgotPasswordAsync(model);
 
-                if (user == null)
+            if (!result.Success)
+            {
+                ViewBag.Error = result.ErrorMessage;
+                return View("~/Views/Auth/ForgotPassword.cshtml", result.ViewModel);
+            }
+
+            // Redirect to OTP verification or confirmation page
+            if (!string.IsNullOrEmpty(result.RedirectAction))
+            {
+                if (!string.IsNullOrEmpty(result.Email))
                 {
-                    // Don't reveal that the user does not exist
-                    return RedirectToAction(nameof(ForgotPasswordConfirmation));
+                    return RedirectToAction(result.RedirectAction, new { email = result.Email });
                 }
-
-                // Generate OTP code
-                string otp = GenerateOtp();
-
-                // Store OTP in cache with 10-minute expiry
-                _otpCache[model.Email] = (otp, DateTime.UtcNow.AddMinutes(10));
-
-                // In a real application, send email with OTP
-                // For demo purposes, we'll just log it
-                _logger.LogInformation("OTP for {Email}: {OTP}", model.Email, otp);
-
-                // Redirect to OTP verification page
-                return RedirectToAction(nameof(VerifyOtp), new { email = model.Email });
+                return RedirectToAction(result.RedirectAction);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during forgot password for email {Email}", model.Email);
-                ModelState.AddModelError(string.Empty, "An error occurred. Please try again.");
-                return View("~/Views/Auth/ForgotPassword.cshtml", model);
-            }
+
+            return RedirectToAction("ForgotPasswordConfirmation");
         }
 
         [HttpGet]
@@ -257,59 +249,53 @@ namespace BrainStormEra_MVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult VerifyOtp(OtpVerificationViewModel model)
+        public async Task<IActionResult> VerifyOtp(OtpVerificationViewModel model)
         {
+            _logger.LogInformation("LoginController.VerifyOtp called with Email={Email}, OtpCode={OtpCode}", model?.Email, model?.OtpCode);
+
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("ModelState is invalid for VerifyOtp in LoginController");
                 return View("~/Views/Auth/VerifyOtp.cshtml", model);
             }
 
-            // Check if OTP exists and is valid
-            if (!_otpCache.TryGetValue(model.Email, out var otpData) ||
-                otpData.otp != model.OtpCode ||
-                otpData.expiry < DateTime.UtcNow)
+            var result = await _authServiceImpl.VerifyOtpAsync(model);
+
+            if (!result.Success)
             {
-                ModelState.AddModelError(string.Empty, "Invalid or expired OTP code.");
-                return View("~/Views/Auth/VerifyOtp.cshtml", model);
+                ViewBag.Error = result.ErrorMessage;
+                return View("~/Views/Auth/VerifyOtp.cshtml", result.ViewModel);
             }
 
-            // Remove OTP from cache
-            _otpCache.Remove(model.Email);
+            // Redirect to reset password page with token
+            if (!string.IsNullOrEmpty(result.RedirectAction))
+            {
+                return RedirectToAction(result.RedirectAction, new
+                {
+                    email = result.Email,
+                    token = result.Token
+                });
+            }
 
-            // Generate password reset token
-            string token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-
-            // In a real application, store token in database with expiry
-            // For demo, we'll use the same cache
-            _otpCache[model.Email] = (token, DateTime.UtcNow.AddHours(1));
-
-            // Redirect to reset password page
-            return RedirectToAction(nameof(ResetPassword), new { email = model.Email, token });
+            return RedirectToAction("Login");
         }
 
         [HttpGet]
-        public IActionResult ResetPassword(string email, string token)
+        public async Task<IActionResult> ResetPassword(string email, string token)
         {
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
+            var result = await _authServiceImpl.GetResetPasswordViewModelAsync(email, token);
+
+            if (!result.Success)
             {
-                return RedirectToAction(nameof(ForgotPassword));
+                ViewBag.Error = result.ErrorMessage;
+
+                if (!string.IsNullOrEmpty(result.RedirectAction))
+                {
+                    return RedirectToAction(result.RedirectAction);
+                }
             }
 
-            // Verify token is valid
-            if (!_otpCache.TryGetValue(email, out var tokenData) ||
-                tokenData.otp != token ||
-                tokenData.expiry < DateTime.UtcNow)
-            {
-                return RedirectToAction(nameof(ForgotPassword));
-            }
-
-            return View("~/Views/Auth/ResetPassword.cshtml", new ResetPasswordViewModel
-            {
-                Email = email,
-                Token = token,
-                NewPassword = string.Empty,
-                ConfirmPassword = string.Empty
-            });
+            return View("~/Views/Auth/ResetPassword.cshtml", result.ViewModel);
         }
 
         [HttpPost]
@@ -321,41 +307,21 @@ namespace BrainStormEra_MVC.Controllers
                 return View("~/Views/Auth/ResetPassword.cshtml", model);
             }
 
-            // Verify token is valid
-            if (!_otpCache.TryGetValue(model.Email, out var tokenData) ||
-                tokenData.otp != model.Token ||
-                tokenData.expiry < DateTime.UtcNow)
+            var result = await _authServiceImpl.ResetPasswordAsync(model);
+
+            if (!result.Success)
             {
-                ModelState.AddModelError(string.Empty, "Invalid or expired token.");
-                return View("~/Views/Auth/ResetPassword.cshtml", model);
+                ViewBag.Error = result.ErrorMessage;
+                return View("~/Views/Auth/ResetPassword.cshtml", result.ViewModel);
             }
 
-            try
+            // Redirect to reset password confirmation page
+            if (!string.IsNullOrEmpty(result.RedirectAction))
             {
-                var user = await _userService.GetUserByEmailAsync(model.Email);
-                if (user == null)
-                {
-                    // Don't reveal that the user does not exist
-                    return RedirectToAction(nameof(ResetPasswordConfirmation));
-                }
-
-                // Update password
-                user.PasswordHash = PasswordHasher.HashPassword(model.NewPassword);
-                user.AccountUpdatedAt = DateTime.UtcNow;
-
-                await _userService.UpdateUserAsync(user);
-
-                // Remove token from cache
-                _otpCache.Remove(model.Email);
-
-                return RedirectToAction(nameof(ResetPasswordConfirmation));
+                return RedirectToAction(result.RedirectAction);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during password reset for email {Email}", model.Email);
-                ModelState.AddModelError(string.Empty, "An error occurred. Please try again.");
-                return View("~/Views/Auth/ResetPassword.cshtml", model);
-            }
+
+            return RedirectToAction("ResetPasswordConfirmation");
         }
 
         [HttpGet]
@@ -440,12 +406,6 @@ namespace BrainStormEra_MVC.Controllers
         }
 
         #region Helper Methods
-        private string GenerateOtp()
-        {
-            // Generate a 6-digit OTP
-            return Random.Shared.Next(100000, 999999).ToString();
-        }
-
         /// <summary>
         /// Helper method to determine the appropriate redirect after successful login
         /// </summary>
