@@ -19,15 +19,17 @@ namespace BrainStormEra_MVC.Controllers
         private readonly ILogger<LoginController> _logger;
         private readonly IConfiguration _configuration;
         private readonly IUserService _userService;
+        private readonly IEmailService _emailService;
         // Cache for OTP codes (in a production environment, use a more robust solution like Redis)
         private static Dictionary<string, (string otp, DateTime expiry)> _otpCache = new();
 
-        public LoginController(BrainStormEraContext context, ILogger<LoginController> logger, IConfiguration configuration, IUserService userService)
+        public LoginController(BrainStormEraContext context, ILogger<LoginController> logger, IConfiguration configuration, IUserService userService, IEmailService emailService)
         {
             _context = context;
             _logger = logger;
             _configuration = configuration;
             _userService = userService;
+            _emailService = emailService;
         }
         [HttpGet]
         public IActionResult Index(string? returnUrl = null)
@@ -219,9 +221,26 @@ namespace BrainStormEra_MVC.Controllers
                 // Store OTP in cache with 10-minute expiry
                 _otpCache[model.Email] = (otp, DateTime.UtcNow.AddMinutes(10));
 
-                // In a real application, send email with OTP
-                // For demo purposes, we'll just log it
-                _logger.LogInformation("OTP for {Email}: {OTP}", model.Email, otp);
+                // Send email with OTP using EmailService
+                var emailResult = await _emailService.SendForgotPasswordEmailAsync(
+                    model.Email,
+                    user.FullName ?? user.Username,
+                    otp,
+                    10);
+
+                if (!emailResult.IsSuccess)
+                {
+                    _logger.LogError("Failed to send forgot password email to {Email}: {Error}",
+                        model.Email, emailResult.Message);
+
+                    // Remove OTP from cache since email failed
+                    _otpCache.Remove(model.Email);
+
+                    ModelState.AddModelError(string.Empty, "Failed to send verification email. Please try again later.");
+                    return View("~/Views/Auth/ForgotPassword.cshtml", model);
+                }
+
+                _logger.LogInformation("Forgot password email sent successfully to {Email}", model.Email);
 
                 // Redirect to OTP verification page
                 return RedirectToAction(nameof(VerifyOtp), new { email = model.Email });
@@ -347,6 +366,24 @@ namespace BrainStormEra_MVC.Controllers
 
                 // Remove token from cache
                 _otpCache.Remove(model.Email);
+
+                // Send password reset confirmation email
+                var resetTime = DateTime.UtcNow;
+                var emailResult = await _emailService.SendPasswordResetConfirmationEmailAsync(
+                    model.Email,
+                    user.FullName ?? user.Username,
+                    resetTime);
+
+                if (!emailResult.IsSuccess)
+                {
+                    _logger.LogWarning("Failed to send password reset confirmation email to {Email}: {Error}",
+                        model.Email, emailResult.Message);
+                    // Don't fail the password reset if email fails, just log it
+                }
+                else
+                {
+                    _logger.LogInformation("Password reset confirmation email sent successfully to {Email}", model.Email);
+                }
 
                 return RedirectToAction(nameof(ResetPasswordConfirmation));
             }
