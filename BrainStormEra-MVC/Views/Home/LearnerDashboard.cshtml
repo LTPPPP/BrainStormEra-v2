@@ -57,7 +57,7 @@
                     <p class="welcome-subtitle">Continue your learning journey today.</p>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <a href="#" class="btn btn-primary explore-courses-btn">
+                    <a href="@Url.Action("Index", "Course")" class="btn btn-primary explore-courses-btn">
                         <i class="fas fa-compass me-2"></i>Explore Courses
                     </a>
                 </div>
@@ -101,7 +101,7 @@
                                             <div class="course-details">
                                                 <h3 class="course-title">@course.CourseName</h3>
                                                 <p class="course-instructor">by @course.AuthorName</p>
-                                                <a href="#" class="continue-btn">Continue Learning</a>
+                                                <a href="@Url.Action("Learn", "Course", new { courseId = course.CourseId })" class="continue-btn">Continue Learning</a>
                                             </div>
                                         </div>
                                     </div>
@@ -115,7 +115,7 @@
                                      onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
                                 <h3>No courses yet</h3>
                                 <p>You haven't enrolled in any courses yet. Start exploring!</p>
-                                <a href="#" class="btn btn-primary">Find Courses</a>
+                                <a href="@Url.Action("Index", "Course")" class="btn btn-primary">Find Courses</a>
                             </div>
                         }
                     </div>
