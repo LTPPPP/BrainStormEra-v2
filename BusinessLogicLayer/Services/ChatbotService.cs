@@ -135,7 +135,12 @@ namespace BusinessLogicLayer.Services
                     // Cache common educational responses
                     if (IsCommonEducationalQuestion(userMessage))
                     {
-                        _cache.Set(cacheKey, botResponse, TimeSpan.FromHours(EnvironmentHelper.GetChatbotCacheHours()));
+                        var cacheOptions = new MemoryCacheEntryOptions
+                        {
+                            AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(EnvironmentHelper.GetChatbotCacheHours()),
+                            Size = 1
+                        };
+                        _cache.Set(cacheKey, botResponse, cacheOptions);
                     }
 
                     // Save conversation to database

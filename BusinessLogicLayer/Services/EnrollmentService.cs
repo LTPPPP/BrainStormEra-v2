@@ -59,7 +59,12 @@ namespace BusinessLogicLayer.Services
 
             isEnrolled = await _courseRepo.IsUserEnrolledAsync(userId, courseId);
 
-            _cache.Set(cacheKey, isEnrolled, CacheExpiration);
+            var cacheOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = CacheExpiration,
+                Size = 1
+            };
+            _cache.Set(cacheKey, isEnrolled, cacheOptions);
             return isEnrolled;
         }
 
@@ -74,7 +79,12 @@ namespace BusinessLogicLayer.Services
 
             var enrollments = await _courseRepo.GetUserEnrollmentsAsync(userId);
 
-            _cache.Set(cacheKey, enrollments, TimeSpan.FromMinutes(10));
+            var cacheOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                Size = 1
+            };
+            _cache.Set(cacheKey, enrollments, cacheOptions);
             return enrollments;
         }
 
@@ -89,7 +99,12 @@ namespace BusinessLogicLayer.Services
 
             count = await _courseRepo.GetCourseEnrollmentCountAsync(courseId);
 
-            _cache.Set(cacheKey, count, CacheExpiration);
+            var cacheOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = CacheExpiration,
+                Size = 1
+            };
+            _cache.Set(cacheKey, count, cacheOptions);
             return count;
         }
     }

@@ -53,7 +53,12 @@ namespace BusinessLogicLayer.Services
                     FinalScore = e.ProgressPercentage ?? 0
                 }).ToList();
 
-                _cache.Set(cacheKey, result, CacheExpiration);
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = CacheExpiration,
+                    Size = 1
+                };
+                _cache.Set(cacheKey, result, cacheOptions);
                 return result;
             }
             catch (Exception ex)
@@ -93,7 +98,12 @@ namespace BusinessLogicLayer.Services
                     CertificateCode = await GenerateCertificateCodeAsync(courseId, userId)
                 };
 
-                _cache.Set(cacheKey, result, CacheExpiration);
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = CacheExpiration,
+                    Size = 1
+                };
+                _cache.Set(cacheKey, result, cacheOptions);
                 return result;
             }
             catch (Exception ex)
@@ -110,7 +120,12 @@ namespace BusinessLogicLayer.Services
                 return cached;
 
             var result = await _certificateRepo.HasValidCertificateAsync(userId, courseId);
-            _cache.Set(cacheKey, result, CacheExpiration);
+            var cacheOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = CacheExpiration,
+                Size = 1
+            };
+            _cache.Set(cacheKey, result, cacheOptions);
             return result;
         }
 
@@ -180,7 +195,12 @@ namespace BusinessLogicLayer.Services
                     TotalPages = totalPages
                 };
 
-                _cache.Set(cacheKey, result, CacheExpiration);
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = CacheExpiration,
+                    Size = 1
+                };
+                _cache.Set(cacheKey, result, cacheOptions);
                 return result;
             }
             catch (Exception ex)
