@@ -568,6 +568,14 @@
   letter-spacing: -0.01em;
   color: #2c3e50;
   text-align: center;
+  /* Prevent text overflow with multi-line support */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  max-width: 100%;
+  word-wrap: break-word;
 }
 
 .course-subtitle {
@@ -966,6 +974,14 @@
   .course-title {
     font-size: 2.2rem;
     margin-bottom: 1rem;
+    /* Ensure text overflow handling on tablet */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    max-width: 100%;
+    word-wrap: break-word;
   }
 
   .course-subtitle {
@@ -992,6 +1008,14 @@
 @media (max-width: 576px) {
   .course-title {
     font-size: 1.8rem;
+    /* Ensure text overflow handling on mobile */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    max-width: 100%;
+    word-wrap: break-word;
   }
 
   .course-subtitle {
