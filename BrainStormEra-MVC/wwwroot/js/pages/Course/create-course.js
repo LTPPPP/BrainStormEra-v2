@@ -16,6 +16,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Initialize category autocomplete
   function initializeCategoryAutocomplete() {
+    // Check if required elements exist before initializing
+    if (
+      !categoryInput ||
+      !categorySuggestions ||
+      !selectedCategoriesContainer
+    ) {
+      console.log(
+        "Category autocomplete elements not found - skipping initialization"
+      );
+      return;
+    }
+
     categoryInput.addEventListener("input", handleCategoryInput);
     categoryInput.addEventListener("keydown", handleKeyNavigation);
     categoryInput.addEventListener("blur", handleInputBlur);
@@ -411,8 +423,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // Form with ID 'createCourseForm' not found!
   }
 
-  // Initialize everything
-  initializeCategoryAutocomplete();
+  // Initialize everything - only if we're on a page that has the required elements
+  if (categoryInput) {
+    initializeCategoryAutocomplete();
+  }
 
   // Page animations
   function animatePageLoad() {

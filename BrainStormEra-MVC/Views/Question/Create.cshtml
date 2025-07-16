@@ -222,20 +222,21 @@
                     <div class="col-lg-6">
                         <div class="true-false-options">
                             <div class="form-check mb-3">
-                                <input asp-for="TrueFalseAnswer" class="form-check-input" type="radio" value="true" id="trueOption" />
+                                <input asp-for="TrueFalseAnswer" class="form-check-input" type="radio" value="true" id="trueOption" name="TrueFalseAnswer" />
                                 <label class="form-check-label" for="trueOption">
                                     <i class="fas fa-check text-success me-2"></i>
                                     True
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input asp-for="TrueFalseAnswer" class="form-check-input" type="radio" value="false" id="falseOption" />
+                                <input asp-for="TrueFalseAnswer" class="form-check-input" type="radio" value="false" id="falseOption" name="TrueFalseAnswer" />
                                 <label class="form-check-label" for="falseOption">
                                     <i class="fas fa-times text-danger me-2"></i>
                                     False
                                 </label>
                             </div>
                         </div>
+                        <span asp-validation-for="TrueFalseAnswer" class="text-danger"></span>
                     </div>
                 </div>
             </div>
@@ -246,7 +247,7 @@
                     <i class="fas fa-pen me-2"></i>
                     Answer Guidelines
                 </h3>
-                <p class="text-muted mb-4">For essay and fill-in-the-blank questions, provide guidelines in the explanation section above</p>
+                <p class="text-muted mb-4">For essay and fill-in-the-blank questions, provide clear guidelines in the explanation field above to help with assessment</p>
 
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
@@ -307,13 +308,42 @@
                     multipleChoiceSection.style.display = 'block';
                 } else if (questionType === 'true_false') {
                     trueFalseSection.style.display = 'block';
+                    // Clear TrueFalseAnswer when switching away from true/false
                 } else if (questionType === 'essay' || questionType === 'fill_blank') {
                     essayFillSection.style.display = 'block';
+                }
+                
+                // Clear values for hidden sections to prevent validation issues
+                if (questionType !== 'multiple_choice') {
+                    // Don't clear answer options to preserve data, but remove validation requirements
+                    const optionInputs = answerOptionsContainer.querySelectorAll('input[name*="OptionText"]');
+                    optionInputs.forEach(input => {
+                        input.removeAttribute('required');
+                    });
+                }
+                
+                if (questionType !== 'true_false') {
+                    // Clear true/false selection when not in true/false mode
+                    document.querySelectorAll('input[name="TrueFalseAnswer"]').forEach(radio => {
+                        radio.checked = false;
+                    });
                 }
             }
 
             // Initialize on page load
             toggleSections();
+
+            // Set True/False answer if editing
+            @if (Model.QuestionId != null && Model.IsTrueFalse && Model.TrueFalseAnswer.HasValue)
+            {
+                <text>
+                if (@Json.Serialize(Model.TrueFalseAnswer.Value) === true) {
+                    document.getElementById('trueOption').checked = true;
+                } else {
+                    document.getElementById('falseOption').checked = true;
+                }
+                </text>
+            }
 
             // Handle question type change
             questionTypeSelect.addEventListener('change', toggleSections);
@@ -402,13 +432,45 @@
                         hiddenCheckboxInput.name = `AnswerOptions[${index}].IsCorrect`;
                     }
                 });
-            }// Form validation
+            }
+
+            // Form validation
             document.getElementById('questionForm').addEventListener('submit', function (e) {
                 const questionType = questionTypeSelect.value;
                 
+                console.log('Form submission started for question type:', questionType);
+                
+                // Check if question text is filled
+                const questionText = document.querySelector('textarea[name="QuestionText"]');
+                if (!questionText || questionText.value.trim() === '') {
+                    e.preventDefault();
+                    alert('Please enter the question text');
+                    questionText?.focus();
+                    return;
+                }
+                
+                // Check if points is filled and valid
+                const points = document.querySelector('input[name="Points"]');
+                if (!points || points.value.trim() === '' || parseInt(points.value) < 1) {
+                    e.preventDefault();
+                    alert('Please enter valid points (minimum 1)');
+                    points?.focus();
+                    return;
+                }
+                
+                // Check if question order is filled and valid
+                const questionOrder = document.querySelector('input[name="QuestionOrder"]');
+                if (!questionOrder || questionOrder.value.trim() === '' || parseInt(questionOrder.value) < 1) {
+                    e.preventDefault();
+                    alert('Please enter valid question order (minimum 1)');
+                    questionOrder?.focus();
+                    return;
+                }
+                
+                // Type-specific validation
                 if (questionType === 'multiple_choice') {
-                    const options = answerOptionsContainer.querySelectorAll('input[type="text"], input:not([type="hidden"]):not([type="checkbox"])');
-                    const filledOptions = Array.from(options).filter(input => input.value.trim() !== '');
+                    const optionInputs = answerOptionsContainer.querySelectorAll('input[name*="OptionText"]');
+                    const filledOptions = Array.from(optionInputs).filter(input => input.value.trim() !== '');
                     
                     if (filledOptions.length < 2) {
                         e.preventDefault();
@@ -429,6 +491,34 @@
                         alert('Please select the correct answer (True or False)');
                         return;
                     }
+                    console.log('True/False answer selected:', trueFalseSelected.value);
+                }
+                
+                // Clear irrelevant data before submission
+                if (questionType !== 'multiple_choice') {
+                    // For non-multiple choice questions, clear answer options to prevent validation errors
+                    const optionInputs = answerOptionsContainer.querySelectorAll('input[name*="OptionText"]');
+                    optionInputs.forEach(input => {
+                        if (input.value.trim() === '') {
+                            input.disabled = true; // Disable empty inputs so they won't be submitted
+                        }
+                    });
+                }
+                
+                if (questionType !== 'true_false') {
+                    // Clear true/false answer for non-true/false questions
+                    document.querySelectorAll('input[name="TrueFalseAnswer"]').forEach(radio => {
+                        radio.checked = false;
+                    });
+                }
+                
+                console.log('Form validation passed for question type:', questionType);
+                
+                // Log form data for debugging
+                const formData = new FormData(this);
+                console.log('Form data being submitted:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(key, value);
                 }
             });
         });

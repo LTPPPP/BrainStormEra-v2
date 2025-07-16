@@ -1502,6 +1502,104 @@ namespace BusinessLogicLayer.Services.Implementations
             }
         }
 
+        /// <summary>
+        /// Get quiz questions management view model with authorization and validation
+        /// </summary>
+        public async Task<GetQuizQuestionsResult> GetQuizQuestionsAsync(ClaimsPrincipal user, string quizId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(quizId))
+                {
+                    return new GetQuizQuestionsResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Quiz ID is required"
+                    };
+                }
+
+                // Get user ID from claims
+                var userId = user.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new GetQuizQuestionsResult
+                    {
+                        Success = false,
+                        ErrorMessage = "User not authenticated"
+                    };
+                }
+
+                var quiz = await _context.Quizzes
+                    .Include(q => q.Lesson)
+                        .ThenInclude(l => l!.Chapter)
+                            .ThenInclude(c => c!.Course)
+                    .Include(q => q.Questions)
+                        .ThenInclude(q => q.AnswerOptions)
+                    .FirstOrDefaultAsync(q => q.QuizId == quizId);
+
+                if (quiz?.Lesson?.Chapter?.Course == null)
+                {
+                    _logger.LogWarning("Quiz {QuizId} not found", quizId);
+                    return new GetQuizQuestionsResult
+                    {
+                        Success = false,
+                        IsNotFound = true,
+                        ErrorMessage = "Quiz not found"
+                    };
+                }
+
+                // Check authorization - user must be the course instructor
+                if (quiz.Lesson.Chapter.Course.AuthorId != userId)
+                {
+                    _logger.LogWarning("User {UserId} not authorized to manage questions for quiz {QuizId}", userId, quizId);
+                    return new GetQuizQuestionsResult
+                    {
+                        Success = false,
+                        IsForbidden = true,
+                        ErrorMessage = "You are not authorized to manage questions for this quiz"
+                    };
+                }
+
+                var questions = quiz.Questions?
+                    .OrderBy(q => q.QuestionOrder)
+                    .Select(q => new QuestionSummaryViewModel
+                    {
+                        QuestionId = q.QuestionId,
+                        QuestionText = q.QuestionText,
+                        QuestionType = q.QuestionType ?? "multiple_choice",
+                        Points = (int)(q.Points ?? 1),
+                        QuestionOrder = q.QuestionOrder ?? 1,
+                        AnswerOptionsCount = q.AnswerOptions?.Count ?? 0,
+                        QuestionCreatedAt = q.QuestionCreatedAt,
+                        QuestionUpdatedAt = q.QuestionCreatedAt // Use CreatedAt since UpdatedAt doesn't exist
+                    }).ToList() ?? new List<QuestionSummaryViewModel>();
+
+                var viewModel = new QuestionListViewModel
+                {
+                    QuizId = quiz.QuizId,
+                    QuizName = quiz.QuizName,
+                    CourseId = quiz.Lesson.Chapter.Course.CourseId,
+                    CourseName = quiz.Lesson.Chapter.Course.CourseName,
+                    Questions = questions
+                };
+
+                return new GetQuizQuestionsResult
+                {
+                    Success = true,
+                    ViewModel = viewModel
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting quiz questions for quiz {QuizId}", quizId);
+                return new GetQuizQuestionsResult
+                {
+                    Success = false,
+                    ErrorMessage = "An error occurred while loading quiz questions"
+                };
+            }
+        }
+
         #endregion
     }
 
@@ -1599,6 +1697,16 @@ namespace BusinessLogicLayer.Services.Implementations
         public string? RedirectAction { get; set; }
         public string? RedirectController { get; set; }
         public object? RouteValues { get; set; }
+        public bool IsNotFound { get; set; }
+        public bool IsForbidden { get; set; }
+    }
+
+    public class GetQuizQuestionsResult
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
+        public string? SuccessMessage { get; set; }
+        public QuestionListViewModel? ViewModel { get; set; }
         public bool IsNotFound { get; set; }
         public bool IsForbidden { get; set; }
     }
