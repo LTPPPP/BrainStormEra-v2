@@ -205,7 +205,7 @@ namespace BusinessLogicLayer.Services
             }
         }
 
-        public async Task<UserDetailViewModel?> GetUserDetailForInstructorAsync(string instructorId, string userId)
+        public async Task<UserDetailViewModel?> GetUserDetailForInstructorAsync(string instructorId, string userId, string? courseId = null)
         {
             try
             {
@@ -230,7 +230,9 @@ namespace BusinessLogicLayer.Services
                     CurrentLessonName = e.CurrentLessonId != null ? "Current Lesson" : null,
                     LastAccessedLessonName = e.LastAccessedLessonId != null ? "Last Lesson" : null,
                     EnrollmentStatus = e.EnrollmentStatus
-                }).ToList(); var achievements = user.UserAchievements.Select(ua => new UserAchievementSummary
+                }).ToList();
+
+                var achievements = user.UserAchievements.Select(ua => new UserAchievementSummary
                 {
                     AchievementName = ua.Achievement.AchievementName ?? ua.Achievement.AchievementType ?? "",
                     Description = ua.Achievement.AchievementDescription ?? "",
@@ -238,7 +240,7 @@ namespace BusinessLogicLayer.Services
                     AchievementIcon = ua.Achievement.AchievementIcon ?? GetAchievementIcon(ua.Achievement.AchievementType ?? "default")
                 }).ToList();
 
-                return new UserDetailViewModel
+                var viewModel = new UserDetailViewModel
                 {
                     UserId = user.UserId,
                     Username = user.Username,
@@ -252,10 +254,46 @@ namespace BusinessLogicLayer.Services
                     TotalCertificates = user.Certificates.Count,
                     OverallProgress = enrollments.Any() ? (double)enrollments.Average(e => e.ProgressPercentage) : 0
                 };
+
+                // If courseId is provided, populate course-specific information
+                if (!string.IsNullOrEmpty(courseId))
+                {
+                    var specificEnrollment = enrollments.FirstOrDefault(e => e.CourseId == courseId);
+                    if (specificEnrollment != null)
+                    {
+                        var course = await _context.Courses
+                            .Include(c => c.Chapters.Where(ch => ch.ChapterStatus != 4)) // 4 = deleted status
+                                .ThenInclude(ch => ch.Lessons.Where(l => l.LessonStatus != 4)) // 4 = deleted status
+                            .FirstOrDefaultAsync(c => c.CourseId == courseId && c.AuthorId == instructorId);
+
+                        if (course != null)
+                        {
+                            var totalLessons = course.Chapters.SelectMany(ch => ch.Lessons).Count();
+                            var completedLessons = (int)(specificEnrollment.ProgressPercentage / 100 * totalLessons);
+
+                            viewModel.CourseId = courseId;
+                            viewModel.CourseName = course.CourseName;
+                            viewModel.CourseDescription = course.CourseDescription;
+                            viewModel.CourseThumbnail = course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath;
+                            viewModel.ProgressPercentage = specificEnrollment.ProgressPercentage;
+                            viewModel.Status = specificEnrollment.StatusText;
+                            viewModel.EnrolledDate = specificEnrollment.EnrollmentDate;
+                            viewModel.CompletedLessons = completedLessons;
+                            viewModel.TotalLessons = totalLessons;
+                            viewModel.TimeSpent = 0; // This would need to be calculated from activity logs
+                            viewModel.LastActivity = specificEnrollment.LastAccessDate;
+
+                            // Set other enrollments (excluding the current one)
+                            viewModel.OtherEnrollments = enrollments.Where(e => e.CourseId != courseId).ToList();
+                        }
+                    }
+                }
+
+                return viewModel;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving user detail for instructor: {InstructorId}, user: {UserId}", instructorId, userId);
+                _logger.LogError(ex, "Error retrieving user detail for instructor: {InstructorId}, user: {UserId}, course: {CourseId}", instructorId, userId, courseId);
                 throw;
             }
         }
