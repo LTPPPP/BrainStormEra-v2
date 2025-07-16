@@ -11,13 +11,13 @@ namespace BrainStormEra_Razor.Pages.Admin
     public class EditAchievementModel : PageModel
     {
         private readonly ILogger<EditAchievementModel> _logger;
-        private readonly IAdminService _adminService;
+        private readonly IAchievementService _achievementService;
 
         public string? AdminName { get; set; }
         public string? UserId { get; set; }
 
         [BindProperty]
-        public EditAchievementRequest Achievement { get; set; } = new EditAchievementRequest
+        public UpdateAchievementRequest Achievement { get; set; } = new UpdateAchievementRequest
         {
             AchievementId = "",
             AchievementName = "",
@@ -37,10 +37,10 @@ namespace BrainStormEra_Razor.Pages.Admin
 
         public bool AchievementNotFound { get; set; } = false;
 
-        public EditAchievementModel(ILogger<EditAchievementModel> logger, IAdminService adminService)
+        public EditAchievementModel(ILogger<EditAchievementModel> logger, IAchievementService achievementService)
         {
             _logger = logger;
-            _adminService = adminService;
+            _achievementService = achievementService;
         }
 
         public async Task<IActionResult> OnGetAsync(string id)
@@ -57,7 +57,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 }
 
                 // Load existing achievement data
-                var existingAchievement = await _adminService.GetAchievementByIdAsync(id);
+                var existingAchievement = await _achievementService.GetAchievementByIdAsync(id);
                 if (existingAchievement == null)
                 {
                     _logger.LogWarning("Achievement not found: {AchievementId} by admin: {AdminName}", id, AdminName);
@@ -66,7 +66,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 }
 
                 // Map to edit model
-                Achievement = new EditAchievementRequest
+                Achievement = new UpdateAchievementRequest
                 {
                     AchievementId = existingAchievement.AchievementId,
                     AchievementName = existingAchievement.AchievementName,
@@ -149,7 +149,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 }
 
                 // Get current achievement to preserve existing icon if no new upload
-                var currentAchievement = await _adminService.GetAchievementByIdAsync(Achievement.AchievementId);
+                var currentAchievement = await _achievementService.GetAchievementByIdAsync(Achievement.AchievementId);
                 if (currentAchievement == null)
                 {
                     _logger.LogError("Achievement not found during update: {AchievementId}", Achievement.AchievementId);
@@ -199,7 +199,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     AchievementType = Achievement.AchievementType ?? ""
                 };
 
-                var success = await _adminService.UpdateAchievementAsync(updateRequest, UserId);
+                var success = await _achievementService.UpdateAchievementAsync(updateRequest, UserId);
 
                 if (success)
                 {

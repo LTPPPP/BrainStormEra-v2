@@ -10,7 +10,7 @@ namespace BrainStormEra_Razor.Pages.Admin
     public class AchievementsModel : PageModel
     {
         private readonly ILogger<AchievementsModel> _logger;
-        private readonly IAdminService _adminService;
+        private readonly IAchievementService _achievementService;
 
         public string? AdminName { get; set; }
         public string? UserId { get; set; }
@@ -32,10 +32,10 @@ namespace BrainStormEra_Razor.Pages.Admin
         [BindProperty(SupportsGet = true)]
         public int PageSize { get; set; } = 12;
 
-        public AchievementsModel(ILogger<AchievementsModel> logger, IAdminService adminService)
+        public AchievementsModel(ILogger<AchievementsModel> logger, IAchievementService achievementService)
         {
             _logger = logger;
-            _adminService = adminService;
+            _achievementService = achievementService;
         }
 
         public async Task OnGetAsync()
@@ -48,7 +48,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 // Load achievements data with pagination and filters
                 if (!string.IsNullOrEmpty(UserId))
                 {
-                    AchievementsData = await _adminService.GetAllAchievementsAsync(
+                    AchievementsData = await _achievementService.GetAllAchievementsAsync(
     search: SearchQuery,
     typeFilter: TypeFilter,
     pointsFilter: null,
@@ -123,9 +123,9 @@ namespace BrainStormEra_Razor.Pages.Admin
                 }
 
                 // Normalize achievement type to lowercase
-                request.AchievementType = request.AchievementType?.ToLower();
+                request.AchievementType = request.AchievementType?.ToLower() ?? "";
 
-                var (success, achievementId) = await _adminService.CreateAchievementAsync(request, UserId);
+                var (success, achievementId) = await _achievementService.CreateAchievementAsync(request, UserId);
 
                 if (success)
                 {
@@ -176,9 +176,9 @@ namespace BrainStormEra_Razor.Pages.Admin
                 }
 
                 // Normalize achievement type to lowercase
-                request.AchievementType = request.AchievementType?.ToLower();
+                request.AchievementType = request.AchievementType?.ToLower() ?? "";
 
-                var result = await _adminService.UpdateAchievementAsync(request, UserId);
+                var result = await _achievementService.UpdateAchievementAsync(request, UserId);
 
                 if (result)
                 {
@@ -210,7 +210,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return BadRequest("Achievement ID is required");
                 }
 
-                var result = await _adminService.DeleteAchievementAsync(request.AchievementId, UserId);
+                var result = await _achievementService.DeleteAchievementAsync(request.AchievementId, UserId);
 
                 if (result)
                 {
@@ -239,7 +239,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return BadRequest("Achievement ID is required");
                 }
 
-                var achievement = await _adminService.GetAchievementByIdAsync(achievementId);
+                var achievement = await _achievementService.GetAchievementByIdAsync(achievementId);
 
                 if (achievement == null)
                 {
@@ -267,7 +267,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return BadRequest("Icon file and achievement ID are required");
                 }
 
-                var result = await _adminService.UploadAchievementIconAsync(iconFile, achievementId, UserId);
+                var result = await _achievementService.UploadAchievementIconAsync(iconFile, achievementId, UserId);
 
                 if (result.Success)
                 {
