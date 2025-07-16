@@ -172,6 +172,7 @@ namespace BrainStormEra_MVC.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> SearchCourses(
             string? courseSearch,
             string? categorySearch,
@@ -530,6 +531,7 @@ namespace BrainStormEra_MVC.Controllers
 
         // GET: Get reviews for a course
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetCourseReviews(string courseId, int page = 1, int pageSize = 10)
         {
             if (string.IsNullOrEmpty(courseId))
