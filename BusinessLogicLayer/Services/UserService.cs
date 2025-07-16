@@ -214,22 +214,33 @@ namespace BusinessLogicLayer.Services
                         .ThenInclude(e => e.Course)
                     .Include(u => u.UserAchievements)
                         .ThenInclude(ua => ua.Achievement)
+                    .Include(u => u.Certificates)
                     .FirstOrDefaultAsync(u => u.UserId == userId);
 
                 if (user == null)
                     return null;
 
-                var enrollments = user.Enrollments.Select(e => new UserCourseEnrollment
+                var enrollments = user.Enrollments.Select(e =>
                 {
-                    CourseId = e.CourseId,
-                    CourseName = e.Course.CourseName,
-                    CourseImage = e.Course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
-                    EnrollmentDate = e.EnrollmentCreatedAt,
-                    LastAccessDate = e.EnrollmentUpdatedAt,
-                    ProgressPercentage = e.ProgressPercentage ?? 0,
-                    CurrentLessonName = e.CurrentLessonId != null ? "Current Lesson" : null,
-                    LastAccessedLessonName = e.LastAccessedLessonId != null ? "Last Lesson" : null,
-                    EnrollmentStatus = e.EnrollmentStatus
+                    var certificate = user.Certificates
+                        .FirstOrDefault(c => c.CourseId == e.CourseId);
+
+                    return new UserCourseEnrollment
+                    {
+                        CourseId = e.CourseId,
+                        CourseName = e.Course.CourseName,
+                        CourseImage = e.Course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
+                        EnrollmentDate = e.EnrollmentCreatedAt,
+                        LastAccessDate = e.EnrollmentUpdatedAt,
+                        ProgressPercentage = e.ProgressPercentage ?? 0,
+                        CurrentLessonName = e.CurrentLessonId != null ? "Current Lesson" : null,
+                        LastAccessedLessonName = e.LastAccessedLessonId != null ? "Last Lesson" : null,
+                        EnrollmentStatus = e.EnrollmentStatus,
+                        HasCertificate = certificate != null,
+                        CertificateIssuedDate = certificate?.IssueDate.ToDateTime(TimeOnly.MinValue),
+                        CertificateCode = certificate?.CertificateCode,
+                        FinalScore = certificate?.FinalScore
+                    };
                 }).ToList();
 
                 var achievements = user.UserAchievements.Select(ua => new UserAchievementSummary

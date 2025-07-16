@@ -110,12 +110,16 @@
             <div class="col-lg-8">
                 <!-- Course Enrollments -->
                 <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-light border-0">
+                    <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 fw-bold text-primary">
                             <i class="fas fa-graduation-cap me-2"></i>Enrolled Courses
                         </h5>
+                        <button class="btn btn-outline-primary btn-sm" id="toggleCoursesBtn"
+                            onclick="toggleCoursesList()">
+                            <i class="fas fa-chevron-down" id="coursesToggleIcon"></i>
+                        </button>
                     </div>
-                    <div class="card-body p-4">
+                    <div class="card-body p-4" id="coursesContent">
                         @if (Model.Enrollments.Any())
                         {
                             @foreach (var enrollment in Model.Enrollments)
@@ -145,6 +149,46 @@
                                                     @enrollment.StatusText
                                                 </span>
                                             </div>
+
+                                            <!-- Certificate Information -->
+                                            @if (enrollment.IsCompleted)
+                                            {
+                                                <div class="certificate-section mt-3 p-2 bg-light rounded">
+                                                    @if (enrollment.HasCertificate)
+                                                    {
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fas fa-certificate text-warning me-2"></i>
+                                                            <div>
+                                                                <small class="fw-bold text-success">Certificate Earned</small>
+                                                                <br>
+                                                                <small class="text-muted">
+                                                                    Issued: @enrollment.CertificateIssuedDate?.ToString("MMM dd, yyyy")
+                                                                    @if (enrollment.FinalScore.HasValue)
+                                                                    {
+                                                                        <span> • Score: @enrollment.FinalScore.Value.ToString("F1")%</span>
+                                                                    }
+                                                                </small>
+                                                                @if (!string.IsNullOrEmpty(enrollment.CertificateCode))
+                                                                {
+                                                                    <br>
+                                                                    <small class="text-muted">Code: @enrollment.CertificateCode</small>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                                            <div>
+                                                                <small class="text-warning fw-bold">Certificate Processing</small>
+                                                                <br>
+                                                                <small class="text-muted">Certificate is being generated.</small>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
                                         </div>
                                     </div>
                                 </div>
@@ -296,6 +340,37 @@
         function sendMessage() {
             // Implement message functionality
             showToast('Message functionality coming soon', 'info');
+        }
+
+        // Course list toggle function
+        function toggleCoursesList() {
+            const content = document.getElementById('coursesContent');
+            const icon = document.getElementById('coursesToggleIcon');
+
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                content.style.opacity = '0';
+                content.style.transform = 'translateY(-10px)';
+
+                // Animate in
+                requestAnimationFrame(() => {
+                    content.style.transition = 'all 0.3s ease';
+                    content.style.opacity = '1';
+                    content.style.transform = 'translateY(0)';
+                });
+
+                icon.className = 'fas fa-chevron-down';
+            } else {
+                content.style.transition = 'all 0.3s ease';
+                content.style.opacity = '0';
+                content.style.transform = 'translateY(-10px)';
+
+                setTimeout(() => {
+                    content.style.display = 'none';
+                }, 300);
+
+                icon.className = 'fas fa-chevron-right';
+            }
         }
 
         // Toast notification function
