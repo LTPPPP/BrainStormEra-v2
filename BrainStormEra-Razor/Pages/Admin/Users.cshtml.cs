@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc;
 using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Models.ViewModels;
+using System.ComponentModel.DataAnnotations;
 
 namespace BrainStormEra_Razor.Pages.Admin
 {
@@ -11,7 +12,6 @@ namespace BrainStormEra_Razor.Pages.Admin
     {
         private readonly ILogger<UsersModel> _logger;
         private readonly IAdminService _adminService;
-
 
         public string? AdminName { get; set; }
         public string? UserId { get; set; }
@@ -46,6 +46,8 @@ namespace BrainStormEra_Razor.Pages.Admin
                 AdminName = HttpContext.User?.Identity?.Name ?? "Admin";
                 UserId = HttpContext.User?.FindFirst("UserId")?.Value ?? "";
 
+                _logger.LogInformation("Loading users page for admin: {AdminName}, UserId: {UserId}", AdminName, UserId);
+
                 // Load users data with pagination and filters
                 if (!string.IsNullOrEmpty(UserId))
                 {
@@ -54,7 +56,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                         roleFilter: RoleFilter,
                         page: CurrentPage,
                         pageSize: PageSize
-                    );                    // No need to encode user IDs anymore
+                    );
 
                     // Apply status filter in frontend since backend doesn't support it yet
                     if (!string.IsNullOrEmpty(StatusFilter))
@@ -70,14 +72,14 @@ namespace BrainStormEra_Razor.Pages.Admin
                         UsersData.TotalUsers = filteredUsers.Count;
                         UsersData.TotalPages = (int)Math.Ceiling((double)filteredUsers.Count / PageSize);
                     }
+
+                    _logger.LogInformation("Loaded {TotalUsers} users for admin: {AdminName}", UsersData.TotalUsers, AdminName);
                 }
                 else
                 {
-                    _logger.LogWarning("User ID not found in claims");
+                    _logger.LogWarning("User ID not found in claims for admin: {AdminName}", AdminName);
                     UsersData = new AdminUsersViewModel();
                 }
-
-                _logger.LogInformation("Admin users page accessed by: {AdminName} at {AccessTime}", AdminName, DateTime.UtcNow);
             }
             catch (Exception ex)
             {
@@ -85,68 +87,173 @@ namespace BrainStormEra_Razor.Pages.Admin
                 UsersData = new AdminUsersViewModel();
             }
         }
-        public async Task<IActionResult> OnPostUpdateUserStatusAsync(string userId, bool isBanned)
+
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OnPostUpdateUserStatusAsync([FromBody] UpdateUserStatusRequest request)
         {
             try
             {
-                if (string.IsNullOrEmpty(userId))
+                _logger.LogInformation("Received ban/unban request for user: {UserId}, isBanned: {IsBanned} by admin: {AdminName}",
+                    request?.UserId, request?.IsBanned, HttpContext.User?.Identity?.Name);
+
+                // Validate request
+                if (request == null)
                 {
-                    return BadRequest("User ID is required");
+                    _logger.LogWarning("UpdateUserStatus request is null");
+                    return new JsonResult(new { success = false, message = "Invalid request" });
                 }
 
-                // Use user ID directly
-                var result = await _adminService.UpdateUserStatusAsync(userId, isBanned);
+                if (string.IsNullOrEmpty(request.UserId))
+                {
+                    _logger.LogWarning("UpdateUserStatus request UserId is null or empty");
+                    return new JsonResult(new { success = false, message = "User ID is required" });
+                }
+
+                // Validate model state
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                    _logger.LogWarning("UpdateUserStatus model validation failed: {Errors}", string.Join(", ", errors));
+                    return new JsonResult(new { success = false, message = "Invalid request data" });
+                }
+
+                // Check if admin is trying to ban themselves
+                var currentUserId = HttpContext.User?.FindFirst("UserId")?.Value;
+                if (request.UserId == currentUserId && request.IsBanned)
+                {
+                    _logger.LogWarning("Admin {AdminName} attempted to ban themselves", HttpContext.User?.Identity?.Name);
+                    return new JsonResult(new { success = false, message = "You cannot ban yourself" });
+                }
+
+                // Update user status
+                var result = await _adminService.UpdateUserStatusAsync(request.UserId, request.IsBanned);
 
                 if (result)
                 {
-                    _logger.LogInformation("User status updated successfully by admin {AdminName} for user {UserId}",
-                        HttpContext.User?.Identity?.Name, userId);
-                    return new JsonResult(new { success = true, message = "User status updated successfully" });
+                    var action = request.IsBanned ? "banned" : "unbanned";
+                    _logger.LogInformation("User {UserId} {Action} successfully by admin {AdminName}",
+                        request.UserId, action, HttpContext.User?.Identity?.Name);
+
+                    return new JsonResult(new
+                    {
+                        success = true,
+                        message = $"User {action} successfully"
+                    });
                 }
                 else
                 {
-                    return new JsonResult(new { success = false, message = "Failed to update user status" });
+                    _logger.LogWarning("Failed to update user status for user: {UserId}", request.UserId);
+                    return new JsonResult(new
+                    {
+                        success = false,
+                        message = "Failed to update user status. Please try again."
+                    });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating user status for user: {UserId}", userId);
-                return new JsonResult(new { success = false, message = "An error occurred while updating user status" });
+                _logger.LogError(ex, "Error updating user status for user: {UserId}", request?.UserId);
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = "An error occurred while updating user status. Please try again."
+                });
             }
         }
 
-        public async Task<IActionResult> OnPostUpdateUserPointsAsync(string userId, decimal pointsChange)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OnPostUpdateUserPointsAsync([FromBody] UpdateUserPointsRequest request)
         {
             try
             {
-                if (string.IsNullOrEmpty(userId))
+                _logger.LogInformation("Received points update request for user: {UserId}, pointsChange: {PointsChange} by admin: {AdminName}",
+                    request?.UserId, request?.PointsChange, HttpContext.User?.Identity?.Name);
+
+                // Validate request
+                if (request == null)
                 {
-                    return BadRequest("User ID is required");
+                    _logger.LogWarning("UpdateUserPoints request is null");
+                    return new JsonResult(new { success = false, message = "Invalid request" });
                 }
 
-                // Use user ID directly
-                var result = await _adminService.UpdateUserPointsAsync(userId, pointsChange);
+                if (string.IsNullOrEmpty(request.UserId))
+                {
+                    _logger.LogWarning("UpdateUserPoints request UserId is null or empty");
+                    return new JsonResult(new { success = false, message = "User ID is required" });
+                }
+
+                // Validate model state
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                    _logger.LogWarning("UpdateUserPoints model validation failed: {Errors}", string.Join(", ", errors));
+                    return new JsonResult(new { success = false, message = "Invalid request data" });
+                }
+
+                // Validate points change
+                if (request.PointsChange == 0)
+                {
+                    _logger.LogWarning("UpdateUserPoints pointsChange is zero");
+                    return new JsonResult(new { success = false, message = "Points change cannot be zero" });
+                }
+
+                // Update user points
+                var result = await _adminService.UpdateUserPointsAsync(request.UserId, request.PointsChange);
 
                 if (result)
                 {
-                    var action = pointsChange > 0 ? "added" : "subtracted";
-                    var amount = Math.Abs(pointsChange);
+                    var action = request.PointsChange > 0 ? "added" : "subtracted";
+                    var amount = Math.Abs(request.PointsChange);
 
                     _logger.LogInformation("User points updated successfully by admin {AdminName} for user {UserId}. Points {Action}: {Amount}",
-                        HttpContext.User?.Identity?.Name, userId, action, amount);
+                        HttpContext.User?.Identity?.Name, request.UserId, action, amount);
 
-                    return new JsonResult(new { success = true, message = $"Points {action} successfully" });
+                    return new JsonResult(new
+                    {
+                        success = true,
+                        message = $"{amount} points {action} successfully"
+                    });
                 }
                 else
                 {
-                    return new JsonResult(new { success = false, message = "Failed to update user points" });
+                    _logger.LogWarning("Failed to update user points for user: {UserId}", request.UserId);
+                    return new JsonResult(new
+                    {
+                        success = false,
+                        message = "Failed to update user points. Please try again."
+                    });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating user points for user: {UserId}, pointsChange: {PointsChange}", userId, pointsChange);
-                return new JsonResult(new { success = false, message = "An error occurred while updating user points" });
+                _logger.LogError(ex, "Error updating user points for user: {UserId}, pointsChange: {PointsChange}",
+                    request?.UserId, request?.PointsChange);
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = "An error occurred while updating user points. Please try again."
+                });
             }
         }
+    }
+
+    // Request models
+    public class UpdateUserStatusRequest
+    {
+        [Required]
+        public string UserId { get; set; } = string.Empty;
+
+        [Required]
+        public bool IsBanned { get; set; }
+    }
+
+    public class UpdateUserPointsRequest
+    {
+        [Required]
+        public string UserId { get; set; } = string.Empty;
+
+        [Required]
+        [Range(-999999, 999999, ErrorMessage = "Points change must be between -999999 and 999999")]
+        public decimal PointsChange { get; set; }
     }
 }

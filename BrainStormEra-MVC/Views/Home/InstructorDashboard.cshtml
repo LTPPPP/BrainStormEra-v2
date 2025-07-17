@@ -13,6 +13,7 @@
     <link rel="icon" type="image/x-icon" href="~/SharedMedia/logo/logowithoutbackground.png" sizes="48x48">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <link rel="stylesheet" href="~/css/layouts/base.css">
     <link rel="stylesheet" href="~/css/components/header.css">
     <link rel="stylesheet" href="~/css/pages/Dashboard/instructor-dashboard.css">
@@ -69,7 +70,9 @@
     <link rel="stylesheet" href="~/css/components/page-header-themes.css">
 
     <div class="dashboard-container">
+        <!-- Anti-forgery token - Only one needed -->
         @Html.AntiForgeryToken()
+
         <!-- Welcome Section -->
         <div class="page-header dashboard-page welcome-section">
             <div class="container welcome-container">
@@ -166,40 +169,84 @@
                                                     {
                                                         <div class="course-price free">Free</div>
                                                     }
-
                                                 </div>
                                                 <div class="course-details">
                                                     <h3 class="course-title">@course.CourseName</h3>
                                                     <p class="course-students">@course.EnrollmentCount enrolled</p>
-                                                    @* Status display for instructor *@
-                                                    @if (course.ApprovalStatus?.ToLower() == "pending")
-                                                    {
-                                                        <p class="course-status text-warning"><i class="fas fa-clock"></i> Status: Pending</p>
+
+                                                    @* Fixed Status display logic *@
+                                                    @{
+                                                        var statusClass = "";
+                                                        var statusIcon = "";
+                                                        var statusText = "";
+
+                                                        // Check CourseStatus first (1=Active, 2=Inactive, 3=Pending, 4=Deleted)
+                                                        if (course.CourseStatus == 4)
+                                                        {
+                                                            statusClass = "text-secondary";
+                                                            statusIcon = "fas fa-trash";
+                                                            statusText = "Deleted";
+                                                        }
+                                                        else if (course.CourseStatus == 2)
+                                                        {
+                                                            statusClass = "text-muted";
+                                                            statusIcon = "fas fa-pause-circle";
+                                                            statusText = "Inactive";
+                                                        }
+                                                        else if (course.CourseStatus == 3)
+                                                        {
+                                                            statusClass = "text-warning";
+                                                            statusIcon = "fas fa-clock";
+                                                            statusText = "Pending Review";
+                                                        }
+                                                        else if (course.CourseStatus == 1)
+                                                        {
+                                                            // If course is active, check approval status
+                                                            if (string.IsNullOrEmpty(course.ApprovalStatus) ||
+                                                            course.ApprovalStatus.ToLower() == "draft")
+                                                            {
+                                                                statusClass = "text-info";
+                                                                statusIcon = "fas fa-edit";
+                                                                statusText = "Draft";
+                                                            }
+                                                            else if (course.ApprovalStatus.ToLower() == "pending")
+                                                            {
+                                                                statusClass = "text-warning";
+                                                                statusIcon = "fas fa-clock";
+                                                                statusText = "Pending Approval";
+                                                            }
+                                                            else if (course.ApprovalStatus.ToLower() == "approved")
+                                                            {
+                                                                statusClass = "text-success";
+                                                                statusIcon = "fas fa-check-circle";
+                                                                statusText = "Published";
+                                                            }
+                                                            else if (course.ApprovalStatus.ToLower() == "rejected" ||
+                                                            course.ApprovalStatus.ToLower() == "denied")
+                                                            {
+                                                                statusClass = "text-danger";
+                                                                statusIcon = "fas fa-times-circle";
+                                                                statusText = "Rejected";
+                                                            }
+                                                            else
+                                                            {
+                                                                statusClass = "text-muted";
+                                                                statusIcon = "fas fa-question-circle";
+                                                                statusText = course.ApprovalStatus ?? "Unknown";
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            statusClass = "text-muted";
+                                                            statusIcon = "fas fa-question-circle";
+                                                            statusText = "Unknown";
+                                                        }
                                                     }
-                                                    else if (course.ApprovalStatus?.ToLower() == "denied" || course.ApprovalStatus?.ToLower() == "rejected")
-                                                    {
-                                                        <p class="course-status text-danger"><i class="fas fa-times-circle"></i> Status: Rejected</p>
-                                                    }
-                                                    else if (course.CourseStatus == 4)
-                                                    {
-                                                        <p class="course-status text-secondary"><i class="fas fa-trash"></i> Status: Deleted</p>
-                                                    }
-                                                    else if (course.ApprovalStatus?.ToLower() == "draft")
-                                                    {
-                                                        <p class="course-status text-info"><i class="fas fa-edit"></i> Status: Draft</p>
-                                                    }
-                                                    else if (course.ApprovalStatus?.ToLower() == "approved")
-                                                    {
-                                                        <p class="course-status text-success"><i class="fas fa-check-circle"></i> Status: Approved</p>
-                                                    }
-                                                    else if (string.IsNullOrEmpty(course.ApprovalStatus))
-                                                    {
-                                                        <p class="course-status text-info"><i class="fas fa-edit"></i> Status: Draft</p>
-                                                    }
-                                                    else
-                                                    {
-                                                        <p class="course-status text-muted"><i class="fas fa-question-circle"></i> Status: @(course.ApprovalStatus ?? "Unknown")</p>
-                                                    }
+
+                                                    <p class="course-status @statusClass">
+                                                        <i class="@statusIcon"></i> Status: @statusText
+                                                    </p>
+
                                                     <div class="course-actions">
                                                         <a href="@Url.Action("Details", "Course", new { id = course.CourseId })"
                                                             class="btn btn-sm btn-outline-info" title="View Course Details">
@@ -209,9 +256,10 @@
                                                             class="btn btn-sm btn-outline-primary" title="Edit Course">
                                                             <i class="fas fa-edit"></i> Edit
                                                         </a>
-                                                        <button type="button" class="btn btn-sm btn-outline-danger"
-                                                            onclick="confirmDeleteCourse('@course.CourseId', '@course.CourseName')"
-                                                            title="Delete Course">
+                                                        <button type="button"
+                                                            class="btn btn-sm btn-outline-danger delete-course-btn"
+                                                            data-course-id="@course.CourseId"
+                                                            data-course-name="@course.CourseName" title="Delete Course">
                                                             <i class="fas fa-trash"></i> Delete
                                                         </button>
                                                     </div>
@@ -224,7 +272,8 @@
                             else
                             {
                                 <div class="empty-state">
-                                    <img src="/SharedMedia/static/empty-courses.svg" alt="No courses" class="empty-state-img"
+                                    <img src="/SharedMedia/static/empty-courses.svg" alt="No courses"
+                                        class="empty-state-img"
                                         onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
                                     <h3>No courses yet</h3>
                                     <p>Start creating your first course to share your knowledge with students!</p>
@@ -245,7 +294,6 @@
     @await Html.PartialAsync("~/Views/Shared/_Chatbot.cshtml")
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Include toast notifications script -->
     <script src="~/js/shared/toast-notifications.js"></script>
     <script src="~/js/pages/instructor-dashboard.js"></script>
@@ -253,232 +301,169 @@
     @* Chatbot Script for authenticated users *@
     @if (User.Identity?.IsAuthenticated == true)
     {
-        @Html.AntiForgeryToken()
         <script src="~/js/components/chatbot.js"></script>
     }
 
     <script>
         // Hide preloader when page is loaded
         window.addEventListener('load', function () {
-            document.querySelector('.page-loader').classList.add('loaded');
-            setTimeout(() => {
-                document.querySelector('.page-loader').style.display = 'none';
-            }, 500);
+            const loader = document.querySelector('.page-loader');
+            if (loader) {
+                loader.classList.add('loaded');
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 500);
+            }
         });
 
         // Enhanced course card interactions
         document.addEventListener('DOMContentLoaded', function () {
+            // Initialize components
+            initializeCourseCards();
+            initializeDeleteHandlers();
+            initializeStatAnimations();
+
+            // Toast notification function
+            window.showToast = function (message, type = 'info') {
+                // Use existing toast notification system
+                if (window.toastNotifications && window.toastNotifications.show) {
+                    window.toastNotifications.show(message, type);
+                } else {
+                    // Fallback to console and alert
+                    console.log(`Toast [${type}]: ${message}`);
+                    if (type === 'error') {
+                        alert(`Error: ${message}`);
+                    }
+                }
+            };
+        });
+
+        // Initialize course card interactions
+        function initializeCourseCards() {
             const courseCards = document.querySelectorAll('.course-card');
             courseCards.forEach(card => {
                 card.addEventListener('mouseenter', function () {
                     this.style.transform = 'translateY(-8px) scale(1.02)';
+                    this.style.transition = 'transform 0.3s ease';
                 });
 
                 card.addEventListener('mouseleave', function () {
                     this.style.transform = 'translateY(0) scale(1)';
                 });
             });
+        }
 
-            // Initialize enrollment chart
-            const enrollmentCtx = document.getElementById('enrollmentChart').getContext('2d');
-            new Chart(enrollmentCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Enrollments',
-                        data: [12, 19, 15, 25, 22, 30],
-                        borderColor: '#007bff',
-                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-
-            // Initialize income chart
-            let incomeChart;
-            const incomeCtx = document.getElementById('incomeChart').getContext('2d');
-
-            function initIncomeChart(data) {
-                if (incomeChart) {
-                    incomeChart.destroy();
-                }
-
-                incomeChart = new Chart(incomeCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: data.map(item => item.Date),
-                        datasets: [{
-                            label: 'Income ($)',
-                            data: data.map(item => item.Amount),
-                            backgroundColor: 'rgba(40, 167, 69, 0.8)',
-                            borderColor: 'rgba(40, 167, 69, 1)',
-                            borderWidth: 1,
-                            borderRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function (value) {
-                                        return '$' + value.toFixed(2);
-                                    }
-                                }
-                            }
-                        },
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    label: function (context) {
-                                        return 'Income: $' + context.parsed.y.toFixed(2);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Load income data
-            function loadIncomeData(days = 1) {
-                const loading = document.getElementById('incomeLoading');
-                const chartContainer = document.querySelector('#incomeChart').parentElement;
-
-                loading.style.display = 'block';
-                chartContainer.style.opacity = '0.5';
-
-                fetch(`/Home/GetIncomeData?days=${days}`)
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.success) {
-                            initIncomeChart(result.data);
-
-                            // Update total income
-                            const totalIncome = result.data.reduce((sum, item) => sum + item.Amount, 0);
-                            document.getElementById('totalIncome').textContent = '$' + totalIncome.toFixed(2);
-                        } else {
-                            showToast('Failed to load income data', 'error');
-                        }
-                    })
-                    .catch(error => {
-                        showToast('An error occurred while loading income data. Please try again.', 'error');
-                    })
-                    .finally(() => {
-                        loading.style.display = 'none';
-                        chartContainer.style.opacity = '1';
-                    });
-            }
-
-            // Filter button handlers
-            const filterButtons = document.querySelectorAll('.filter-btn');
-            filterButtons.forEach(button => {
+        // Initialize delete handlers
+        function initializeDeleteHandlers() {
+            const deleteButtons = document.querySelectorAll('.delete-course-btn');
+            deleteButtons.forEach(button => {
                 button.addEventListener('click', function () {
-                    // Remove active class from all buttons
-                    filterButtons.forEach(btn => btn.classList.remove('active'));
-                    // Add active class to clicked button
-                    this.classList.add('active');
-
-                    // Load data for selected period
-                    const days = parseInt(this.getAttribute('data-days'));
-                    loadIncomeData(days);
+                    const courseId = this.getAttribute('data-course-id');
+                    const courseName = this.getAttribute('data-course-name');
+                    confirmDeleteCourse(courseId, courseName, this);
                 });
             });
+        }
 
-            // Load initial income data (1 day)
-            loadIncomeData(1);
+        // Course deletion confirmation function
+        function confirmDeleteCourse(courseId, courseName, buttonElement) {
+            if (confirm(`Are you sure you want to delete the course "${courseName}"?\n\nThis action cannot be undone and will permanently remove all course content. Students enrolled in this course will lose access.`)) {
+                deleteCourse(courseId, buttonElement);
+            }
+        }
 
-            // Toast notification function
-            function showToast(message, type = 'info') {
-                // Use existing toast notification system
-                if (window.showToast) {
-                    window.showToast(message, type);
-                } else {
-                    alert(message);
-                }
+        // Delete course function
+        function deleteCourse(courseId, buttonElement) {
+            if (!courseId) {
+                showToast('Invalid course ID', 'error');
+                return;
             }
 
-            // Animate statistics on scroll
-            const statItems = document.querySelectorAll('.stat-item');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.animationDelay = Math.random() * 0.5 + 's';
-                        entry.target.classList.add('animate__animated', 'animate__fadeInUp');
+            // Show loading state
+            if (buttonElement) {
+                buttonElement.disabled = true;
+                buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            }
+
+            // Get anti-forgery token
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (!tokenInput) {
+                showToast('Security token not found. Please refresh the page.', 'error');
+                restoreDeleteButton(buttonElement);
+                return;
+            }
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('id', courseId);
+            formData.append('__RequestVerificationToken', tokenInput.value);
+
+            // Make the request
+            fetch('@Url.Action("DeleteCourse", "Course")', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
                     }
-                });
-            });
-
-            statItems.forEach(item => observer.observe(item));
-
-            // Course deletion confirmation function
-            window.confirmDeleteCourse = function (courseId, courseName) {
-                if (confirm(`Are you sure you want to delete the course "${courseName}"?\n\nThis action cannot be undone and will permanently remove all course content. Students enrolled in this course will lose access.`)) {
-                    deleteCourse(courseId);
-                }
-            };
-
-            // Delete course function
-            function deleteCourse(courseId) {
-                // Show loading state
-                const deleteButton = document.querySelector(`button[onclick*="${courseId}"]`);
-                if (deleteButton) {
-                    deleteButton.disabled = true;
-                    deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
-                }
-
-                // Create form data
-                const formData = new FormData();
-                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
-
-                fetch('@Url.Action("DeleteCourse", "Course")', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: `id=${encodeURIComponent(courseId)}&__RequestVerificationToken=${encodeURIComponent(document.querySelector('input[name="__RequestVerificationToken"]').value)}`
+                    return response.json();
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showToast(data.message || 'Course deleted successfully!', 'success');
-                            // Reload the page to refresh the course list
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 1500);
-                        } else {
-                            showToast(data.message || 'Failed to delete course. Please try again.', 'error');
-                            // Restore button state
-                            if (deleteButton) {
-                                deleteButton.disabled = false;
-                                deleteButton.innerHTML = '<i class="fas fa-trash"></i> Delete';
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        showToast('An error occurred while deleting the course. Please try again.', 'error');
-                        // Restore button state
-                        if (deleteButton) {
-                            deleteButton.disabled = false;
-                            deleteButton.innerHTML = '<i class="fas fa-trash"></i> Delete';
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message || 'Course deleted successfully!', 'success');
+                        // Reload the page to refresh the course list
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        showToast(data.message || 'Failed to delete course. Please try again.', 'error');
+                        restoreDeleteButton(buttonElement);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting course:', error);
+                    showToast('An error occurred while deleting the course. Please try again.', 'error');
+                    restoreDeleteButton(buttonElement);
+                });
+        }
+
+        // Restore delete button to original state
+        function restoreDeleteButton(buttonElement) {
+            if (buttonElement) {
+                buttonElement.disabled = false;
+                buttonElement.innerHTML = '<i class="fas fa-trash"></i> Delete';
+            }
+        }
+
+        // Initialize statistics animations
+        function initializeStatAnimations() {
+            const statItems = document.querySelectorAll('.stat-item');
+
+            // Check if Intersection Observer is supported
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.style.animationDelay = Math.random() * 0.5 + 's';
+                            entry.target.classList.add('animate__animated', 'animate__fadeInUp');
                         }
                     });
+                });
+
+                statItems.forEach(item => observer.observe(item));
+            } else {
+                // Fallback for browsers without Intersection Observer
+                statItems.forEach((item, index) => {
+                    setTimeout(() => {
+                        item.classList.add('animate__animated', 'animate__fadeInUp');
+                    }, index * 100);
+                });
             }
-        });
+        }
     </script>
 
 </body>
