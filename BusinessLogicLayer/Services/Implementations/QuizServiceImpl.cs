@@ -1011,14 +1011,19 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
+                _logger.LogInformation("GetQuizTakeAsync called for quiz {QuizId} by user {UserId}", quizId, user.FindFirst("UserId")?.Value);
+
                 // Clean up abandoned attempts first
                 await CleanupAbandonedAttemptsAsync();
 
                 var userId = user.FindFirst("UserId")?.Value;
                 var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
 
+                _logger.LogInformation("User {UserId} with role {UserRole} attempting to take quiz {QuizId}", userId, userRole, quizId);
+
                 if (string.IsNullOrEmpty(userId))
                 {
+                    _logger.LogWarning("User not authenticated for quiz {QuizId}", quizId);
                     return new QuizTakeResult
                     {
                         Success = false,
@@ -1040,6 +1045,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 if (quiz == null)
                 {
+                    _logger.LogWarning("Quiz {QuizId} not found", quizId);
                     return new QuizTakeResult
                     {
                         Success = false,
@@ -1050,15 +1056,34 @@ namespace BusinessLogicLayer.Services.Implementations
                 // Check if user is enrolled in the course (learners only)
                 if (userRole == "learner")
                 {
-                    var isEnrolled = await _context.Enrollments
-                        .AnyAsync(e => e.UserId == userId && e.CourseId == quiz.CourseId);
+                    var enrollment = await _context.Enrollments
+                        .FirstOrDefaultAsync(e => e.UserId == userId && e.CourseId == quiz.CourseId);
 
-                    if (!isEnrolled)
+                    _logger.LogDebug("Enrollment check for user {UserId} in course {CourseId}: {EnrollmentFound}", 
+                        userId, quiz.CourseId, enrollment != null ? "Found" : "Not found");
+
+                    if (enrollment == null)
                     {
+                        _logger.LogWarning("User {UserId} not enrolled in course {CourseId} for quiz {QuizId}", userId, quiz.CourseId, quizId);
                         return new QuizTakeResult
                         {
                             Success = false,
                             ErrorMessage = "You must be enrolled in this course to take the quiz",
+                            RedirectAction = "Details",
+                            RedirectController = "Course",
+                            RouteValues = new { id = quiz.CourseId }
+                        };
+                    }
+
+                    // Check if enrollment is approved
+                    if (enrollment.Approved != true)
+                    {
+                        _logger.LogWarning("User {UserId} enrollment not approved for course {CourseId} (Approved: {Approved})", 
+                            userId, quiz.CourseId, enrollment.Approved);
+                        return new QuizTakeResult
+                        {
+                            Success = false,
+                            ErrorMessage = "Your enrollment in this course is not yet approved",
                             RedirectAction = "Details",
                             RedirectController = "Course",
                             RouteValues = new { id = quiz.CourseId }
@@ -1069,6 +1094,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 // Check if quiz has questions
                 if (!quiz.Questions.Any())
                 {
+                    _logger.LogWarning("Quiz {QuizId} has no questions", quizId);
                     return new QuizTakeResult
                     {
                         Success = false,
@@ -1107,6 +1133,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                     if (nextAttemptNumber > maxAttempts)
                     {
+                        _logger.LogWarning("User {UserId} exceeded max attempts ({MaxAttempts}) for quiz {QuizId}", userId, maxAttempts, quizId);
                         return new QuizTakeResult
                         {
                             Success = false,
@@ -1176,6 +1203,8 @@ namespace BusinessLogicLayer.Services.Implementations
                     }).ToList()
                 };
 
+                _logger.LogInformation("Successfully prepared quiz {QuizId} for user {UserId} with {QuestionCount} questions", quizId, userId, viewModel.Questions.Count);
+                
                 return new QuizTakeResult
                 {
                     Success = true,
@@ -1184,7 +1213,7 @@ namespace BusinessLogicLayer.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in GetQuizTakeAsync for quiz {QuizId}", quizId);
+                _logger.LogError(ex, "Error in GetQuizTakeAsync for quiz {QuizId} by user {UserId}", quizId, user.FindFirst("UserId")?.Value);
                 return new QuizTakeResult
                 {
                     Success = false,
@@ -1639,27 +1668,34 @@ namespace BusinessLogicLayer.Services.Implementations
             {
                 var now = DateTime.UtcNow;
 
-                // Find all unsubmitted attempts
+                // Find all unsubmitted attempts that are older than 5 minutes
+                // This prevents cleanup of attempts that were just created
                 var abandonedAttempts = await _context.QuizAttempts
                     .Include(qa => qa.Quiz)
-                    .Where(qa => qa.EndTime == null) // Not submitted
+                    .Where(qa => qa.EndTime == null && 
+                                qa.StartTime.HasValue && 
+                                qa.StartTime.Value < now.AddMinutes(-5)) // Only cleanup attempts older than 5 minutes
                     .ToListAsync();
+
+                _logger.LogDebug("Found {Count} unsubmitted attempts older than 5 minutes", abandonedAttempts.Count);
 
                 var attemptsToCleanup = new List<QuizAttempt>();
 
                 foreach (var attempt in abandonedAttempts)
                 {
-                    if (attempt.StartTime.HasValue)
-                    {
-                        var timeElapsed = (now - attempt.StartTime.Value).TotalMinutes;
-                        var timeLimit = attempt.Quiz?.TimeLimit ?? 60; // Default 60 minutes if no time limit
-                        var graceMinutes = 30; // 30 minutes grace period
+                    var timeElapsed = (now - attempt.StartTime!.Value).TotalMinutes;
+                    var timeLimit = attempt.Quiz?.TimeLimit ?? 60; // Default 60 minutes if no time limit
+                    var graceMinutes = 30; // 30 minutes grace period
 
-                        // If elapsed time exceeds time limit + grace period, mark as abandoned
-                        if (timeElapsed > (timeLimit + graceMinutes))
-                        {
-                            attemptsToCleanup.Add(attempt);
-                        }
+                    _logger.LogDebug("Attempt {AttemptId} for quiz {QuizId} by user {UserId}: elapsed={Elapsed:F1}min, limit={Limit}min, grace={Grace}min", 
+                        attempt.AttemptId, attempt.QuizId, attempt.UserId, timeElapsed, timeLimit, graceMinutes);
+
+                    // If elapsed time exceeds time limit + grace period, mark as abandoned
+                    if (timeElapsed > (timeLimit + graceMinutes))
+                    {
+                        attemptsToCleanup.Add(attempt);
+                        _logger.LogInformation("Marking attempt {AttemptId} as abandoned (elapsed: {Elapsed:F1}min > limit+grace: {Total:F1}min)", 
+                            attempt.AttemptId, timeElapsed, timeLimit + graceMinutes);
                     }
                 }
 
