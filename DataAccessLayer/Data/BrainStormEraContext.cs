@@ -1341,6 +1341,8 @@ public partial class BrainStormEraContext : DbContext
                 .HasMaxLength(36)
                 .IsUnicode(false)
                 .HasColumnName("selected_option_id");
+            entity.Property(e => e.SelectedOptionIds)
+                .HasColumnName("selected_option_ids");
 
             entity.HasOne(d => d.Attempt).WithMany(p => p.UserAnswers)
                 .HasForeignKey(d => d.AttemptId)

@@ -42,15 +42,19 @@ class QuizTakeManager {
     $("#quiz-form").on("submit", (e) => this.handleSubmit(e));
 
     // Answer selection changes
-    $('input[type="radio"], textarea').on("change input", () => {
+    $('input[type="radio"], input[type="checkbox"], textarea').on("change input", () => {
       this.updateProgress();
       this.updateSubmissionTime();
     });
 
-    // Submit button click
-    $("#submit-quiz").on("click", (e) => this.showSubmitConfirmation(e));
+    // Submit button click: submit form ngay lập tức
+    $("#submit-quiz").on("click", (e) => {
+      this.isSubmitting = true;
+      this.updateSubmissionTime();
+      $("#quiz-form")[0].submit();
+    });
 
-    // Modal confirmations
+    // Modal confirmations (giữ lại cho auto-submit)
     $("#confirm-submit").on("click", () => this.confirmSubmit());
     $("#confirm-auto-submit").on("click", () => this.confirmSubmit());
 
@@ -184,18 +188,11 @@ class QuizTakeManager {
   }
 
   showSubmitConfirmation(e) {
+    // Không còn dùng nữa, chỉ dùng cho auto-submit
     e.preventDefault();
-
-    const unansweredCount = this.getUnansweredCount();
-
-    if (unansweredCount > 0) {
-      $("#unanswered-count").text(unansweredCount);
-      $("#unanswered-warning").show();
-    } else {
-      $("#unanswered-warning").hide();
-    }
-
-    $("#submit-confirmation-modal").modal("show");
+    this.isSubmitting = true;
+    this.updateSubmissionTime();
+    $("#quiz-form")[0].submit();
   }
 
   confirmSubmit() {
@@ -218,10 +215,10 @@ class QuizTakeManager {
   }
 
   handleSubmit(e) {
-    if (!this.isSubmitting) {
-      e.preventDefault();
-      this.showSubmitConfirmation(e);
-    }
+    // Submit luôn, không xác nhận
+    this.isSubmitting = true;
+    this.updateSubmissionTime();
+    // Không cần e.preventDefault();
   }
 
   handleKeyboardShortcuts(e) {

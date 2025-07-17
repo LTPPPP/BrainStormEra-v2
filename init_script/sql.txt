@@ -253,6 +253,7 @@ CREATE TABLE user_answer (
     question_id VARCHAR(36),
     attempt_id VARCHAR(36),
     selected_option_id VARCHAR(36),
+    selected_option_ids NVARCHAR(4000),
     answer_text NVARCHAR(MAX), -- For essay/fill_blank questions
     is_correct BIT,
     points_earned DECIMAL(5,2) DEFAULT 0,
