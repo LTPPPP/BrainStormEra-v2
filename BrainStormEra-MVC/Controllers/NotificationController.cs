@@ -12,15 +12,18 @@ namespace BrainStormEra_MVC.Controllers
     {
         private readonly NotificationServiceImpl _notificationServiceImpl;
         private readonly INotificationService _notificationService; // Keep for simple operations
+        private readonly ICourseService _courseService; // Add CourseService
         private readonly ILogger<NotificationController> _logger;
 
         public NotificationController(
             NotificationServiceImpl notificationServiceImpl,
             INotificationService notificationService,
+            ICourseService courseService, // Add CourseService parameter
             ILogger<NotificationController> logger)
         {
             _notificationServiceImpl = notificationServiceImpl;
             _notificationService = notificationService;
+            _courseService = courseService; // Initialize CourseService
             _logger = logger;
         }// GET: Notification
         public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
@@ -538,6 +541,105 @@ namespace BrainStormEra_MVC.Controllers
             {
                 _logger.LogError(ex, "Error searching users for notification");
                 return Json(new { success = false, message = "An error occurred while searching users" });
+            }
+        }
+
+        // GET: Get courses for instructor notification targeting
+        [HttpGet]
+        [Authorize(Roles = "admin,instructor")]
+        public async Task<IActionResult> GetCourses()
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new { success = false, message = "User not authenticated" });
+                }
+
+                List<object> courses = new List<object>();
+
+                if (userRole?.Equals("admin", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    // Admin can see all courses
+                    var allCoursesResult = await _courseService.GetCoursesAsync("", "", 1, 1000);
+                    courses = allCoursesResult.Courses.Select(c => new
+                    {
+                        courseId = c.CourseId,
+                        title = c.CourseName,
+                        studentsCount = c.EnrollmentCount
+                    }).ToList<object>();
+                }
+                else if (userRole?.Equals("instructor", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    // Instructor can only see their own courses
+                    var instructorCoursesResult = await _courseService.GetInstructorCoursesAsync(userId, "", "", 1, 1000);
+                    courses = instructorCoursesResult.Courses.Select(c => new
+                    {
+                        courseId = c.CourseId,
+                        title = c.CourseName,
+                        studentsCount = c.EnrollmentCount
+                    }).ToList<object>();
+                }
+
+                return Json(courses);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting courses for notification");
+                return Json(new { success = false, message = "An error occurred while loading courses" });
+            }
+        }
+
+        // GET: Get all users for notification targeting
+        [HttpGet]
+        [Authorize(Roles = "admin,instructor")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            try
+            {
+                var result = await _notificationServiceImpl.SearchUsersAsync(User, "");
+
+                if (result.Success)
+                {
+                    return Json(result.Users);
+                }
+                else
+                {
+                    return Json(new { success = false, message = result.ErrorMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all users for notification");
+                return Json(new { success = false, message = "An error occurred while loading users" });
+            }
+        }
+
+        // GET: Get enrolled users for notification targeting (instructor only)
+        [HttpGet]
+        [Authorize(Roles = "admin,instructor")]
+        public async Task<IActionResult> GetEnrolledUsers(string? courseId = null, string? searchTerm = null)
+        {
+            try
+            {
+                var result = await _notificationServiceImpl.GetEnrolledUsersAsync(User, courseId, searchTerm);
+
+                if (result.Success)
+                {
+                    return Json(result.Users);
+                }
+                else
+                {
+                    return Json(new { success = false, message = result.ErrorMessage });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting enrolled users for notification");
+                return Json(new { success = false, message = "An error occurred while loading enrolled users" });
             }
         }
     }

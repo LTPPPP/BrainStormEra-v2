@@ -23,6 +23,7 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<bool> RestoreNotificationAsync(string notificationId, string userId);
         Task<List<Notification>> GetDeletedNotificationsAsync(string userId, int page = 1, int pageSize = 20);
         Task<List<Account>> SearchUsersAsync(string searchTerm);
+        Task<List<Account>> GetEnrolledUsersAsync(string instructorId, string? courseId = null, string? searchTerm = null);
 
         // Admin global operations
         Task<bool> AdminDeleteNotificationGloballyAsync(string notificationId, string adminUserId);

@@ -15,6 +15,56 @@ class AdminNotifications {
     this.setupSignalR();
     this.updateHeaderNotificationBell();
     this.initializeNotificationStates();
+    this.loadCourses(); // Load courses for notification targeting
+  }
+
+  // Load courses for instructor notification targeting
+  async loadCourses() {
+    try {
+      const response = await fetch("/Admin/Notifications?handler=Courses", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const courses = await response.json();
+        this.populateCourseDropdown(courses);
+      } else {
+        console.warn("Failed to load courses, using empty list");
+        this.populateCourseDropdown([]);
+      }
+    } catch (error) {
+      console.error("Error loading courses:", error);
+      this.populateCourseDropdown([]);
+    }
+  }
+
+  // Populate course dropdown with instructor's courses
+  populateCourseDropdown(courses) {
+    const courseSelect = $("#targetCourse");
+    if (courseSelect.length === 0) return;
+
+    // Clear existing options except the default
+    courseSelect.find("option:not(:first)").remove();
+
+    // Add courses
+    courses.forEach((course) => {
+      const option = $("<option></option>")
+        .attr("value", course.courseId)
+        .text(`${course.title} (${course.studentsCount} students)`);
+      courseSelect.append(option);
+    });
+
+    // If no courses available, show message
+    if (courses.length === 0) {
+      const option = $("<option></option>")
+        .attr("value", "")
+        .attr("disabled", true)
+        .text("No courses available");
+      courseSelect.append(option);
+    }
   }
 
   setupEventHandlers() {
@@ -864,6 +914,8 @@ class AdminNotifications {
         break;
       case "2": // Course Students
         $("#targetCourseContainer").show();
+        // Reload courses when showing course selection
+        this.loadCourses();
         break;
       case "3": // Role
         $("#targetRoleContainer").show();

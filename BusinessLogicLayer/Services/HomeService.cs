@@ -102,21 +102,16 @@ namespace BusinessLogicLayer.Services
                     CompletionPercentage = (int)(e.ProgressPercentage ?? 0)
                 }).ToList();
 
-                // Get notifications (enhanced with dynamic content)
-                var notifications = new List<NotificationViewModel>();
-
-                // Add additional helpful notifications
-                if (!enrolledCourseViewModels.Any())
+                // Get notifications from database
+                var notifications = await _notificationRepo.GetRecentNotificationsAsync(userId, 5);
+                var notificationViewModels = notifications.Select(n => new NotificationViewModel
                 {
-                    notifications.Add(new NotificationViewModel
-                    {
-                        NotificationId = "first_course",
-                        Title = "Get Started with Your First Course",
-                        Message = "Browse our course catalog and enroll in your first course to begin learning!",
-                        CreatedAt = DateTime.Now.AddHours(-2),
-                        IsRead = false
-                    });
-                }
+                    NotificationId = n.NotificationId,
+                    Title = n.NotificationTitle,
+                    Message = n.NotificationContent,
+                    CreatedAt = n.NotificationCreatedAt,
+                    IsRead = n.IsRead ?? false
+                }).ToList();
 
                 return new LearnerDashboardViewModel
                 {
@@ -124,7 +119,7 @@ namespace BusinessLogicLayer.Services
                     FullName = user.FullName ?? user.Username,
                     UserImage = user.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
                     EnrolledCourses = enrolledCourseViewModels,
-                    Notifications = notifications
+                    Notifications = notificationViewModels
                 };
             }
             catch (Exception ex)
@@ -166,18 +161,16 @@ namespace BusinessLogicLayer.Services
                 var totalStudents = courseViewModels.Sum(c => c.EnrollmentCount);
                 var totalRevenue = user.PaymentPoint ?? 0;
 
-                // Get notifications (placeholder)
-                var notifications = new List<NotificationViewModel>
+                // Get notifications from database
+                var notifications = await _notificationRepo.GetRecentNotificationsAsync(userId, 5);
+                var notificationViewModels = notifications.Select(n => new NotificationViewModel
                 {
-                    new NotificationViewModel
-                    {
-                        NotificationId = "1",
-                        Title = "Welcome to Instructor Dashboard!",
-                        Message = "Start creating amazing courses and help students learn.",
-                        CreatedAt = DateTime.Now.AddDays(-1),
-                        IsRead = false
-                    }
-                };
+                    NotificationId = n.NotificationId,
+                    Title = n.NotificationTitle,
+                    Message = n.NotificationContent,
+                    CreatedAt = n.NotificationCreatedAt,
+                    IsRead = n.IsRead ?? false
+                }).ToList();
 
                 return new InstructorDashboardViewModel
                 {
@@ -189,7 +182,7 @@ namespace BusinessLogicLayer.Services
                     TotalReviews = 0, // Calculate if needed
                     AverageRating = 4.5, // Calculate if needed
                     RecentCourses = courseViewModels.Take(5).ToList(),
-                    Notifications = notifications
+                    Notifications = notificationViewModels
                 };
             }
             catch (Exception ex)

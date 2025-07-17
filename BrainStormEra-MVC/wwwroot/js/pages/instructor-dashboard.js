@@ -23,8 +23,8 @@
     // Initialize animations
     initAnimations();
 
-    // Simulate analytics loading
-    simulateAnalyticsLoading();
+    // Load analytics data
+    loadAnalyticsData();
   }
 
   /**
@@ -108,41 +108,75 @@
   }
 
   /**
-   * Simulate loading analytics data
+   * Load analytics data from server
    */
-  function simulateAnalyticsLoading() {
+  function loadAnalyticsData() {
     if (!elements.chartPlaceholder) return;
 
-    // Show loading state for 2 seconds
-    setTimeout(() => {
-      elements.chartPlaceholder.innerHTML = `
-        <div class="chart-content">
-          <p class="chart-note">Sample analytics visualization - will be replaced with real data.</p>
-          <div class="chart-bars">
-            <div class="chart-bar" style="height: 60%;" title="Course A: 60 students">
-              <span>Course A</span>
-            </div>
-            <div class="chart-bar" style="height: 40%;" title="Course B: 40 students">
-              <span>Course B</span>
-            </div>
-            <div class="chart-bar" style="height: 75%;" title="Course C: 75 students">
-              <span>Course C</span>
-            </div>
-            <div class="chart-bar" style="height: 25%;" title="Course D: 25 students">
-              <span>Course D</span>
+    // Show loading state
+    elements.chartPlaceholder.innerHTML = `
+      <div class="chart-content">
+        <div class="loading-analytics">
+          <i class="fas fa-spinner fa-spin me-2"></i>
+          Loading analytics data...
+        </div>
+      </div>
+    `;
+
+    // Fetch analytics data from server
+    fetch('/Instructor/GetAnalyticsData')
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to load analytics');
+        return response.json();
+      })
+      .then(data => {
+        renderAnalyticsChart(data);
+      })
+      .catch(error => {
+        console.error('Error loading analytics:', error);
+        elements.chartPlaceholder.innerHTML = `
+          <div class="chart-content">
+            <div class="error-state">
+              <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+              Unable to load analytics data
             </div>
           </div>
-        </div>
-      `;
-
-      // Animate the bars
-      const bars = document.querySelectorAll(".chart-bar");
-      bars.forEach((bar, index) => {
-        setTimeout(() => {
-          bar.classList.add("animate");
-        }, index * 100);
+        `;
       });
-    }, 2000);
+  }
+
+  /**
+   * Render analytics chart with real data
+   */
+  function renderAnalyticsChart(data) {
+    if (!elements.chartPlaceholder || !data || !data.courses) return;
+
+    const courses = data.courses;
+    const maxStudents = Math.max(...courses.map(c => c.studentCount), 1);
+
+    const chartBars = courses.map(course => `
+      <div class="chart-bar" style="height: ${(course.studentCount / maxStudents) * 100}%;" 
+           title="${course.courseName}: ${course.studentCount} students">
+        <span>${course.courseName}</span>
+      </div>
+    `).join('');
+
+    elements.chartPlaceholder.innerHTML = `
+      <div class="chart-content">
+        <h6 class="chart-title">Course Enrollment Analytics</h6>
+        <div class="chart-bars">
+          ${chartBars}
+        </div>
+      </div>
+    `;
+
+    // Animate the bars
+    const bars = document.querySelectorAll(".chart-bar");
+    bars.forEach((bar, index) => {
+      setTimeout(() => {
+        bar.classList.add("animate");
+      }, index * 100);
+    });
   }
 
   /**
