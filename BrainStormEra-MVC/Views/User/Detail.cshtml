@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="~/css/components/loader.css">
     <link rel="stylesheet" href="~/css/pages/Course/courses.css">
     <link rel="stylesheet" href="~/css/components/footer.css">
-    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css">    <!-- User Management specific styles -->
+    <link rel="stylesheet" href="~/css/pages/HomePage/enhanced-home.css"> <!-- User Management specific styles -->
     <link rel="stylesheet" href="~/css/pages/User/user-management.css">
     <link rel="stylesheet" href="~/css/pages/User/user-detail.css">
     <link rel="stylesheet" href="~/css/components/toast-notifications.css">
@@ -62,7 +62,7 @@
     <!-- Page Loader -->
     <div class="page-loader">
         <div class="loader"></div>
-    </div>    <!-- Include Header partial view -->
+    </div> <!-- Include Header partial view -->
     @await Html.PartialAsync("~/Views/Shared/Header/_Header.cshtml")
 
     <!-- Main Content -->
@@ -79,7 +79,8 @@
                                     style="width: 80px; height: 80px; object-fit: cover;"
                                     onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-avatar.svg';">
                             </div>
-                        </div>                        <div class="col">
+                        </div>
+                        <div class="col">
                             <h3 class="mb-1 fw-bold">@Model.FullName</h3>
                             <p class="text-muted mb-2">@Model.Email</p>
                             <div class="d-flex align-items-center gap-3">
@@ -99,255 +100,139 @@
                             </div>
                         </div>
                         <div class="col-auto">
-                            <div class="dropdown">
-                                <button class="btn btn-primary dropdown-toggle px-4" type="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-cog me-2"></i>Actions
-                                </button>                                <ul class="dropdown-menu">
-                                    <li>
-                                        <a class="dropdown-item" href="#" onclick="changeStatus()">
-                                            <i class="fas fa-flag me-2"></i>Change Status
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item text-danger" href="#" onclick="unenrollUser()">
-                                            <i class="fas fa-user-times me-2"></i>Unenroll User
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>        <div class="row">
-            <!-- Left Column - Course Progress and Activity -->
-            <div class="col-lg-8">
-                <!-- Course Information -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-light border-0">
-                        <h5 class="mb-0 fw-bold text-primary">
-                            <i class="fas fa-book me-2"></i>Course Information
-                        </h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="row">
-                            <div class="col-lg-8">
-                                <h5 class="fw-bold mb-2">@Model.CourseName</h5>
-                                <p class="text-muted mb-4">@Model.CourseDescription</p>
-
-                                <!-- Progress Section -->
-                                <div class="progress-section mb-4">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h6 class="mb-0 fw-bold">Learning Progress</h6>
-                                        <span class="badge bg-primary fs-6 px-3 py-2">@Model.ProgressPercentage%</span>
-                                    </div>
-                                    <div class="progress mb-3" style="height: 12px;">
-                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-gradient"
-                                            role="progressbar" style="width: @Model.ProgressPercentage%"
-                                            aria-valuenow="@Model.ProgressPercentage" aria-valuemin="0"
-                                            aria-valuemax="100">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Progress Stats -->
-                                <div class="row g-3">
-                                    <div class="col-4">
-                                        <div class="text-center p-3 bg-light rounded">
-                                            <h5 class="mb-1 text-success fw-bold">@Model.CompletedLessons</h5>
-                                            <small class="text-muted">Completed</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-4">
-                                        <div class="text-center p-3 bg-light rounded">
-                                            <h5 class="mb-1 text-primary fw-bold">@Model.TotalLessons</h5>
-                                            <small class="text-muted">Total Lessons</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-4">
-                                        <div class="text-center p-3 bg-light rounded">
-                                            <h5 class="mb-1 text-info fw-bold">@Model.TimeSpent</h5>
-                                            <small class="text-muted">Hours</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-4">
-                                <div class="course-thumbnail text-center">
-                                    <img src="@Model.CourseThumbnail" alt="@Model.CourseName" 
-                                        class="img-fluid rounded shadow-sm"
-                                        style="max-height: 200px; object-fit: cover;"
-                                        onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>                <!-- Learning Activity -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-light border-0">
-                        <h5 class="mb-0 fw-bold text-primary">
-                            <i class="fas fa-chart-area me-2"></i>Recent Activity
-                        </h5>
-                    </div>
-                    <div class="card-body p-4">
-                        @if (Model.RecentActivity.Any())
-                        {
-                            <div class="activity-timeline">
-                                @foreach (var activity in Model.RecentActivity)
-                                {
-                                    <div class="activity-item d-flex mb-3 pb-3 border-bottom">
-                                        <div class="activity-icon me-3 mt-1">
-                                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" 
-                                                style="width: 40px; height: 40px;">
-                                                <i class="fas fa-@(activity.Type.ToLower() switch 
-                                                   { 
-                                                       "lesson" => "play-circle", 
-                                                       "quiz" => "question-circle", 
-                                                       "assignment" => "file-alt", 
-                                                       _ => "circle" 
-                                                   }) text-white"></i>
-                                            </div>
-                                        </div>
-                                        <div class="activity-content flex-grow-1">
-                                            <h6 class="mb-1 fw-bold">@activity.Title</h6>
-                                            <p class="mb-2 text-muted">@activity.Description</p>
-                                            <small class="text-muted">
-                                                <i class="fas fa-clock me-1"></i>
-                                                @activity.Date.ToString("MMM dd, yyyy HH:mm")
-                                            </small>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="text-center py-5">
-                                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
-                                <h6 class="text-muted">No recent activity recorded</h6>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>            <!-- Right Column - Statistics and Additional Info -->
-            <div class="col-lg-4">
-                <!-- Quick Stats -->
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-light border-0">
-                        <h5 class="mb-0 fw-bold text-primary">
-                            <i class="fas fa-chart-pie me-2"></i>Statistics
-                        </h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                            <span class="text-muted">Last Activity</span>
-                            <span class="fw-bold @(Model.LastActivity.HasValue && (DateTime.Now - Model.LastActivity.Value).TotalDays <= 7 ? "text-success" : "text-muted")">
-                                @(Model.LastActivity?.ToString("MMM dd") ?? "Never")
-                            </span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                            <span class="text-muted">Study Streak</span>
-                            <span class="fw-bold text-warning">@Model.StudyStreak days</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                            <span class="text-muted">Avg. Session</span>
-                            <span class="fw-bold">@Model.AverageSessionTime min</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center py-2">
-                            <span class="text-muted">Login Count</span>
-                            <span class="fw-bold">@Model.LoginCount</span>
-                        </div>
-                    </div>
-                </div>                <!-- Achievements -->
-                @if (Model.Achievements.Any())
-                {
-                    <div class="card border-0 shadow-sm mb-4">
-                        <div class="card-header bg-light border-0">
-                            <h5 class="mb-0 fw-bold text-primary">
-                                <i class="fas fa-trophy me-2"></i>Achievements
-                            </h5>
-                        </div>
-                        <div class="card-body p-4">
-                            <div class="row g-3">
-                                @foreach (var achievement in Model.Achievements)
-                                {
-                                    <div class="col-12">
-                                        <div class="d-flex align-items-center p-3 bg-light rounded">
-                                            <div class="achievement-icon me-3">
-                                                <div class="rounded-circle bg-warning d-flex align-items-center justify-content-center" 
-                                                    style="width: 40px; height: 40px;">
-                                                    <i class="fas fa-@achievement.Icon text-white"></i>
-                                                </div>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <h6 class="mb-1 fw-bold">@achievement.Name</h6>
-                                                <small class="text-muted">@achievement.Description</small>
-                                                <br>
-                                                <small class="text-success">
-                                                    <i class="fas fa-calendar me-1"></i>
-                                                    @achievement.DateEarned.ToString("MMM dd, yyyy")
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                }                <!-- Course Enrollments -->
-                @if (Model.OtherEnrollments.Any())
-                {
-                    <div class="card border-0 shadow-sm mb-4">
-                        <div class="card-header bg-light border-0">
-                            <h5 class="mb-0 fw-bold text-primary">
-                                <i class="fas fa-graduation-cap me-2"></i>Other Enrollments
-                            </h5>
-                        </div>
-                        <div class="card-body p-4">
-                            @foreach (var enrollment in Model.OtherEnrollments)
-                            {
-                                <div class="enrollment-item mb-3 pb-3 @(enrollment != Model.OtherEnrollments.Last() ? "border-bottom" : "")">
-                                    <h6 class="mb-2 fw-bold">@enrollment.CourseName</h6>
-                                    <div class="progress mb-2" style="height: 8px;">
-                                        <div class="progress-bar bg-gradient" style="width: @enrollment.ProgressPercentage%"></div>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <small class="text-muted">@enrollment.ProgressPercentage% complete</small>
-                                        <span class="badge bg-@(enrollment.StatusText.ToLower() switch 
-                                                               { 
-                                                                   "active" => "success", 
-                                                                   "completed" => "primary", 
-                                                                   "inactive" => "warning", 
-                                                                   _ => "secondary" 
-                                                               }) px-2 py-1">
-                                            @enrollment.StatusText
-                                        </span>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }                <!-- Quick Actions -->
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-light border-0">
-                        <h5 class="mb-0 fw-bold text-primary">
-                            <i class="fas fa-bolt me-2"></i>Quick Actions
-                        </h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="d-grid gap-3">
-                            <button class="btn btn-outline-primary d-flex align-items-center justify-content-center py-2" onclick="sendMessage()">
-                                <i class="fas fa-envelope me-2"></i>Send Message
-                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>    <!-- Status Change Modal -->
+        <div class="row">
+            <!-- Left Column - Course Progress and Activity -->
+            <div class="col-lg-8">
+                <!-- Course Enrollments -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold text-primary">
+                            <i class="fas fa-graduation-cap me-2"></i>Enrolled Courses
+                        </h5>
+                        <button class="btn btn-outline-primary btn-sm" id="toggleCoursesBtn"
+                            onclick="toggleCoursesList()">
+                            <i class="fas fa-chevron-down" id="coursesToggleIcon"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-4" id="coursesContent">
+                        @if (Model.Enrollments.Any())
+                        {
+                            @foreach (var enrollment in Model.Enrollments)
+                            {
+                                <div class="course-item mb-3 p-3 border rounded">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <img src="@enrollment.CourseImage" alt="@enrollment.CourseName" class="rounded"
+                                                style="width: 50px; height: 50px; object-fit: cover;"
+                                                onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
+                                        </div>
+                                        <div class="col">
+                                            <h6 class="mb-1 fw-bold">@enrollment.CourseName</h6>
+                                            <div class="progress mb-2" style="height: 6px;">
+                                                <div class="progress-bar bg-primary"
+                                                    style="width: @enrollment.ProgressPercentage%"></div>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">@enrollment.ProgressPercentage% complete</small>
+                                                <span class="badge bg-@(enrollment.StatusText.ToLower() switch 
+                                                      { 
+                                                          "active" => "success", 
+                                                          "completed" => "primary", 
+                                                          "suspended" => "warning", 
+                                                          _ => "secondary" 
+                                                      }) px-2 py-1">
+                                                    @enrollment.StatusText
+                                                </span>
+                                            </div>
+
+                                            <!-- Certificate Information -->
+                                            @if (enrollment.IsCompleted)
+                                            {
+                                                <div class="certificate-section mt-3 p-2 bg-light rounded">
+                                                    @if (enrollment.HasCertificate)
+                                                    {
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fas fa-certificate text-warning me-2"></i>
+                                                            <div>
+                                                                <small class="fw-bold text-success">Certificate Earned</small>
+                                                                <br>
+                                                                <small class="text-muted">
+                                                                    Issued: @enrollment.CertificateIssuedDate?.ToString("MMM dd, yyyy")
+                                                                    @if (enrollment.FinalScore.HasValue)
+                                                                    {
+                                                                        <span> • Score: @enrollment.FinalScore.Value.ToString("F1")%</span>
+                                                                    }
+                                                                </small>
+                                                                @if (!string.IsNullOrEmpty(enrollment.CertificateCode))
+                                                                {
+                                                                    <br>
+                                                                    <small class="text-muted">Code: @enrollment.CertificateCode</small>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                                            <div>
+                                                                <small class="text-warning fw-bold">Certificate Processing</small>
+                                                                <br>
+                                                                <small class="text-muted">Certificate is being generated.</small>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No course enrollments found</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div> <!-- Right Column - Account Info -->
+            <div class="col-lg-4">
+                <!-- Account Information -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-light border-0">
+                        <h5 class="mb-0 fw-bold text-primary">
+                            <i class="fas fa-user me-2"></i>Account Information
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Username:</span>
+                            <span class="fw-bold">@Model.Username</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                        {
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Phone:</span>
+                                <span>@Model.PhoneNumber</span>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Member since:</span>
+                            <span>@Model.AccountCreatedAt.ToString("MMM dd, yyyy")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> <!-- Status Change Modal -->
     <div class="modal fade" id="statusModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow">
@@ -360,7 +245,8 @@
                 <div class="modal-body p-4">
                     <form id="statusForm">
                         <div class="mb-4">
-                            <label for="newStatus" class="form-label fw-bold">New Status</label>                            <select class="form-select" id="newStatus">
+                            <label for="newStatus" class="form-label fw-bold">New Status</label> <select
+                                class="form-select" id="newStatus">
                                 @{
                                     var currentStatus = Model.Status;
                                 }
@@ -430,7 +316,7 @@
                     },
                     body: JSON.stringify({
                         userId: '@Model.UserId',
-                        courseId: '@Model.CourseId',
+                        courseId: '@(Model.CourseId ?? "")',
                         status: status,
                         reason: reason
                     })
@@ -450,47 +336,41 @@
             }
         }
 
-        // Unenroll user function
-        function unenrollUser() {
-            if (confirm(`Are you sure you want to unenroll @Model.FullName from @Model.CourseName? This action cannot be undone.`)) {
-                performUnenroll();
-            }
-        }
-
-        // Perform unenroll
-        async function performUnenroll() {
-            try {
-                const response = await fetch('@Url.Action("UnenrollUser", "User")', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                    },
-                    body: JSON.stringify({
-                        userId: '@Model.UserId',
-                        courseId: '@Model.CourseId'
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showToast('User unenrolled successfully', 'success');
-                    setTimeout(() => {
-                        window.location.href = '@Url.Action("Index", "User")';
-                    }, 1500);
-                } else {
-                    showToast(result.message || 'Failed to unenroll user', 'error');
-                }
-            } catch (error) {
-                showToast('An error occurred while unenrolling user', 'error');
-            }
-        }
-
         // Quick action functions
         function sendMessage() {
             // Implement message functionality
             showToast('Message functionality coming soon', 'info');
+        }
+
+        // Course list toggle function
+        function toggleCoursesList() {
+            const content = document.getElementById('coursesContent');
+            const icon = document.getElementById('coursesToggleIcon');
+
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                content.style.opacity = '0';
+                content.style.transform = 'translateY(-10px)';
+
+                // Animate in
+                requestAnimationFrame(() => {
+                    content.style.transition = 'all 0.3s ease';
+                    content.style.opacity = '1';
+                    content.style.transform = 'translateY(0)';
+                });
+
+                icon.className = 'fas fa-chevron-down';
+            } else {
+                content.style.transition = 'all 0.3s ease';
+                content.style.opacity = '0';
+                content.style.transform = 'translateY(-10px)';
+
+                setTimeout(() => {
+                    content.style.display = 'none';
+                }, 300);
+
+                icon.className = 'fas fa-chevron-right';
+            }
         }
 
         // Toast notification function
@@ -544,4 +424,3 @@
 </body>
 
 </html>
-

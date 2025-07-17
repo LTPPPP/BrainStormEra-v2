@@ -18,7 +18,7 @@ namespace BusinessLogicLayer.Services.Interfaces
 
         // Instructor user management methods
         Task<List<EnrolledUserViewModel>> GetEnrolledUsersForInstructorAsync(string instructorId, string? courseId = null, string? search = null, string? statusFilter = null, int page = 1, int pageSize = 10);
-        Task<UserDetailViewModel?> GetUserDetailForInstructorAsync(string instructorId, string userId);
+        Task<UserDetailViewModel?> GetUserDetailForInstructorAsync(string instructorId, string userId, string? courseId = null);
         Task<bool> UpdateUserEnrollmentProgressAsync(string instructorId, string userId, string courseId, decimal progressPercentage, string? currentLessonId = null);
         Task<bool> UpdateUserEnrollmentStatusAsync(string instructorId, string userId, string courseId, int status);
         Task<List<CourseFilterOption>> GetInstructorCoursesForFilterAsync(string instructorId);

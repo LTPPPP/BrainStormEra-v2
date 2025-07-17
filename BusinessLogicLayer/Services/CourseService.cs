@@ -601,7 +601,12 @@ namespace BusinessLogicLayer.Services
                     _logger.LogInformation("ApprovalStatus: {Status} - Count: {Count}", status.Status, status.Count);
                 }
 
-                _cache.Set(cacheKey, categories, CacheExpiration);
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = CacheExpiration,
+                    Size = 1
+                };
+                _cache.Set(cacheKey, categories, cacheOptions);
                 return categories;
             }
             catch (Exception ex)

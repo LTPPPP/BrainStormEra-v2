@@ -133,6 +133,12 @@ namespace DataAccessLayer.Models.ViewModels
 
         // Add Status property as alias for compatibility
         public string Status => StatusText;
+
+        // Certificate information
+        public bool HasCertificate { get; set; }
+        public DateTime? CertificateIssuedDate { get; set; }
+        public string? CertificateCode { get; set; }
+        public decimal? FinalScore { get; set; }
     }
     public class UserAchievementSummary
     {

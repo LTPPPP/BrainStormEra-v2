@@ -41,6 +41,7 @@ namespace BusinessLogicLayer.Services
                 {
                     AbsoluteExpirationRelativeToNow = expiration,
                     Priority = CacheItemPriority.Normal,
+                    Size = 1, // Each cache entry takes 1 unit of size
                     PostEvictionCallbacks = { new PostEvictionCallbackRegistration
                     {
                         EvictionCallback = (k, v, r, s) => _cacheKeys.TryRemove(k.ToString()!, out _)

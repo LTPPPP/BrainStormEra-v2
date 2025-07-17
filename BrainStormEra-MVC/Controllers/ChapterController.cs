@@ -31,7 +31,7 @@ namespace BrainStormEra_MVC.Controllers
                 return RedirectToAction(result.RedirectAction, result.RedirectController);
             }
 
-            return View(result.ViewModel);
+            return View("~/Views/Chapters/CreateChapter.cshtml", result.ViewModel);
         }
 
         [HttpPost]

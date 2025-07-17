@@ -51,7 +51,7 @@ namespace BrainStormEra_MVC.Controllers
             }
         }        // GET: User Detail
         [RequireAuthentication("You need to login to view user details. Please login to continue.")]
-        public async Task<IActionResult> Detail(string userId)
+        public async Task<IActionResult> Detail(string userId, string? courseId = null)
         {
             try
             {
@@ -62,7 +62,7 @@ namespace BrainStormEra_MVC.Controllers
                     return NotFound();
                 }
 
-                var userDetail = await _userService.GetUserDetailForInstructorAsync(instructorId, userId);
+                var userDetail = await _userService.GetUserDetailForInstructorAsync(instructorId, userId, courseId);
                 if (userDetail == null)
                 {
                     return NotFound();
@@ -88,18 +88,27 @@ namespace BrainStormEra_MVC.Controllers
         // POST: Update User Status
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateStatus(string userId, string courseId, int status)
+        public async Task<IActionResult> UpdateStatus([FromBody] UpdateUserStatusRequest request)
         {
             try
             {
                 var instructorId = GetCurrentUserId();
 
-                if (string.IsNullOrEmpty(instructorId) || string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(courseId))
+                if (string.IsNullOrEmpty(instructorId) || string.IsNullOrEmpty(request.UserId) || string.IsNullOrEmpty(request.CourseId))
                 {
                     return Json(new { success = false, message = "Invalid parameters" });
                 }
 
-                var result = await _userService.UpdateUserEnrollmentStatusAsync(instructorId, userId, courseId, status);
+                // Convert status string to int
+                var status = request.Status.ToLower() switch
+                {
+                    "active" => 1,
+                    "suspended" => 2,
+                    "completed" => 3,
+                    _ => 1 // Default to active
+                };
+
+                var result = await _userService.UpdateUserEnrollmentStatusAsync(instructorId, request.UserId, request.CourseId, status);
 
                 if (result)
                 {
@@ -122,20 +131,29 @@ namespace BrainStormEra_MVC.Controllers
             }
         }
 
+        // Request model for updating user status
+        public class UpdateUserStatusRequest
+        {
+            public string UserId { get; set; } = "";
+            public string CourseId { get; set; } = "";
+            public string Status { get; set; } = "";
+            public string? Reason { get; set; }
+        }
+
         // POST: Unenroll User
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Unenroll(string userId, string courseId)
+        public async Task<IActionResult> Unenroll([FromBody] UnenrollUserRequest request)
         {
             try
             {
                 var instructorId = GetCurrentUserId();
-                if (string.IsNullOrEmpty(instructorId) || string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(courseId))
+                if (string.IsNullOrEmpty(instructorId) || string.IsNullOrEmpty(request.UserId) || string.IsNullOrEmpty(request.CourseId))
                 {
                     return Json(new { success = false, message = "Invalid parameters" });
                 }
 
-                var result = await _userService.UnenrollUserFromCourseAsync(instructorId, userId, courseId);
+                var result = await _userService.UnenrollUserFromCourseAsync(instructorId, request.UserId, request.CourseId);
 
                 if (result)
                 {
@@ -149,6 +167,13 @@ namespace BrainStormEra_MVC.Controllers
                 _logger.LogError(ex, "Error unenrolling user");
                 return Json(new { success = false, message = "An error occurred while unenrolling user" });
             }
+        }
+
+        // Request model for unenrolling user
+        public class UnenrollUserRequest
+        {
+            public string UserId { get; set; } = "";
+            public string CourseId { get; set; } = "";
         }
 
         // POST: Bulk Actions

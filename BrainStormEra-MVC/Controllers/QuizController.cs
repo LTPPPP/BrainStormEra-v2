@@ -32,6 +32,9 @@ namespace BrainStormEra_MVC.Controllers
 
             var result = await _quizServiceImpl.GetCreateQuizAsync(User, realChapterId);
 
+            // Clear ModelState to ensure no validation errors show on initial load
+            ModelState.Clear();
+            ViewBag.IsPost = false;
             if (!result.Success)
             {
                 TempData["ErrorMessage"] = result.ErrorMessage;
@@ -64,6 +67,7 @@ namespace BrainStormEra_MVC.Controllers
                 }
                 if (result.ReturnView)
                 {
+                    ViewBag.IsPost = true;
                     return View(result.ViewModel);
                 }
                 if (!string.IsNullOrEmpty(result.ErrorMessage))
@@ -339,6 +343,33 @@ namespace BrainStormEra_MVC.Controllers
                 if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
                 {
                     return RedirectToAction(result.RedirectAction, result.RedirectController, result.RouteValues);
+                }
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    TempData["ErrorMessage"] = result.ErrorMessage;
+                    return RedirectToAction("Index", "Home");
+                }
+            }
+
+            return View(result.ViewModel);
+        }
+
+        // GET: Quiz/ManageQuestions/5
+        [Authorize(Roles = "instructor")]
+        public async Task<IActionResult> ManageQuestions(string quizId)
+        {
+            // Use quiz ID directly without decoding
+            var result = await _quizServiceImpl.GetQuizQuestionsAsync(User, quizId);
+
+            if (!result.Success)
+            {
+                if (result.IsNotFound)
+                {
+                    return NotFound();
+                }
+                if (result.IsForbidden)
+                {
+                    return Forbid();
                 }
                 if (!string.IsNullOrEmpty(result.ErrorMessage))
                 {

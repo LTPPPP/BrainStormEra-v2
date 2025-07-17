@@ -157,7 +157,12 @@ namespace BusinessLogicLayer.Services
                     TotalPages = totalPages
                 };
 
-                _cache.Set(cacheKey, result, TimeSpan.FromMinutes(5));
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+                    Size = 1 // Each cache entry takes 1 unit of size
+                };
+                _cache.Set(cacheKey, result, cacheOptions);
                 return result;
             }
             catch (Exception ex)
