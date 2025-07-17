@@ -1011,6 +1011,9 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
+                // Clean up abandoned attempts first
+                await CleanupAbandonedAttemptsAsync();
+
                 var userId = user.FindFirst("UserId")?.Value;
                 var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
 
@@ -1076,38 +1079,63 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                // Check attempts
-                var userAttempts = quiz.QuizAttempts.Where(qa => qa.UserId == userId).ToList();
-                var currentAttemptNumber = userAttempts.Count + 1;
+                // Check attempts - but don't create attempt yet, just check if user can attempt
+                var userAttempts = quiz.QuizAttempts.Where(qa => qa.UserId == userId && qa.EndTime != null).ToList();
+                var completedAttempts = userAttempts.Count;
                 var maxAttempts = quiz.MaxAttempts ?? 3;
 
-                if (currentAttemptNumber > maxAttempts)
+                // Check if user has an ongoing (unsubmitted) attempt
+                var ongoingAttempt = quiz.QuizAttempts.FirstOrDefault(qa => qa.UserId == userId && qa.EndTime == null);
+
+                string attemptId;
+                DateTime startTime;
+                int currentAttemptNumber;
+                bool isOngoingAttempt;
+
+                if (ongoingAttempt != null)
                 {
-                    return new QuizTakeResult
-                    {
-                        Success = false,
-                        ErrorMessage = "You have exceeded the maximum number of attempts for this quiz",
-                        RedirectAction = "Details",
-                        RedirectController = "Course",
-                        RouteValues = new { id = quiz.CourseId }
-                    };
+                    // User has an ongoing attempt, use it
+                    attemptId = ongoingAttempt.AttemptId;
+                    startTime = ongoingAttempt.StartTime ?? DateTime.UtcNow;
+                    currentAttemptNumber = ongoingAttempt.AttemptNumber ?? 1;
+                    isOngoingAttempt = true;
                 }
-
-                // Create new attempt
-                var attemptId = Guid.NewGuid().ToString();
-                var startTime = DateTime.UtcNow;
-
-                var attempt = new QuizAttempt
+                else
                 {
-                    AttemptId = attemptId,
-                    UserId = userId,
-                    QuizId = quizId,
-                    StartTime = startTime,
-                    AttemptNumber = currentAttemptNumber
-                };
+                    // Check if user can start a new attempt
+                    var nextAttemptNumber = completedAttempts + 1;
 
-                _context.QuizAttempts.Add(attempt);
-                await _context.SaveChangesAsync();
+                    if (nextAttemptNumber > maxAttempts)
+                    {
+                        return new QuizTakeResult
+                        {
+                            Success = false,
+                            ErrorMessage = "You have exceeded the maximum number of attempts for this quiz",
+                            RedirectAction = "Details",
+                            RedirectController = "Course",
+                            RouteValues = new { id = quiz.CourseId }
+                        };
+                    }
+
+                    // Create new attempt (but don't set EndTime yet, meaning not submitted)
+                    attemptId = Guid.NewGuid().ToString();
+                    startTime = DateTime.UtcNow;
+                    currentAttemptNumber = nextAttemptNumber;
+                    isOngoingAttempt = false;
+
+                    var attempt = new QuizAttempt
+                    {
+                        AttemptId = attemptId,
+                        UserId = userId,
+                        QuizId = quizId,
+                        StartTime = startTime,
+                        AttemptNumber = currentAttemptNumber
+                        // EndTime is null, meaning not submitted yet
+                    };
+
+                    _context.QuizAttempts.Add(attempt);
+                    await _context.SaveChangesAsync();
+                }
 
                 // Build view model
                 var viewModel = new QuizTakeViewModel
@@ -1119,7 +1147,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     PassingScore = quiz.PassingScore,
                     MaxAttempts = maxAttempts,
                     CurrentAttemptNumber = currentAttemptNumber,
-                    RemainingAttempts = maxAttempts - currentAttemptNumber,
+                    RemainingAttempts = maxAttempts - completedAttempts - 1, // -1 for current ongoing attempt
                     CanAttempt = true,
                     CourseId = quiz.CourseId,
                     CourseName = quiz.Lesson?.Chapter?.Course?.CourseName,
@@ -1129,6 +1157,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     AttemptId = attemptId,
                     IsPrerequisiteQuiz = quiz.IsPrerequisiteQuiz ?? false,
                     BlocksLessonCompletion = quiz.BlocksLessonCompletion ?? false,
+                    IsOngoingAttempt = isOngoingAttempt,
                     Questions = quiz.Questions.Select(q => new QuizQuestionViewModel
                     {
                         QuestionId = q.QuestionId,
@@ -1597,6 +1626,55 @@ namespace BusinessLogicLayer.Services.Implementations
                     Success = false,
                     ErrorMessage = "An error occurred while loading quiz questions"
                 };
+            }
+        }
+
+        /// <summary>
+        /// Clean up abandoned quiz attempts that have been started but not submitted 
+        /// for more than the quiz time limit plus a grace period
+        /// </summary>
+        public async Task CleanupAbandonedAttemptsAsync()
+        {
+            try
+            {
+                var now = DateTime.UtcNow;
+
+                // Find all unsubmitted attempts
+                var abandonedAttempts = await _context.QuizAttempts
+                    .Include(qa => qa.Quiz)
+                    .Where(qa => qa.EndTime == null) // Not submitted
+                    .ToListAsync();
+
+                var attemptsToCleanup = new List<QuizAttempt>();
+
+                foreach (var attempt in abandonedAttempts)
+                {
+                    if (attempt.StartTime.HasValue)
+                    {
+                        var timeElapsed = (now - attempt.StartTime.Value).TotalMinutes;
+                        var timeLimit = attempt.Quiz?.TimeLimit ?? 60; // Default 60 minutes if no time limit
+                        var graceMinutes = 30; // 30 minutes grace period
+
+                        // If elapsed time exceeds time limit + grace period, mark as abandoned
+                        if (timeElapsed > (timeLimit + graceMinutes))
+                        {
+                            attemptsToCleanup.Add(attempt);
+                        }
+                    }
+                }
+
+                // Remove abandoned attempts
+                if (attemptsToCleanup.Any())
+                {
+                    _context.QuizAttempts.RemoveRange(attemptsToCleanup);
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogInformation("Cleaned up {Count} abandoned quiz attempts", attemptsToCleanup.Count);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cleaning up abandoned quiz attempts");
             }
         }
 

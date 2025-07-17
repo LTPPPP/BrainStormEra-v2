@@ -24,6 +24,7 @@ namespace DataAccessLayer.Models.ViewModels
         public string? AttemptId { get; set; }
         public bool IsPrerequisiteQuiz { get; set; }
         public bool BlocksLessonCompletion { get; set; }
+        public bool IsOngoingAttempt { get; set; } // Indicates if this is a resumed attempt
     }
 
     public class QuizQuestionViewModel

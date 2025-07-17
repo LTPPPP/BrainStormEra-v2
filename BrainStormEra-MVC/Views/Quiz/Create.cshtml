@@ -146,7 +146,8 @@
                         <textarea asp-for="QuizDescription" 
                                   class="form-control" 
                                   rows="4" 
-                                  placeholder="Provide a brief description of what this quiz covers..."></textarea>                        <span asp-validation-for="QuizDescription" class="text-danger"></span>
+                                  placeholder="Provide a brief description of what this quiz covers..."></textarea>
+                        <span asp-validation-for="QuizDescription" class="text-danger"></span>
                         <div class="form-text">
                             Optional: Help learners understand what this quiz will test
                         </div>
@@ -246,11 +247,11 @@
                                        type="number" 
                                        class="form-control" 
                                        min="1" 
-                                       max="10" 
+                                       max="100" 
                                        placeholder="3">
                                 <span asp-validation-for="MaxAttempts" class="text-danger"></span>
                                 <div class="form-text">
-                                    Maximum number of attempts allowed (1-10)
+                                    Maximum number of attempts allowed (1-100)
                                 </div>
                             </div>
                         </div>

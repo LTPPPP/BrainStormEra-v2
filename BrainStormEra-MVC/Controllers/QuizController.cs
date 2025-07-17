@@ -32,6 +32,9 @@ namespace BrainStormEra_MVC.Controllers
 
             var result = await _quizServiceImpl.GetCreateQuizAsync(User, realChapterId);
 
+            // Clear ModelState to ensure no validation errors show on initial load
+            ModelState.Clear();
+            ViewBag.IsPost = false;
             if (!result.Success)
             {
                 TempData["ErrorMessage"] = result.ErrorMessage;
@@ -64,6 +67,7 @@ namespace BrainStormEra_MVC.Controllers
                 }
                 if (result.ReturnView)
                 {
+                    ViewBag.IsPost = true;
                     return View(result.ViewModel);
                 }
                 if (!string.IsNullOrEmpty(result.ErrorMessage))
