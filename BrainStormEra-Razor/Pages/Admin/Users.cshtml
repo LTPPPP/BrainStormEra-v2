@@ -12,6 +12,11 @@
 }
 
 <div class="users-management">
+    <!-- Hidden form for CSRF token -->
+    <form method="post" style="display: none;">
+        @Html.AntiForgeryToken()
+    </form>
+
     <!-- Page Header -->
     @{
         var pageHeaderModel = new PageHeaderViewModel
@@ -173,7 +178,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var user in Model.UsersData.Users)
+                        @foreach (var user in Model.UsersData.Users.Where(u => !string.Equals(u.UserRole, "admin", StringComparison.OrdinalIgnoreCase)))
                         {
                             <tr>
                                 <td>
@@ -288,25 +293,59 @@
         function updateUserStatus(userId, isBanned) {
             const action = isBanned ? 'ban' : 'unban';
             if (confirm(`Are you sure you want to ${action} this user?`)) {
+                // Get CSRF token
+                const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                const token = tokenElement ? tokenElement.value : '';
+                
+                if (!token) {
+                    console.error('CSRF token not found');
+                    alert('Security token not found. Please refresh the page and try again.');
+                    return;
+                }
+
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'RequestVerificationToken': token
+                };
+
+                console.log('Sending request to ban/unban user:', userId, 'isBanned:', isBanned);
+
                 fetch('/admin/users?handler=UpdateUserStatus', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                    },
-                    body: JSON.stringify({ userId: userId, isBanned: isBanned })
+                    headers: headers,
+                    body: JSON.stringify({ UserId: userId, IsBanned: isBanned })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        return response.text().then(text => {
+                            console.error('Non-JSON response:', text);
+                            throw new Error('Server returned non-JSON response: ' + text);
+                        });
+                    }
+                    
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Response data:', data);
                     if (data.success) {
+                        alert('User status updated successfully!');
                         location.reload();
                     } else {
-                        alert('Error: ' + data.message);
+                        alert('Error: ' + (data.message || 'Unknown error occurred'));
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('An error occurred while updating user status');
+                    alert('An error occurred while updating user status: ' + error.message);
                 });
             }
         }
@@ -338,26 +377,59 @@
             const actionText = action === 'add' ? 'add' : 'subtract';
 
             if (confirm(`Are you sure you want to ${actionText} ${points} points for ${currentUserName}?`)) {
+                // Get CSRF token
+                const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                const token = tokenElement ? tokenElement.value : '';
+                
+                if (!token) {
+                    console.error('CSRF token not found');
+                    alert('Security token not found. Please refresh the page and try again.');
+                    return;
+                }
+
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'RequestVerificationToken': token
+                };
+
+                console.log('Sending request to update points:', currentUserId, 'pointsChange:', pointsChange);
+
                 fetch('/admin/users?handler=UpdateUserPoints', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                    },
+                    headers: headers,
                     body: JSON.stringify({ userId: currentUserId, pointsChange: pointsChange })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        return response.text().then(text => {
+                            console.error('Non-JSON response:', text);
+                            throw new Error('Server returned non-JSON response: ' + text);
+                        });
+                    }
+                    
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Response data:', data);
                     if (data.success) {
+                        alert('Points updated successfully!');
                         closePointModal();
                         location.reload();
                     } else {
-                        alert('Error: ' + data.message);
+                        alert('Error: ' + (data.message || 'Unknown error occurred'));
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('An error occurred while updating user points');
+                    alert('An error occurred while updating user points: ' + error.message);
                 });
             }
         }
@@ -370,4 +442,4 @@
             }
         }
     </script>
-} 
+}

@@ -1019,6 +1019,8 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 if (string.IsNullOrEmpty(userId))
                 {
+                    Console.WriteLine($"[TakeQuiz] User not authenticated. quizId={quizId}");
+                    _logger.LogWarning($"[TakeQuiz] User not authenticated. quizId={quizId}");
                     return new QuizTakeResult
                     {
                         Success = false,
@@ -1040,6 +1042,8 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 if (quiz == null)
                 {
+                    Console.WriteLine($"[TakeQuiz] Quiz not found. quizId={quizId}, userId={userId}");
+                    _logger.LogWarning($"[TakeQuiz] Quiz not found. quizId={quizId}, userId={userId}");
                     return new QuizTakeResult
                     {
                         Success = false,
@@ -1055,6 +1059,8 @@ namespace BusinessLogicLayer.Services.Implementations
 
                     if (!isEnrolled)
                     {
+                        Console.WriteLine($"[TakeQuiz] User not enrolled. quizId={quizId}, userId={userId}, courseId={quiz.CourseId}");
+                        _logger.LogWarning($"[TakeQuiz] User not enrolled. quizId={quizId}, userId={userId}, courseId={quiz.CourseId}");
                         return new QuizTakeResult
                         {
                             Success = false,
@@ -1069,6 +1075,8 @@ namespace BusinessLogicLayer.Services.Implementations
                 // Check if quiz has questions
                 if (!quiz.Questions.Any())
                 {
+                    Console.WriteLine($"[TakeQuiz] Quiz has no questions. quizId={quizId}, userId={userId}");
+                    _logger.LogWarning($"[TakeQuiz] Quiz has no questions. quizId={quizId}, userId={userId}");
                     return new QuizTakeResult
                     {
                         Success = false,
@@ -1087,6 +1095,9 @@ namespace BusinessLogicLayer.Services.Implementations
                 // Check if user has an ongoing (unsubmitted) attempt
                 var ongoingAttempt = quiz.QuizAttempts.FirstOrDefault(qa => qa.UserId == userId && qa.EndTime == null);
 
+                Console.WriteLine($"[TakeQuiz] Attempt status. quizId={quizId}, userId={userId}, completedAttempts={completedAttempts}, maxAttempts={maxAttempts}, ongoingAttemptId={ongoingAttempt?.AttemptId}");
+                _logger.LogInformation($"[TakeQuiz] Attempt status. quizId={quizId}, userId={userId}, completedAttempts={completedAttempts}, maxAttempts={maxAttempts}, ongoingAttemptId={ongoingAttempt?.AttemptId}");
+
                 string attemptId;
                 DateTime startTime;
                 int currentAttemptNumber;
@@ -1099,6 +1110,8 @@ namespace BusinessLogicLayer.Services.Implementations
                     startTime = ongoingAttempt.StartTime ?? DateTime.UtcNow;
                     currentAttemptNumber = ongoingAttempt.AttemptNumber ?? 1;
                     isOngoingAttempt = true;
+                    Console.WriteLine($"[TakeQuiz] Resuming ongoing attempt. attemptId={attemptId}, startTime={startTime}, currentAttemptNumber={currentAttemptNumber}");
+                    _logger.LogInformation($"[TakeQuiz] Resuming ongoing attempt. attemptId={attemptId}, startTime={startTime}, currentAttemptNumber={currentAttemptNumber}");
                 }
                 else
                 {
@@ -1107,6 +1120,8 @@ namespace BusinessLogicLayer.Services.Implementations
 
                     if (nextAttemptNumber > maxAttempts)
                     {
+                        Console.WriteLine($"[TakeQuiz] Exceeded max attempts. quizId={quizId}, userId={userId}, completedAttempts={completedAttempts}, maxAttempts={maxAttempts}");
+                        _logger.LogWarning($"[TakeQuiz] Exceeded max attempts. quizId={quizId}, userId={userId}, completedAttempts={completedAttempts}, maxAttempts={maxAttempts}");
                         return new QuizTakeResult
                         {
                             Success = false,
@@ -1135,6 +1150,8 @@ namespace BusinessLogicLayer.Services.Implementations
 
                     _context.QuizAttempts.Add(attempt);
                     await _context.SaveChangesAsync();
+                    Console.WriteLine($"[TakeQuiz] Created new attempt. attemptId={attemptId}, startTime={startTime}, currentAttemptNumber={currentAttemptNumber}");
+                    _logger.LogInformation($"[TakeQuiz] Created new attempt. attemptId={attemptId}, startTime={startTime}, currentAttemptNumber={currentAttemptNumber}");
                 }
 
                 // Build view model
@@ -1176,6 +1193,9 @@ namespace BusinessLogicLayer.Services.Implementations
                     }).ToList()
                 };
 
+                Console.WriteLine($"[TakeQuiz] Returning quiz take view. quizId={quizId}, userId={userId}, attemptId={attemptId}, isOngoingAttempt={isOngoingAttempt}");
+                _logger.LogInformation($"[TakeQuiz] Returning quiz take view. quizId={quizId}, userId={userId}, attemptId={attemptId}, isOngoingAttempt={isOngoingAttempt}");
+
                 return new QuizTakeResult
                 {
                     Success = true,
@@ -1184,7 +1204,8 @@ namespace BusinessLogicLayer.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in GetQuizTakeAsync for quiz {QuizId}", quizId);
+                Console.WriteLine($"[TakeQuiz] Exception occurred. quizId={quizId}, userId={user?.FindFirst("UserId")?.Value}, ex={ex.Message}");
+                _logger.LogError(ex, $"[TakeQuiz] Exception occurred. quizId={quizId}, userId={user?.FindFirst("UserId")?.Value}");
                 return new QuizTakeResult
                 {
                     Success = false,
