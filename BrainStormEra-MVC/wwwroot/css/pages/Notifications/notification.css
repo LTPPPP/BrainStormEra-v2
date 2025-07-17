@@ -1,0 +1,228 @@
+/* Notification Create Page Styles */
+
+/* Character Counter */
+.character-counter {
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.text-warning {
+  color: #ffc107 !important;
+}
+
+/* Loading States */
+.loading-users,
+.searching-users {
+  padding: 2rem 1rem;
+  color: #6c757d;
+}
+
+.loading-users .spinner-border,
+.searching-users .spinner-border {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* User Table Styles */
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e9ecef;
+}
+
+.user-avatar-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 2px solid #e9ecef;
+}
+
+/* Role Badges */
+.role-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.role-badge.Admin {
+  background-color: #dc3545;
+  color: white;
+}
+
+.role-badge.Instructor {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.role-badge.Student {
+  background-color: #198754;
+  color: white;
+}
+
+.role-badge.User {
+  background-color: #6c757d;
+  color: white;
+}
+
+/* Selected Row */
+.selected-row {
+  background-color: #e7f3ff !important;
+  border-left: 4px solid #0d6efd;
+}
+
+.selected-row:hover {
+  background-color: #d1ecf1 !important;
+}
+
+/* Empty State */
+.empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #6c757d;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state.text-danger i {
+  color: #dc3545;
+}
+
+/* Target Type Selection */
+.target-type-card {
+  border: 2px solid #e9ecef;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.target-type-card:hover {
+  border-color: #0d6efd;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.target-type-card.selected {
+  border-color: #0d6efd;
+  background-color: #f8f9fa;
+}
+
+/* Pagination Info */
+.pagination-info {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+/* Form Controls */
+.form-select:disabled,
+.form-control:disabled {
+  background-color: #f8f9fa;
+  opacity: 0.65;
+}
+
+/* Toast Notifications */
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  min-width: 300px;
+  max-width: 500px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .user-avatar,
+  .user-avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+  }
+
+  .empty-state {
+    padding: 2rem 0.5rem;
+  }
+
+  .empty-state i {
+    font-size: 2rem;
+  }
+
+  .loading-users,
+  .searching-users {
+    padding: 1.5rem 0.5rem;
+  }
+}
+
+/* Animation for loading states */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loading-users,
+.searching-users,
+.empty-state {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Button States */
+.btn[data-selected="true"] {
+  background-color: #198754;
+  border-color: #198754;
+  color: white;
+}
+
+.btn[data-selected="true"]:hover {
+  background-color: #157347;
+  border-color: #146c43;
+}
+
+/* Course Filter Styles */
+.course-filter-container {
+  margin-bottom: 1rem;
+}
+
+.course-filter-container .form-select {
+  max-width: 300px;
+}
+
+/* Table Responsive */
+.table-responsive {
+  border-radius: 0.375rem;
+  border: 1px solid #dee2e6;
+}
+
+.table th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  color: #495057;
+}
+
+/* Checkbox Styling */
+.user-checkbox {
+  transform: scale(1.2);
+}
+
+.user-checkbox:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}

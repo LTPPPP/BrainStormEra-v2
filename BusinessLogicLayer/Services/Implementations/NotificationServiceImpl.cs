@@ -1002,6 +1002,63 @@ namespace BusinessLogicLayer.Services.Implementations
             }
         }
 
+        /// <summary>
+        /// Get enrolled users for notification targeting (instructor only)
+        /// </summary>
+        public async Task<UserSearchResult> GetEnrolledUsersAsync(ClaimsPrincipal user, string? courseId = null, string? searchTerm = null)
+        {
+            try
+            {
+                var userId = user.FindFirst("UserId")?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new UserSearchResult
+                    {
+                        Success = false,
+                        ErrorMessage = "User not authenticated"
+                    };
+                }
+
+                var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                if (!IsAuthorizedToCreateNotifications(userRole))
+                {
+                    return new UserSearchResult
+                    {
+                        Success = false,
+                        ErrorMessage = "You are not authorized to get enrolled users"
+                    };
+                }
+
+                // Get enrolled users for the instructor
+                var users = await _notificationService.GetEnrolledUsersAsync(userId, courseId, searchTerm?.Trim());
+
+                // Filter out the current user (creator) to prevent sending notification to themselves
+                var filteredUsers = users.Where(u => u.UserId != userId).ToList();
+
+                return new UserSearchResult
+                {
+                    Success = true,
+                    Users = filteredUsers.Select(u => new UserSearchItem
+                    {
+                        UserId = u.UserId,
+                        UserName = u.Username,
+                        Email = u.UserEmail,
+                        FullName = u.FullName ?? "",
+                        Role = u.UserRole
+                    }).ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting enrolled users");
+                return new UserSearchResult
+                {
+                    Success = false,
+                    ErrorMessage = "An error occurred while getting enrolled users"
+                };
+            }
+        }
+
         #endregion
 
     }

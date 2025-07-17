@@ -483,6 +483,20 @@ namespace BusinessLogicLayer.Services
                 return new List<Account>();
             }
         }
+
+        public async Task<List<Account>> GetEnrolledUsersAsync(string instructorId, string? courseId = null, string? searchTerm = null)
+        {
+            try
+            {
+                // Get users enrolled in the instructor's courses
+                return await _userRepo.GetUsersWithEnrollmentsAsync(instructorId, courseId, searchTerm, null, 1, 1000);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting enrolled users for instructor: {InstructorId}", instructorId);
+                return new List<Account>();
+            }
+        }
     }
 }
 

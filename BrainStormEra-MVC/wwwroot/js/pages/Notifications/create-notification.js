@@ -1,6 +1,7 @@
 // Global variables
 let currentUserId;
 let getAllUsersUrl;
+let getEnrolledUsersUrl;
 let getCoursesUrl;
 let allUsers = [];
 let allCourses = [];
@@ -18,12 +19,17 @@ document.addEventListener("DOMContentLoaded", function () {
   currentUserId =
     document.querySelector('meta[name="user-id"]')?.getAttribute("content") ||
     "";
-  // Initialize components
+
+  // Initialize components that don't require URLs first
   initializeCharacterCounter();
   initializeTargetTypeSelection();
-  initializeUserTable();
-  initializeCourseSelection();
   initializeFormValidation();
+
+  // Initialize components that require URLs with delay to allow server-side configuration
+  setTimeout(() => {
+    initializeUserTableWithUrlCheck();
+    initializeCourseSelectionWithUrlCheck();
+  }, 100);
 });
 
 // Initialize character counter for content textarea
@@ -54,6 +60,26 @@ function initializeCharacterCounter() {
   updateCharacterCounter();
 }
 
+// Initialize user table with URL check
+function initializeUserTableWithUrlCheck() {
+  if (!getEnrolledUsersUrl) {
+    console.warn("Enrolled users URL not configured, retrying...");
+    setTimeout(initializeUserTableWithUrlCheck, 500);
+    return;
+  }
+  initializeUserTable();
+}
+
+// Initialize course selection with URL check
+function initializeCourseSelectionWithUrlCheck() {
+  if (!getCoursesUrl) {
+    console.warn("Courses URL not configured, retrying...");
+    setTimeout(initializeCourseSelectionWithUrlCheck, 500);
+    return;
+  }
+  initializeCourseSelection();
+}
+
 // Initialize user table functionality
 function initializeUserTable() {
   const searchInput = document.getElementById("userSearchInput");
@@ -64,90 +90,173 @@ function initializeUserTable() {
     let searchTimeout;
     searchInput.addEventListener("input", function () {
       clearTimeout(searchTimeout);
+
+      // Show search indicator
+      const tableBody = document.getElementById("usersTableBody");
+      if (this.value.length > 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center">
+              <div class="searching-users py-2">
+                <div class="spinner-border spinner-border-sm me-2 text-secondary" role="status">
+                  <span class="visually-hidden">Searching...</span>
+                </div>
+                <span class="text-muted">Searching users...</span>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
       searchTimeout = setTimeout(() => {
-        filterUsers();
+        const selectedCourseId =
+          document.getElementById("courseFilterUsers")?.value;
+        if (selectedCourseId) {
+          loadEnrolledUsersByCourse(selectedCourseId);
+        } else {
+          loadEnrolledUsersByCourse(null);
+        }
       }, 300);
     });
   }
 
   if (roleFilter) {
     roleFilter.addEventListener("change", function () {
+      // For role filtering, we'll filter the already loaded users
       filterUsers();
     });
   }
 
   if (courseFilterUsers) {
     courseFilterUsers.addEventListener("change", function () {
-      filterUsers();
+      const selectedCourseId = this.value;
+      if (selectedCourseId) {
+        loadEnrolledUsersByCourse(selectedCourseId);
+      } else {
+        loadAllUsers(); // Load all enrolled users if no course selected
+      }
     });
   }
 
-  // Load all users
-  loadAllUsers();
+  // Load all users only if URL is configured
+  if (getEnrolledUsersUrl) {
+    loadAllUsers();
+  } else {
+    showInitialUserTableMessage();
+  }
 }
 
 // Load all users from server
 function loadAllUsers() {
-  if (!getAllUsersUrl) {
-    // Get all users URL not configured, using mock data
-    loadMockUsers();
+  loadEnrolledUsersByCourse(null);
+}
+
+// Show initial user table message
+function showInitialUserTableMessage() {
+  const tableBody = document.getElementById("usersTableBody");
+  if (tableBody) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center">
+          <div class="loading-users py-4">
+            <div class="spinner-border spinner-border-sm me-2 text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="text-muted">Initializing user data...</span>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+}
+
+// Load enrolled users by course
+function loadEnrolledUsersByCourse(courseId) {
+  if (!getEnrolledUsersUrl) {
+    console.error("Enrolled users URL not configured");
+    showError("Unable to load users. Please refresh the page.");
     return;
   }
+
   const tableBody = document.getElementById("usersTableBody");
+  const paginationContainer = document.getElementById("usersPagination");
+  const paginationInfo = document.querySelector(".pagination-info");
+
+  // Show loading state
   tableBody.innerHTML = `
     <tr>
       <td colspan="5" class="text-center">
-        <div class="loading-users">
-          <i class="fas fa-spinner fa-spin me-2"></i>
-          Loading users...
+        <div class="loading-users py-4">
+          <div class="spinner-border spinner-border-sm me-2 text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <span class="text-muted">Loading enrolled users...</span>
         </div>
       </td>
     </tr>
   `;
 
-  fetch(getAllUsersUrl)
+  // Hide pagination during loading
+  if (paginationContainer) paginationContainer.style.display = "none";
+  if (paginationInfo) paginationInfo.style.display = "none";
+
+  // Build URL with parameters
+  let url = getEnrolledUsersUrl;
+  const params = new URLSearchParams();
+  if (courseId) {
+    params.append("courseId", courseId);
+  }
+  const searchTerm = document.getElementById("userSearchInput")?.value;
+  if (searchTerm) {
+    params.append("searchTerm", searchTerm);
+  }
+  if (params.toString()) {
+    url += "?" + params.toString();
+  }
+
+  fetch(url)
     .then((response) => {
-      if (!response.ok) throw new Error("Failed to load users");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       return response.json();
     })
     .then((data) => {
+      // Show pagination again
+      if (paginationContainer) paginationContainer.style.display = "flex";
+      if (paginationInfo) paginationInfo.style.display = "block";
+
       if (data.success && data.users) {
         allUsers = data.users.filter((user) => user.userId !== currentUserId); // Exclude current user
         filteredUsers = [...allUsers];
-        renderUsersTable();
+        renderUserTable();
+        updatePaginationInfo();
+      } else if (Array.isArray(data)) {
+        // Handle direct array response from GetEnrolledUsers
+        allUsers = data.filter((user) => user.userId !== currentUserId); // Exclude current user
+        filteredUsers = [...allUsers];
+        renderUserTable();
         updatePaginationInfo();
       } else {
-        showError("Failed to load users");
+        showError("No users found or invalid response format");
       }
     })
     .catch((error) => {
-      // Falling back to mock data
-      loadMockUsers();
+      console.error("Error loading enrolled users:", error);
+      showError("Failed to load enrolled users. Please try again.");
+      // Show pagination again even on error
+      if (paginationContainer) paginationContainer.style.display = "flex";
+      if (paginationInfo) paginationInfo.style.display = "block";
     });
 }
 
-// Filter users based on search and role filter
+// Filter users based on role filter (search and course are handled by server-side filtering)
 function filterUsers() {
-  const searchTerm =
-    document.getElementById("userSearchInput")?.value.toLowerCase() || "";
   const roleFilter = document.getElementById("roleFilter")?.value || "";
-  const courseFilter =
-    document.getElementById("courseFilterUsers")?.value || "";
 
   filteredUsers = allUsers.filter((user) => {
-    const matchesSearch =
-      !searchTerm ||
-      (user.fullName && user.fullName.toLowerCase().includes(searchTerm)) ||
-      (user.userName && user.userName.toLowerCase().includes(searchTerm)) ||
-      (user.email && user.email.toLowerCase().includes(searchTerm));
-
     const matchesRole = !roleFilter || user.role === roleFilter;
-
-    const matchesCourse =
-      !courseFilter ||
-      (user.enrolledCourses && user.enrolledCourses.includes(courseFilter));
-
-    return matchesSearch && matchesRole && matchesCourse;
+    return matchesRole;
   });
   currentPage = 1; // Reset to first page when filtering
   renderUserTable();
@@ -403,8 +512,12 @@ function initializeCourseSelection() {
     });
   }
 
-  // Load courses
-  loadCourses();
+  // Load courses only if URL is configured
+  if (getCoursesUrl) {
+    loadCourses();
+  } else {
+    showInitialCourseMessage();
+  }
 }
 
 // Load courses from server
@@ -413,35 +526,79 @@ function loadCourses() {
   const courseFilterUsers = document.getElementById("courseFilterUsers");
 
   if (!getCoursesUrl) {
-    // Get courses URL not configured, using mock data
-    loadMockCourses();
+    console.error("Courses URL not configured");
+    showToast("Unable to load courses. Please check configuration.", "error");
     return;
+  }
+
+  // Show loading state in course dropdowns
+  if (courseFilter) {
+    courseFilter.innerHTML = '<option value="">Loading courses...</option>';
+    courseFilter.disabled = true;
+  }
+
+  if (courseFilterUsers) {
+    courseFilterUsers.innerHTML =
+      '<option value="">Loading courses...</option>';
+    courseFilterUsers.disabled = true;
   }
 
   fetch(getCoursesUrl)
     .then((response) => {
-      if (!response.ok) throw new Error("Failed to load courses");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       return response.json();
     })
     .then((data) => {
-      allCourses = data || [];
+      allCourses = Array.isArray(data) ? data : data.courses || [];
+
+      // Re-enable dropdowns
+      if (courseFilter) courseFilter.disabled = false;
+      if (courseFilterUsers) courseFilterUsers.disabled = false;
+
       populateCourseFilters();
+
+      if (allCourses.length === 0) {
+        showToast("No courses available", "warning");
+      }
     })
     .catch((error) => {
-      loadMockCourses();
+      console.error("Error loading courses:", error);
+
+      // Re-enable dropdowns and show error state
+      if (courseFilter) {
+        courseFilter.innerHTML =
+          '<option value="">Error loading courses</option>';
+        courseFilter.disabled = false;
+      }
+
+      if (courseFilterUsers) {
+        courseFilterUsers.innerHTML =
+          '<option value="">Error loading courses</option>';
+        courseFilterUsers.disabled = false;
+      }
+
+      showToast("Failed to load courses. Please try again.", "error");
     });
 }
 
-// Load mock courses for development
-function loadMockCourses() {
-  allCourses = [
-    { courseId: "1", title: "Introduction to Programming", studentsCount: 25 },
-    { courseId: "2", title: "Web Development Fundamentals", studentsCount: 30 },
-    { courseId: "3", title: "Database Design", studentsCount: 20 },
-    { courseId: "4", title: "Mobile App Development", studentsCount: 18 },
-    { courseId: "5", title: "Data Structures", studentsCount: 22 },
-  ];
-  populateCourseFilters();
+// Show initial course message
+function showInitialCourseMessage() {
+  const courseFilter = document.getElementById("courseFilter");
+  const courseFilterUsers = document.getElementById("courseFilterUsers");
+
+  if (courseFilter) {
+    courseFilter.innerHTML =
+      '<option value="">Initializing courses...</option>';
+    courseFilter.disabled = true;
+  }
+
+  if (courseFilterUsers) {
+    courseFilterUsers.innerHTML =
+      '<option value="">Initializing courses...</option>';
+    courseFilterUsers.disabled = true;
+  }
 }
 
 // Populate course filter dropdowns
@@ -451,22 +608,36 @@ function populateCourseFilters() {
 
   if (courseFilter) {
     courseFilter.innerHTML = '<option value="">Select a course...</option>';
-    allCourses.forEach((course) => {
+
+    if (allCourses.length === 0) {
       const option = document.createElement("option");
-      option.value = course.courseId;
-      option.textContent = `${course.title} (${course.studentsCount} students)`;
+      option.value = "";
+      option.textContent = "No courses available";
+      option.disabled = true;
       courseFilter.appendChild(option);
-    });
+    } else {
+      allCourses.forEach((course) => {
+        const option = document.createElement("option");
+        option.value = course.courseId;
+        option.textContent = `${course.title}${
+          course.studentsCount ? ` (${course.studentsCount} students)` : ""
+        }`;
+        courseFilter.appendChild(option);
+      });
+    }
   }
 
   if (courseFilterUsers) {
     courseFilterUsers.innerHTML = '<option value="">All Courses</option>';
-    allCourses.forEach((course) => {
-      const option = document.createElement("option");
-      option.value = course.courseId;
-      option.textContent = course.title;
-      courseFilterUsers.appendChild(option);
-    });
+
+    if (allCourses.length > 0) {
+      allCourses.forEach((course) => {
+        const option = document.createElement("option");
+        option.value = course.courseId;
+        option.textContent = course.title;
+        courseFilterUsers.appendChild(option);
+      });
+    }
   }
 }
 
@@ -594,7 +765,7 @@ window.changePage = function (page) {
   if (page < 1 || page > totalPages) return;
 
   currentPage = page;
-  renderUsersTable();
+  renderUserTable();
 };
 
 // Update pagination info
@@ -708,8 +879,20 @@ window.setGetAllUsersUrl = function (url) {
   getAllUsersUrl = url;
 };
 
+window.setGetEnrolledUsersUrl = function (url) {
+  getEnrolledUsersUrl = url;
+  // Trigger user table initialization if not already done
+  if (url && !allUsers.length) {
+    setTimeout(loadAllUsers, 100);
+  }
+};
+
 window.setGetCoursesUrl = function (url) {
   getCoursesUrl = url;
+  // Trigger course loading if not already done
+  if (url && !allCourses.length) {
+    setTimeout(loadCourses, 100);
+  }
 };
 
 // Set get all users URL (to be called by server-side code)
@@ -717,158 +900,20 @@ function setGetAllUsersUrl(url) {
   getAllUsersUrl = url;
 }
 
-// Load mock users for demonstration
-function loadMockUsers() {
-  // Mock user data for demonstration
-  const mockUsers = [
-    {
-      userId: "user001",
-      userName: "john_doe",
-      fullName: "John Doe",
-      email: "john.doe@example.com",
-      role: "learner",
-      isActive: true,
-      avatarUrl: null,
-      enrolledCourses: ["1", "2"],
-    },
-    {
-      userId: "user002",
-      userName: "jane_smith",
-      fullName: "Jane Smith",
-      email: "jane.smith@example.com",
-      role: "instructor",
-      isActive: true,
-      avatarUrl: null,
-      enrolledCourses: ["2", "3", "4"],
-    },
-    {
-      userId: "user003",
-      userName: "admin_user",
-      fullName: "Admin User",
-      email: "admin@example.com",
-      role: "admin",
-      isActive: true,
-      avatarUrl: null,
-      enrolledCourses: [],
-    },
-    {
-      userId: "user004",
-      userName: "alice_johnson",
-      fullName: "Alice Johnson",
-      email: "alice.johnson@example.com",
-      role: "learner",
-      isActive: true,
-      avatarUrl: null,
-      enrolledCourses: ["1", "3", "5"],
-    },
-    {
-      userId: "user005",
-      userName: "bob_wilson",
-      fullName: "Bob Wilson",
-      email: "bob.wilson@example.com",
-      role: "instructor",
-      isActive: false,
-      avatarUrl: null,
-    },
-    {
-      userId: "user006",
-      userName: "charlie_brown",
-      fullName: "Charlie Brown",
-      email: "charlie.brown@example.com",
-      role: "learner",
-      isActive: true,
-      avatarUrl: null,
-    },
-    {
-      userId: "user007",
-      userName: "diana_prince",
-      fullName: "Diana Prince",
-      email: "diana.prince@example.com",
-      role: "instructor",
-      isActive: true,
-      avatarUrl: null,
-    },
-    {
-      userId: "user008",
-      userName: "edward_norton",
-      fullName: "Edward Norton",
-      email: "edward.norton@example.com",
-      role: "learner",
-      isActive: true,
-      avatarUrl: null,
-    },
-    {
-      userId: "user009",
-      userName: "fiona_green",
-      fullName: "Fiona Green",
-      email: "fiona.green@example.com",
-      role: "admin",
-      isActive: true,
-      avatarUrl: null,
-    },
-    {
-      userId: "user010",
-      userName: "george_white",
-      fullName: "George White",
-      email: "george.white@example.com",
-      role: "learner",
-      isActive: false,
-      avatarUrl: null,
-    },
-    {
-      userId: "user011",
-      userName: "helen_black",
-      fullName: "Helen Black",
-      email: "helen.black@example.com",
-      role: "instructor",
-      isActive: true,
-      avatarUrl: null,
-    },
-    {
-      userId: "user012",
-      userName: "ivan_red",
-      fullName: "Ivan Red",
-      email: "ivan.red@example.com",
-      role: "learner",
-      isActive: true,
-      avatarUrl: null,
-    },
-    {
-      userId: "user013",
-      userName: "julia_yellow",
-      fullName: "Julia Yellow",
-      email: "julia.yellow@example.com",
-      role: "instructor",
-      isActive: true,
-      avatarUrl: null,
-    },
-    {
-      userId: "user014",
-      userName: "kevin_blue",
-      fullName: "Kevin Blue",
-      email: "kevin.blue@example.com",
-      role: "learner",
-      isActive: true,
-      avatarUrl: null,
-    },
-    {
-      userId: "user015",
-      userName: "linda_purple",
-      fullName: "Linda Purple",
-      email: "linda.purple@example.com",
-      role: "admin",
-      isActive: true,
-      avatarUrl: null,
-    },
-  ];
+// Set get enrolled users URL (to be called by server-side code)
+function setGetEnrolledUsersUrl(url) {
+  getEnrolledUsersUrl = url;
+  // Trigger user table initialization if not already done
+  if (url && !allUsers.length) {
+    setTimeout(loadAllUsers, 100);
+  }
+}
 
-  // Filter out current user from mock data
-  allUsers = mockUsers.filter((user) => user.userId !== currentUserId);
-  filteredUsers = [...allUsers];
-
-  // Simulate loading delay
-  setTimeout(() => {
-    renderUsersTable();
-    updatePaginationInfo();
-  }, 500);
+// Set get courses URL (to be called by server-side code)
+function setGetCoursesUrl(url) {
+  getCoursesUrl = url;
+  // Trigger course loading if not already done
+  if (url && !allCourses.length) {
+    setTimeout(loadCourses, 100);
+  }
 }

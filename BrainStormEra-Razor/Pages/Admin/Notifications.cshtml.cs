@@ -13,15 +13,18 @@ namespace BrainStormEra_Razor.Pages.Admin
     {
         private readonly NotificationServiceImpl _notificationServiceImpl;
         private readonly INotificationService _notificationService;
+        private readonly ICourseService _courseService; // Add CourseService
         private readonly ILogger<NotificationsModel> _logger;
 
         public NotificationsModel(
             NotificationServiceImpl notificationServiceImpl,
             INotificationService notificationService,
+            ICourseService courseService, // Add CourseService parameter
             ILogger<NotificationsModel> logger)
         {
             _notificationServiceImpl = notificationServiceImpl;
             _notificationService = notificationService;
+            _courseService = courseService; // Initialize CourseService
             _logger = logger;
         }
 
@@ -517,6 +520,53 @@ namespace BrainStormEra_Razor.Pages.Admin
             {
                 _logger.LogError(ex, "Error loading notification data");
                 NotificationData = new NotificationIndexViewModel();
+            }
+        }
+
+        // Handler for getting courses for instructor notifications
+        public async Task<IActionResult> OnGetCoursesAsync()
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new JsonResult(new { success = false, message = "User not authenticated" });
+                }
+
+                List<object> courses = new List<object>();
+
+                if (userRole?.Equals("admin", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    // Admin can see all courses
+                    var allCoursesResult = await _courseService.GetCoursesAsync("", "", 1, 1000);
+                    courses = allCoursesResult.Courses.Select(c => new
+                    {
+                        courseId = c.CourseId,
+                        title = c.CourseName,
+                        studentsCount = c.EnrollmentCount
+                    }).ToList<object>();
+                }
+                else if (userRole?.Equals("instructor", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    // Instructor can only see their own courses
+                    var instructorCoursesResult = await _courseService.GetInstructorCoursesAsync(userId, "", "", 1, 1000);
+                    courses = instructorCoursesResult.Courses.Select(c => new
+                    {
+                        courseId = c.CourseId,
+                        title = c.CourseName,
+                        studentsCount = c.EnrollmentCount
+                    }).ToList<object>();
+                }
+
+                return new JsonResult(courses);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting courses for notification");
+                return new JsonResult(new { success = false, message = "An error occurred while loading courses" });
             }
         }
     }
