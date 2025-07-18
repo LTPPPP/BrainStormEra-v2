@@ -173,33 +173,111 @@
 
                 <div class="mb-4">
                     <label class="form-label">
-                        <i class="fas fa-search me-2"></i>Search and Select Categories *
+                        <i class="fas fa-layer-group me-2"></i>Select Categories *
                     </label>
-                    <div class="category-input-container">
-                        <input type="text" id="categoryInput" class="form-control"
-                            placeholder="Start typing to search categories (e.g., 'programming', 'design')"
-                            autocomplete="off" />
-                        <i class="fas fa-spinner fa-spin category-loading-icon"></i>
-                        <div id="categorySuggestions" class="category-suggestions"></div>
-                        <div class="loading-spinner">
-                            <i class="fas fa-spinner fa-spin"></i>
-                        </div>
+                    <div class="category-grid">
+                        @foreach (var category in Model.AvailableCategories)
+                        {
+                            var isSelected = Model.SelectedCategories?.Contains(category.CategoryId) ?? false;
+                            <div class="category-item @(isSelected ? "selected" : "")" 
+                                 data-category-id="@category.CategoryId"
+                                 onclick="toggleCategory(this)">
+                                <i class="@category.CategoryIcon"></i>
+                                <span>@category.CategoryName</span>
+                                <input type="checkbox" 
+                                       name="SelectedCategories" 
+                                       value="@category.CategoryId" 
+                                       @(isSelected ? "checked" : "") 
+                                       style="display: none;" />
+                            </div>
+                        }
                     </div>
                     <span asp-validation-for="SelectedCategories" class="text-danger"></span>
-
-                    <div id="selectedCategories" class="selected-categories">
-                        <div class="text-muted text-center w-100">
-                            <i class="fas fa-plus-circle me-2"></i>
-                            Selected categories will appear here
-                        </div>
+                    
+                    <div class="selected-count mt-3">
+                        <span id="categoryCount">0</span> categories selected
                     </div>
 
-                    <div class="form-text mt-3">
+                    <div class="form-text mt-2">
                         <i class="fas fa-info-circle me-1"></i>
                         Select 2-5 relevant categories to help students discover your course
                     </div>
                 </div>
             </div>
+
+            <style>
+            .category-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }
+
+            .category-item {
+                display: flex;
+                align-items: center;
+                padding: 1rem;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                background: #fff;
+            }
+
+            .category-item:hover {
+                border-color: #007bff;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .category-item.selected {
+                background-color: #007bff;
+                color: white;
+                border-color: #0056b3;
+            }
+
+            .category-item i {
+                margin-right: 10px;
+                font-size: 1.2em;
+            }
+
+            .selected-count {
+                color: #666;
+                font-size: 0.9em;
+            }
+
+            #categoryCount {
+                font-weight: bold;
+                color: #007bff;
+            }
+            </style>
+
+            <script>
+            function toggleCategory(element) {
+                const checkbox = element.querySelector('input[type="checkbox"]');
+                const currentlySelected = element.classList.contains('selected');
+                const selectedCount = document.querySelectorAll('.category-item.selected').length;
+
+                if (!currentlySelected && selectedCount >= 5) {
+                    alert('You can select up to 5 categories');
+                    return;
+                }
+
+                element.classList.toggle('selected');
+                checkbox.checked = !currentlySelected;
+                
+                updateCategoryCount();
+            }
+
+            function updateCategoryCount() {
+                const selectedCount = document.querySelectorAll('.category-item.selected').length;
+                document.getElementById('categoryCount').textContent = selectedCount;
+            }
+
+            // Initialize count on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                updateCategoryCount();
+            });
+            </script>
 
             <!-- Course Details Section -->
             <div class="form-section">
