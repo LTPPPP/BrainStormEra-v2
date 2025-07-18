@@ -193,19 +193,6 @@
                 <a href="/admin/users" class="btn btn-back">
                     <i class="fas fa-arrow-left"></i>Back to Users
                 </a>
-                
-                @if (Model.UserDetail.IsBanned)
-                {
-                    <button type="button" class="btn btn-unban" onclick="updateUserStatus('@Model.UserId', false)">
-                        <i class="fas fa-unlock"></i>Unban User
-                    </button>
-                }
-                else
-                {
-                    <button type="button" class="btn btn-ban" onclick="updateUserStatus('@Model.UserId', true)">
-                        <i class="fas fa-ban"></i>Ban User
-                    </button>
-                }
             </div>
         </div>
     }
