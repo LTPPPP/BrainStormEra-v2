@@ -174,73 +174,107 @@
                                                     <h3 class="course-title">@course.CourseName</h3>
                                                     <p class="course-students">@course.EnrollmentCount enrolled</p>
 
-                                                    @* Fixed Status display logic *@
+                                                    @* Course Status Display Logic *@
                                                     @{
                                                         var statusClass = "";
                                                         var statusIcon = "";
                                                         var statusText = "";
 
-                                                        // Check CourseStatus first (1=Active, 2=Inactive, 3=Pending, 4=Deleted)
-                                                        if (course.CourseStatus == 4)
+                                                        // Get current approval status (normalize to lowercase)
+                                                        var approvalStatus = course.ApprovalStatus?.ToLower() ?? "";
+                                                        var courseStatus = course.CourseStatus.GetValueOrDefault(5); // Default to Draft (5) if null
+                                                        
+                                                        // Priority-based status determination based on course_status and approval_status
+                                                        switch (courseStatus)
                                                         {
-                                                            statusClass = "text-secondary";
-                                                            statusIcon = "fas fa-trash";
-                                                            statusText = "Deleted";
-                                                        }
-                                                        else if (course.CourseStatus == 2)
-                                                        {
-                                                            statusClass = "text-muted";
-                                                            statusIcon = "fas fa-pause-circle";
-                                                            statusText = "Inactive";
-                                                        }
-                                                        else if (course.CourseStatus == 3)
-                                                        {
-                                                            statusClass = "text-warning";
-                                                            statusIcon = "fas fa-clock";
-                                                            statusText = "Pending Review";
-                                                        }
-                                                        else if (course.CourseStatus == 1)
-                                                        {
-                                                            // If course is active, check approval status
-                                                            if (string.IsNullOrEmpty(course.ApprovalStatus) ||
-                                                            course.ApprovalStatus.ToLower() == "draft")
-                                                            {
+                                                            case 7: // Archived
+                                                                statusClass = "text-secondary";
+                                                                statusIcon = "fas fa-archive";
+                                                                statusText = "Archived";
+                                                                break;
+
+                                                            case 2: // Inactive
+                                                                statusClass = "text-muted";
+                                                                statusIcon = "fas fa-pause-circle";
+                                                                statusText = "Inactive";
+                                                                break;
+
+                                                            case 5: // Draft
                                                                 statusClass = "text-info";
                                                                 statusIcon = "fas fa-edit";
                                                                 statusText = "Draft";
-                                                            }
-                                                            else if (course.ApprovalStatus.ToLower() == "pending")
-                                                            {
+                                                                break;
+
+                                                            case 3: // Pending
                                                                 statusClass = "text-warning";
                                                                 statusIcon = "fas fa-clock";
-                                                                statusText = "Pending Approval";
-                                                            }
-                                                            else if (course.ApprovalStatus.ToLower() == "approved")
-                                                            {
+                                                                statusText = "Pending Review";
+                                                                break;
+
+                                                            case 6: // Published
+                                                                if (approvalStatus == "approved")
+                                                                {
+                                                                    statusClass = "text-success";
+                                                                    statusIcon = "fas fa-check-circle";
+                                                                    statusText = "Published";
+                                                                }
+                                                                else
+                                                                {
+                                                                    statusClass = "text-warning";
+                                                                    statusIcon = "fas fa-exclamation-circle";
+                                                                    statusText = "Needs Approval";
+                                                                }
+                                                                break;
+
+                                                            case 1: // Active
+                                                                if (approvalStatus == "approved")
+                                                                {
+                                                                    statusClass = "text-success";
+                                                                    statusIcon = "fas fa-check-circle";
+                                                                    statusText = "Active";
+                                                                }
+                                                                else if (approvalStatus == "pending")
+                                                                {
+                                                                    statusClass = "text-warning";
+                                                                    statusIcon = "fas fa-clock";
+                                                                    statusText = "Pending Approval";
+                                                                }
+                                                                else if (approvalStatus == "rejected")
+                                                                {
+                                                                    statusClass = "text-danger";
+                                                                    statusIcon = "fas fa-times-circle";
+                                                                    statusText = "Rejected";
+                                                                }
+                                                                else
+                                                                {
+                                                                    statusClass = "text-info";
+                                                                    statusIcon = "fas fa-edit";
+                                                                    statusText = "Draft";
+                                                                }
+                                                                break;
+
+                                                            case 4: // Completed
                                                                 statusClass = "text-success";
-                                                                statusIcon = "fas fa-check-circle";
-                                                                statusText = "Published";
-                                                            }
-                                                            else if (course.ApprovalStatus.ToLower() == "rejected" ||
-                                                            course.ApprovalStatus.ToLower() == "denied")
-                                                            {
-                                                                statusClass = "text-danger";
-                                                                statusIcon = "fas fa-times-circle";
-                                                                statusText = "Rejected";
-                                                            }
-                                                            else
-                                                            {
-                                                                statusClass = "text-muted";
-                                                                statusIcon = "fas fa-question-circle";
-                                                                statusText = course.ApprovalStatus ?? "Unknown";
-                                                            }
+                                                                statusIcon = "fas fa-flag-checkered";
+                                                                statusText = "Completed";
+                                                                break;
+
+                                                            default:
+                                                                statusClass = "text-info";
+                                                                statusIcon = "fas fa-edit";
+                                                                statusText = "Draft"; // Default to Draft status
+                                                                break;
                                                         }
-                                                        else
-                                                        {
-                                                            statusClass = "text-muted";
-                                                            statusIcon = "fas fa-question-circle";
-                                                            statusText = "Unknown";
-                                                        }
+
+                                                        // Check if course can be deleted
+                                                        var canDelete = (
+                                                            courseStatus == 2 || 
+                                                            courseStatus == 5 || 
+                                                            (courseStatus == 1 && 
+                                                             (string.IsNullOrEmpty(approvalStatus) || 
+                                                              approvalStatus == "draft" || 
+                                                              approvalStatus == "rejected"))
+                                                        ) && course.EnrollmentCount == 0;
                                                     }
 
                                                     <p class="course-status @statusClass">
@@ -256,12 +290,29 @@
                                                             class="btn btn-sm btn-outline-primary" title="Edit Course">
                                                             <i class="fas fa-edit"></i> Edit
                                                         </a>
-                                                        <button type="button"
-                                                            class="btn btn-sm btn-outline-danger delete-course-btn"
-                                                            data-course-id="@course.CourseId"
-                                                            data-course-name="@course.CourseName" title="Delete Course">
-                                                            <i class="fas fa-trash"></i> Delete
-                                                        </button>
+                                                        
+                                                        @* Conditional Delete Button *@
+                                                        @if (canDelete)
+                                                        {
+                                                            <button type="button"
+                                                                class="btn btn-sm btn-outline-danger delete-course-btn"
+                                                                data-course-id="@course.CourseId"
+                                                                data-course-name="@course.CourseName" 
+                                                                title="Delete Course">
+                                                                <i class="fas fa-trash"></i> Delete
+                                                            </button>
+                                                        }
+                                                        else
+                                                        {
+                                                            @* Disabled Delete Button with Tooltip *@
+                                                            <button type="button"
+                                                                class="btn btn-sm btn-outline-secondary"
+                                                                disabled
+                                                                title="@(course.EnrollmentCount > 0 ? "Cannot delete course with enrolled students" : "Cannot delete published or pending courses")"
+                                                                data-bs-toggle="tooltip">
+                                                                <i class="fas fa-trash"></i> Delete
+                                                            </button>
+                                                        }
                                                     </div>
                                                 </div>
                                             </div>
@@ -322,6 +373,7 @@
             initializeCourseCards();
             initializeDeleteHandlers();
             initializeStatAnimations();
+            initializeTooltips();
 
             // Toast notification function
             window.showToast = function (message, type = 'info') {
@@ -353,6 +405,14 @@
             });
         }
 
+        // Initialize tooltips for disabled buttons
+        function initializeTooltips() {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+
         // Initialize delete handlers
         function initializeDeleteHandlers() {
             const deleteButtons = document.querySelectorAll('.delete-course-btn');
@@ -367,7 +427,10 @@
 
         // Course deletion confirmation function
         function confirmDeleteCourse(courseId, courseName, buttonElement) {
-            if (confirm(`Are you sure you want to delete the course "${courseName}"?\n\nThis action cannot be undone and will permanently remove all course content. Students enrolled in this course will lose access.`)) {
+            const confirmMessage = `Are you sure you want to delete the course "${courseName}"?\n\n` +
+                                 `This action cannot be undone and will permanently remove all course content.`;
+            
+            if (confirm(confirmMessage)) {
                 deleteCourse(courseId, buttonElement);
             }
         }
