@@ -153,7 +153,9 @@ namespace BusinessLogicLayer.Services
                     CreatedBy = user.FullName ?? user.Username,
                     Description = c.CourseDescription,
                     EnrollmentCount = c.Enrollments?.Count ?? 0,
-                    CourseCategories = c.CourseCategories?.Select(cc => cc.CourseCategoryName).ToList() ?? new List<string>()
+                    CourseCategories = c.CourseCategories?.Select(cc => cc.CourseCategoryName).ToList() ?? new List<string>(),
+                    CourseStatus = c.CourseStatus,
+                    ApprovalStatus = c.ApprovalStatus
                 }).ToList();
 
                 // Calculate statistics
