@@ -176,9 +176,7 @@
                 <button type="button" class="btn btn-warning bulk-action-btn" id="bulkRejectBtn">
                     <i class="fas fa-times"></i> Reject Selected
                 </button>
-                <button type="button" class="btn btn-danger bulk-action-btn" id="bulkBanBtn">
-                    <i class="fas fa-ban"></i> Ban Selected
-                </button>
+                
                 <button type="button" class="btn btn-secondary" id="clearSelectionBtn">
                     <i class="fas fa-times"></i> Clear Selection
                 </button>
@@ -320,19 +318,11 @@
                                             data-course-name="@course.CourseName">
                                         <i class="fas fa-times"></i> Reject
                                     </button>
-                                    <button type="button" class="btn-action btn-ban" 
-                                            data-course-id="@course.CourseId"
-                                            data-course-name="@course.CourseName">
-                                        <i class="fas fa-ban"></i> Ban
-                                    </button>
+                                    
                                     break;
                                     
                                 case "approved":
-                                    <button type="button" class="btn-action btn-ban" 
-                                            data-course-id="@course.CourseId"
-                                            data-course-name="@course.CourseName">
-                                        <i class="fas fa-ban"></i> Ban
-                                    </button>
+                                    
                                     <span class="btn-action btn-details disabled approved-indicator">
                                         <i class="fas fa-check-circle"></i> Approved
                                     </span>
@@ -344,17 +334,11 @@
                                             data-course-name="@course.CourseName">
                                         <i class="fas fa-check"></i> Approve
                                     </button>
-                                    <button type="button" class="btn-action btn-ban" 
-                                            data-course-id="@course.CourseId"
-                                            data-course-name="@course.CourseName">
-                                        <i class="fas fa-ban"></i> Ban
-                                    </button>
+                                    
                                     break;
                                     
                                 case "banned":
-                                    <span class="btn-action btn-details disabled banned-indicator">
-                                        <i class="fas fa-ban"></i> Course Banned
-                                    </span>
+                                    
                                     break;
                             }
                         </div>
