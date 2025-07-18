@@ -11,20 +11,34 @@ namespace BusinessLogicLayer.Utilities
         {
             var vnpay = new VnPayLibrary();
 
+            // Log input parameters and returnUrl
+            Console.WriteLine($"Creating VNPAY URL with returnUrl: {returnUrl}");
+
             vnpay.AddRequestData("vnp_Version", "2.1.0");
             vnpay.AddRequestData("vnp_Command", "pay");
-            vnpay.AddRequestData("vnp_TmnCode", vnp_TmnCode);
-            vnpay.AddRequestData("vnp_Amount", amount.ToString());
-            vnpay.AddRequestData("vnp_CurrCode", "VND");
-            vnpay.AddRequestData("vnp_TxnRef", orderId);
-            vnpay.AddRequestData("vnp_OrderInfo", orderInfo);
-            vnpay.AddRequestData("vnp_OrderType", orderType);
-            vnpay.AddRequestData("vnp_Locale", locale);
-            vnpay.AddRequestData("vnp_ReturnUrl", returnUrl);
-            vnpay.AddRequestData("vnp_IpAddr", ipAddr);
+            vnpay.AddRequestData("vnp_TmnCode", vnp_TmnCode.Trim());
+            vnpay.AddRequestData("vnp_Amount", (amount).ToString());
             vnpay.AddRequestData("vnp_CreateDate", createDate);
+            vnpay.AddRequestData("vnp_CurrCode", "VND");
+            vnpay.AddRequestData("vnp_IpAddr", ipAddr.Trim());
+            vnpay.AddRequestData("vnp_Locale", locale.Trim());
+            vnpay.AddRequestData("vnp_OrderInfo", orderInfo.Trim());
+            vnpay.AddRequestData("vnp_OrderType", orderType.Trim());
+            vnpay.AddRequestData("vnp_ReturnUrl", returnUrl.Trim());
+            vnpay.AddRequestData("vnp_TxnRef", orderId.Trim());
 
-            string paymentUrl = vnpay.CreateRequestUrl(vnp_Url, hashSecret);
+            // Log all request parameters
+            Console.WriteLine("\nVNPAY Request Parameters:");
+            foreach (var item in vnpay.GetRequestData())
+            {
+                Console.WriteLine($"{item.Key}: {item.Value}");
+            }
+
+            string paymentUrl = vnpay.CreateRequestUrl(vnp_Url.Trim(), hashSecret.Trim());
+
+            // Log final URL
+            Console.WriteLine($"\nGenerated Payment URL: {paymentUrl}");
+
             return paymentUrl;
         }
         public static bool ValidateSignature(IDictionary<string, string?> vnpayData, string hashSecret)
@@ -32,17 +46,23 @@ namespace BusinessLogicLayer.Utilities
             var vnpay = new VnPayLibrary();
 
             // Add all vnp_ parameters except vnp_SecureHash and vnp_SecureHashType
-            foreach (var (key, value) in vnpayData)
+            foreach (var (key, value) in vnpayData.OrderBy(kvp => kvp.Key))
             {
                 if (!string.IsNullOrEmpty(key) && key.StartsWith("vnp_") &&
-                    key != "vnp_SecureHash" && key != "vnp_SecureHashType")
+                    key != "vnp_SecureHash" && key != "vnp_SecureHashType" &&
+                    !string.IsNullOrEmpty(value))
                 {
-                    vnpay.AddResponseData(key, value ?? "");
+                    vnpay.AddResponseData(key, value);
                 }
             }
 
             string inputHash = vnpayData["vnp_SecureHash"] ?? "";
             bool isValidSignature = vnpay.ValidateSignature(inputHash, hashSecret);
+
+            // Debug logging
+            Console.WriteLine("Validating VNPAY signature:");
+            Console.WriteLine($"Input Hash: {inputHash}");
+
             return isValidSignature;
         }
     }
@@ -67,75 +87,102 @@ namespace BusinessLogicLayer.Utilities
                 _responseData.Add(key, value);
             }
         }
+
+        // New method to get request data
+        public IDictionary<string, string> GetRequestData()
+        {
+            return new Dictionary<string, string>(_requestData);
+        }
+
         public string CreateRequestUrl(string baseUrl, string hashSecret)
         {
             var data = new StringBuilder();
-
-            // VNPAY requires parameters to be sorted alphabetically
-            foreach (var (key, value) in _requestData.Where(kv => !string.IsNullOrEmpty(kv.Value)))
-            {
-                data.Append(Uri.EscapeDataString(key) + "=" + Uri.EscapeDataString(value) + "&");
-            }
-
-            string queryString = data.ToString();
-
-            if (queryString.Length > 0)
-            {
-                queryString = queryString.Remove(data.Length - 1, 1);
-            }
-
-            // Create signature data without URL encoding for hash calculation
             var signData = new StringBuilder();
-            foreach (var (key, value) in _requestData.Where(kv => !string.IsNullOrEmpty(kv.Value)))
+
+            // Sort the parameters by key
+            var sortedParams = new SortedDictionary<string, string>(_requestData);
+
+            // Build query string and signing data
+            foreach (var (key, value) in sortedParams)
             {
-                signData.Append(key + "=" + value + "&");
+                if (string.IsNullOrEmpty(value)) continue;
+
+                // Build query string with URL encoded values
+                if (data.Length > 0)
+                {
+                    data.Append('&');
+                }
+                data.Append(key).Append('=').Append(Uri.EscapeDataString(value));
+
+                // Build signing string without URL encoding
+                if (signData.Length > 0)
+                {
+                    signData.Append('&');
+                }
+                signData.Append(key).Append('=').Append(value);
             }
 
+            // Calculate secure hash
             string signDataString = signData.ToString();
-            if (signDataString.Length > 0)
-            {
-                signDataString = signDataString.Remove(signDataString.Length - 1, 1);
-            }
+            Console.WriteLine($"\nData to hash: {signDataString}");
+            Console.WriteLine($"Hash secret: {hashSecret}");
 
             string vnpSecureHash = HmacSHA512(hashSecret, signDataString);
+            Console.WriteLine($"Generated hash: {vnpSecureHash}");
 
-            return baseUrl + "?" + queryString + "&vnp_SecureHash=" + vnpSecureHash;
+            // Build final URL
+            string finalUrl = baseUrl;
+            if (baseUrl.Contains("?"))
+            {
+                finalUrl += "&";
+            }
+            else
+            {
+                finalUrl += "?";
+            }
+            finalUrl += data.ToString() + "&vnp_SecureHash=" + vnpSecureHash;
+
+            return finalUrl;
         }
 
         public bool ValidateSignature(string inputHash, string secretKey)
         {
             string rspRaw = GetResponseData();
             string myChecksum = HmacSHA512(secretKey, rspRaw);
+
+            // Debug logging
+            Console.WriteLine($"Data to verify: {rspRaw}");
+            Console.WriteLine($"Hash secret: {secretKey}");
+            Console.WriteLine($"Calculated hash: {myChecksum}");
+
             return myChecksum.Equals(inputHash, StringComparison.InvariantCultureIgnoreCase);
         }
 
         private string GetResponseData()
         {
             var data = new StringBuilder();
-            if (_responseData.ContainsKey("vnp_SecureHashType"))
-            {
-                _responseData.Remove("vnp_SecureHashType");
-            }
 
-            if (_responseData.ContainsKey("vnp_SecureHash"))
-            {
-                _responseData.Remove("vnp_SecureHash");
-            }
+            // Create a sorted dictionary to ensure parameters are in alphabetical order
+            var sortedData = new SortedDictionary<string, string>(_responseData);
 
-            foreach (var (key, value) in _responseData.Where(kv => !string.IsNullOrEmpty(kv.Value)))
+            foreach (var (key, value) in sortedData)
             {
-                data.Append(key + "=" + value + "&");
-            }
-
-            if (data.Length > 0)
-            {
-                data.Remove(data.Length - 1, 1);
+                if (!string.IsNullOrEmpty(value) &&
+                    key != "vnp_SecureHashType" &&
+                    key != "vnp_SecureHash")
+                {
+                    if (data.Length > 0)
+                    {
+                        data.Append('&');
+                    }
+                    data.Append(key).Append('=').Append(value);
+                }
             }
 
             return data.ToString();
         }
 
-        private static string HmacSHA512(string key, string inputData)
+        public static string HmacSHA512(string key, string inputData)
         {
             var hash = new StringBuilder();
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);

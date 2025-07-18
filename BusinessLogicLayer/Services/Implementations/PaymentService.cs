@@ -22,16 +22,19 @@ namespace BusinessLogicLayer.Services.Implementations
             _configuration = configuration;
 
             // Load VNPAY configuration from environment variables
-            _vnp_TmnCode = Environment.GetEnvironmentVariable("VNPAY_TMN_CODE") ?? "2QXUI4J4";
-            _vnp_HashSecret = Environment.GetEnvironmentVariable("VNPAY_HASH_SECRET") ?? "OHVTVTPZNEJ6X6FUVXTZCRJNPUBOMVTZ";
+            _vnp_TmnCode = Environment.GetEnvironmentVariable("VNPAY_TMN_CODE") ?? "ok";
+            _vnp_HashSecret = Environment.GetEnvironmentVariable("VNPAY_HASH_SECRET") ?? "ok";
             _vnp_Url = Environment.GetEnvironmentVariable("VNPAY_BASE_URL") ?? "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
         }
         public async Task<string> CreatePaymentUrlAsync(string userId, string courseId, decimal amount, string returnUrl)
         {
             try
             {
+                Console.WriteLine($"Creating payment URL for User: {userId}, Course: {courseId}, Amount: {amount}");
+
                 // Generate transaction ID
                 var transactionId = GenerateTransactionId();
+                Console.WriteLine($"Generated Transaction ID: {transactionId}");
 
                 // Create payment transaction record
                 var transaction = new PaymentTransaction
@@ -48,9 +51,19 @@ namespace BusinessLogicLayer.Services.Implementations
                 };
 
                 _context.PaymentTransactions.Add(transaction);
-                await _context.SaveChangesAsync();                // Get course info for description
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"Created transaction record in database: {transactionId}");
+
+                // Get course info for description
                 var course = await _context.Courses.FindAsync(courseId);
+                Console.WriteLine($"Found course: {course?.CourseName ?? "Course not found"}");
+
                 var orderInfo = $"Course payment: {course?.CourseName ?? "Course"}";
+
+                // Log VNPAY configuration
+                Console.WriteLine("VNPAY Configuration:");
+                Console.WriteLine($"URL: {_vnp_Url}");
+                Console.WriteLine($"TMN Code: {_vnp_TmnCode}");
 
                 // Create VNPAY payment URL
                 var paymentUrl = VnPayHelper.CreatePaymentUrl(
@@ -66,10 +79,19 @@ namespace BusinessLogicLayer.Services.Implementations
                     DateTime.Now.ToString("yyyyMMddHHmmss")
                 );
 
+                Console.WriteLine($"Generated VNPAY URL: {paymentUrl}");
                 return paymentUrl;
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"ERROR in CreatePaymentUrlAsync:");
+                Console.WriteLine($"Exception Type: {ex.GetType().Name}");
+                Console.WriteLine($"Message: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
                 throw new Exception($"Error creating payment URL: {ex.Message}");
             }
         }
@@ -77,8 +99,21 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
+                Console.WriteLine($"Creating top-up payment URL for User: {userId}, Amount: {amount}");
+
+                // Validate amount
+                if (amount <= 0)
+                {
+                    throw new ArgumentException("Amount must be greater than 0");
+                }
+
+                // Convert amount to VND (remove decimal points)
+                long vnpayAmount = (long)amount;
+                Console.WriteLine($"Converted amount for VNPAY: {vnpayAmount}");
+
                 // Generate transaction ID
                 var transactionId = GenerateTransactionId();
+                Console.WriteLine($"Generated Transaction ID: {transactionId}");
 
                 // Create payment transaction record for top-up
                 var transaction = new PaymentTransaction
@@ -86,7 +121,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     TransactionId = transactionId,
                     UserId = userId,
                     Amount = amount,
-                    TransactionType = "topup", // Use topup type instead of course payment
+                    TransactionType = "topup",
                     TransactionStatus = "PENDING",
                     PaymentGateway = "VNPAY",
                     CurrencyCode = "VND",
@@ -95,8 +130,18 @@ namespace BusinessLogicLayer.Services.Implementations
                 };
 
                 _context.PaymentTransactions.Add(transaction);
-                await _context.SaveChangesAsync();                // Create order description for top-up
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"Created top-up transaction record in database: {transactionId}");
+
                 var orderInfo = $"Account top up - {amount:N0} VND";
+
+                // Log VNPAY configuration
+                Console.WriteLine("VNPAY Configuration for top-up:");
+                Console.WriteLine($"URL: {_vnp_Url}");
+                Console.WriteLine($"TMN Code: {_vnp_TmnCode}");
+
+                string createDate = DateTime.Now.ToString("yyyyMMddHHmmss");
+                Console.WriteLine($"Create Date: {createDate}");
 
                 // Create VNPAY payment URL
                 var paymentUrl = VnPayHelper.CreatePaymentUrl(
@@ -105,17 +150,26 @@ namespace BusinessLogicLayer.Services.Implementations
                     _vnp_HashSecret,
                     transactionId,
                     orderInfo,
-                    (long)(amount * 100), // VNPAY uses amount in VND * 100
+                    vnpayAmount,
                     "other",
                     "vi",
                     returnUrl,
-                    DateTime.Now.ToString("yyyyMMddHHmmss")
+                    createDate
                 );
 
+                Console.WriteLine($"Generated VNPAY URL for top-up: {paymentUrl}");
                 return paymentUrl;
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"ERROR in CreateTopUpPaymentUrlAsync:");
+                Console.WriteLine($"Exception Type: {ex.GetType().Name}");
+                Console.WriteLine($"Message: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
                 throw new Exception($"Error creating top-up payment URL: {ex.Message}");
             }
         }
@@ -131,6 +185,17 @@ namespace BusinessLogicLayer.Services.Implementations
                     Console.WriteLine($"{kvp.Key}: {kvp.Value}");
                 }
 
+                // Check if required parameters are present
+                if (!vnpayData.ContainsKey("vnp_ResponseCode") || !vnpayData.ContainsKey("vnp_TxnRef"))
+                {
+                    Console.WriteLine("Missing required parameters in return data");
+                    return new PaymentResponseDto
+                    {
+                        Success = false,
+                        Message = "Invalid payment return data"
+                    };
+                }
+
                 var isValidSignature = VnPayHelper.ValidateSignature(vnpayData, _vnp_HashSecret);
 
                 if (!isValidSignature)
@@ -139,7 +204,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     return new PaymentResponseDto
                     {
                         Success = false,
-                        Message = "Chữ ký không hợp lệ"
+                        Message = "Invalid signature"
                     };
                 }
 
@@ -159,7 +224,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     return new PaymentResponseDto
                     {
                         Success = false,
-                        Message = "Không tìm thấy giao dịch"
+                        Message = "Transaction not found"
                     };
                 }
 
@@ -171,9 +236,12 @@ namespace BusinessLogicLayer.Services.Implementations
                     transaction.PaymentGatewayRef = vnp_TransactionNo;
                     transaction.TransactionUpdatedAt = DateTime.Now;
 
-                    // Update user points (1 VND = 1 point)                    await UpdateUserPointsAsync(transaction.UserId, transaction.Amount);
+                    // Update user points (1 VND = 1 point)
+                    await UpdateUserPointsAsync(transaction.UserId, transaction.Amount);
 
-                    await _context.SaveChangesAsync(); return new PaymentResponseDto
+                    await _context.SaveChangesAsync();
+
+                    return new PaymentResponseDto
                     {
                         Success = true,
                         Message = "Payment successful",
@@ -190,6 +258,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     // Payment failed
                     transaction.TransactionStatus = "FAILED";
                     transaction.TransactionUpdatedAt = DateTime.Now;
+
                     await _context.SaveChangesAsync();
 
                     return new PaymentResponseDto
@@ -202,6 +271,8 @@ namespace BusinessLogicLayer.Services.Implementations
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error processing payment return: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return new PaymentResponseDto
                 {
                     Success = false,
@@ -214,17 +285,38 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                var user = await _context.Accounts.FindAsync(userId);
-                if (user == null) return false;
+                Console.WriteLine($"Attempting to update points for User: {userId}, Points to add: {points}");
 
-                user.PaymentPoint = (user.PaymentPoint ?? 0) + points;
+                var user = await _context.Accounts.FindAsync(userId);
+                if (user == null)
+                {
+                    Console.WriteLine($"ERROR: User not found with ID: {userId}");
+                    return false;
+                }
+
+                decimal currentPoints = user.PaymentPoint ?? 0;
+                user.PaymentPoint = currentPoints + points;
                 user.AccountUpdatedAt = DateTime.Now;
 
+                Console.WriteLine($"Updating user points:");
+                Console.WriteLine($"Current points: {currentPoints}");
+                Console.WriteLine($"Points to add: {points}");
+                Console.WriteLine($"New total points: {user.PaymentPoint}");
+
                 await _context.SaveChangesAsync();
+                Console.WriteLine($"Successfully updated points for user {userId}");
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"ERROR in UpdateUserPointsAsync:");
+                Console.WriteLine($"Exception Type: {ex.GetType().Name}");
+                Console.WriteLine($"Message: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
                 return false;
             }
         }

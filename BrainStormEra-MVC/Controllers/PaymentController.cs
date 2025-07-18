@@ -128,16 +128,19 @@ namespace BrainStormEra_MVC.Controllers
                     return Json(new { success = false, message = "Minimum top-up amount is 10,000 VND" });
                 }
 
-                // Create return URL
-                var returnUrl = Url.Action("PaymentReturn", "Payment", null, Request.Scheme);
+                // Create return URL with explicit scheme and host
+                var returnUrl = $"{Request.Scheme}://{Request.Host}/Payment/PaymentReturn";
+                Console.WriteLine($"Generated return URL: {returnUrl}");
 
                 // Create payment URL for top-up (no courseId needed)
-                var paymentUrl = await _paymentService.CreateTopUpPaymentUrlAsync(userId, amount, returnUrl!);
+                var paymentUrl = await _paymentService.CreateTopUpPaymentUrlAsync(userId, amount, returnUrl);
 
                 return Json(new { success = true, paymentUrl = paymentUrl });
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error in CreateTopUpPayment: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return Json(new { success = false, message = ex.Message });
             }
         }
