@@ -182,20 +182,22 @@
                             var isSelected = Model.SelectedCategories?.Contains(category.CategoryId) ?? false;
                             if (isSelected)
                             {
-                                <option value="@category.CategoryId" data-icon="@category.CategoryIcon" selected>@category.CategoryName</option>
+                                <option value="@category.CategoryId" data-icon="@category.CategoryIcon" selected>
+                                    @category.CategoryName</option>
                             }
                             else
                             {
-                                <option value="@category.CategoryId" data-icon="@category.CategoryIcon">@category.CategoryName</option>
+                                <option value="@category.CategoryId" data-icon="@category.CategoryIcon">@category.CategoryName
+                                </option>
                             }
                         }
                     </select>
                     <span asp-validation-for="SelectedCategories" class="text-danger"></span>
-                    
+
                     <div class="selected-count mt-3">
                         <span id="categoryCount">0</span> categories selected
                     </div>
-                    
+
                     <!-- Hidden inputs for selected categories -->
                     <div id="selectedCategoriesInputs"></div>
 
@@ -208,82 +210,82 @@
 
             <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
             <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-            
+
             <style>
-            .selected-count {
-                color: #666;
-                font-size: 0.9em;
-            }
+                .selected-count {
+                    color: #666;
+                    font-size: 0.9em;
+                }
 
-            #categoryCount {
-                font-weight: bold;
-                color: #007bff;
-            }
+                #categoryCount {
+                    font-weight: bold;
+                    color: #007bff;
+                }
 
-            .select2-container {
-                width: 100% !important;
-            }
+                .select2-container {
+                    width: 100% !important;
+                }
 
-            .select2-selection--multiple {
-                border: 1px solid #ced4da !important;
-                border-radius: 0.375rem !important;
-                min-height: 38px !important;
-            }
+                .select2-selection--multiple {
+                    border: 1px solid #ced4da !important;
+                    border-radius: 0.375rem !important;
+                    min-height: 38px !important;
+                }
 
-            .select2-container .select2-selection--multiple .select2-selection__choice {
-                background-color: #007bff;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 5px 10px;
-                margin: 3px;
-            }
+                .select2-container .select2-selection--multiple .select2-selection__choice {
+                    background-color: #007bff;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 5px 10px;
+                    margin: 3px;
+                }
 
-            .select2-container .select2-selection--multiple .select2-selection__choice__remove {
-                color: white;
-                margin-right: 5px;
-            }
+                .select2-container .select2-selection--multiple .select2-selection__choice__remove {
+                    color: white;
+                    margin-right: 5px;
+                }
             </style>
 
             <script>
-            $(document).ready(function() {
-                $('#categorySelect').select2({
-                    maximumSelectionLength: 5,
-                    placeholder: 'Select up to 5 categories',
-                    allowClear: true,
-                    templateResult: formatCategory,
-                    templateSelection: formatCategory
-                });
-
-                $('#categorySelect').on('change', function() {
-                    const selectedCount = $(this).val() ? $(this).val().length : 0;
-                    $('#categoryCount').text(selectedCount);
-                    
-                    // Update hidden inputs
-                    updateHiddenInputs($(this).val());
-                });
-
-                // Initialize count
-                const initialCount = $('#categorySelect').val() ? $('#categorySelect').val().length : 0;
-                $('#categoryCount').text(initialCount);
-            });
-
-            function formatCategory(category) {
-                if (!category.id) return category.text;
-                const icon = $(category.element).data('icon');
-                return $('<span><i class="' + icon + '"></i> ' + category.text + '</span>');
-            }
-
-            function updateHiddenInputs(selectedValues) {
-                const container = $('#selectedCategoriesInputs');
-                container.empty();
-                
-                if (selectedValues) {
-                    selectedValues.forEach(value => {
-                        container.append(`<input type="hidden" name="SelectedCategories" value="${value}" />`);
+                $(document).ready(function () {
+                    $('#categorySelect').select2({
+                        maximumSelectionLength: 5,
+                        placeholder: 'Select up to 5 categories',
+                        allowClear: true,
+                        templateResult: formatCategory,
+                        templateSelection: formatCategory
                     });
+
+                    $('#categorySelect').on('change', function () {
+                        const selectedCount = $(this).val() ? $(this).val().length : 0;
+                        $('#categoryCount').text(selectedCount);
+
+                        // Update hidden inputs
+                        updateHiddenInputs($(this).val());
+                    });
+
+                    // Initialize count
+                    const initialCount = $('#categorySelect').val() ? $('#categorySelect').val().length : 0;
+                    $('#categoryCount').text(initialCount);
+                });
+
+                function formatCategory(category) {
+                    if (!category.id) return category.text;
+                    const icon = $(category.element).data('icon');
+                    return $('<span><i class="' + icon + '"></i> ' + category.text + '</span>');
                 }
-            }
+
+                function updateHiddenInputs(selectedValues) {
+                    const container = $('#selectedCategoriesInputs');
+                    container.empty();
+
+                    if (selectedValues) {
+                        selectedValues.forEach(value => {
+                            container.append(`<input type="hidden" name="SelectedCategories" value="${value}" />`);
+                        });
+                    }
+                }
             </script>
 
             <!-- Course Details Section -->
