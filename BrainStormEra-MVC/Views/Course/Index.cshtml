@@ -200,194 +200,147 @@
 
         <!-- Course Grid -->
         <div class="courses-section" id="coursesContainer">
+            <div class="row g-4" id="coursesGrid">
             @if (Model.Courses.Any())
             {
-                <div class="row g-4" id="coursesGrid">
-                    @foreach (var course in Model.Courses)
-                    {
-                        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
-                            <div class="course-card" data-course-id="@course.CourseId">
-                                <div class="course-image">
-                                    <img src="@course.CoursePicture" alt="@course.CourseName" loading="lazy" 
-                                         onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
-                                    @if (course.Price > 0)
+                @foreach (var course in Model.Courses)
+                {
+                    <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                        <div class="course-card" data-course-id="@course.CourseId">
+                            <div class="course-image">
+                                <img src="@course.CoursePicture" alt="@course.CourseName" loading="lazy" 
+                                     onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
+                                @if (course.Price > 0)
+                                {
+                                    <div class="course-price">$@course.Price.ToString("N0")</div>
+                                }
+                                else
+                                {
+                                    <div class="course-price free">Free</div>
+                                }
+                            </div>
+                            <div class="course-details">
+                                <div class="course-categories">
+                                    @foreach (var category in course.CourseCategories.Take(2))
                                     {
-                                        <div class="course-price">$@course.Price.ToString("N0")</div>
+                                        <span class="category-badge">@category</span>
                                     }
-                                    else
-                                    {
-                                        <div class="course-price free">Free</div>
-                                    }
-
                                 </div>
-                                <div class="course-details">
-                                    <div class="course-categories">
-                                        @foreach (var category in course.CourseCategories.Take(2))
-                                        {
-                                            <span class="category-badge">@category</span>
-                                        }
+                                <h3 class="course-title">@course.CourseName</h3>
+                                <p class="course-description">@(course.Description?.Length > 100 ? course.Description.Substring(0, 100) + "..." : course.Description)</p>
+                                <div class="course-meta">
+                                    <div class="instructor">
+                                        <i class="fas fa-user"></i>
+                                        <span>@course.CreatedBy</span>
                                     </div>
-                                    <h3 class="course-title">@course.CourseName</h3>
-                                    <p class="course-description">@(course.Description?.Length > 100 ? course.Description.Substring(0, 100) + "..." : course.Description)</p>
-                                    <div class="course-meta">
-                                        <div class="instructor">
-                                            <i class="fas fa-user"></i>
-                                            <span>@course.CreatedBy</span>
-                                        </div>
-                                        <div class="rating">
-                                            @{
-                                                var courseRating = (double)course.StarRating;
-                                                // Special logic: ratings 0.1-0.9 show as half star only
-                                                double roundedCourseRating;
-                                                if (courseRating > 0 && courseRating < 1)
-                                                {
-                                                    roundedCourseRating = 0.5; // Show only half star for ratings 0.1-0.9
-                                                }
-                                                else
-                                                {
-                                                    roundedCourseRating = Math.Round(courseRating * 2) / 2; // Round to nearest 0.5 for other values
-                                                }
-                                            }
-                                            @for (int i = 1; i <= 5; i++)
+                                    <div class="rating">
+                                        @{
+                                            var courseRating = (double)course.StarRating;
+                                            double roundedCourseRating;
+                                            if (courseRating > 0 && courseRating < 1)
                                             {
-                                                if (i <= Math.Floor(roundedCourseRating))
-                                                {
-                                                    // Full star
-                                                    <span class="star-combined">
-                                                        <i class="fas fa-star-half-alt star-left"></i>
-                                                        <i class="fas fa-star-half-alt star-right"></i>
-                                                    </span>
-                                                }
-                                                else if (i - 0.5 <= roundedCourseRating)
-                                                {
-                                                    // Half star
-                                                    <span class="star-half">
-                                                        <i class="fas fa-star-half-alt"></i>
-                                                    </span>
-                                                }
-                                                else
-                                                {
-                                                    // Empty star
-                                                    <span class="star-combined star-empty">
-                                                        <i class="fas fa-star-half-alt star-left"></i>
-                                                        <i class="fas fa-star-half-alt star-right"></i>
-                                                    </span>
-                                                }
-                                            }
-                                            <span class="rating-text">(@course.StarRating.ToString("F1"))</span>
-                                        </div>
-                                    </div>
-                                    <p class="course-students">@course.EnrollmentCount enrolled</p>
-                                    <div class="course-actions">
-                                        <a href="@Url.Action("Details", "Course", new { id = course.CourseId })" 
-                                           class="btn btn-sm btn-outline-info" title="View Course Details">
-                                            <i class="fas fa-eye"></i> Details
-                                        </a>
-                                        @if (ViewBag.IsAuthenticated == true && ViewBag.UserRole == "Learner")
-                                        {
-                                            @if (course.Price > 0)
-                                            {
-                                                <button class="btn btn-sm btn-outline-primary" onclick="enrollInCourse('@course.CourseId')" title="Purchase Course">
-                                                    <i class="fas fa-shopping-cart"></i> Buy Now
-                                                </button>
+                                                roundedCourseRating = 0.5;
                                             }
                                             else
                                             {
-                                                <button class="btn btn-sm btn-outline-success" onclick="enrollInCourse('@course.CourseId')" title="Enroll for Free">
-                                                    <i class="fas fa-play"></i> Enroll Free
-                                                </button>
-                                            }                        }
-                        else if (ViewBag.IsAuthenticated == true && (ViewBag.UserRole == "Instructor" || ViewBag.UserRole == "Admin"))
-                        {
-                            @* Show status only for instructor and admin roles *@
-                            @if (course.ApprovalStatus?.ToLower() == "pending")
-                            {
-                                <span class="btn btn-sm btn-warning" title="Course Status">
-                                    <i class="fas fa-clock"></i> Pending
-                                </span>
-                            }
-                            else if (course.ApprovalStatus?.ToLower() == "denied" || course.ApprovalStatus?.ToLower() == "rejected")
-                            {
-                                <span class="btn btn-sm btn-danger" title="Course Status">
-                                    <i class="fas fa-times-circle"></i> Rejected
-                                </span>
-                            }
-                            else if (course.CourseStatus == 4)
-                            {
-                                <span class="btn btn-sm btn-secondary" title="Course Status">
-                                    <i class="fas fa-trash"></i> Deleted
-                                </span>
-                            }
-                            else if (course.ApprovalStatus?.ToLower() == "draft")
-                            {
-                                <span class="btn btn-sm btn-info" title="Course Status">
-                                    <i class="fas fa-edit"></i> Draft
-                                </span>
-                            }
-                            else if (course.ApprovalStatus?.ToLower() == "approved")
-                            {
-                                <span class="btn btn-sm btn-success" title="Course Status">
-                                    <i class="fas fa-check-circle"></i> Approved
-                                </span>
-                            }
-                            else if (string.IsNullOrEmpty(course.ApprovalStatus))
-                            {
-                                <span class="btn btn-sm btn-outline-info" title="Course Status">
-                                    <i class="fas fa-edit"></i> Draft
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="btn btn-sm btn-outline-secondary" title="Course Status">
-                                    <i class="fas fa-question-circle"></i> @(course.ApprovalStatus ?? "Unknown")
-                                </span>
-                            }
-                        }
+                                                roundedCourseRating = Math.Round(courseRating * 2) / 2;
+                                            }
+                                        }
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            if (i <= Math.Floor(roundedCourseRating))
+                                            {
+                                                <span class="star-combined">
+                                                    <i class="fas fa-star-half-alt star-left"></i>
+                                                    <i class="fas fa-star-half-alt star-right"></i>
+                                                </span>
+                                            }
+                                            else if (i - 0.5 <= roundedCourseRating)
+                                            {
+                                                <span class="star-half">
+                                                    <i class="fas fa-star-half-alt"></i>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="star-combined star-empty">
+                                                    <i class="fas fa-star-half-alt star-left"></i>
+                                                    <i class="fas fa-star-half-alt star-right"></i>
+                                                </span>
+                                            }
+                                        }
+                                        <span class="rating-text">(@course.StarRating.ToString("F1"))</span>
                                     </div>
                                 </div>
+                                <p class="course-students">@course.EnrollmentCount enrolled</p>
+                                <div class="course-actions">
+                                    <a href="@Url.Action("Details", "Course", new { id = course.CourseId })" 
+                                       class="btn btn-sm btn-outline-info" title="View Course Details">
+                                        <i class="fas fa-eye"></i> Details
+                                    </a>
+                                    @if (ViewBag.IsAuthenticated == true && ViewBag.UserRole == "Learner")
+                                    {
+                                        @if (course.Price > 0)
+                                        {
+                                            <button class="btn btn-sm btn-outline-primary" onclick="enrollInCourse('@course.CourseId')" title="Purchase Course">
+                                                <i class="fas fa-shopping-cart"></i> Buy Now
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-outline-success" onclick="enrollInCourse('@course.CourseId')" title="Enroll for Free">
+                                                <i class="fas fa-play"></i> Enroll Free
+                                            </button>
+                                        }
+                                    }
+                                    else if (ViewBag.IsAuthenticated == true && (ViewBag.UserRole == "Instructor" || ViewBag.UserRole == "Admin"))
+                                    {
+                                        @* Show status only for instructor and admin roles *@
+                                        @if (course.ApprovalStatus?.ToLower() == "pending")
+                                        {
+                                            <span class="btn btn-sm btn-warning" title="Course Status">
+                                                <i class="fas fa-clock"></i> Pending
+                                            </span>
+                                        }
+                                        else if (course.ApprovalStatus?.ToLower() == "denied" || course.ApprovalStatus?.ToLower() == "rejected")
+                                        {
+                                            <span class="btn btn-sm btn-danger" title="Course Status">
+                                                <i class="fas fa-times-circle"></i> Rejected
+                                            </span>
+                                        }
+                                        else if (course.CourseStatus == 4)
+                                        {
+                                            <span class="btn btn-sm btn-secondary" title="Course Status">
+                                                <i class="fas fa-trash"></i> Deleted
+                                            </span>
+                                        }
+                                        else if (course.ApprovalStatus?.ToLower() == "draft")
+                                        {
+                                            <span class="btn btn-sm btn-info" title="Course Status">
+                                                <i class="fas fa-edit"></i> Draft
+                                            </span>
+                                        }
+                                        else if (course.ApprovalStatus?.ToLower() == "approved")
+                                        {
+                                            <span class="btn btn-sm btn-success" title="Course Status">
+                                                <i class="fas fa-check-circle"></i> Approved
+                                            </span>
+                                        }
+                                        else if (string.IsNullOrEmpty(course.ApprovalStatus))
+                                        {
+                                            <span class="btn btn-sm btn-outline-info" title="Course Status">
+                                                <i class="fas fa-edit"></i> Draft
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="btn btn-sm btn-outline-secondary" title="Course Status">
+                                                <i class="fas fa-question-circle"></i> @(course.ApprovalStatus ?? "Unknown")
+                                            </span>
+                                        }
+                                    }
+                                </div>
                             </div>
-                        </div>
-                    }
-                </div>
-
-                <!-- Pagination -->
-                @if (Model.TotalPages > 1)
-                {
-                    <div class="pagination-wrapper" id="paginationWrapper">
-                        <nav aria-label="Course pagination">
-                            <ul class="pagination justify-content-center">
-                                @if (Model.HasPreviousPage)
-                                {
-                                    <li class="page-item">
-                                        <button class="page-link pagination-btn" data-page="@(Model.CurrentPage - 1)">
-                                            <i class="fas fa-chevron-left"></i>
-                                            Previous
-                                        </button>
-                                    </li>
-                                }
-
-                                @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
-                                {
-                                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                                        <button class="page-link pagination-btn" data-page="@i">
-                                            @i
-                                        </button>
-                                    </li>
-                                }
-
-                                @if (Model.HasNextPage)
-                                {
-                                    <li class="page-item">
-                                        <button class="page-link pagination-btn" data-page="@(Model.CurrentPage + 1)">
-                                            Next
-                                            <i class="fas fa-chevron-right"></i>
-                                        </button>
-                                    </li>
-                                }
-                            </ul>
-                        </nav>
-                        <div class="pagination-info">
-                            Showing @((Model.CurrentPage - 1) * Model.PageSize + 1) to @(Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalCourses)) of @Model.TotalCourses courses
                         </div>
                     </div>
                 }
@@ -413,6 +366,13 @@
                     </div>
                 </div>
             }
+            </div>
+            <div id="lazyLoadingIndicator" class="loading-indicator" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <span class="loading-text">Loading more courses...</span>
+            </div>
         </div>
     </div>    
     <!-- Footer -->
@@ -429,6 +389,107 @@
     <script src="~/js/components/loader.js"></script>
     <script src="~/js/pages/Course/courses.js"></script>
     <script src="~/js/pages/Course/course-search.js"></script>
+    <script>
+        // Infinite scroll variables
+        let currentPage = 1;
+        let isLoading = false;
+        let hasNextPage = true;
+        const pageSize = 12;
+
+        function appendCourses(courses) {
+            const grid = document.getElementById('coursesGrid');
+            courses.forEach(course => {
+                const col = document.createElement('div');
+                col.className = 'col-lg-4 col-md-6 col-sm-12 mb-4';
+                col.innerHTML = `
+                <div class="course-card" data-course-id="${course.courseId}">
+                    <div class="course-image">
+                        <img src="${course.coursePicture}" alt="${course.courseName}" loading="lazy" onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
+                        ${course.price > 0 ? `<div class="course-price">$${course.price.toLocaleString()}</div>` : `<div class="course-price free">Free</div>`}
+                    </div>
+                    <div class="course-details">
+                        <div class="course-categories">
+                            ${(course.courseCategories || []).slice(0,2).map(cat => `<span class="category-badge">${cat}</span>`).join('')}
+                        </div>
+                        <h3 class="course-title">${course.courseName}</h3>
+                        <p class="course-description">${course.description && course.description.length > 100 ? course.description.substring(0, 100) + '...' : course.description || ''}</p>
+                        <div class="course-meta">
+                            <div class="instructor">
+                                <i class="fas fa-user"></i>
+                                <span>${course.createdBy}</span>
+                            </div>
+                            <div class="rating">
+                                <span class="rating-text">(${Number(course.starRating).toFixed(1)})</span>
+                            </div>
+                        </div>
+                        <p class="course-students">${course.enrollmentCount} enrolled</p>
+                        <div class="course-actions">
+                            <a href="/Course/Details/${course.courseId}" class="btn btn-sm btn-outline-info" title="View Course Details">
+                                <i class="fas fa-eye"></i> Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                `;
+                grid.appendChild(col);
+            });
+        }
+
+        function loadMoreCourses() {
+            if (isLoading || !hasNextPage) return;
+            isLoading = true;
+            document.getElementById('lazyLoadingIndicator').style.display = 'block';
+            currentPage++;
+            const search = document.getElementById('courseSearchInput')?.value || '';
+            const category = document.getElementById('categoryFilter')?.value || '';
+            const price = document.getElementById('priceFilter')?.value || '';
+            const difficulty = document.getElementById('difficultyFilter')?.value || '';
+            const sortBy = document.getElementById('sortSelect')?.value || 'newest';
+            fetch(`/Course/SearchCourses?courseSearch=${encodeURIComponent(search)}&categorySearch=${encodeURIComponent(category)}&page=${currentPage}&pageSize=${pageSize}&sortBy=${sortBy}&price=${price}&difficulty=${difficulty}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.courses && data.courses.length > 0) {
+                        appendCourses(data.courses);
+                        hasNextPage = data.hasNextPage;
+                    } else {
+                        hasNextPage = false;
+                    }
+                })
+                .finally(() => {
+                    isLoading = false;
+                    document.getElementById('lazyLoadingIndicator').style.display = 'none';
+                });
+        }
+
+        window.addEventListener('scroll', function() {
+            if (!hasNextPage || isLoading) return;
+            const scrollY = window.scrollY || window.pageYOffset;
+            const viewportHeight = window.innerHeight;
+            const fullHeight = document.body.offsetHeight;
+            if (scrollY + viewportHeight + 200 >= fullHeight) {
+                loadMoreCourses();
+            }
+        });
+
+        // Reset grid and reload when filter/search changes
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('courseSearchInput');
+            const categoryFilter = document.getElementById('categoryFilter');
+            const priceFilter = document.getElementById('priceFilter');
+            const difficultyFilter = document.getElementById('difficultyFilter');
+            const sortSelect = document.getElementById('sortSelect');
+            [searchInput, categoryFilter, priceFilter, difficultyFilter, sortSelect].forEach(el => {
+                if (el) {
+                    el.addEventListener('change', function() {
+                        currentPage = 1;
+                        hasNextPage = true;
+                        document.getElementById('coursesGrid').innerHTML = '';
+                        loadMoreCourses();
+                    });
+                }
+            });
+        });
+    </script>
 
     @* Chatbot Script for authenticated users *@
     @if (User.Identity?.IsAuthenticated == true)
