@@ -682,7 +682,10 @@
                                                                             </span>
                                                                             @if (ViewBag.IsAuthor == true)
                                                                             {
-                                                                                <div class="lesson-actions">
+                                                                                <div class="lesson-actions d-flex align-items-center">
+                                                                                    <a href="/Quiz/Details/@quiz.QuizId" class="btn btn-sm btn-outline-primary me-1" title="Edit Quiz">
+                                                                                        <i class="fas fa-edit"></i>
+                                                                                    </a>
                                                                                     <a href="@Url.Action("ManageQuestions", "Quiz", new { quizId = quiz.QuizId })" 
                                                                                        class="btn btn-sm btn-outline-primary me-1"
                                                                                        title="Manage Questions">

@@ -152,7 +152,7 @@ namespace BrainStormEra_MVC.Controllers
                 TempData["SuccessMessage"] = result.SuccessMessage;
             }
 
-            return RedirectToAction(result.RedirectAction, result.QuizId);
+            return RedirectToAction("Details", "Quiz", new { id = result.QuizId });
         }
 
         // POST: Quiz/Delete/5
