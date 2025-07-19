@@ -24,14 +24,14 @@ namespace BusinessLogicLayer.Services.Implementations
     {
         private readonly ICourseService _courseService;
         private readonly ICourseImageService _courseImageService;
-        private readonly ILessonService _lessonService;
+        private readonly LessonServiceImpl _lessonService;
         private readonly ILogger<CourseServiceImpl> _logger;
         private readonly IServiceProvider _serviceProvider;
 
         public CourseServiceImpl(
             ICourseService courseService,
             ICourseImageService courseImageService,
-            ILessonService lessonService,
+            LessonServiceImpl lessonService,
             ILogger<CourseServiceImpl> logger,
             IServiceProvider serviceProvider)
         {

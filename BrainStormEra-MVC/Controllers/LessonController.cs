@@ -12,13 +12,11 @@ namespace BrainStormEra_MVC.Controllers
     public class LessonController : BaseController
     {
         private readonly LessonServiceImpl _lessonServiceImpl;
-        private readonly ILessonService _lessonService;
         private readonly ILogger<LessonController> _logger;
 
-        public LessonController(LessonServiceImpl lessonServiceImpl, ILessonService lessonService, ILogger<LessonController> logger) : base()
+        public LessonController(LessonServiceImpl lessonServiceImpl, ILogger<LessonController> logger) : base()
         {
             _lessonServiceImpl = lessonServiceImpl;
-            _lessonService = lessonService;
             _logger = logger;
         }
 
@@ -413,7 +411,33 @@ namespace BrainStormEra_MVC.Controllers
             try
             {
                 var result = await _lessonServiceImpl.MarkLessonAsCompletedAsync(userId, lessonId);
-                return Json(new { success = result.Success, message = result.Message });
+
+                if (result)
+                {
+                    // Also update course progress in enrollment table
+                    try
+                    {
+                        // Get the course ID from the lesson
+                        var lesson = await _lessonServiceImpl.GetLessonWithDetailsAsync(lessonId);
+                        if (lesson?.Chapter?.CourseId != null)
+                        {
+                            var courseId = lesson.Chapter.CourseId;
+                            var progressPercentage = await _lessonServiceImpl.GetLessonCompletionPercentageAsync(userId, courseId);
+                            await _lessonServiceImpl.UpdateEnrollmentProgressAsync(userId, courseId, progressPercentage, lessonId);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to update course progress after completing lesson {LessonId} for user {UserId}", lessonId, userId);
+                        // Don't fail the entire operation if progress update fails
+                    }
+
+                    return Json(new { success = true, message = "Lesson completed successfully!" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Failed to mark lesson as completed. Please try again." });
+                }
             }
             catch (Exception ex)
             {
@@ -441,7 +465,7 @@ namespace BrainStormEra_MVC.Controllers
                 }
 
                 // Get course progress
-                var courseProgress = await _lessonService.GetLessonCompletionPercentageAsync(CurrentUserId, result.ViewModel.CourseId);
+                var courseProgress = await _lessonServiceImpl.GetLessonCompletionPercentageAsync(CurrentUserId, result.ViewModel.CourseId);
 
                 return Json(new
                 {

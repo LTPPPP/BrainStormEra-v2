@@ -18,13 +18,13 @@ namespace BusinessLogicLayer.Services.Implementations
     public class QuizServiceImpl : IQuizService
     {
         private readonly BrainStormEraContext _context;
-        private readonly ILessonService _lessonService;
+        private readonly LessonServiceImpl _lessonService;
         private readonly IAchievementUnlockService _achievementUnlockService;
         private readonly ILogger<QuizServiceImpl> _logger;
 
         public QuizServiceImpl(
             BrainStormEraContext context,
-            ILessonService lessonService,
+            LessonServiceImpl lessonService,
             IAchievementUnlockService achievementUnlockService,
             ILogger<QuizServiceImpl> logger)
         {
