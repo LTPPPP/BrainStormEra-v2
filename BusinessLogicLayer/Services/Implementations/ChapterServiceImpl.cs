@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Models.ViewModels;
 using System.Security.Claims;
+using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
+using System;
+using System.Linq;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
@@ -11,17 +15,286 @@ namespace BusinessLogicLayer.Services.Implementations
     /// This class sits between Controller and Service layer to handle authentication, 
     /// authorization, validation, and error handling.
     /// </summary>
-    public class ChapterServiceImpl
+    public class ChapterServiceImpl : IChapterService
     {
-        private readonly IChapterService _chapterService;
+        private readonly IChapterRepo _chapterRepo;
+        private readonly ICourseRepo _courseRepo;
         private readonly ILogger<ChapterServiceImpl> _logger;
 
         public ChapterServiceImpl(
-            IChapterService chapterService,
+            IChapterRepo chapterRepo,
+            ICourseRepo courseRepo,
             ILogger<ChapterServiceImpl> logger)
         {
-            _chapterService = chapterService;
+            _chapterRepo = chapterRepo;
+            _courseRepo = courseRepo;
             _logger = logger;
+        }
+
+        // IChapterService Implementation Methods
+        public async Task<string> CreateChapterAsync(CreateChapterViewModel model, string authorId)
+        {
+            try
+            {
+                // Verify that the user is the author of the course
+                var course = await _courseRepo.GetCourseWithChaptersAsync(model.CourseId, authorId);
+
+                if (course == null)
+                {
+                    _logger.LogWarning("Course not found or user not authorized to add chapters to course {CourseId}", model.CourseId);
+                    throw new UnauthorizedAccessException("You are not authorized to add chapters to this course.");
+                }
+
+                // Additional validation for chapter order uniqueness
+                if (course.Chapters.Any(c => c.ChapterOrder == model.ChapterOrder))
+                {
+                    throw new ArgumentException($"Chapter order {model.ChapterOrder} is already taken in this course.");
+                }
+
+                // Validate chapter name uniqueness
+                if (course.Chapters.Any(c => string.Equals(c.ChapterName.Trim(), model.ChapterName.Trim(), StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new ArgumentException($"A chapter with the name '{model.ChapterName}' already exists in this course.");
+                }
+
+                // Validate prerequisite chapter exists and is before this chapter
+                if (model.IsLocked && !string.IsNullOrEmpty(model.UnlockAfterChapterId))
+                {
+                    var prerequisiteChapter = course.Chapters.FirstOrDefault(c => c.ChapterId == model.UnlockAfterChapterId);
+                    if (prerequisiteChapter == null)
+                    {
+                        throw new ArgumentException("Selected prerequisite chapter does not exist.");
+                    }
+                    if (prerequisiteChapter.ChapterOrder >= model.ChapterOrder)
+                    {
+                        throw new ArgumentException("Prerequisite chapter must come before this chapter in the sequence.");
+                    }
+                }
+
+                var chapterId = Guid.NewGuid().ToString();
+
+                var chapter = new Chapter
+                {
+                    ChapterId = chapterId,
+                    CourseId = model.CourseId,
+                    ChapterName = model.ChapterName.Trim(),
+                    ChapterDescription = string.IsNullOrEmpty(model.ChapterDescription) ? null : model.ChapterDescription.Trim(),
+                    ChapterOrder = model.ChapterOrder,
+                    ChapterStatus = 1, // Active status
+                    IsLocked = model.IsLocked,
+                    UnlockAfterChapterId = string.IsNullOrEmpty(model.UnlockAfterChapterId) ? null : model.UnlockAfterChapterId,
+                    ChapterCreatedAt = DateTime.UtcNow,
+                    ChapterUpdatedAt = DateTime.UtcNow
+                };
+
+                var result = await _chapterRepo.CreateChapterAsync(chapter);
+
+                _logger.LogInformation("Chapter created successfully: {ChapterId} for course {CourseId} by author {AuthorId}", chapterId, model.CourseId, authorId);
+                return result;
+            }
+            catch (ArgumentException)
+            {
+                // Re-throw argument exceptions for controller to handle
+                throw;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Re-throw unauthorized exceptions for controller to handle
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating chapter for course {CourseId} by author {AuthorId}", model.CourseId, authorId);
+                throw new InvalidOperationException("An error occurred while creating the chapter. Please try again.", ex);
+            }
+        }
+
+        public async Task<CreateChapterViewModel?> GetCreateChapterViewModelAsync(string courseId, string authorId)
+        {
+            try
+            {
+                var course = await _courseRepo.GetCourseWithChaptersAsync(courseId, authorId);
+
+                if (course == null)
+                {
+                    _logger.LogWarning("Course not found or user not authorized: {CourseId} for user {AuthorId}", courseId, authorId);
+                    return null;
+                }
+
+                var existingChapters = course.Chapters
+                    .OrderBy(c => c.ChapterOrder)
+                    .Select(c => new ChapterViewModel
+                    {
+                        ChapterId = c.ChapterId,
+                        ChapterName = c.ChapterName,
+                        ChapterDescription = c.ChapterDescription ?? "",
+                        ChapterOrder = c.ChapterOrder ?? 0,
+                        Lessons = c.Lessons?.Select(l => new LessonViewModel
+                        {
+                            LessonId = l.LessonId,
+                            LessonName = l.LessonName,
+                            LessonDescription = l.LessonDescription ?? "",
+                            LessonOrder = l.LessonOrder,
+                            LessonType = l.LessonType?.LessonTypeName ?? "Content",
+                            EstimatedDuration = 0, // Calculate if needed
+                            IsLocked = l.IsLocked ?? false
+                        }).ToList() ?? new List<LessonViewModel>()
+                    }).ToList();
+
+                var nextChapterOrder = existingChapters.Any() ? existingChapters.Max(c => c.ChapterOrder) + 1 : 1;
+
+                return new CreateChapterViewModel
+                {
+                    CourseId = courseId,
+                    CourseName = course.CourseName,
+                    CourseDescription = course.CourseDescription ?? "",
+                    ChapterOrder = nextChapterOrder,
+                    ExistingChapters = existingChapters
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting create chapter view model for course {CourseId}", courseId);
+                return null;
+            }
+        }
+
+        public async Task<bool> UpdateChapterAsync(string chapterId, CreateChapterViewModel model, string authorId)
+        {
+            try
+            {
+                var chapter = await _chapterRepo.GetChapterWithCourseAsync(chapterId, authorId);
+
+                if (chapter == null)
+                {
+                    _logger.LogWarning("Chapter not found or user not authorized to update chapter {ChapterId}", chapterId);
+                    return false;
+                }
+
+                chapter.ChapterName = model.ChapterName;
+                chapter.ChapterDescription = model.ChapterDescription;
+                chapter.ChapterOrder = model.ChapterOrder;
+                chapter.IsLocked = model.IsLocked;
+                chapter.UnlockAfterChapterId = model.UnlockAfterChapterId;
+                chapter.ChapterUpdatedAt = DateTime.UtcNow;
+
+                var result = await _chapterRepo.UpdateChapterAsync(chapter);
+
+                _logger.LogInformation("Chapter updated successfully: {ChapterId}", chapterId);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating chapter {ChapterId}", chapterId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Delete chapter - performs soft delete by setting status to Archived
+        /// </summary>
+        /// <param name="chapterId">Chapter ID to delete</param>
+        /// <param name="authorId">Author ID for authorization</param>
+        /// <returns>Success result</returns>
+        public async Task<bool> DeleteChapterAsync(string chapterId, string authorId)
+        {
+            try
+            {
+                var result = await _chapterRepo.DeleteChapterAsync(chapterId, authorId);
+
+                if (result)
+                {
+                    _logger.LogInformation("Chapter deleted successfully: {ChapterId}", chapterId);
+                }
+                else
+                {
+                    _logger.LogWarning("Chapter not found or user not authorized to delete chapter {ChapterId}", chapterId);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting chapter {ChapterId}", chapterId);
+                return false;
+            }
+        }
+
+        public async Task<List<ChapterViewModel>> GetChaptersByCourseIdAsync(string courseId)
+        {
+            try
+            {
+                var chapters = await _chapterRepo.GetChaptersByCourseAsync(courseId);
+
+                return chapters.Select(c => new ChapterViewModel
+                {
+                    ChapterId = c.ChapterId,
+                    ChapterName = c.ChapterName,
+                    ChapterDescription = c.ChapterDescription ?? "",
+                    ChapterOrder = c.ChapterOrder ?? 0
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting chapters for course {CourseId}", courseId);
+                return new List<ChapterViewModel>();
+            }
+        }
+
+        public async Task<CreateChapterViewModel?> GetChapterForEditAsync(string chapterId, string authorId)
+        {
+            try
+            {
+                var chapter = await _chapterRepo.GetChapterWithCourseAsync(chapterId, authorId);
+
+                if (chapter == null)
+                {
+                    _logger.LogWarning("Chapter not found or user not authorized: {ChapterId} for user {AuthorId}", chapterId, authorId);
+                    return null;
+                }
+
+                // Get all chapters for the course
+                var allChapters = await _chapterRepo.GetChaptersByCourseAsync(chapter.CourseId);
+
+                var existingChapters = allChapters
+                    .Where(c => c.ChapterId != chapterId) // Exclude current chapter
+                    .OrderBy(c => c.ChapterOrder)
+                    .Select(c => new ChapterViewModel
+                    {
+                        ChapterId = c.ChapterId,
+                        ChapterName = c.ChapterName,
+                        ChapterDescription = c.ChapterDescription ?? "",
+                        ChapterOrder = c.ChapterOrder ?? 0,
+                        Lessons = c.Lessons?.Select(l => new LessonViewModel
+                        {
+                            LessonId = l.LessonId,
+                            LessonName = l.LessonName,
+                            LessonDescription = l.LessonDescription ?? "",
+                            LessonOrder = l.LessonOrder,
+                            LessonType = l.LessonType?.LessonTypeName ?? "Content",
+                            EstimatedDuration = 0,
+                            IsLocked = l.IsLocked ?? false
+                        }).ToList() ?? new List<LessonViewModel>()
+                    }).ToList();
+
+                return new CreateChapterViewModel
+                {
+                    CourseId = chapter.CourseId,
+                    CourseName = chapter.Course.CourseName,
+                    CourseDescription = chapter.Course.CourseDescription ?? "",
+                    ChapterName = chapter.ChapterName,
+                    ChapterDescription = chapter.ChapterDescription ?? "",
+                    ChapterOrder = chapter.ChapterOrder ?? 1,
+                    IsLocked = chapter.IsLocked ?? false,
+                    UnlockAfterChapterId = chapter.UnlockAfterChapterId,
+                    ExistingChapters = existingChapters
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting chapter for edit: {ChapterId}", chapterId);
+                return null;
+            }
         }
 
         #region Chapter Creation Operations
@@ -45,7 +318,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var viewModel = await _chapterService.GetCreateChapterViewModelAsync(courseId, userId);
+                var viewModel = await GetCreateChapterViewModelAsync(courseId, userId);
                 if (viewModel == null)
                 {
                     return new CreateChapterResult
@@ -112,7 +385,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var chapterId = await _chapterService.CreateChapterAsync(model, userId);
+                var chapterId = await CreateChapterAsync(model, userId);
 
                 return new CreateChapterResult
                 {
@@ -190,7 +463,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var chapter = await _chapterService.GetChapterForEditAsync(chapterId, userId);
+                var chapter = await GetChapterForEditAsync(chapterId, userId);
                 if (chapter == null)
                 {
                     return new EditChapterResult
@@ -251,7 +524,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     return new EditChapterResult
                     {
                         Success = false,
-                        ErrorMessage = "Please correct the following errors: " + string.Join("; ", validationResult.Errors.SelectMany(e => e.Value)),
+                        ErrorMessage = "Please correct the validation errors.",
                         ValidationErrors = validationResult.Errors,
                         ViewModel = model,
                         ChapterId = chapterId,
@@ -259,7 +532,8 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var success = await _chapterService.UpdateChapterAsync(chapterId, model, userId);
+                var success = await UpdateChapterAsync(chapterId, model, userId);
+
                 if (success)
                 {
                     return new EditChapterResult
@@ -273,47 +547,15 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
                 else
                 {
-                    await ReloadEditChapterViewModel(model, userId, chapterId);
                     return new EditChapterResult
                     {
                         Success = false,
-                        ErrorMessage = "Failed to update chapter. Please try again.",
+                        ErrorMessage = "Failed to update the chapter. Please try again.",
                         ViewModel = model,
                         ChapterId = chapterId,
                         ReturnView = true
                     };
                 }
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                _logger.LogWarning("Unauthorized access attempt: {Message} by user {UserId}", ex.Message, user.FindFirst("UserId")?.Value);
-                return new EditChapterResult
-                {
-                    Success = false,
-                    ErrorMessage = "You are not authorized to edit this chapter.",
-                    RedirectAction = "Details",
-                    RedirectController = "Course",
-                    RouteValues = new { id = model.CourseId }
-                };
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning("Validation error updating chapter: {Message}", ex.Message);
-
-                var userId = user.FindFirst("UserId")?.Value;
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    await ReloadEditChapterViewModel(model, userId, chapterId);
-                }
-
-                return new EditChapterResult
-                {
-                    Success = false,
-                    ErrorMessage = ex.Message,
-                    ViewModel = model,
-                    ChapterId = chapterId,
-                    ReturnView = true
-                };
             }
             catch (Exception ex)
             {
@@ -350,7 +592,8 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var success = await _chapterService.DeleteChapterAsync(chapterId, userId);
+                var success = await DeleteChapterAsync(chapterId, userId);
+
                 if (success)
                 {
                     return new DeleteChapterResult
@@ -374,62 +617,69 @@ namespace BusinessLogicLayer.Services.Implementations
                 return new DeleteChapterResult
                 {
                     Success = false,
-                    Message = "An error occurred while deleting the chapter."
+                    Message = "An error occurred while deleting the chapter. Please try again."
                 };
             }
         }
 
         #endregion
 
-        #region Private Validation Methods
+        #region Private Helper Methods
 
-        /// <summary>
-        /// Validates chapter model with comprehensive business rules
-        /// </summary>
         private async Task<ChapterValidationResult> ValidateChapterModelAsync(CreateChapterViewModel model, string userId)
         {
             var errors = new Dictionary<string, List<string>>();
 
-            try
+            // Basic validation
+            if (string.IsNullOrWhiteSpace(model.ChapterName))
             {
-                // Check if chapter name already exists in the course
-                var existingChapters = await _chapterService.GetChaptersByCourseIdAsync(model.CourseId);
-
-                if (existingChapters.Any(c => string.Equals(c.ChapterName.Trim(), model.ChapterName.Trim(), StringComparison.OrdinalIgnoreCase)))
-                {
-                    AddValidationError(errors, nameof(model.ChapterName), "A chapter with this name already exists in the course.");
-                }
-
-                // Check if chapter order already exists
-                if (existingChapters.Any(c => c.ChapterOrder == model.ChapterOrder))
-                {
-                    AddValidationError(errors, nameof(model.ChapterOrder), $"Chapter order {model.ChapterOrder} is already taken. Please choose a different order.");
-                }
-
-                // Validate unlock prerequisite
-                if (model.IsLocked && !string.IsNullOrEmpty(model.UnlockAfterChapterId))
-                {
-                    var prerequisiteChapter = existingChapters.FirstOrDefault(c => c.ChapterId == model.UnlockAfterChapterId);
-                    if (prerequisiteChapter == null)
-                    {
-                        AddValidationError(errors, nameof(model.UnlockAfterChapterId), "Selected prerequisite chapter not found.");
-                    }
-                    else if (prerequisiteChapter.ChapterOrder >= model.ChapterOrder)
-                    {
-                        AddValidationError(errors, nameof(model.UnlockAfterChapterId), "Prerequisite chapter must come before this chapter in the course sequence.");
-                    }
-                }
-
-                // Validate chapter name doesn't contain inappropriate content
-                if (ContainsInappropriateContent(model.ChapterName))
-                {
-                    AddValidationError(errors, nameof(model.ChapterName), "Chapter name contains inappropriate content.");
-                }
+                AddValidationError(errors, "ChapterName", "Chapter name is required.");
             }
-            catch (Exception ex)
+            else if (model.ChapterName.Length < 3)
             {
-                _logger.LogError(ex, "Error during chapter validation for course {CourseId}", model.CourseId);
-                AddValidationError(errors, "", "An error occurred during validation. Please try again.");
+                AddValidationError(errors, "ChapterName", "Chapter name must be at least 3 characters long.");
+            }
+            else if (model.ChapterName.Length > 100)
+            {
+                AddValidationError(errors, "ChapterName", "Chapter name cannot exceed 100 characters.");
+            }
+            else if (ContainsInappropriateContent(model.ChapterName))
+            {
+                AddValidationError(errors, "ChapterName", "Chapter name contains inappropriate content.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.ChapterDescription) && model.ChapterDescription.Length > 500)
+            {
+                AddValidationError(errors, "ChapterDescription", "Chapter description cannot exceed 500 characters.");
+            }
+
+            if (model.ChapterOrder <= 0)
+            {
+                AddValidationError(errors, "ChapterOrder", "Chapter order must be a positive number.");
+            }
+
+            // Business logic validation
+            if (!string.IsNullOrEmpty(model.CourseId))
+            {
+                var course = await _courseRepo.GetCourseWithChaptersAsync(model.CourseId, userId);
+                if (course == null)
+                {
+                    AddValidationError(errors, "", "Course not found or you are not authorized to add chapters to this course.");
+                }
+                else
+                {
+                    // Check for duplicate chapter order
+                    if (course.Chapters.Any(c => c.ChapterOrder == model.ChapterOrder))
+                    {
+                        AddValidationError(errors, "ChapterOrder", $"Chapter order {model.ChapterOrder} is already taken in this course.");
+                    }
+
+                    // Check for duplicate chapter name
+                    if (course.Chapters.Any(c => string.Equals(c.ChapterName.Trim(), model.ChapterName?.Trim(), StringComparison.OrdinalIgnoreCase)))
+                    {
+                        AddValidationError(errors, "ChapterName", $"A chapter with the name '{model.ChapterName}' already exists in this course.");
+                    }
+                }
             }
 
             return new ChapterValidationResult
@@ -439,53 +689,60 @@ namespace BusinessLogicLayer.Services.Implementations
             };
         }
 
-        /// <summary>
-        /// Validates chapter model for editing with additional business rules
-        /// </summary>
         private async Task<ChapterValidationResult> ValidateChapterModelForEditAsync(CreateChapterViewModel model, string userId, string chapterId)
         {
             var errors = new Dictionary<string, List<string>>();
 
-            try
+            // Basic validation (same as create)
+            if (string.IsNullOrWhiteSpace(model.ChapterName))
             {
-                // Check if chapter name already exists in the course (excluding current chapter)
-                var existingChapters = await _chapterService.GetChaptersByCourseIdAsync(model.CourseId);
-
-                if (existingChapters.Any(c => c.ChapterId != chapterId && string.Equals(c.ChapterName.Trim(), model.ChapterName.Trim(), StringComparison.OrdinalIgnoreCase)))
-                {
-                    AddValidationError(errors, nameof(model.ChapterName), "A chapter with this name already exists in the course.");
-                }
-
-                // Check if chapter order already exists (excluding current chapter)
-                if (existingChapters.Any(c => c.ChapterId != chapterId && c.ChapterOrder == model.ChapterOrder))
-                {
-                    AddValidationError(errors, nameof(model.ChapterOrder), $"Chapter order {model.ChapterOrder} is already taken. Please choose a different order.");
-                }
-
-                // Validate unlock prerequisite
-                if (model.IsLocked && !string.IsNullOrEmpty(model.UnlockAfterChapterId))
-                {
-                    var prerequisiteChapter = existingChapters.FirstOrDefault(c => c.ChapterId == model.UnlockAfterChapterId);
-                    if (prerequisiteChapter == null)
-                    {
-                        AddValidationError(errors, nameof(model.UnlockAfterChapterId), "Selected prerequisite chapter not found.");
-                    }
-                    else if (prerequisiteChapter.ChapterOrder >= model.ChapterOrder)
-                    {
-                        AddValidationError(errors, nameof(model.UnlockAfterChapterId), "Prerequisite chapter must come before this chapter in the course sequence.");
-                    }
-                }
-
-                // Validate chapter name doesn't contain inappropriate content
-                if (ContainsInappropriateContent(model.ChapterName))
-                {
-                    AddValidationError(errors, nameof(model.ChapterName), "Chapter name contains inappropriate content.");
-                }
+                AddValidationError(errors, "ChapterName", "Chapter name is required.");
             }
-            catch (Exception ex)
+            else if (model.ChapterName.Length < 3)
             {
-                _logger.LogError(ex, "Error during chapter validation for edit. Chapter {ChapterId}", chapterId);
-                AddValidationError(errors, "", "An error occurred during validation. Please try again.");
+                AddValidationError(errors, "ChapterName", "Chapter name must be at least 3 characters long.");
+            }
+            else if (model.ChapterName.Length > 100)
+            {
+                AddValidationError(errors, "ChapterName", "Chapter name cannot exceed 100 characters.");
+            }
+            else if (ContainsInappropriateContent(model.ChapterName))
+            {
+                AddValidationError(errors, "ChapterName", "Chapter name contains inappropriate content.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.ChapterDescription) && model.ChapterDescription.Length > 500)
+            {
+                AddValidationError(errors, "ChapterDescription", "Chapter description cannot exceed 500 characters.");
+            }
+
+            if (model.ChapterOrder <= 0)
+            {
+                AddValidationError(errors, "ChapterOrder", "Chapter order must be a positive number.");
+            }
+
+            // Business logic validation for edit
+            if (!string.IsNullOrEmpty(model.CourseId))
+            {
+                var course = await _courseRepo.GetCourseWithChaptersAsync(model.CourseId, userId);
+                if (course == null)
+                {
+                    AddValidationError(errors, "", "Course not found or you are not authorized to edit chapters in this course.");
+                }
+                else
+                {
+                    // Check for duplicate chapter order (excluding current chapter)
+                    if (course.Chapters.Any(c => c.ChapterId != chapterId && c.ChapterOrder == model.ChapterOrder))
+                    {
+                        AddValidationError(errors, "ChapterOrder", $"Chapter order {model.ChapterOrder} is already taken in this course.");
+                    }
+
+                    // Check for duplicate chapter name (excluding current chapter)
+                    if (course.Chapters.Any(c => c.ChapterId != chapterId && string.Equals(c.ChapterName.Trim(), model.ChapterName?.Trim(), StringComparison.OrdinalIgnoreCase)))
+                    {
+                        AddValidationError(errors, "ChapterName", $"A chapter with the name '{model.ChapterName}' already exists in this course.");
+                    }
+                }
             }
 
             return new ChapterValidationResult
@@ -495,9 +752,6 @@ namespace BusinessLogicLayer.Services.Implementations
             };
         }
 
-        /// <summary>
-        /// Helper method to add validation errors
-        /// </summary>
         private static void AddValidationError(Dictionary<string, List<string>> errors, string key, string message)
         {
             if (!errors.ContainsKey(key))
@@ -507,29 +761,22 @@ namespace BusinessLogicLayer.Services.Implementations
             errors[key].Add(message);
         }
 
-        /// <summary>
-        /// Simple content filter for inappropriate content
-        /// </summary>
         private static bool ContainsInappropriateContent(string content)
         {
-            if (string.IsNullOrWhiteSpace(content)) return false;
+            if (string.IsNullOrWhiteSpace(content))
+                return false;
 
-            var inappropriateWords = new[] { "test", "dummy", "placeholder", "xxx", "delete", "remove" };
-            return inappropriateWords.Any(word => content.ToLower().Contains(word.ToLower()));
+            var inappropriateWords = new[] { "spam", "scam", "hack", "crack", "illegal", "porn", "sex" };
+            var contentLower = content.ToLowerInvariant();
+
+            return inappropriateWords.Any(word => contentLower.Contains(word));
         }
 
-        #endregion
-
-        #region Private Helper Methods
-
-        /// <summary>
-        /// Reloads the create chapter view model with existing data
-        /// </summary>
         private async Task ReloadCreateChapterViewModel(CreateChapterViewModel model, string userId)
         {
             try
             {
-                var viewModel = await _chapterService.GetCreateChapterViewModelAsync(model.CourseId, userId);
+                var viewModel = await GetCreateChapterViewModelAsync(model.CourseId, userId);
                 if (viewModel != null)
                 {
                     model.CourseName = viewModel.CourseName;
@@ -543,14 +790,11 @@ namespace BusinessLogicLayer.Services.Implementations
             }
         }
 
-        /// <summary>
-        /// Reloads the edit chapter view model with existing data
-        /// </summary>
         private async Task ReloadEditChapterViewModel(CreateChapterViewModel model, string userId, string chapterId)
         {
             try
             {
-                var viewModel = await _chapterService.GetChapterForEditAsync(chapterId, userId);
+                var viewModel = await GetChapterForEditAsync(chapterId, userId);
                 if (viewModel != null)
                 {
                     model.CourseName = viewModel.CourseName;

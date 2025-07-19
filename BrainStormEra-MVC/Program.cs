@@ -182,7 +182,7 @@ namespace BrainStormEra_MVC
 
             // Register Course Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.CourseServiceImpl>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IChapterService, BusinessLogicLayer.Services.ChapterService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IChapterService, BusinessLogicLayer.Services.Implementations.ChapterServiceImpl>();
 
             // Register Chapter Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.ChapterServiceImpl>();
