@@ -93,6 +93,7 @@ namespace DataAccessLayer.Models.ViewModels
         public int? TimeLimit { get; set; }
         public decimal? PassingScore { get; set; }
         public int? MaxAttempts { get; set; }
+        public int? QuizStatus { get; set; }
         public bool IsFinalQuiz { get; set; }
         public bool IsPrerequisiteQuiz { get; set; }
         public bool BlocksLessonCompletion { get; set; }

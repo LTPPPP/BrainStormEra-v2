@@ -12,6 +12,8 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<ServiceResult<string>> DeleteQuizAsync(string quizId, string userId);
         Task<ServiceResult<QuizDetailsViewModel>> GetQuizDetailsAsync(string quizId, string userId);
         Task<ServiceResult<QuizPreviewViewModel>> GetQuizPreviewAsync(string quizId, string userId);
+        Task<ServiceResult<bool>> UpdateQuizStatusAsync(string quizId, string userId, int newStatus);
+        Task<ServiceResult<QuizStatisticsViewModel>> GetQuizStatisticsAsync(string quizId, string userId);
         Task CleanupAbandonedAttemptsAsync();
     }
 }

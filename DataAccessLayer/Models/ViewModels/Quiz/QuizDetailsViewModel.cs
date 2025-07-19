@@ -49,4 +49,35 @@ namespace DataAccessLayer.Models.ViewModels
         public string OptionText { get; set; } = string.Empty;
         public int OptionOrder { get; set; }
     }
+
+    public class QuizStatisticsViewModel
+    {
+        public string QuizId { get; set; } = string.Empty;
+        public string QuizName { get; set; } = string.Empty;
+        public int TotalAttempts { get; set; }
+        public int CompletedAttempts { get; set; }
+        public int PassedAttempts { get; set; }
+        public decimal PassRate { get; set; }
+        public decimal AverageScore { get; set; }
+        public int TotalQuestions { get; set; }
+        public int? QuizStatus { get; set; }
+        public bool IsPrerequisiteQuiz { get; set; }
+        public bool BlocksLessonCompletion { get; set; }
+
+        // Computed properties
+        public string PassRateText => $"{PassRate:F1}%";
+        public string AverageScoreText => $"{AverageScore:F1}%";
+        public string StatusText => QuizStatus switch
+        {
+            0 => "Draft",
+            1 => "Published",
+            2 => "Active",
+            3 => "Inactive",
+            4 => "Archived",
+            5 => "Suspended",
+            6 => "Completed",
+            7 => "In Progress",
+            _ => "Unknown"
+        };
+    }
 }

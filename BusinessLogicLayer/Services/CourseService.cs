@@ -276,6 +276,7 @@ namespace BusinessLogicLayer.Services
                             TimeLimit = q.TimeLimit,
                             PassingScore = q.PassingScore,
                             MaxAttempts = q.MaxAttempts,
+                            QuizStatus = q.QuizStatus,
                             IsFinalQuiz = q.IsFinalQuiz ?? false,
                             IsPrerequisiteQuiz = q.IsPrerequisiteQuiz ?? false,
                             BlocksLessonCompletion = q.BlocksLessonCompletion ?? false,

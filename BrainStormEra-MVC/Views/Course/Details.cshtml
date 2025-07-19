@@ -76,6 +76,23 @@
             transform: none !important;
             box-shadow: none !important;
         }
+        
+        .quiz-status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        }
+        
+        .archived-item {
+            opacity: 0.6;
+            background-color: #f8f9fa;
+        }
+        
+        .archived-item .lesson-name-truncated {
+            text-decoration: line-through;
+        }
     </style>
 </head>
 
@@ -673,12 +690,17 @@
                                                                 <div class="mb-2">
                                                                     @foreach (var quiz in chapter.Quizzes)
                                                                     {
-                                                                        <div class="lecture-item quiz-item">
+                                                                        var (statusText, statusClass, statusIcon) = BusinessLogicLayer.Services.Implementations.QuizServiceImpl.GetQuizStatusInfo(quiz.QuizStatus);
+                                                                        <div class="lecture-item quiz-item @(quiz.QuizStatus == 4 ? "archived-item" : "")">
                                                                             <i class="fas fa-question-circle"></i>
                                                                             <span class="lesson-name-truncated">@quiz.QuizName</span>
                                                                             <span class="lesson-type-with-icon">
                                                                                 <i class="fas fa-question-circle"></i>
                                                                                 Quiz
+                                                                            </span>
+                                                                            <span class="quiz-status-badge @statusClass">
+                                                                                <i class="@statusIcon"></i>
+                                                                                @statusText
                                                                             </span>
                                                                             @if (ViewBag.IsAuthor == true)
                                                                             {
@@ -691,13 +713,25 @@
                                                                                        title="Manage Questions">
                                                                                         <i class="fas fa-cog"></i>
                                                                                     </a>
-                                                                                    <button type="button" class="btn btn-sm btn-outline-danger delete-quiz-btn" 
-                                                                                            data-quiz-id="@quiz.QuizId" 
-                                                                                            data-quiz-name="@quiz.QuizName"
-                                                                                            data-course-id="@Model.CourseId"
-                                                                                            title="Delete Quiz">
-                                                                                        <i class="fas fa-trash-alt"></i>
-                                                                                    </button>
+                                                                                    @if (quiz.QuizStatus != 4) @* Don't show delete button for archived quizzes *@
+                                                                                    {
+                                                                                        <button type="button" class="btn btn-sm btn-outline-danger delete-quiz-btn" 
+                                                                                                data-quiz-id="@quiz.QuizId" 
+                                                                                                data-quiz-name="@quiz.QuizName"
+                                                                                                data-course-id="@Model.CourseId"
+                                                                                                data-quiz-status="@quiz.QuizStatus"
+                                                                                                data-is-prerequisite="@quiz.IsPrerequisiteQuiz"
+                                                                                                data-blocks-completion="@quiz.BlocksLessonCompletion"
+                                                                                                title="Delete Quiz">
+                                                                                            <i class="fas fa-trash-alt"></i>
+                                                                                        </button>
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Quiz is archived">
+                                                                                            <i class="fas fa-archive"></i>
+                                                                                        </button>
+                                                                                    }
                                                                                 </div>
                                                                             }
                                                                             @if (quiz.PassingScore.HasValue)
@@ -1271,6 +1305,29 @@
                     currentQuizId = this.getAttribute('data-quiz-id');
                     currentCourseId = this.getAttribute('data-course-id');
                     const quizName = this.getAttribute('data-quiz-name');
+                    const quizStatus = this.getAttribute('data-quiz-status');
+                    const isPrerequisite = this.getAttribute('data-is-prerequisite') === 'True';
+                    const blocksCompletion = this.getAttribute('data-blocks-completion') === 'True';
+
+                    // Check if quiz can be deleted
+                    let cannotDeleteReason = '';
+                    if (quizStatus === '1' || quizStatus === '2') {
+                        cannotDeleteReason = 'This quiz is published/active and cannot be deleted. Please change the status to Draft first.';
+                    } else if (isPrerequisite) {
+                        cannotDeleteReason = 'This quiz is set as a prerequisite for course progression and cannot be deleted.';
+                    } else if (blocksCompletion) {
+                        cannotDeleteReason = 'This quiz blocks lesson completion and cannot be deleted. Please change the settings first.';
+                    }
+
+                    if (cannotDeleteReason) {
+                        // Show error message instead of delete modal
+                        if (window.showToast) {
+                            window.showToast('error', cannotDeleteReason);
+                        } else {
+                            alert(cannotDeleteReason);
+                        }
+                        return;
+                    }
 
                     // Update modal content
                     document.getElementById('deleteQuizName').textContent = quizName;
