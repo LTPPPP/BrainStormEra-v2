@@ -52,7 +52,7 @@ namespace BusinessLogicLayer.Services.Implementations
             string? search,
             string? category,
             int page = 1,
-            int pageSize = 12)
+            int pageSize = 50)
         {
             try
             {
@@ -96,7 +96,7 @@ namespace BusinessLogicLayer.Services.Implementations
             string? courseSearch,
             string? categorySearch,
             int page = 1,
-            int pageSize = 12,
+            int pageSize = 50,
             string? sortBy = "newest",
             string? price = null,
             string? difficulty = null,

@@ -242,7 +242,7 @@ namespace DataAccessLayer.Repositories
             try
             {
                 IQueryable<Course> query = _dbSet
-                    .Where(c => c.AuthorId == authorId && c.CourseStatus != 4) // Exclude archived courses
+                    .Where(c => c.AuthorId == authorId && c.CourseStatus != null && new[] { 1, 2, 3, 4, 5, 6 }.Contains(c.CourseStatus.Value)) // Exclude archived courses
                     .Include(c => c.Enrollments)
                     .Include(c => c.CourseCategories);
 

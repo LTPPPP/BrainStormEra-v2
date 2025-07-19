@@ -967,7 +967,7 @@ namespace BusinessLogicLayer.Services
             {
                 var query = _context.Courses
                     .AsNoTracking()
-                    .Where(c => c.AuthorId == authorId && c.CourseStatus != 4); // Filter by instructor's authorId and exclude archived courses
+                    .Where(c => c.AuthorId == authorId && c.CourseStatus != null && new[] { 1, 2, 3, 4, 5, 6 }.Contains(c.CourseStatus.Value)); // Filter by instructor's authorId and exclude archived courses
 
                 query = query.Include(c => c.Author)
                            .Include(c => c.Enrollments)
