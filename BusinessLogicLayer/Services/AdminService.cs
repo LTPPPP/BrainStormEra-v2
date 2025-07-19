@@ -10,6 +10,9 @@ namespace BusinessLogicLayer.Services
         private readonly IAdminRepo _adminRepo;
         private readonly IUserRepo _userRepo;
         private readonly ICourseRepo _courseRepo;
+        private readonly IAchievementService _achievementService;
+        private readonly ICertificateService _certificateService;
+        private readonly IAchievementRepo _achievementRepo;
 
         private readonly ILogger<AdminService> _logger;
 
@@ -17,11 +20,17 @@ namespace BusinessLogicLayer.Services
             IAdminRepo adminRepo,
             IUserRepo userRepo,
             ICourseRepo courseRepo,
+            IAchievementService achievementService,
+            ICertificateService certificateService,
+            IAchievementRepo achievementRepo,
             ILogger<AdminService> logger)
         {
             _adminRepo = adminRepo;
             _userRepo = userRepo;
             _courseRepo = courseRepo;
+            _achievementService = achievementService;
+            _certificateService = certificateService;
+            _achievementRepo = achievementRepo;
 
             _logger = logger;
         }
@@ -292,6 +301,38 @@ namespace BusinessLogicLayer.Services
                     return null;
                 }
 
+                // Get user achievements and certificates
+                var userAchievements = await _achievementService.GetUserAchievementsAsync(userId);
+                var certificates = await _certificateService.GetUserCertificatesAsync(userId);
+
+                // Convert UserAchievement to AchievementSummaryViewModel
+                var achievements = new List<AchievementSummaryViewModel>();
+                foreach (var ua in userAchievements)
+                {
+                    string? relatedCourseName = null;
+                    if (!string.IsNullOrEmpty(ua.RelatedCourseId))
+                    {
+                        relatedCourseName = await _achievementRepo.GetCourseNameAsync(ua.RelatedCourseId);
+                    }
+
+                    achievements.Add(new AchievementSummaryViewModel
+                    {
+                        AchievementId = ua.AchievementId,
+                        AchievementName = ua.Achievement.AchievementName,
+                        AchievementDescription = ua.Achievement.AchievementDescription ?? "",
+                        AchievementIcon = ua.Achievement.AchievementIcon ?? "fas fa-trophy",
+                        AchievementType = ua.Achievement.AchievementType ?? "",
+                        PointsReward = ua.Achievement.PointsReward,
+                        ReceivedDate = ua.ReceivedDate.ToDateTime(TimeOnly.MinValue),
+                        RelatedCourseName = relatedCourseName
+                    });
+                }
+
+                // Calculate totals
+                var totalAchievements = achievements.Count;
+                var totalCertificates = certificates.Count;
+                var totalPointsEarned = achievements.Sum(a => a.PointsReward ?? 0);
+
                 return new AdminUserViewModel
                 {
                     UserId = user.UserId,
@@ -311,7 +352,12 @@ namespace BusinessLogicLayer.Services
                     PaymentPoint = user.PaymentPoint,
                     BankName = user.BankName,
                     BankAccountNumber = user.BankAccountNumber,
-                    AccountHolderName = user.AccountHolderName
+                    AccountHolderName = user.AccountHolderName,
+                    Achievements = achievements,
+                    Certificates = certificates,
+                    TotalAchievements = totalAchievements,
+                    TotalCertificates = totalCertificates,
+                    TotalPointsEarned = totalPointsEarned
                 };
             }
             catch (Exception ex)

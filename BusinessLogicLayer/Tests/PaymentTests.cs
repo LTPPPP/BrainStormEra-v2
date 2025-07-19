@@ -27,7 +27,7 @@ namespace BusinessLogicLayer.Tests
             _context = new BrainStormEraContext(options);
 
             // Setup configuration
-            var configDict = new Dictionary<string, string>
+            var configDict = new Dictionary<string, string?>
             {
                 {"VNPAY_TMN_CODE", "ok"},
                 {"VNPAY_HASH_SECRET", "ok"},
