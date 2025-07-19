@@ -133,24 +133,6 @@
                     </div>
                 </div>
 
-                <!-- Point Management -->
-                <div class="info-section">
-                    <h5><i class="fas fa-coins"></i>Point Management</h5>
-                    <div class="point-actions">
-                        <div class="point-input-group">
-                            <input type="number" id="pointsAmount" min="1" step="1" value="100" class="form-control" placeholder="Enter points" />
-                        </div>
-                        <div class="point-buttons">
-                            <button type="button" class="btn btn-success btn-sm" onclick="updateUserPoints('@Model.UserId', 'add')">
-                                <i class="fas fa-plus"></i> Add Points
-                            </button>
-                            <button type="button" class="btn btn-warning btn-sm" onclick="updateUserPoints('@Model.UserId', 'subtract')">
-                                <i class="fas fa-minus"></i> Subtract Points
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Bank Information -->
                 <div class="info-section">
                     <h5><i class="fas fa-university"></i>Bank Information</h5>
