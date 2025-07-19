@@ -16,16 +16,16 @@ namespace BusinessLogicLayer.Services.Implementations
     public class NotificationServiceImpl
     {
         private readonly INotificationService _notificationService;
-        private readonly ICourseService _courseService;
+        private readonly CourseServiceImpl _courseServiceImpl;
         private readonly ILogger<NotificationServiceImpl> _logger;
 
         public NotificationServiceImpl(
             INotificationService notificationService,
-            ICourseService courseService,
+            CourseServiceImpl courseServiceImpl,
             ILogger<NotificationServiceImpl> logger)
         {
             _notificationService = notificationService;
-            _courseService = courseService;
+            _courseServiceImpl = courseServiceImpl;
             _logger = logger;
         }
 
@@ -748,7 +748,7 @@ namespace BusinessLogicLayer.Services.Implementations
                         else
                         {
                             // Validate course exists and user has access
-                            var course = await _courseService.GetCourseDetailAsync(model.CourseId, userId);
+                            var course = await _courseServiceImpl.GetCourseDetailAsync(model.CourseId, userId);
                             if (course == null)
                             {
                                 AddValidationError(errors, nameof(model.CourseId), "Selected course not found or you don't have access to it.");

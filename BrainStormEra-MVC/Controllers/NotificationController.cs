@@ -12,18 +12,18 @@ namespace BrainStormEra_MVC.Controllers
     {
         private readonly NotificationServiceImpl _notificationServiceImpl;
         private readonly INotificationService _notificationService; // Keep for simple operations
-        private readonly ICourseService _courseService; // Add CourseService
+        private readonly CourseServiceImpl _courseServiceImpl; // Add CourseServiceImpl
         private readonly ILogger<NotificationController> _logger;
 
         public NotificationController(
             NotificationServiceImpl notificationServiceImpl,
             INotificationService notificationService,
-            ICourseService courseService, // Add CourseService parameter
+            CourseServiceImpl courseServiceImpl, // Add CourseServiceImpl parameter
             ILogger<NotificationController> logger)
         {
             _notificationServiceImpl = notificationServiceImpl;
             _notificationService = notificationService;
-            _courseService = courseService; // Initialize CourseService
+            _courseServiceImpl = courseServiceImpl; // Initialize CourseServiceImpl
             _logger = logger;
         }// GET: Notification
         public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
@@ -564,7 +564,7 @@ namespace BrainStormEra_MVC.Controllers
                 if (userRole?.Equals("admin", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     // Admin can see all courses
-                    var allCoursesResult = await _courseService.GetCoursesAsync("", "", 1, 1000);
+                    var allCoursesResult = await _courseServiceImpl.GetCoursesAsync("", "", 1, 1000);
                     courses = allCoursesResult.Courses.Select(c => new
                     {
                         courseId = c.CourseId,
@@ -575,7 +575,7 @@ namespace BrainStormEra_MVC.Controllers
                 else if (userRole?.Equals("instructor", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     // Instructor can only see their own courses
-                    var instructorCoursesResult = await _courseService.GetInstructorCoursesAsync(userId, "", "", 1, 1000);
+                    var instructorCoursesResult = await _courseServiceImpl.GetInstructorCoursesAsync(userId, "", "", 1, 1000);
                     courses = instructorCoursesResult.Courses.Select(c => new
                     {
                         courseId = c.CourseId,

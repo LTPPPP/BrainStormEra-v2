@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Services.Implementations;
 using DataAccessLayer.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
 
@@ -9,12 +10,12 @@ namespace BrainStormEra_MVC.Controllers
     public class PaymentController : BaseController
     {
         private readonly IPaymentService _paymentService;
-        private readonly ICourseService _courseService;
+        private readonly CourseServiceImpl _courseServiceImpl;
 
-        public PaymentController(IPaymentService paymentService, ICourseService courseService)
+        public PaymentController(IPaymentService paymentService, CourseServiceImpl courseServiceImpl)
         {
             _paymentService = paymentService;
-            _courseService = courseService;
+            _courseServiceImpl = courseServiceImpl;
         }
         [HttpGet]
         public async Task<IActionResult> Index()
@@ -40,7 +41,7 @@ namespace BrainStormEra_MVC.Controllers
                 }
 
                 // Validate course exists
-                var course = await _courseService.GetCourseByIdAsync(courseId);
+                var course = await _courseServiceImpl.GetCourseByIdAsync(courseId);
                 if (course == null)
                 {
                     return Json(new { success = false, message = "Course does not exist" });

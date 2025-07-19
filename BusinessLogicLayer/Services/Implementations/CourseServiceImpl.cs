@@ -12,6 +12,9 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DataAccessLayer.Data;
+using DataAccessLayer.Repositories.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
+using BusinessLogicLayer.Constants;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
@@ -20,29 +23,903 @@ namespace BusinessLogicLayer.Services.Implementations
     /// This class sits between Controller and Service layer to handle authentication, 
     /// authorization, validation, and error handling.
     /// </summary>
-    public class CourseServiceImpl
+    public class CourseServiceImpl : ICourseService
     {
-        private readonly ICourseService _courseService;
+        private readonly ICourseRepo _courseRepo;
+        private readonly IUserRepo _userRepo;
+        private readonly IEnrollmentService _enrollmentService;
+        private readonly BrainStormEraContext _context;
+        private readonly IMemoryCache _cache;
         private readonly ICourseImageService _courseImageService;
         private readonly LessonServiceImpl _lessonService;
         private readonly ILogger<CourseServiceImpl> _logger;
         private readonly IServiceProvider _serviceProvider;
+        private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(10);
 
         public CourseServiceImpl(
-            ICourseService courseService,
+            ICourseRepo courseRepo,
+            IUserRepo userRepo,
+            IEnrollmentService enrollmentService,
+            BrainStormEraContext context,
+            IMemoryCache cache,
             ICourseImageService courseImageService,
             LessonServiceImpl lessonService,
             ILogger<CourseServiceImpl> logger,
             IServiceProvider serviceProvider)
         {
-            _courseService = courseService;
+            _courseRepo = courseRepo;
+            _userRepo = userRepo;
+            _enrollmentService = enrollmentService;
+            _context = context;
+            _cache = cache;
             _courseImageService = courseImageService;
             _lessonService = lessonService;
             _logger = logger;
             _serviceProvider = serviceProvider;
+
+            // Clear category cache to ensure updated counts
+            RefreshCategoryCache();
         }
 
-        #region Course Listing Operations
+        #region ICourseService Implementation
+
+        public async Task<CourseListViewModel> GetCoursesAsync(string? search, string? category, int page, int pageSize)
+        {
+            try
+            {
+                var courses = await _courseRepo.SearchCoursesAsync(search, category, page, pageSize, "date");
+
+                var courseViewModels = courses.Select(c => new CourseViewModel
+                {
+                    CourseId = c.CourseId,
+                    CourseName = c.CourseName,
+                    CoursePicture = c.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
+                    Description = c.CourseDescription,
+                    Price = c.Price,
+                    CreatedBy = c.Author.FullName ?? c.Author.Username,
+                    CourseCategories = c.CourseCategories
+                        .Select(cc => cc.CourseCategoryName)
+                        .ToList(),
+                    EnrollmentCount = c.Enrollments.Count(),
+                    StarRating = 4 // Default rating
+                }).ToList();
+
+                // Count total courses using the same logic as category counting
+                var totalCourses = await _context.Courses
+                    .CountAsync(c => (c.CourseStatus == 1 || c.CourseStatus == 2) && c.ApprovalStatus == "Approved");
+                var totalPages = (int)Math.Ceiling((double)totalCourses / pageSize);
+
+                // Get categories with proper course count mapping and sorting
+                var categoryViewModels = await GetCategoriesAsync();
+
+                // Log category information for debugging
+                _logger.LogInformation("Loaded {Count} categories for course listing", categoryViewModels.Count);
+                foreach (var cat in categoryViewModels)
+                {
+                    _logger.LogInformation("Category: {Name} - {Count} courses", cat.CategoryName, cat.CourseCount);
+                }
+
+                return new CourseListViewModel
+                {
+                    Courses = courseViewModels,
+                    Categories = categoryViewModels,
+                    SearchQuery = search,
+                    SelectedCategory = category,
+                    CurrentPage = page,
+                    TotalPages = totalPages,
+                    TotalCourses = totalCourses,
+                    PageSize = pageSize
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading courses");
+                return new CourseListViewModel();
+            }
+        }
+
+        public async Task<CourseDetailViewModel?> GetCourseDetailAsync(string courseId)
+        {
+            try
+            {
+                var course = await _courseRepo.GetCourseDetailAsync(courseId);
+                if (course == null) return null;
+
+                var viewModel = new CourseDetailViewModel
+                {
+                    CourseId = course.CourseId,
+                    CourseName = course.CourseName,
+                    CourseDescription = course.CourseDescription ?? "",
+                    CourseImage = course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
+                    Price = course.Price,
+                    AuthorId = course.AuthorId,
+                    AuthorName = course.Author.FullName ?? course.Author.Username,
+                    AuthorImage = course.Author.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
+                    EstimatedDuration = course.EstimatedDuration ?? 0,
+                    DifficultyLevel = GetDifficultyLevelText(course.DifficultyLevel),
+                    Categories = course.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
+                    TotalStudents = course.Enrollments.Count,
+                    ApprovalStatus = course.ApprovalStatus,
+                    CourseCreatedAt = course.CourseCreatedAt,
+                    CourseUpdatedAt = course.CourseUpdatedAt
+                };
+
+                if (course.Feedbacks.Any(f => f.StarRating.HasValue))
+                {
+                    viewModel.AverageRating = (double)Math.Round((decimal)course.Feedbacks.Where(f => f.StarRating.HasValue).Average(f => f.StarRating!.Value), 1);
+                    viewModel.TotalReviews = course.Feedbacks.Count;
+                }
+
+                viewModel.Chapters = course.Chapters.Select(ch => new ChapterViewModel
+                {
+                    ChapterId = ch.ChapterId,
+                    ChapterName = ch.ChapterName,
+                    ChapterDescription = ch.ChapterDescription ?? "",
+                    ChapterOrder = ch.ChapterOrder ?? 0,
+                    Lessons = ch.Lessons
+                        .Where(l => l.LessonType?.LessonTypeName != "Quiz") // Exclude quiz lessons from regular lessons
+                        .Select(l => new LessonViewModel
+                        {
+                            LessonId = l.LessonId,
+                            LessonName = l.LessonName,
+                            LessonDescription = l.LessonDescription ?? "",
+                            LessonOrder = l.LessonOrder,
+                            LessonType = l.LessonType?.LessonTypeName ?? "Video",
+                            EstimatedDuration = 0,
+                            IsLocked = l.IsLocked ?? false
+                        }).ToList(),
+                    Quizzes = ch.Lessons
+                        .Where(l => l.Quizzes != null && l.Quizzes.Any())
+                        .SelectMany(l => l.Quizzes)
+                        .Select(q => new QuizViewModel
+                        {
+                            QuizId = q.QuizId,
+                            QuizName = q.QuizName,
+                            QuizDescription = q.QuizDescription ?? "",
+                            LessonId = q.LessonId,
+                            LessonName = q.Lesson?.LessonName ?? "",
+                            TimeLimit = q.TimeLimit,
+                            PassingScore = q.PassingScore,
+                            MaxAttempts = q.MaxAttempts,
+                            IsFinalQuiz = q.IsFinalQuiz ?? false,
+                            IsPrerequisiteQuiz = q.IsPrerequisiteQuiz ?? false,
+                            BlocksLessonCompletion = q.BlocksLessonCompletion ?? false,
+                            QuizCreatedAt = q.QuizCreatedAt,
+                            QuizUpdatedAt = q.QuizUpdatedAt,
+                            Questions = q.Questions?.OrderBy(qu => qu.QuestionOrder).Select(qu => new QuestionViewModel
+                            {
+                                QuestionId = qu.QuestionId,
+                                QuestionText = qu.QuestionText,
+                                QuestionType = qu.QuestionType,
+                                Points = qu.Points ?? 0,
+                                QuestionOrder = qu.QuestionOrder ?? 0,
+                                Explanation = qu.Explanation ?? "",
+                                AnswerOptions = qu.AnswerOptions?.OrderBy(ao => ao.OptionOrder).Select(ao => new AnswerOptionViewModel
+                                {
+                                    OptionId = ao.OptionId,
+                                    OptionText = ao.OptionText,
+                                    IsCorrect = ao.IsCorrect ?? false,
+                                    OptionOrder = ao.OptionOrder ?? 0
+                                }).ToList() ?? new List<AnswerOptionViewModel>()
+                            }).ToList() ?? new List<QuestionViewModel>()
+                        }).ToList()
+                }).ToList();
+
+                viewModel.Reviews = course.Feedbacks
+                    .OrderByDescending(f => f.FeedbackCreatedAt)
+                    .Take(10)
+                    .Select(f => new ReviewViewModel
+                    {
+                        ReviewId = f.FeedbackId,
+                        UserName = f.User.FullName ?? f.User.Username,
+                        UserImage = f.User.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
+                        StarRating = f.StarRating ?? 0,
+                        ReviewComment = f.Comment ?? "",
+                        ReviewDate = f.FeedbackCreatedAt,
+                        IsVerifiedPurchase = f.IsVerifiedPurchase ?? false,
+                        UserId = f.UserId
+                    }).ToList();
+
+                return viewModel;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading course detail {CourseId}", courseId);
+                return null;
+            }
+        }
+
+        public async Task<CourseDetailViewModel?> GetCourseDetailAsync(string courseId, string? currentUserId = null)
+        {
+            try
+            {
+                var course = await _courseRepo.GetCourseDetailAsync(courseId, currentUserId);
+                if (course == null) return null;
+
+                var viewModel = new CourseDetailViewModel
+                {
+                    CourseId = course.CourseId,
+                    CourseName = course.CourseName,
+                    CourseDescription = course.CourseDescription ?? "",
+                    CourseImage = course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
+                    Price = course.Price,
+                    AuthorId = course.AuthorId,
+                    AuthorName = course.Author.FullName ?? course.Author.Username,
+                    AuthorImage = course.Author.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
+                    EstimatedDuration = course.EstimatedDuration ?? 0,
+                    DifficultyLevel = GetDifficultyLevelText(course.DifficultyLevel),
+                    Categories = course.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
+                    TotalStudents = course.Enrollments.Count,
+                    ApprovalStatus = course.ApprovalStatus,
+                    CourseCreatedAt = course.CourseCreatedAt,
+                    CourseUpdatedAt = course.CourseUpdatedAt
+                };
+
+                // Get progress percentage if user is enrolled
+                if (!string.IsNullOrEmpty(currentUserId))
+                {
+                    var enrollment = course.Enrollments.FirstOrDefault(e => e.UserId == currentUserId);
+                    if (enrollment != null)
+                    {
+                        viewModel.ProgressPercentage = enrollment.ProgressPercentage ?? 0;
+                    }
+                }
+
+                if (course.Feedbacks.Any(f => f.StarRating.HasValue))
+                {
+                    viewModel.AverageRating = (double)Math.Round((decimal)course.Feedbacks.Where(f => f.StarRating.HasValue).Average(f => f.StarRating!.Value), 1);
+                    viewModel.TotalReviews = course.Feedbacks.Count;
+                }
+
+                viewModel.Chapters = course.Chapters.Select(ch => new ChapterViewModel
+                {
+                    ChapterId = ch.ChapterId,
+                    ChapterName = ch.ChapterName,
+                    ChapterDescription = ch.ChapterDescription ?? "",
+                    ChapterOrder = ch.ChapterOrder ?? 0,
+                    Lessons = ch.Lessons
+                        .Where(l => l.LessonType?.LessonTypeName != "Quiz") // Exclude quiz lessons from regular lessons
+                        .Select(l => new LessonViewModel
+                        {
+                            LessonId = l.LessonId,
+                            LessonName = l.LessonName,
+                            LessonDescription = l.LessonDescription ?? "",
+                            LessonOrder = l.LessonOrder,
+                            LessonType = l.LessonType?.LessonTypeName ?? "Video",
+                            EstimatedDuration = 0,
+                            IsLocked = l.IsLocked ?? false
+                        }).ToList(),
+                    Quizzes = ch.Lessons
+                        .Where(l => l.Quizzes != null && l.Quizzes.Any())
+                        .SelectMany(l => l.Quizzes)
+                        .Select(q => new QuizViewModel
+                        {
+                            QuizId = q.QuizId,
+                            QuizName = q.QuizName,
+                            QuizDescription = q.QuizDescription ?? "",
+                            LessonId = q.LessonId,
+                            LessonName = q.Lesson?.LessonName ?? "",
+                            TimeLimit = q.TimeLimit,
+                            PassingScore = q.PassingScore,
+                            MaxAttempts = q.MaxAttempts,
+                            IsFinalQuiz = q.IsFinalQuiz ?? false,
+                            IsPrerequisiteQuiz = q.IsPrerequisiteQuiz ?? false,
+                            BlocksLessonCompletion = q.BlocksLessonCompletion ?? false,
+                            QuizCreatedAt = q.QuizCreatedAt,
+                            QuizUpdatedAt = q.QuizUpdatedAt,
+                            Questions = q.Questions?.OrderBy(qu => qu.QuestionOrder).Select(qu => new QuestionViewModel
+                            {
+                                QuestionId = qu.QuestionId,
+                                QuestionText = qu.QuestionText,
+                                QuestionType = qu.QuestionType,
+                                Points = qu.Points ?? 0,
+                                QuestionOrder = qu.QuestionOrder ?? 0,
+                                Explanation = qu.Explanation ?? "",
+                                AnswerOptions = qu.AnswerOptions?.OrderBy(ao => ao.OptionOrder).Select(ao => new AnswerOptionViewModel
+                                {
+                                    OptionId = ao.OptionId,
+                                    OptionText = ao.OptionText,
+                                    IsCorrect = ao.IsCorrect ?? false,
+                                    OptionOrder = ao.OptionOrder ?? 0
+                                }).ToList() ?? new List<AnswerOptionViewModel>()
+                            }).ToList() ?? new List<QuestionViewModel>()
+                        }).ToList()
+                }).ToList();
+
+                viewModel.Reviews = course.Feedbacks
+                    .OrderByDescending(f => f.FeedbackCreatedAt)
+                    .Take(10)
+                    .Select(f => new ReviewViewModel
+                    {
+                        ReviewId = f.FeedbackId,
+                        UserName = f.User.FullName ?? f.User.Username,
+                        UserImage = f.User.UserImage ?? MediaConstants.Defaults.DefaultAvatarPath,
+                        StarRating = f.StarRating ?? 0,
+                        ReviewComment = f.Comment ?? "",
+                        ReviewDate = f.FeedbackCreatedAt,
+                        IsVerifiedPurchase = f.IsVerifiedPurchase ?? false,
+                        UserId = f.UserId
+                    }).ToList();
+
+                return viewModel;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading course detail {CourseId}", courseId);
+                return null;
+            }
+        }
+
+        public async Task<List<CourseViewModel>> SearchCoursesAsync(string? search, string? category, int page, int pageSize, string? sortBy)
+        {
+            try
+            {
+                var courses = await _courseRepo.SearchCoursesAsync(search, category, page, pageSize, sortBy ?? "date");
+
+                return courses.Select(c => new CourseViewModel
+                {
+                    CourseId = c.CourseId,
+                    CourseName = c.CourseName,
+                    CoursePicture = c.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
+                    Description = c.CourseDescription,
+                    Price = c.Price,
+                    CreatedBy = c.Author.FullName ?? c.Author.Username,
+                    CourseCategories = c.CourseCategories
+                        .Select(cc => cc.CourseCategoryName)
+                        .ToList(),
+                    EnrollmentCount = c.Enrollments.Count(),
+                    StarRating = 4 // Default rating
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching courses");
+                return new List<CourseViewModel>();
+            }
+        }
+
+        public async Task<(List<CourseViewModel> courses, int totalCount)> SearchCoursesWithPaginationAsync(
+            string? courseSearch,
+            string? categorySearch,
+            int page,
+            int pageSize,
+            string? sortBy,
+            string? price = null,
+            string? difficulty = null,
+            string? duration = null,
+            string? userRole = null,
+            string? userId = null)
+        {
+            try
+            {
+                // Build query based on user role
+                var query = _context.Courses.AsQueryable();
+
+                // Role-based filtering
+                if (userRole?.Equals("Instructor", StringComparison.OrdinalIgnoreCase) == true && !string.IsNullOrEmpty(userId))
+                {
+                    // Instructors see their own courses (including denied/pending)
+                    query = query.Where(c => c.AuthorId == userId);
+                }
+                else if (userRole?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    // Admins see all courses including deleted ones
+                    query = query.Where(c => c.CourseStatus >= 0);
+                }
+                else
+                {
+                    // Regular users see only approved and active courses
+                    query = query.Where(c => (c.CourseStatus == 1 || c.CourseStatus == 2) && c.ApprovalStatus == "Approved");
+                }
+
+                // Apply search filters
+                if (!string.IsNullOrWhiteSpace(courseSearch))
+                {
+                    query = query.Where(c => c.CourseName.Contains(courseSearch) || c.CourseDescription.Contains(courseSearch));
+                }
+
+                if (!string.IsNullOrWhiteSpace(categorySearch))
+                {
+                    query = query.Where(c => c.CourseCategories.Any(cc => cc.CourseCategoryName.Contains(categorySearch)));
+                }
+
+                // Apply additional filters
+                if (!string.IsNullOrWhiteSpace(price))
+                {
+                    switch (price.ToLower())
+                    {
+                        case "free":
+                            query = query.Where(c => c.Price == 0);
+                            break;
+                        case "paid":
+                            query = query.Where(c => c.Price > 0);
+                            break;
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(difficulty))
+                {
+                    if (byte.TryParse(difficulty, out byte difficultyLevel))
+                    {
+                        query = query.Where(c => c.DifficultyLevel == difficultyLevel);
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(duration))
+                {
+                    switch (duration.ToLower())
+                    {
+                        case "short":
+                            query = query.Where(c => c.EstimatedDuration <= 60);
+                            break;
+                        case "medium":
+                            query = query.Where(c => c.EstimatedDuration > 60 && c.EstimatedDuration <= 180);
+                            break;
+                        case "long":
+                            query = query.Where(c => c.EstimatedDuration > 180);
+                            break;
+                    }
+                }
+
+                // Get total count before pagination
+                var totalCount = await query.CountAsync();
+
+                // Apply sorting
+                query = sortBy?.ToLower() switch
+                {
+                    "name" => query.OrderBy(c => c.CourseName),
+                    "price" => query.OrderBy(c => c.Price),
+                    "enrollment" => query.OrderByDescending(c => c.Enrollments.Count),
+                    "rating" => query.OrderByDescending(c => c.Feedbacks.Average(f => f.StarRating ?? 0)),
+                    "oldest" => query.OrderBy(c => c.CourseCreatedAt),
+                    _ => query.OrderByDescending(c => c.CourseCreatedAt) // newest
+                };
+
+                // Apply pagination
+                var courses = await query
+                    .Include(c => c.Author)
+                    .Include(c => c.CourseCategories)
+                    .Include(c => c.Enrollments)
+                    .Include(c => c.Feedbacks)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var courseViewModels = courses.Select(c => new CourseViewModel
+                {
+                    CourseId = c.CourseId,
+                    CourseName = c.CourseName,
+                    CoursePicture = c.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
+                    Description = c.CourseDescription,
+                    Price = c.Price,
+                    CreatedBy = c.Author.FullName ?? c.Author.Username,
+                    CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
+                    EnrollmentCount = c.Enrollments.Count,
+                    StarRating = c.Feedbacks.Any(f => f.StarRating.HasValue)
+                        ? (int)Math.Round(c.Feedbacks.Where(f => f.StarRating.HasValue).Average(f => f.StarRating!.Value))
+                        : 0
+                }).ToList();
+
+                return (courseViewModels, totalCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching courses with pagination");
+                return (new List<CourseViewModel>(), 0);
+            }
+        }
+
+        public async Task<bool> EnrollUserAsync(string userId, string courseId)
+        {
+            try
+            {
+                return await _enrollmentService.EnrollAsync(userId, courseId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error enrolling user {UserId} in course {CourseId}", userId, courseId);
+                return false;
+            }
+        }
+
+        public async Task<bool> IsUserEnrolledAsync(string userId, string courseId)
+        {
+            try
+            {
+                return await _enrollmentService.IsEnrolledAsync(userId, courseId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking enrollment for user {UserId} in course {CourseId}", userId, courseId);
+                return false;
+            }
+        }
+
+        public async Task<List<CourseCategoryViewModel>> GetCategoriesAsync()
+        {
+            try
+            {
+                var cacheKey = "course_categories";
+                if (_cache.TryGetValue(cacheKey, out List<CourseCategoryViewModel>? cachedCategories))
+                {
+                    return cachedCategories ?? new List<CourseCategoryViewModel>();
+                }
+
+                var categories = await _context.CourseCategories
+                    .Include(cc => cc.Courses)
+                    .Where(cc => cc.Courses.Any(c => (c.CourseStatus == 1 || c.CourseStatus == 2) && c.ApprovalStatus == "Approved"))
+                    .Select(cc => new CourseCategoryViewModel
+                    {
+                        CategoryId = cc.CourseCategoryId,
+                        CategoryName = cc.CourseCategoryName,
+                        CourseCount = cc.Courses.Count(c => (c.CourseStatus == 1 || c.CourseStatus == 2) && c.ApprovalStatus == "Approved")
+                    })
+                    .Where(cc => cc.CourseCount > 0)
+                    .OrderBy(cc => cc.CategoryName)
+                    .ToListAsync();
+
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(CacheExpiration);
+                _cache.Set(cacheKey, categories, cacheOptions);
+
+                return categories;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading course categories");
+                return new List<CourseCategoryViewModel>();
+            }
+        }
+
+        public async Task<List<CategoryAutocompleteItem>> SearchCategoriesAsync(string searchTerm)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    return new List<CategoryAutocompleteItem>();
+                }
+
+                var categories = await _context.CourseCategories
+                    .Where(cc => cc.CourseCategoryName.Contains(searchTerm))
+                    .Select(cc => new CategoryAutocompleteItem
+                    {
+                        CategoryId = cc.CourseCategoryId,
+                        CategoryName = cc.CourseCategoryName
+                    })
+                    .Take(10)
+                    .ToListAsync();
+
+                return categories;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching categories with term: {SearchTerm}", searchTerm);
+                return new List<CategoryAutocompleteItem>();
+            }
+        }
+
+        public async Task<string> CreateCourseAsync(CreateCourseViewModel model, string authorId)
+        {
+            try
+            {
+                var course = new Course
+                {
+                    CourseId = Guid.NewGuid().ToString(),
+                    CourseName = model.CourseName,
+                    CourseDescription = model.CourseDescription,
+                    Price = model.Price,
+                    EstimatedDuration = model.EstimatedDuration,
+                    DifficultyLevel = model.DifficultyLevel,
+                    AuthorId = authorId,
+                    CourseStatus = 1, // Active
+                    ApprovalStatus = "Draft", // Start as draft
+                    CourseCreatedAt = DateTime.UtcNow,
+                    CourseUpdatedAt = DateTime.UtcNow
+                };
+
+                // Add categories
+                if (model.SelectedCategories != null && model.SelectedCategories.Any())
+                {
+                    var categories = await _context.CourseCategories
+                        .Where(cc => model.SelectedCategories.Contains(cc.CourseCategoryId))
+                        .ToListAsync();
+
+                    foreach (var category in categories)
+                    {
+                        course.CourseCategories.Add(category);
+                    }
+                }
+
+                _context.Courses.Add(course);
+                await _context.SaveChangesAsync();
+
+                return course.CourseId;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating course for author {AuthorId}", authorId);
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateCourseImageAsync(string courseId, string imagePath)
+        {
+            try
+            {
+                var course = await _context.Courses.FindAsync(courseId);
+                if (course == null) return false;
+
+                course.CourseImage = imagePath;
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating course image for course {CourseId}", courseId);
+                return false;
+            }
+        }
+
+        public async Task<CreateCourseViewModel?> GetCourseForEditAsync(string courseId, string authorId)
+        {
+            try
+            {
+                var course = await _context.Courses
+                    .Include(c => c.CourseCategories)
+                    .FirstOrDefaultAsync(c => c.CourseId == courseId && c.AuthorId == authorId);
+
+                if (course == null) return null;
+
+                var model = new CreateCourseViewModel
+                {
+                    CourseName = course.CourseName,
+                    CourseDescription = course.CourseDescription ?? "",
+                    Price = course.Price,
+                    EstimatedDuration = course.EstimatedDuration ?? 0,
+                    DifficultyLevel = course.DifficultyLevel ?? 1,
+                    SelectedCategories = course.CourseCategories.Select(cc => cc.CourseCategoryId).ToList(),
+                    AvailableCategories = await GetCategoriesAsync()
+                };
+
+                return model;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting course for edit {CourseId}", courseId);
+                return null;
+            }
+        }
+
+        public async Task<bool> UpdateCourseAsync(string courseId, CreateCourseViewModel model, string authorId)
+        {
+            try
+            {
+                var course = await _context.Courses
+                    .Include(c => c.CourseCategories)
+                    .FirstOrDefaultAsync(c => c.CourseId == courseId && c.AuthorId == authorId);
+
+                if (course == null) return false;
+
+                // Update basic properties
+                course.CourseName = model.CourseName;
+                course.CourseDescription = model.CourseDescription;
+                course.Price = model.Price;
+                course.EstimatedDuration = model.EstimatedDuration;
+                course.DifficultyLevel = model.DifficultyLevel;
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                // Update categories
+                course.CourseCategories.Clear();
+                if (model.SelectedCategories != null && model.SelectedCategories.Any())
+                {
+                    var categories = await _context.CourseCategories
+                        .Where(cc => model.SelectedCategories.Contains(cc.CourseCategoryId))
+                        .ToListAsync();
+
+                    foreach (var category in categories)
+                    {
+                        course.CourseCategories.Add(category);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating course {CourseId}", courseId);
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteCourseAsync(string courseId, string authorId)
+        {
+            try
+            {
+                var course = await _context.Courses
+                    .Include(c => c.Enrollments)
+                    .FirstOrDefaultAsync(c => c.CourseId == courseId && c.AuthorId == authorId);
+
+                if (course == null) return false;
+
+                // Check if course has enrolled students
+                if (course.Enrollments.Any())
+                {
+                    return false; // Cannot delete course with enrolled students
+                }
+
+                // Soft delete
+                course.CourseStatus = -1; // Deleted
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting course {CourseId}", courseId);
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateCourseApprovalStatusAsync(string courseId, string approvalStatus)
+        {
+            try
+            {
+                var course = await _context.Courses.FindAsync(courseId);
+                if (course == null) return false;
+
+                course.ApprovalStatus = approvalStatus;
+                course.CourseUpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating course approval status {CourseId}", courseId);
+                return false;
+            }
+        }
+
+        public async Task<Course?> GetCourseByIdAsync(string courseId)
+        {
+            try
+            {
+                return await _context.Courses
+                    .Include(c => c.Author)
+                    .FirstOrDefaultAsync(c => c.CourseId == courseId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting course by ID {CourseId}", courseId);
+                return null;
+            }
+        }
+
+        public async Task<List<Chapter>> GetChaptersByCourseIdAsync(string courseId)
+        {
+            try
+            {
+                return await _context.Chapters
+                    .Include(c => c.Lessons)
+                    .Where(c => c.CourseId == courseId)
+                    .OrderBy(c => c.ChapterOrder)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting chapters for course {CourseId}", courseId);
+                return new List<Chapter>();
+            }
+        }
+
+        public async Task<List<Lesson>> GetLessonsByChapterIdAsync(string chapterId)
+        {
+            try
+            {
+                return await _context.Lessons
+                    .Include(l => l.LessonType)
+                    .Include(l => l.UnlockAfterLesson)
+                    .Include(l => l.Quizzes)
+                    .Where(l => l.ChapterId == chapterId)
+                    .OrderBy(l => l.LessonOrder)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting lessons for chapter {ChapterId}", chapterId);
+                return new List<Lesson>();
+            }
+        }
+
+        public async Task<CourseListViewModel> GetInstructorCoursesAsync(string authorId, string? search, string? category, int page, int pageSize)
+        {
+            try
+            {
+                var query = _context.Courses
+                    .Include(c => c.Author)
+                    .Include(c => c.CourseCategories)
+                    .Include(c => c.Enrollments)
+                    .Where(c => c.AuthorId == authorId && c.CourseStatus >= 0); // Include all statuses for instructor
+
+                // Apply search filter
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(c => c.CourseName.Contains(search) || c.CourseDescription.Contains(search));
+                }
+
+                // Apply category filter
+                if (!string.IsNullOrWhiteSpace(category))
+                {
+                    query = query.Where(c => c.CourseCategories.Any(cc => cc.CourseCategoryName.Contains(category)));
+                }
+
+                var totalCourses = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling((double)totalCourses / pageSize);
+
+                var courses = await query
+                    .OrderByDescending(c => c.CourseCreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var courseViewModels = courses.Select(c => new CourseViewModel
+                {
+                    CourseId = c.CourseId,
+                    CourseName = c.CourseName,
+                    CoursePicture = c.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
+                    Description = c.CourseDescription,
+                    Price = c.Price,
+                    CreatedBy = c.Author.FullName ?? c.Author.Username,
+                    CourseCategories = c.CourseCategories.Select(cc => cc.CourseCategoryName).ToList(),
+                    EnrollmentCount = c.Enrollments.Count,
+                    StarRating = 4 // Default rating
+                }).ToList();
+
+                var categoryViewModels = await GetCategoriesAsync();
+
+                return new CourseListViewModel
+                {
+                    Courses = courseViewModels,
+                    Categories = categoryViewModels,
+                    SearchQuery = search,
+                    SelectedCategory = category,
+                    CurrentPage = page,
+                    TotalPages = totalPages,
+                    TotalCourses = totalCourses,
+                    PageSize = pageSize
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading instructor courses for author {AuthorId}", authorId);
+                return new CourseListViewModel();
+            }
+        }
+
+        public void RefreshCategoryCache()
+        {
+            _cache.Remove("course_categories");
+        }
+
+        private string GetDifficultyLevelText(byte? level)
+        {
+            return level switch
+            {
+                1 => "Beginner",
+                2 => "Intermediate",
+                3 => "Advanced",
+                _ => "Beginner"
+            };
+        }
+
+        #endregion
+
+        #region Business Logic Methods
 
         /// <summary>
         /// Get courses based on user role and permissions
@@ -64,11 +941,11 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (currentUserRole?.Equals("Instructor", StringComparison.OrdinalIgnoreCase) == true
                     && !string.IsNullOrEmpty(currentUserId))
                 {
-                    viewModel = await _courseService.GetInstructorCoursesAsync(currentUserId, search, category, page, pageSize);
+                    viewModel = await GetInstructorCoursesAsync(currentUserId, search, category, page, pageSize);
                 }
                 else
                 {
-                    viewModel = await _courseService.GetCoursesAsync(search, category, page, pageSize);
+                    viewModel = await GetCoursesAsync(search, category, page, pageSize);
                 }
 
                 return new CourseIndexResult
@@ -108,7 +985,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 string? userRole = user.FindFirst(ClaimTypes.Role)?.Value;
                 string? userId = user.FindFirst("UserId")?.Value;
 
-                var (courses, totalCount) = await _courseService.SearchCoursesWithPaginationAsync(
+                var (courses, totalCount) = await SearchCoursesWithPaginationAsync(
                     courseSearch, categorySearch, page, pageSize, sortBy, price, difficulty, duration, userRole, userId);
                 var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
@@ -162,7 +1039,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     currentUserId = user.FindFirst("UserId")?.Value;
                 }
 
-                var viewModel = await _courseService.GetCourseDetailAsync(courseId, currentUserId);
+                var viewModel = await GetCourseDetailAsync(courseId, currentUserId);
                 if (viewModel == null)
                 {
                     return new CourseDetailResult
@@ -175,7 +1052,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 // Set user-specific properties
                 if (user.Identity?.IsAuthenticated == true && !string.IsNullOrEmpty(currentUserId))
                 {
-                    viewModel.IsEnrolled = await _courseService.IsUserEnrolledAsync(currentUserId, courseId);
+                    viewModel.IsEnrolled = await _enrollmentService.IsEnrolledAsync(currentUserId, courseId);
                     viewModel.CanEnroll = !viewModel.IsEnrolled;
                 }
 
@@ -220,7 +1097,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var isAlreadyEnrolled = await _courseService.IsUserEnrolledAsync(userId, courseId);
+                var isAlreadyEnrolled = await _enrollmentService.IsEnrolledAsync(userId, courseId);
                 if (isAlreadyEnrolled)
                 {
                     return new EnrollmentResult
@@ -231,7 +1108,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
 
                 // Get course info to check price
-                var course = await _courseService.GetCourseByIdAsync(courseId);
+                var course = await GetCourseByIdAsync(courseId);
                 if (course == null)
                 {
                     return new EnrollmentResult
@@ -244,7 +1121,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 // If course is free, proceed with normal enrollment
                 if (course.Price == 0)
                 {
-                    var success = await _courseService.EnrollUserAsync(userId, courseId);
+                    var success = await _enrollmentService.EnrollAsync(userId, courseId);
                     if (success)
                     {
                         return new EnrollmentResult
@@ -377,7 +1254,7 @@ namespace BusinessLogicLayer.Services.Implementations
             {
                 var model = new CreateCourseViewModel
                 {
-                    AvailableCategories = await _courseService.GetCategoriesAsync()
+                    AvailableCategories = await GetCategoriesAsync()
                 };
 
                 return new CreateCourseResult
@@ -420,7 +1297,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var courseId = await _courseService.CreateCourseAsync(model, userId);
+                var courseId = await CreateCourseAsync(model, userId);
 
                 // Handle course image upload if provided
                 string? warningMessage = null;
@@ -430,7 +1307,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     if (uploadResult.Success && !string.IsNullOrEmpty(uploadResult.ImagePath))
                     {
                         // Update course with image path
-                        await _courseService.UpdateCourseImageAsync(courseId, uploadResult.ImagePath);
+                        await UpdateCourseImageAsync(courseId, uploadResult.ImagePath);
                     }
                     else
                     {
@@ -454,7 +1331,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 // Reload categories for the view
                 try
                 {
-                    model.AvailableCategories = await _courseService.GetCategoriesAsync();
+                    model.AvailableCategories = await GetCategoriesAsync();
                 }
                 catch (Exception)
                 {
@@ -490,7 +1367,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var model = await _courseService.GetCourseForEditAsync(courseId, userId);
+                var model = await GetCourseForEditAsync(courseId, userId);
                 if (model == null)
                 {
                     return new EditCourseResult
@@ -544,7 +1421,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var success = await _courseService.UpdateCourseAsync(courseId, model, userId);
+                var success = await UpdateCourseAsync(courseId, model, userId);
                 if (!success)
                 {
                     return new EditCourseResult
@@ -563,7 +1440,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     var uploadResult = await _courseImageService.UploadCourseImageAsync(model.CourseImage, courseId);
                     if (uploadResult.Success && !string.IsNullOrEmpty(uploadResult.ImagePath))
                     {
-                        await _courseService.UpdateCourseImageAsync(courseId, uploadResult.ImagePath);
+                        await UpdateCourseImageAsync(courseId, uploadResult.ImagePath);
                     }
                     else
                     {
@@ -587,7 +1464,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 // Reload categories for the view
                 try
                 {
-                    model.AvailableCategories = await _courseService.GetCategoriesAsync();
+                    model.AvailableCategories = await GetCategoriesAsync();
                 }
                 catch (Exception)
                 {
@@ -622,7 +1499,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var success = await _courseService.DeleteCourseAsync(courseId, userId);
+                var success = await DeleteCourseAsync(courseId, userId);
                 if (success)
                 {
                     return new DeleteCourseResult
@@ -653,30 +1530,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
         #endregion
 
-        #region Category Operations
 
-        /// <summary>
-        /// Search categories for autocomplete
-        /// </summary>
-        public async Task<List<CategoryAutocompleteItem>> SearchCategoriesAsync(string? term)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(term))
-                {
-                    return new List<CategoryAutocompleteItem>();
-                }
-
-                return await _courseService.SearchCategoriesAsync(term);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while searching categories with term: {Term}", term);
-                return new List<CategoryAutocompleteItem>();
-            }
-        }
-
-        #endregion
 
         #region Instructor Dashboard Operations
 
@@ -703,7 +1557,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (userRole?.Equals("admin", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     // Admin can see all courses
-                    var allCourses = await _courseService.GetCoursesAsync(null, null, 1, int.MaxValue);
+                    var allCourses = await GetCoursesAsync(null, null, 1, int.MaxValue);
                     courseList = allCourses.Courses.Select(c => new
                     {
                         courseId = c.CourseId,
@@ -714,7 +1568,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 else
                 {
                     // Instructor can see only their courses
-                    var courses = await _courseService.GetInstructorCoursesAsync(userId, null, null, 1, int.MaxValue);
+                    var courses = await GetInstructorCoursesAsync(userId, null, null, 1, int.MaxValue);
                     courseList = courses.Courses.Select(c => new
                     {
                         courseId = c.CourseId,
@@ -762,7 +1616,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
 
                 // Check if user is the author of the course
-                var course = await _courseService.GetCourseDetailAsync(courseId, userId);
+                var course = await GetCourseDetailAsync(courseId, userId);
                 if (course == null)
                 {
                     return new CourseApprovalResult
@@ -813,7 +1667,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
 
                 // Update course status to pending
-                var success = await _courseService.UpdateCourseApprovalStatusAsync(courseId, "Pending");
+                var success = await UpdateCourseApprovalStatusAsync(courseId, "Pending");
                 if (success)
                 {
                     // Send notification to all admins about the approval request
@@ -885,7 +1739,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
 
                 // Check if user is enrolled in the course
-                var isEnrolled = await _courseService.IsUserEnrolledAsync(userId, courseId);
+                var isEnrolled = await _enrollmentService.IsEnrolledAsync(userId, courseId);
                 if (!isEnrolled)
                 {
                     return new LearnManagementResult
@@ -896,7 +1750,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
 
                 // Get course basic info first
-                var course = await _courseService.GetCourseByIdAsync(courseId);
+                var course = await GetCourseByIdAsync(courseId);
                 if (course == null)
                 {
                     return new LearnManagementResult
@@ -907,14 +1761,14 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
 
                 // Get all chapters for this course
-                var chapters = await _courseService.GetChaptersByCourseIdAsync(courseId);
+                var chapters = await GetChaptersByCourseIdAsync(courseId);
 
                 var chapterViewModels = new List<LearnChapterViewModel>();
 
                 foreach (var chapter in chapters.OrderBy(c => c.ChapterOrder))
                 {
                     // Get all lessons for each chapter
-                    var lessons = await _courseService.GetLessonsByChapterIdAsync(chapter.ChapterId);
+                    var lessons = await GetLessonsByChapterIdAsync(chapter.ChapterId);
 
                     var lessonViewModels = new List<LearnLessonViewModel>();
                     var quizViewModels = new List<LearnQuizViewModel>();
@@ -1060,7 +1914,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
 
                 // If lesson is locked but no specific prerequisite, check if previous lesson in same chapter is completed
-                var previousLesson = await _courseService.GetLessonsByChapterIdAsync(lesson.ChapterId);
+                var previousLesson = await GetLessonsByChapterIdAsync(lesson.ChapterId);
                 var previousLessonInOrder = previousLesson
                     .Where(l => l.LessonOrder < lesson.LessonOrder &&
                                l.LessonType?.LessonTypeName != "Quiz")
@@ -1189,6 +2043,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
     #endregion
 }
+
 
 
 
