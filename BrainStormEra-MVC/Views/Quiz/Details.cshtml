@@ -138,10 +138,10 @@
                             <div class="course-preview-content">
                                 <h5 class="mb-3">Quiz Actions</h5>
                                 <div class="d-grid gap-2">
-                                    <a href="@Url.Action("Preview", "Quiz", new { id = Model.QuizId })" 
+                                    @* <a href="@Url.Action("Preview", "Quiz", new { id = Model.QuizId })" 
                                        class="btn btn-outline-primary">
                                         <i class="fas fa-eye me-2"></i>Preview Quiz
-                                    </a>
+                                    </a> *@
                                     <a href="@Url.Action("Edit", "Quiz", new { id = Model.QuizId })" 
                                        class="btn btn-primary">
                                         <i class="fas fa-edit me-2"></i>Edit Quiz
@@ -227,7 +227,7 @@
                     </div>
 
                     <!-- Sidebar -->
-                    <div class="col-lg-4">
+                    @* <div class="col-lg-4">
                         <!-- Quiz Settings -->
                         <div class="card mb-3">
                             <div class="card-header">
@@ -254,7 +254,7 @@
                                 </a>
                             </div>
                         </div>
-                    </div>
+                    </div> *@
                 </div>
             </div>
         </div>
