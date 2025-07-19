@@ -1,11 +1,37 @@
 @{
-    // Chatbot partial view - placeholder for now
+    // Chatbot partial view - chỉ hiển thị khi user đang ở lesson
 }
 
 @if (User.Identity?.IsAuthenticated == true)
 {
-    <!-- Chatbot will be implemented here when needed -->
-    <div id="chatbot-container" style="display: none;">
-        <!-- Chatbot UI will be added here -->
+    <div id="chatbot-container" class="chatbot-container" style="display: none;">
+        <button id="chatbot-toggle" class="chatbot-toggle" title="AI Assistant">
+            <i class="fas fa-robot"></i>
+        </button>
+        
+        <div id="chatbot-window" class="chatbot-window" style="display: none;">
+            <div class="chatbot-header">
+                <h5><i class="fas fa-robot"></i> AI Learning Assistant</h5>
+                <button id="chatbot-close" class="chatbot-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chatbot-messages" id="chatbot-messages">
+                <div class="chatbot-message bot-message">
+                    <div class="message-content">
+                        <i class="fas fa-robot"></i>
+                        <p>Hello! I'm your AI learning assistant. How can I help you with this lesson?</p>
+                    </div>
+                </div>
+            </div>
+            <div class="chatbot-input">
+                <input type="text" id="chatbot-input" placeholder="Ask me anything about this lesson..." />
+                <button id="chatbot-send">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
     </div>
+
+
 }
