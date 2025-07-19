@@ -581,6 +581,71 @@ namespace BusinessLogicLayer.Services
             }
         }
 
+        public async Task<bool> ChangeUserRoleAsync(string userId, string newRole)
+        {
+            try
+            {
+                // Validate the new role
+                var validRoles = new[] { "learner", "instructor", "admin" };
+                if (!validRoles.Contains(newRole, StringComparer.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Invalid role attempted: {NewRole} for user {UserId}", newRole, userId);
+                    return false;
+                }
+
+                // Get user details to check current role and validate promotion
+                var user = await _userRepo.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found: {UserId}", userId);
+                    return false;
+                }
+
+                // Check if user is already in the target role
+                if (string.Equals(user.UserRole, newRole, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation("User {UserId} is already in role {Role}", userId, newRole);
+                    return true; // Consider this a success
+                }
+
+                // For promoting to instructor, check if user has any content
+                if (string.Equals(newRole, "instructor", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Check if user has any courses, enrollments, or other content
+                    var hasCourses = await _courseRepo.GetInstructorCoursesAsync(userId, null, null, 1, 1);
+                    var hasEnrollments = user.Enrollments?.Any() == true;
+                    var hasProgress = user.UserProgresses?.Any() == true;
+                    var hasQuizAttempts = user.QuizAttempts?.Any() == true;
+
+                    if (hasCourses.Any() || hasEnrollments || hasProgress || hasQuizAttempts)
+                    {
+                        _logger.LogWarning("Cannot promote user {UserId} to instructor - user has existing content", userId);
+                        return false;
+                    }
+                }
+
+                // Change the user role
+                var result = await _adminRepo.ChangeUserRoleAsync(userId, newRole);
+
+                if (result)
+                {
+                    _logger.LogInformation("Successfully changed user {UserId} role from {OldRole} to {NewRole}",
+                        userId, user.UserRole, newRole);
+                }
+                else
+                {
+                    _logger.LogError("Failed to change user {UserId} role to {NewRole}", userId, newRole);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing user role for userId: {UserId}, newRole: {NewRole}", userId, newRole);
+                throw;
+            }
+        }
+
         public async Task<bool> DeleteUserAsync(string userId)
         {
             try

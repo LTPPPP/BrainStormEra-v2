@@ -15,6 +15,7 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<AdminCourseDetailsViewModel?> GetCourseDetailsAsync(string courseId);
         Task<bool> UpdateUserStatusAsync(string userId, bool isBanned);
         Task<bool> UpdateUserPointsAsync(string userId, decimal pointsChange);
+        Task<bool> ChangeUserRoleAsync(string userId, string newRole);
         Task<bool> DeleteUserAsync(string userId);
         Task<bool> UpdateCourseStatusAsync(string courseId, bool isApproved, string? adminId = null);
         Task<bool> RejectCourseAsync(string courseId, string reason, string? adminId = null);

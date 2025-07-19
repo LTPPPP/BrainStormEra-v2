@@ -285,6 +285,16 @@ namespace DataAccessLayer.Models.ViewModels
         public bool IsBanned { get; set; }
     }
 
+    public class ChangeUserRoleRequest
+    {
+        [Required]
+        public required string UserId { get; set; }
+
+        [Required]
+        [StringLength(20)]
+        public required string NewRole { get; set; }
+    }
+
     public class UpdateCourseStatusRequest
     {
         [Required]

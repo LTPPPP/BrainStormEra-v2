@@ -235,25 +235,121 @@ namespace BrainStormEra_Razor.Pages.Admin
                 });
             }
         }
-    }
 
-    // Request models
-    public class UpdateUserStatusRequest
-    {
-        [Required]
-        public string UserId { get; set; } = string.Empty;
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OnPostChangeUserRoleAsync([FromBody] ChangeUserRoleRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Received role change request for user: {UserId}, newRole: {NewRole} by admin: {AdminName}",
+                    request?.UserId, request?.NewRole, HttpContext.User?.Identity?.Name);
 
-        [Required]
-        public bool IsBanned { get; set; }
-    }
+                // Validate request
+                if (request == null)
+                {
+                    _logger.LogWarning("ChangeUserRole request is null");
+                    return new JsonResult(new { success = false, message = "Invalid request" });
+                }
 
-    public class UpdateUserPointsRequest
-    {
-        [Required]
-        public string UserId { get; set; } = string.Empty;
+                if (string.IsNullOrEmpty(request.UserId))
+                {
+                    _logger.LogWarning("ChangeUserRole request UserId is null or empty");
+                    return new JsonResult(new { success = false, message = "User ID is required" });
+                }
 
-        [Required]
-        [Range(-999999, 999999, ErrorMessage = "Points change must be between -999999 and 999999")]
-        public decimal PointsChange { get; set; }
+                if (string.IsNullOrEmpty(request.NewRole))
+                {
+                    _logger.LogWarning("ChangeUserRole request NewRole is null or empty");
+                    return new JsonResult(new { success = false, message = "New role is required" });
+                }
+
+                // Validate model state
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                    _logger.LogWarning("ChangeUserRole model validation failed: {Errors}", string.Join(", ", errors));
+                    return new JsonResult(new { success = false, message = "Invalid request data" });
+                }
+
+                // Check if admin is trying to change their own role
+                var currentUserId = HttpContext.User?.FindFirst("UserId")?.Value;
+                if (request.UserId == currentUserId)
+                {
+                    _logger.LogWarning("Admin {AdminName} attempted to change their own role", HttpContext.User?.Identity?.Name);
+                    return new JsonResult(new { success = false, message = "You cannot change your own role" });
+                }
+
+                // Validate the new role
+                var validRoles = new[] { "learner", "instructor", "admin" };
+                if (!validRoles.Contains(request.NewRole, StringComparer.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Invalid role attempted: {NewRole} for user {UserId}", request.NewRole, request.UserId);
+                    return new JsonResult(new { success = false, message = "Invalid role specified" });
+                }
+
+                // Change user role
+                var result = await _adminService.ChangeUserRoleAsync(request.UserId, request.NewRole);
+
+                if (result)
+                {
+                    _logger.LogInformation("User {UserId} role changed to {NewRole} successfully by admin {AdminName}",
+                        request.UserId, request.NewRole, HttpContext.User?.Identity?.Name);
+
+                    return new JsonResult(new
+                    {
+                        success = true,
+                        message = $"User role changed to {request.NewRole} successfully"
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to change user role for user: {UserId} to {NewRole}", request.UserId, request.NewRole);
+                    return new JsonResult(new
+                    {
+                        success = false,
+                        message = "Failed to change user role. User may have existing content that prevents role change."
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing user role for user: {UserId} to {NewRole}", request?.UserId, request?.NewRole);
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = "An error occurred while changing user role. Please try again."
+                });
+            }
+        }
+
+        // Request models
+        public class UpdateUserStatusRequest
+        {
+            [Required]
+            public string UserId { get; set; } = string.Empty;
+
+            [Required]
+            public bool IsBanned { get; set; }
+        }
+
+        public class UpdateUserPointsRequest
+        {
+            [Required]
+            public string UserId { get; set; } = string.Empty;
+
+            [Required]
+            [Range(-999999, 999999, ErrorMessage = "Points change must be between -999999 and 999999")]
+            public decimal PointsChange { get; set; }
+        }
+
+        public class ChangeUserRoleRequest
+        {
+            [Required]
+            public string UserId { get; set; } = string.Empty;
+
+            [Required]
+            [StringLength(20)]
+            public string NewRole { get; set; } = string.Empty;
+        }
     }
 }
