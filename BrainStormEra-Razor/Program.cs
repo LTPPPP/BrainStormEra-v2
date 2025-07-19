@@ -62,7 +62,7 @@ namespace BrainStormEra_Razor
             // Register Service Interfaces and Implementations
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.UserService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAvatarService, BusinessLogicLayer.Services.AvatarService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementService, BusinessLogicLayer.Services.AchievementService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementService, BusinessLogicLayer.Services.Implementations.AchievementServiceImpl>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementUnlockService, BusinessLogicLayer.Services.Implementations.AchievementUnlockServiceImpl>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementNotificationService, BusinessLogicLayer.Services.Implementations.AchievementNotificationServiceImpl>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementIconService, BusinessLogicLayer.Services.AchievementIconService>();
@@ -72,11 +72,12 @@ namespace BrainStormEra_Razor
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.INotificationService, BusinessLogicLayer.Services.NotificationService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseService, BusinessLogicLayer.Services.CourseService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.EnrollmentService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserContextService, BusinessLogicLayer.Services.UserContextService>();
 
             // Register other Services from BusinessLogicLayer
             builder.Services.AddScoped<BusinessLogicLayer.Services.UserService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.AvatarService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.AchievementService>();
+
             builder.Services.AddScoped<BusinessLogicLayer.Services.AchievementIconService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.MediaPathService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.AdminService>();
