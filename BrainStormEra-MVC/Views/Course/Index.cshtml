@@ -295,8 +295,29 @@
                                     }
                                     else if (ViewBag.IsAuthenticated == true && (ViewBag.UserRole == "Instructor" || ViewBag.UserRole == "Admin"))
                                     {
-                                        @* Show status only for instructor and admin roles *@
-                                        @if (course.ApprovalStatus?.ToLower() == "pending")
+                                        @* Show status and edit button for instructor and admin roles *@
+                                        @if (course.ApprovalStatus?.ToLower() == "draft" || course.CourseStatus == 5) // Assuming 5 is inactive status
+                                        {
+                                            <div class="d-flex gap-2">
+                                                <a href="@Url.Action("Edit", "Course", new { id = course.CourseId })" 
+                                                   class="btn btn-sm btn-outline-warning" title="Edit Course">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                @if (course.ApprovalStatus?.ToLower() == "draft")
+                                                {
+                                                    <span class="btn btn-sm btn-info" title="Course Status">
+                                                        <i class="fas fa-edit"></i> Draft
+                                                    </span>
+                                                }
+                                                @if (course.CourseStatus == 5)
+                                                {
+                                                    <span class="btn btn-sm btn-secondary" title="Course Status">
+                                                        <i class="fas fa-pause-circle"></i> Inactive
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
+                                        else if (course.ApprovalStatus?.ToLower() == "pending")
                                         {
                                             <span class="btn btn-sm btn-warning" title="Course Status">
                                                 <i class="fas fa-clock"></i> Pending
@@ -304,20 +325,20 @@
                                         }
                                         else if (course.ApprovalStatus?.ToLower() == "denied" || course.ApprovalStatus?.ToLower() == "rejected")
                                         {
-                                            <span class="btn btn-sm btn-danger" title="Course Status">
-                                                <i class="fas fa-times-circle"></i> Rejected
-                                            </span>
+                                            <div class="d-flex gap-2">
+                                                <a href="@Url.Action("Edit", "Course", new { id = course.CourseId })" 
+                                                   class="btn btn-sm btn-outline-warning" title="Edit Course">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                <span class="btn btn-sm btn-danger" title="Course Status">
+                                                    <i class="fas fa-times-circle"></i> Rejected
+                                                </span>
+                                            </div>
                                         }
                                         else if (course.CourseStatus == 4)
                                         {
                                             <span class="btn btn-sm btn-secondary" title="Course Status">
                                                 <i class="fas fa-trash"></i> Deleted
-                                            </span>
-                                        }
-                                        else if (course.ApprovalStatus?.ToLower() == "draft")
-                                        {
-                                            <span class="btn btn-sm btn-info" title="Course Status">
-                                                <i class="fas fa-edit"></i> Draft
                                             </span>
                                         }
                                         else if (course.ApprovalStatus?.ToLower() == "approved")
@@ -328,9 +349,15 @@
                                         }
                                         else if (string.IsNullOrEmpty(course.ApprovalStatus))
                                         {
-                                            <span class="btn btn-sm btn-outline-info" title="Course Status">
-                                                <i class="fas fa-edit"></i> Draft
-                                            </span>
+                                            <div class="d-flex gap-2">
+                                                <a href="@Url.Action("Edit", "Course", new { id = course.CourseId })" 
+                                                   class="btn btn-sm btn-outline-warning" title="Edit Course">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                <span class="btn btn-sm btn-outline-info" title="Course Status">
+                                                    <i class="fas fa-edit"></i> Draft
+                                                </span>
+                                            </div>
                                         }
                                         else
                                         {
