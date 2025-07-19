@@ -1543,8 +1543,8 @@ namespace DataAccessLayer.Repositories
                     query = query.Where(c =>
                         c.UserMessage.Contains(search) ||
                         c.BotResponse.Contains(search) ||
-                        c.User.Username.Contains(search) ||
-                        c.User.FullName.Contains(search));
+                        (c.User != null && c.User.Username != null && c.User.Username.Contains(search)) ||
+                        (c.User != null && c.User.FullName != null && c.User.FullName.Contains(search)));
                 }
 
                 if (!string.IsNullOrEmpty(userId))
@@ -1589,8 +1589,8 @@ namespace DataAccessLayer.Repositories
                     query = query.Where(c =>
                         c.UserMessage.Contains(search) ||
                         c.BotResponse.Contains(search) ||
-                        c.User.Username.Contains(search) ||
-                        c.User.FullName.Contains(search));
+                        (c.User != null && c.User.Username != null && c.User.Username.Contains(search)) ||
+                        (c.User != null && c.User.FullName != null && c.User.FullName.Contains(search)));
                 }
 
                 if (!string.IsNullOrEmpty(userId))

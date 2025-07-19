@@ -233,6 +233,9 @@ namespace BrainStormEra_MVC
             // Register Payment Service
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPaymentService, BusinessLogicLayer.Services.Implementations.PaymentService>();
 
+            // Register Points Service
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPointsService, BusinessLogicLayer.Services.Implementations.PointsService>();
+
             // Register Recommendation Helper
             builder.Services.AddScoped<BusinessLogicLayer.Services.RecommendationHelper>();
 
@@ -408,6 +411,9 @@ namespace BrainStormEra_MVC
 
             // Add Security middleware for brute force protection
             app.UseSecurityMiddleware();
+
+            // Add Points refresh middleware
+            app.UsePointsRefresh();
 
             // Add Session middleware before Authentication
             app.UseSession();

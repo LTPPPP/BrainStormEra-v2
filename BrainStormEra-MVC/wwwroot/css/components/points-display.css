@@ -1,0 +1,116 @@
+/* Points Display Styling */
+.payment-points {
+    display: flex;
+    align-items: center;
+}
+
+.points-container {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    border-radius: 20px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    border: 1px solid #ffd700;
+    transition: all 0.3s ease;
+    min-width: 80px;
+    justify-content: center;
+}
+
+.points-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+.points-container i {
+    font-size: 16px;
+    margin-right: 6px;
+    animation: coinSpin 2s ease-in-out infinite;
+}
+
+.points-value {
+    font-weight: bold;
+    font-size: 14px;
+    color: #333;
+    margin-right: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.points-label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Animation for coin icon */
+@keyframes coinSpin {
+    0%, 100% {
+        transform: rotateY(0deg);
+    }
+    50% {
+        transform: rotateY(180deg);
+    }
+}
+
+/* Points update animation */
+.points-value.updating {
+    animation: pointsUpdate 0.5s ease-in-out;
+}
+
+@keyframes pointsUpdate {
+    0% {
+        transform: scale(1);
+        color: #333;
+    }
+    50% {
+        transform: scale(1.2);
+        color: #28a745;
+    }
+    100% {
+        transform: scale(1);
+        color: #333;
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .points-container {
+        padding: 6px 10px;
+        min-width: 70px;
+    }
+    
+    .points-value {
+        font-size: 13px;
+    }
+    
+    .points-label {
+        font-size: 11px;
+    }
+    
+    .points-container i {
+        font-size: 14px;
+        margin-right: 4px;
+    }
+}
+
+@media (max-width: 576px) {
+    .points-container {
+        padding: 5px 8px;
+        min-width: 60px;
+    }
+    
+    .points-value {
+        font-size: 12px;
+    }
+    
+    .points-label {
+        font-size: 10px;
+    }
+    
+    .points-container i {
+        font-size: 12px;
+        margin-right: 3px;
+    }
+} 

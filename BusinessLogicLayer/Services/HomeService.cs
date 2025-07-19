@@ -136,8 +136,8 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                // Use repository for user data with payment point
-                var user = await _userRepo.GetUserWithPaymentPointAsync(userId);
+                // Use repository for user data
+                var user = await _userRepo.GetByIdAsync(userId);
 
                 if (user == null)
                     throw new ArgumentException("User not found", nameof(userId));

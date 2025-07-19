@@ -274,6 +274,9 @@ namespace BusinessLogicLayer.Services.Implementations
                     claims.Add(new Claim("PaymentPoint", user.PaymentPoint.Value.ToString()));
                 }
 
+                // Add points last refresh time claim
+                claims.Add(new Claim("PointsLastRefresh", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")));
+
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var authProperties = new AuthenticationProperties
                 {

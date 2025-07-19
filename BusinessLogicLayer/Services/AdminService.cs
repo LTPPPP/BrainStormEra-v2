@@ -15,6 +15,7 @@ namespace BusinessLogicLayer.Services
         private readonly IAchievementRepo _achievementRepo;
 
         private readonly ILogger<AdminService> _logger;
+        private readonly IPointsService _pointsService;
 
         public AdminService(
             IAdminRepo adminRepo,
@@ -23,6 +24,7 @@ namespace BusinessLogicLayer.Services
             IAchievementService achievementService,
             ICertificateService certificateService,
             IAchievementRepo achievementRepo,
+            IPointsService pointsService,
             ILogger<AdminService> logger)
         {
             _adminRepo = adminRepo;
@@ -31,7 +33,7 @@ namespace BusinessLogicLayer.Services
             _achievementService = achievementService;
             _certificateService = certificateService;
             _achievementRepo = achievementRepo;
-
+            _pointsService = pointsService;
             _logger = logger;
         }
 
@@ -570,7 +572,7 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                return await _adminRepo.UpdateUserPointsAsync(userId, pointsChange);
+                return await _pointsService.UpdateUserPointsAsync(userId, pointsChange);
             }
             catch (Exception ex)
             {
