@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="~/css/pages/User/user-detail.css">
     <link rel="stylesheet" href="~/css/components/toast-notifications.css">
     <link rel="stylesheet" href="~/css/components/chatbot.css">
+    <link rel="stylesheet" href="~/css/pages/Achievements/LearnerAchievement.css">
 
     @* User authentication meta tags for JavaScript access *@
     @if (User.Identity?.IsAuthenticated == true)
@@ -83,7 +84,7 @@
                         <div class="col">
                             <h3 class="mb-1 fw-bold">@Model.FullName</h3>
                             <p class="text-muted mb-2">@Model.Email</p>
-                            <div class="d-flex align-items-center gap-3">
+                            <div class="d-flex align-items-center gap-3 mb-2">
                                 <span class="badge bg-@(Model.Status.ToLower() switch 
                                       { 
                                           "active" => "success", 
@@ -97,6 +98,19 @@
                                     <i class="fas fa-calendar-alt me-1"></i>
                                     Enrolled @Model.EnrolledDate.ToString("MMM dd, yyyy")
                                 </small>
+                            </div>
+                            <!-- Achievement Summary -->
+                            <div class="d-flex align-items-center gap-4">
+                                <div class="achievement-summary-item">
+                                    <i class="fas fa-trophy text-warning me-1"></i>
+                                    <span class="fw-bold">@Model.Achievements.Count</span>
+                                    <small class="text-muted">Achievements</small>
+                                </div>
+                                <div class="achievement-summary-item">
+                                    <i class="fas fa-graduation-cap text-primary me-1"></i>
+                                    <span class="fw-bold">@Model.Enrollments.Count</span>
+                                    <small class="text-muted">Courses</small>
+                                </div>
                             </div>
                         </div>
                         <div class="col-auto">
@@ -203,7 +217,7 @@
                         }
                     </div>
                 </div>
-            </div> <!-- Right Column - Account Info -->
+            </div> <!-- Right Column - Account Info and Achievements -->
             <div class="col-lg-4">
                 <!-- Account Information -->
                 <div class="card border-0 shadow-sm mb-4">
@@ -228,6 +242,101 @@
                             <span class="text-muted">Member since:</span>
                             <span>@Model.AccountCreatedAt.ToString("MMM dd, yyyy")</span>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Achievements Section -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold text-primary">
+                            <i class="fas fa-trophy me-2"></i>Achievements
+                        </h5>
+                        <button class="btn btn-outline-primary btn-sm" id="toggleAchievementsBtn"
+                            onclick="toggleAchievementsList()">
+                            <i class="fas fa-chevron-down" id="achievementsToggleIcon"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-4" id="achievementsContent">
+                        @if (Model.Achievements.Any())
+                        {
+                            <div class="achievements-stats mb-3">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="achievement-stat">
+                                            <h4 class="text-primary mb-1">@Model.Achievements.Count</h4>
+                                            <small class="text-muted">Total Achievements</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="achievements-list">
+                                @foreach (var achievement in Model.Achievements.Take(5))
+                                {
+                                    <!-- Debug info (remove in production) -->
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <small class="text-muted d-block mb-1">
+                                            Debug: Icon="@achievement.AchievementIcon" | Type="@achievement.AchievementName"
+                                        </small>
+                                    }
+                                    
+                                    <div class="achievement-item mb-3 p-3 border rounded bg-light">
+                                        <div class="d-flex align-items-center">
+                                            <div class="achievement-icon me-3">
+                                                @{
+                                                    var iconClass = !string.IsNullOrEmpty(achievement.AchievementIcon) 
+                                                        ? achievement.AchievementIcon 
+                                                        : "fas fa-trophy";
+                                                    var isImage = !string.IsNullOrEmpty(achievement.AchievementIcon) && 
+                                                                 (achievement.AchievementIcon.StartsWith("/") || 
+                                                                  achievement.AchievementIcon.StartsWith("http"));
+                                                }
+                                                
+                                                @if (isImage)
+                                                {
+                                                    <!-- Custom uploaded image -->
+                                                    <img src="@achievement.AchievementIcon" 
+                                                         alt="@achievement.AchievementName" 
+                                                         class="achievement-image"
+                                                         onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-achievement.svg';">
+                                                }
+                                                else
+                                                {
+                                                    <!-- FontAwesome icon -->
+                                                    <i class="@iconClass"></i>
+                                                }
+                                            </div>
+                                            <div class="achievement-details flex-grow-1">
+                                                <h6 class="mb-1 fw-bold text-primary">@achievement.AchievementName</h6>
+                                                <p class="mb-1 text-muted small">@achievement.Description</p>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar-alt me-1"></i>
+                                                    Earned @achievement.EarnedDate.ToString("MMM dd, yyyy")
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (Model.Achievements.Count > 5)
+                                {
+                                    <div class="text-center mt-3">
+                                        <small class="text-muted">
+                                            +@(Model.Achievements.Count - 5) more achievements
+                                        </small>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No achievements earned yet</p>
+                                <small class="text-muted">Complete courses and activities to earn achievements!</small>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -372,6 +481,58 @@
                 icon.className = 'fas fa-chevron-right';
             }
         }
+
+        // Achievements list toggle function
+        function toggleAchievementsList() {
+            const content = document.getElementById('achievementsContent');
+            const icon = document.getElementById('achievementsToggleIcon');
+
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                content.style.opacity = '0';
+                content.style.transform = 'translateY(-10px)';
+
+                // Animate in
+                requestAnimationFrame(() => {
+                    content.style.transition = 'all 0.3s ease';
+                    content.style.opacity = '1';
+                    content.style.transform = 'translateY(0)';
+                });
+
+                icon.className = 'fas fa-chevron-down';
+            } else {
+                content.style.transition = 'all 0.3s ease';
+                content.style.opacity = '0';
+                content.style.transform = 'translateY(-10px)';
+
+                setTimeout(() => {
+                    content.style.display = 'none';
+                }, 300);
+
+                icon.className = 'fas fa-chevron-right';
+            }
+        }
+
+        // Handle achievement image errors and icon display
+        document.addEventListener('DOMContentLoaded', function() {
+            const achievementImages = document.querySelectorAll('.achievement-image');
+            achievementImages.forEach(img => {
+                img.addEventListener('error', function() {
+                    this.onerror = null;
+                    this.src = '/SharedMedia/defaults/default-achievement.svg';
+                });
+            });
+
+            // Ensure FontAwesome icons are visible
+            const achievementIcons = document.querySelectorAll('.achievement-icon i');
+            achievementIcons.forEach(icon => {
+                if (icon.style.display === 'none' || icon.offsetWidth === 0) {
+                    console.log('Icon not visible:', icon.className);
+                    // Fallback to default icon
+                    icon.className = 'fas fa-trophy';
+                }
+            });
+        });
 
         // Toast notification function
         function showToast(message, type) {
