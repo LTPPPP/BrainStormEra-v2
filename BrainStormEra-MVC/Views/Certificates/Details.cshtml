@@ -3,8 +3,7 @@
     ViewBag.Title = "Certificate Details";
     Layout = "~/Views/Shared/_CertificateLayout.cshtml";
 }
-<link rel="stylesheet" href="/css/pages/Certificates/certificate-details.css" />
-<link rel="stylesheet" href="/css/pages/Certificates/certificate-pdf.css" />
+<link rel="stylesheet" href="/css/pages/Certificates/certificate-details-enhanced.css" />
 <div class="certificate-container">
     <div class="certificate-frame">
         <div class="certificate-header">
@@ -16,21 +15,47 @@
             <h3 class="certificate-learner">@Model.LearnerName</h3>
             <p class="certificate-course-label">has successfully completed the course</p>
             <h2 class="certificate-course">@Model.CourseName</h2>
-            <p class="certificate-date">Date Completed: <strong>@Model.FormattedCompletedDate</strong></p>
-            <p class="certificate-code">Certificate Code: <strong>@Model.CertificateCode</strong></p>
-            <p class="certificate-score">Final Score: <strong>@Model.ProgressPercentage%</strong></p>
+            
+            <div class="certificate-info">
+                <div class="certificate-info-item">
+                    <div class="certificate-info-label">Date Completed</div>
+                    <div class="certificate-info-value">@Model.FormattedCompletedDate</div>
+                </div>
+                <div class="certificate-info-item">
+                    <div class="certificate-info-label">Certificate Code</div>
+                    <div class="certificate-info-value">@Model.CertificateCode</div>
+                </div>
+                <div class="certificate-info-item">
+                    <div class="certificate-info-label">Final Score</div>
+                    <div class="certificate-info-value">@Model.ProgressPercentage%</div>
+                </div>
+                <div class="certificate-info-item">
+                    <div class="certificate-info-label">Duration</div>
+                    <div class="certificate-info-value">@Model.CompletionDurationDays days</div>
+                </div>
+            </div>
         </div>
         <div class="certificate-footer">
             <span class="certificate-signature">BrainStormEra Team</span>
         </div>
     </div>
     <div class="text-center mt-4">
-        <form asp-action="Download" asp-controller="Certificate" method="post">
-            <input type="hidden" name="courseId" value="@Model.CourseId" />
-            <button type="submit" class="btn btn-primary">
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Download", "Certificate", new { courseId = Model.CourseId })" 
+               class="btn btn-primary" 
+               id="downloadBtn"
+               data-original-href="@Url.Action("Download", "Certificate", new { courseId = Model.CourseId })">
                 <i class="fas fa-download"></i> Download PDF
+            </a>
+            <button type="button" class="btn btn-outline-secondary" id="printBtn">
+                <i class="fas fa-print"></i> Print Certificate
             </button>
-        </form>
+        </div>
+        <div id="downloadStatus" class="mt-2" style="display: none;">
+            <div class="alert alert-info">
+                <i class="fas fa-spinner fa-spin"></i> Generating PDF, please wait...
+            </div>
+        </div>
     </div>
 </div>
-<script src="/js/pages/Certificates/certificate-pdf.js"></script> 
+<script src="/js/pages/Certificates/certificate-download.js"></script> 
