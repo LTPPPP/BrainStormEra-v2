@@ -918,6 +918,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     }
                     break;
                     // Text lessons don't need special file processing
+                    // Content parsing is handled in LessonService.ProcessLessonContent
             }
         }
 
@@ -1069,6 +1070,142 @@ namespace BusinessLogicLayer.Services.Implementations
 
             // Update the enrollment progress
             await _lessonService.UpdateEnrollmentProgressAsync(userId, courseId, progressPercentage, lessonId);
+        }
+
+        // Method to parse lesson content and remove tags for display
+        public static string ParseLessonContentForDisplay(string lessonContent, int lessonTypeId)
+        {
+            if (string.IsNullOrEmpty(lessonContent))
+                return string.Empty;
+
+            try
+            {
+                switch (lessonTypeId)
+                {
+                    case 1: // Video lesson
+                        return ParseVideoContentForDisplay(lessonContent);
+                    case 2: // Text lesson
+                        return ParseTextContentForDisplay(lessonContent);
+                    case 3: // Document lesson
+                        return ParseDocumentContentForDisplay(lessonContent);
+                    default:
+                        return lessonContent;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but return original content to avoid breaking display
+                return lessonContent;
+            }
+        }
+
+        private static string ParseVideoContentForDisplay(string content)
+        {
+            var result = content;
+            var videoUrl = "";
+
+            // Extract VIDEO_URL tags and keep the URL
+            if (result.Contains("[VIDEO_URL]") && result.Contains("[/VIDEO_URL]"))
+            {
+                var startIndex = result.IndexOf("[VIDEO_URL]");
+                var endIndex = result.IndexOf("[/VIDEO_URL]");
+                if (startIndex >= 0 && endIndex > startIndex)
+                {
+                    videoUrl = result.Substring(startIndex + "[VIDEO_URL]".Length, endIndex - startIndex - "[VIDEO_URL]".Length);
+                    result = result.Replace($"[VIDEO_URL]{videoUrl}[/VIDEO_URL]", "");
+                    result = result.Trim();
+                }
+            }
+
+            // Extract VIDEO_FILE tags and keep the file path
+            if (result.Contains("[VIDEO_FILE]") && result.Contains("[/VIDEO_FILE]"))
+            {
+                var startIndex = result.IndexOf("[VIDEO_FILE]");
+                var endIndex = result.IndexOf("[/VIDEO_FILE]");
+                if (startIndex >= 0 && endIndex > startIndex)
+                {
+                    var videoFile = result.Substring(startIndex + "[VIDEO_FILE]".Length, endIndex - startIndex - "[VIDEO_FILE]".Length);
+                    result = result.Replace($"[VIDEO_FILE]{videoFile}[/VIDEO_FILE]", "");
+                    result = result.Trim();
+
+                    // If we have a video file, use it as the video URL
+                    if (string.IsNullOrEmpty(videoUrl))
+                    {
+                        videoUrl = videoFile;
+                    }
+                }
+            }
+
+            // Return the video URL if found, otherwise return the remaining content
+            return !string.IsNullOrEmpty(videoUrl) ? videoUrl : result;
+        }
+
+        private static string ParseTextContentForDisplay(string content)
+        {
+            var result = content;
+            var textContent = "";
+
+            // Extract TEXT_CONTENT tags and keep the content inside
+            if (result.Contains("[TEXT_CONTENT]") && result.Contains("[/TEXT_CONTENT]"))
+            {
+                var startIndex = result.IndexOf("[TEXT_CONTENT]");
+                var endIndex = result.IndexOf("[/TEXT_CONTENT]");
+                if (startIndex >= 0 && endIndex > startIndex)
+                {
+                    textContent = result.Substring(startIndex + "[TEXT_CONTENT]".Length, endIndex - startIndex - "[TEXT_CONTENT]".Length);
+                    result = result.Replace($"[TEXT_CONTENT]{textContent}[/TEXT_CONTENT]", "");
+                    result = result.Trim();
+                }
+            }
+
+            // Return the text content if found, otherwise return the remaining content
+            return !string.IsNullOrEmpty(textContent) ? textContent : result;
+        }
+
+        private static string ParseDocumentContentForDisplay(string content)
+        {
+            var result = content;
+            var documentDescription = "";
+
+            // Extract DOCUMENT_DESCRIPTION tags and keep the description
+            if (result.Contains("[DOCUMENT_DESCRIPTION]") && result.Contains("[/DOCUMENT_DESCRIPTION]"))
+            {
+                var startIndex = result.IndexOf("[DOCUMENT_DESCRIPTION]");
+                var endIndex = result.IndexOf("[/DOCUMENT_DESCRIPTION]");
+                if (startIndex >= 0 && endIndex > startIndex)
+                {
+                    documentDescription = result.Substring(startIndex + "[DOCUMENT_DESCRIPTION]".Length, endIndex - startIndex - "[DOCUMENT_DESCRIPTION]".Length);
+                    result = result.Replace($"[DOCUMENT_DESCRIPTION]{documentDescription}[/DOCUMENT_DESCRIPTION]", "");
+                    result = result.Trim();
+                }
+            }
+
+            // Extract DOCUMENT_FILES tags and keep the file paths
+            if (result.Contains("[DOCUMENT_FILES]") && result.Contains("[/DOCUMENT_FILES]"))
+            {
+                var startIndex = result.IndexOf("[DOCUMENT_FILES]");
+                var endIndex = result.IndexOf("[/DOCUMENT_FILES]");
+                if (startIndex >= 0 && endIndex > startIndex)
+                {
+                    var files = result.Substring(startIndex + "[DOCUMENT_FILES]".Length, endIndex - startIndex - "[DOCUMENT_FILES]".Length);
+                    result = result.Replace($"[DOCUMENT_FILES]{files}[/DOCUMENT_FILES]", "");
+                    result = result.Trim();
+
+                    // If we have document files, use the first one as the main content
+                    if (!string.IsNullOrEmpty(files))
+                    {
+                        var fileList = files.Split(';');
+                        if (fileList.Length > 0)
+                        {
+                            var firstFile = fileList[0].Split('|')[0]; // Get file path without filename
+                            return firstFile;
+                        }
+                    }
+                }
+            }
+
+            // Return the document description if found, otherwise return the remaining content
+            return !string.IsNullOrEmpty(documentDescription) ? documentDescription : result;
         }
     }
 }

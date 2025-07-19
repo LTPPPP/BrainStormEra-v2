@@ -86,6 +86,26 @@ namespace BusinessLogicLayer.Services.Implementations
         public string Message { get; set; } = string.Empty;
     }
 
+    /// <summary>
+    /// Result class for user ranking operations
+    /// </summary>
+    public class UserRankingResult
+    {
+        public bool IsSuccess { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public UserRankingViewModel? Data { get; set; }
+    }
+
+    /// <summary>
+    /// Result class for chatbot history operations
+    /// </summary>
+    public class ChatbotHistoryResult
+    {
+        public bool IsSuccess { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public ChatbotHistoryViewModel? Data { get; set; }
+    }
+
     #endregion
 
     /// <summary>
@@ -104,6 +124,8 @@ namespace BusinessLogicLayer.Services.Implementations
         Task<AdminOperationResult> DeleteUserAsync(ClaimsPrincipal user, string userId);
         Task<AdminOperationResult> UpdateCourseStatusAsync(ClaimsPrincipal user, string courseId, bool isApproved);
         Task<AdminOperationResult> DeleteCourseAsync(ClaimsPrincipal user, string courseId);
+        Task<UserRankingResult> GetUserRankingAsync(ClaimsPrincipal user, int page = 1, int pageSize = 20);
+        Task<ChatbotHistoryResult> GetChatbotHistoryAsync(ClaimsPrincipal user, string? search = null, string? userId = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 20);
     }
 
     /// <summary>
@@ -782,6 +804,145 @@ namespace BusinessLogicLayer.Services.Implementations
                 {
                     IsSuccess = false,
                     Message = "An error occurred while deleting course."
+                };
+            }
+        }
+
+        /// <summary>
+        /// Get user ranking with authorization
+        /// </summary>
+        public async Task<UserRankingResult> GetUserRankingAsync(ClaimsPrincipal user, int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                // Authentication check
+                if (user?.Identity?.IsAuthenticated != true)
+                {
+                    return new UserRankingResult
+                    {
+                        IsSuccess = false,
+                        Message = "User is not authenticated.",
+                        Data = null
+                    };
+                }
+
+                // Authorization check - only Admin role can access user ranking
+                var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new UserRankingResult
+                    {
+                        IsSuccess = false,
+                        Message = "Access denied. Admin role required.",
+                        Data = null
+                    };
+                }
+
+                // Validate pagination parameters
+                if (page <= 0 || pageSize <= 0 || pageSize > 100)
+                {
+                    return new UserRankingResult
+                    {
+                        IsSuccess = false,
+                        Message = "Invalid pagination parameters.",
+                        Data = null
+                    };
+                }
+
+                // Get user ranking data
+                var userRanking = await _adminService.GetUserRankingAsync(page, pageSize);
+
+                return new UserRankingResult
+                {
+                    IsSuccess = true,
+                    Message = "User ranking data retrieved successfully.",
+                    Data = userRanking
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving user ranking data for admin {UserId}",
+                    user?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                return new UserRankingResult
+                {
+                    IsSuccess = false,
+                    Message = "An error occurred while retrieving user ranking data.",
+                    Data = null
+                };
+            }
+        }
+
+        /// <summary>
+        /// Get chatbot history with authorization
+        /// </summary>
+        public async Task<ChatbotHistoryResult> GetChatbotHistoryAsync(ClaimsPrincipal user, string? search = null, string? userId = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                // Authentication check
+                if (user?.Identity?.IsAuthenticated != true)
+                {
+                    return new ChatbotHistoryResult
+                    {
+                        IsSuccess = false,
+                        Message = "User is not authenticated.",
+                        Data = null
+                    };
+                }
+
+                // Authorization check - only Admin role can access chatbot history
+                var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+                if (!string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new ChatbotHistoryResult
+                    {
+                        IsSuccess = false,
+                        Message = "Access denied. Admin role required.",
+                        Data = null
+                    };
+                }
+
+                // Validate pagination parameters
+                if (page <= 0 || pageSize <= 0 || pageSize > 100)
+                {
+                    return new ChatbotHistoryResult
+                    {
+                        IsSuccess = false,
+                        Message = "Invalid pagination parameters.",
+                        Data = null
+                    };
+                }
+
+                // Validate date range
+                if (fromDate.HasValue && toDate.HasValue && fromDate > toDate)
+                {
+                    return new ChatbotHistoryResult
+                    {
+                        IsSuccess = false,
+                        Message = "From date cannot be later than to date.",
+                        Data = null
+                    };
+                }
+
+                // Get chatbot history data
+                var chatbotHistory = await _adminService.GetChatbotHistoryAsync(search, userId, fromDate, toDate, page, pageSize);
+
+                return new ChatbotHistoryResult
+                {
+                    IsSuccess = true,
+                    Message = "Chatbot history data retrieved successfully.",
+                    Data = chatbotHistory
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving chatbot history data for admin {UserId}",
+                    user?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                return new ChatbotHistoryResult
+                {
+                    IsSuccess = false,
+                    Message = "An error occurred while retrieving chatbot history data.",
+                    Data = null
                 };
             }
         }

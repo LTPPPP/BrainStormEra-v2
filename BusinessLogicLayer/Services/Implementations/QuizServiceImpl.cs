@@ -259,6 +259,8 @@ namespace BusinessLogicLayer.Services.Implementations
                     .Include(q => q.Lesson)
                         .ThenInclude(l => l!.Chapter)
                             .ThenInclude(c => c!.Course)
+                    .Include(q => q.QuizAttempts)
+                    .Include(q => q.Questions)
                     .FirstOrDefaultAsync(q => q.QuizId == quizId);
 
                 if (quiz == null)
@@ -271,8 +273,52 @@ namespace BusinessLogicLayer.Services.Implementations
                 {
                     return ServiceResult<string>.Failure("Unauthorized");
                 }
+
+                // Check if quiz has active attempts (not completed)
+                var activeAttempts = quiz.QuizAttempts?.Where(qa => qa.EndTime == null).Count() ?? 0;
+                if (activeAttempts > 0)
+                {
+                    return ServiceResult<string>.Failure($"Cannot delete quiz: {activeAttempts} student(s) are currently taking this quiz");
+                }
+
+                // Check if quiz has completed attempts
+                var completedAttempts = quiz.QuizAttempts?.Where(qa => qa.EndTime != null).Count() ?? 0;
+                if (completedAttempts > 0)
+                {
+                    return ServiceResult<string>.Failure($"Cannot delete quiz: {completedAttempts} student(s) have already taken this quiz. Consider archiving instead.");
+                }
+
+                // Check quiz status - don't allow deletion of published/active quizzes
+                if (quiz.QuizStatus == 1 || quiz.QuizStatus == 2) // Published or Active
+                {
+                    return ServiceResult<string>.Failure("Cannot delete a published/active quiz. Please change the status to Draft first.");
+                }
+
+                // Check if quiz is a prerequisite for other content
+                if (quiz.IsPrerequisiteQuiz == true)
+                {
+                    return ServiceResult<string>.Failure("Cannot delete quiz: This quiz is set as a prerequisite for course progression");
+                }
+
+                // Check if quiz blocks lesson completion
+                if (quiz.BlocksLessonCompletion == true)
+                {
+                    return ServiceResult<string>.Failure("Cannot delete quiz: This quiz blocks lesson completion. Please change the settings first.");
+                }
+
                 var lessonId = quiz.LessonId ?? "";
-                _context.Quizzes.Remove(quiz);
+
+                // Soft delete by changing status to Archived (4) instead of hard delete
+                quiz.QuizStatus = 4; // Archived
+                quiz.QuizUpdatedAt = DateTime.UtcNow;
+
+                // Also archive related questions
+                foreach (var question in quiz.Questions)
+                {
+                    // You might want to add a status field to questions as well
+                    // For now, we'll keep the questions but mark the quiz as archived
+                }
+
                 await _context.SaveChangesAsync();
 
                 return ServiceResult<string>.Success(lessonId);
@@ -840,6 +886,8 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 var quiz = await _context.Quizzes
                     .Include(q => q.Course)
+                    .Include(q => q.QuizAttempts)
+                    .Include(q => q.Questions)
                     .FirstOrDefaultAsync(q => q.QuizId == quizId);
 
                 if (quiz == null)
@@ -860,15 +908,71 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
+                // Check if quiz has active attempts (not completed)
+                var activeAttempts = quiz.QuizAttempts?.Where(qa => qa.EndTime == null).Count() ?? 0;
+                if (activeAttempts > 0)
+                {
+                    return new DeleteQuizResult
+                    {
+                        Success = false,
+                        ErrorMessage = $"Cannot delete quiz: {activeAttempts} student(s) are currently taking this quiz"
+                    };
+                }
+
+                // Check if quiz has completed attempts
+                var completedAttempts = quiz.QuizAttempts?.Where(qa => qa.EndTime != null).Count() ?? 0;
+                if (completedAttempts > 0)
+                {
+                    return new DeleteQuizResult
+                    {
+                        Success = false,
+                        ErrorMessage = $"Cannot delete quiz: {completedAttempts} student(s) have already taken this quiz. Consider archiving instead."
+                    };
+                }
+
+                // Check quiz status - don't allow deletion of published/active quizzes
+                if (quiz.QuizStatus == 1 || quiz.QuizStatus == 2) // Published or Active
+                {
+                    return new DeleteQuizResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Cannot delete a published/active quiz. Please change the status to Draft first."
+                    };
+                }
+
+                // Check if quiz is a prerequisite for other content
+                if (quiz.IsPrerequisiteQuiz == true)
+                {
+                    return new DeleteQuizResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Cannot delete quiz: This quiz is set as a prerequisite for course progression"
+                    };
+                }
+
+                // Check if quiz blocks lesson completion
+                if (quiz.BlocksLessonCompletion == true)
+                {
+                    return new DeleteQuizResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Cannot delete quiz: This quiz blocks lesson completion. Please change the settings first."
+                    };
+                }
+
                 var courseId = quiz.CourseId;
-                _context.Quizzes.Remove(quiz);
+
+                // Soft delete by changing status to Archived (4) instead of hard delete
+                quiz.QuizStatus = 4; // Archived
+                quiz.QuizUpdatedAt = DateTime.UtcNow;
+
                 await _context.SaveChangesAsync();
 
                 return new DeleteQuizResult
                 {
                     Success = true,
                     CourseId = courseId,
-                    SuccessMessage = "Quiz deleted successfully!"
+                    SuccessMessage = "Quiz archived successfully!"
                 };
             }
             catch (Exception ex)
@@ -1696,6 +1800,179 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error cleaning up abandoned quiz attempts");
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// Get quiz status information for display
+        /// </summary>
+        public static (string StatusText, string StatusClass, string StatusIcon) GetQuizStatusInfo(int? quizStatus)
+        {
+            return quizStatus switch
+            {
+                0 => ("Draft", "text-secondary", "fas fa-edit"),
+                1 => ("Published", "text-success", "fas fa-check-circle"),
+                2 => ("Active", "text-primary", "fas fa-play-circle"),
+                3 => ("Inactive", "text-warning", "fas fa-pause-circle"),
+                4 => ("Archived", "text-muted", "fas fa-archive"),
+                5 => ("Suspended", "text-danger", "fas fa-ban"),
+                6 => ("Completed", "text-info", "fas fa-flag-checkered"),
+                7 => ("In Progress", "text-warning", "fas fa-clock"),
+                _ => ("Unknown", "text-muted", "fas fa-question-circle")
+            };
+        }
+
+        /// <summary>
+        /// Check if quiz can be deleted based on its current state
+        /// </summary>
+        public static async Task<(bool CanDelete, string Reason)> CanDeleteQuizAsync(BrainStormEraContext context, string quizId)
+        {
+            var quiz = await context.Quizzes
+                .Include(q => q.QuizAttempts)
+                .FirstOrDefaultAsync(q => q.QuizId == quizId);
+
+            if (quiz == null)
+                return (false, "Quiz not found");
+
+            // Check if quiz has active attempts (not completed)
+            var activeAttempts = quiz.QuizAttempts?.Where(qa => qa.EndTime == null).Count() ?? 0;
+            if (activeAttempts > 0)
+                return (false, $"{activeAttempts} student(s) are currently taking this quiz");
+
+            // Check if quiz has completed attempts
+            var completedAttempts = quiz.QuizAttempts?.Where(qa => qa.EndTime != null).Count() ?? 0;
+            if (completedAttempts > 0)
+                return (false, $"{completedAttempts} student(s) have already taken this quiz");
+
+            // Check quiz status - don't allow deletion of published/active quizzes
+            if (quiz.QuizStatus == 1 || quiz.QuizStatus == 2) // Published or Active
+                return (false, "Cannot delete a published/active quiz");
+
+            // Check if quiz is a prerequisite for other content
+            if (quiz.IsPrerequisiteQuiz == true)
+                return (false, "This quiz is set as a prerequisite for course progression");
+
+            // Check if quiz blocks lesson completion
+            if (quiz.BlocksLessonCompletion == true)
+                return (false, "This quiz blocks lesson completion");
+
+            return (true, "Quiz can be deleted");
+        }
+
+        /// <summary>
+        /// Update quiz status
+        /// </summary>
+        public async Task<ServiceResult<bool>> UpdateQuizStatusAsync(string quizId, string userId, int newStatus)
+        {
+            try
+            {
+                var quiz = await _context.Quizzes
+                    .Include(q => q.Lesson)
+                        .ThenInclude(l => l!.Chapter)
+                            .ThenInclude(c => c!.Course)
+                    .FirstOrDefaultAsync(q => q.QuizId == quizId);
+
+                if (quiz == null)
+                {
+                    return ServiceResult<bool>.Failure("Quiz not found");
+                }
+
+                // Check authorization
+                if (quiz.Lesson?.Chapter?.Course?.AuthorId != userId)
+                {
+                    return ServiceResult<bool>.Failure("Unauthorized");
+                }
+
+                // Validate status
+                if (newStatus < 0 || newStatus > 7)
+                {
+                    return ServiceResult<bool>.Failure("Invalid status value");
+                }
+
+                // Check if quiz has active attempts when trying to change to active status
+                if (newStatus == 2) // Active
+                {
+                    var activeAttempts = await _context.QuizAttempts
+                        .Where(qa => qa.QuizId == quizId && qa.EndTime == null)
+                        .CountAsync();
+
+                    if (activeAttempts > 0)
+                    {
+                        return ServiceResult<bool>.Failure($"Cannot activate quiz: {activeAttempts} student(s) are currently taking this quiz");
+                    }
+                }
+
+                quiz.QuizStatus = newStatus;
+                quiz.QuizUpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                return ServiceResult<bool>.Success(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating quiz status {QuizId} to {NewStatus}", quizId, newStatus);
+                return ServiceResult<bool>.Failure("An error occurred while updating the quiz status");
+            }
+        }
+
+        /// <summary>
+        /// Get quiz statistics for instructor dashboard
+        /// </summary>
+        public async Task<ServiceResult<QuizStatisticsViewModel>> GetQuizStatisticsAsync(string quizId, string userId)
+        {
+            try
+            {
+                var quiz = await _context.Quizzes
+                    .Include(q => q.QuizAttempts)
+                    .Include(q => q.Questions)
+                    .Include(q => q.Lesson)
+                        .ThenInclude(l => l!.Chapter)
+                            .ThenInclude(c => c!.Course)
+                    .FirstOrDefaultAsync(q => q.QuizId == quizId);
+
+                if (quiz == null)
+                {
+                    return ServiceResult<QuizStatisticsViewModel>.Failure("Quiz not found");
+                }
+
+                // Check authorization
+                if (quiz.Lesson?.Chapter?.Course?.AuthorId != userId)
+                {
+                    return ServiceResult<QuizStatisticsViewModel>.Failure("Unauthorized");
+                }
+
+                var totalAttempts = quiz.QuizAttempts?.Count ?? 0;
+                var completedAttempts = quiz.QuizAttempts?.Where(qa => qa.EndTime != null).Count() ?? 0;
+                var passedAttempts = quiz.QuizAttempts?.Where(qa => qa.IsPassed == true).Count() ?? 0;
+                var averageScore = quiz.QuizAttempts?.Where(qa => qa.PercentageScore.HasValue).Average(qa => qa.PercentageScore) ?? 0;
+                var totalQuestions = quiz.Questions?.Count ?? 0;
+
+                var statistics = new QuizStatisticsViewModel
+                {
+                    QuizId = quiz.QuizId,
+                    QuizName = quiz.QuizName,
+                    TotalAttempts = totalAttempts,
+                    CompletedAttempts = completedAttempts,
+                    PassedAttempts = passedAttempts,
+                    PassRate = completedAttempts > 0 ? (decimal)passedAttempts / completedAttempts * 100 : 0,
+                    AverageScore = averageScore,
+                    TotalQuestions = totalQuestions,
+                    QuizStatus = quiz.QuizStatus,
+                    IsPrerequisiteQuiz = quiz.IsPrerequisiteQuiz ?? false,
+                    BlocksLessonCompletion = quiz.BlocksLessonCompletion ?? false
+                };
+
+                return ServiceResult<QuizStatisticsViewModel>.Success(statistics);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting quiz statistics for quiz {QuizId}", quizId);
+                return ServiceResult<QuizStatisticsViewModel>.Failure("An error occurred while loading quiz statistics");
             }
         }
 

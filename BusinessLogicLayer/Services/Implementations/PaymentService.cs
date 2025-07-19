@@ -12,14 +12,18 @@ namespace BusinessLogicLayer.Services.Implementations
     {
         private readonly BrainStormEraContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IPointsService _pointsService;
 
         // VNPAY Configuration from appsettings
         private readonly string _vnp_TmnCode;
         private readonly string _vnp_HashSecret;
-        private readonly string _vnp_Url; public PaymentService(BrainStormEraContext context, IConfiguration configuration)
+        private readonly string _vnp_Url;
+
+        public PaymentService(BrainStormEraContext context, IConfiguration configuration, IPointsService pointsService)
         {
             _context = context;
             _configuration = configuration;
+            _pointsService = pointsService;
 
             // Load VNPAY configuration from environment variables
             _vnp_TmnCode = Environment.GetEnvironmentVariable("VNPAY_TMN_CODE") ?? "ok";
@@ -237,7 +241,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     transaction.TransactionUpdatedAt = DateTime.Now;
 
                     // Update user points (1 VND = 1 point)
-                    await UpdateUserPointsAsync(transaction.UserId, transaction.Amount);
+                    await _pointsService.UpdateUserPointsAsync(transaction.UserId, transaction.Amount);
 
                     await _context.SaveChangesAsync();
 
@@ -281,45 +285,7 @@ namespace BusinessLogicLayer.Services.Implementations
             }
         }
 
-        public async Task<bool> UpdateUserPointsAsync(string userId, decimal points)
-        {
-            try
-            {
-                Console.WriteLine($"Attempting to update points for User: {userId}, Points to add: {points}");
 
-                var user = await _context.Accounts.FindAsync(userId);
-                if (user == null)
-                {
-                    Console.WriteLine($"ERROR: User not found with ID: {userId}");
-                    return false;
-                }
-
-                decimal currentPoints = user.PaymentPoint ?? 0;
-                user.PaymentPoint = currentPoints + points;
-                user.AccountUpdatedAt = DateTime.Now;
-
-                Console.WriteLine($"Updating user points:");
-                Console.WriteLine($"Current points: {currentPoints}");
-                Console.WriteLine($"Points to add: {points}");
-                Console.WriteLine($"New total points: {user.PaymentPoint}");
-
-                await _context.SaveChangesAsync();
-                Console.WriteLine($"Successfully updated points for user {userId}");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"ERROR in UpdateUserPointsAsync:");
-                Console.WriteLine($"Exception Type: {ex.GetType().Name}");
-                Console.WriteLine($"Message: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-                }
-                return false;
-            }
-        }
         public async Task<PaymentTransaction?> GetTransactionByIdAsync(string transactionId)
         {
             return await _context.PaymentTransactions
@@ -333,6 +299,22 @@ namespace BusinessLogicLayer.Services.Implementations
                 .Where(t => t.UserId == userId)
                 .OrderByDescending(t => t.TransactionCreatedAt)
                 .ToListAsync();
+        }
+
+        public async Task<bool> UpdateUserPointsAsync(string userId, decimal points)
+        {
+            try
+            {
+                return await _pointsService.UpdateUserPointsAsync(userId, points);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR in PaymentService.UpdateUserPointsAsync:");
+                Console.WriteLine($"Exception Type: {ex.GetType().Name}");
+                Console.WriteLine($"Message: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                return false;
+            }
         }
 
         private string GenerateTransactionId()

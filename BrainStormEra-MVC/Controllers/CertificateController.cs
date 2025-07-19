@@ -73,39 +73,95 @@ namespace BrainStormEra_MVC.Controllers
         }
 
         [HttpPost]
+        [HttpGet]
         public async Task<IActionResult> Download(string courseId)
         {
             try
             {
+                if (string.IsNullOrEmpty(courseId))
+                {
+                    TempData["ErrorMessage"] = "Course ID is required";
+                    return RedirectToAction("Index");
+                }
+
                 var userId = User.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return Json(new { success = false, message = "User not authenticated" });
+                    TempData["ErrorMessage"] = "User not authenticated";
+                    return RedirectToAction("Index", "Login");
                 }
 
-                // Get certificate details
-                var result = await _certificateServiceImpl.GetCertificateDetailsAsync(User, courseId);
-                if (!result.IsSuccess)
+                // Validate certificate first
+                var isValid = await _certificateServiceImpl.ValidateCertificateAsync(userId, courseId);
+                if (!isValid)
                 {
-                    return Json(new { success = false, message = result.ErrorMessage });
+                    TempData["ErrorMessage"] = "Certificate not found or invalid";
+                    return RedirectToAction("Index");
                 }
+
+                // Get certificate details using the proper method
+                var certificateDetails = await _certificateServiceImpl.GetCertificateDetailsAsync(userId, courseId);
+                if (certificateDetails == null)
+                {
+                    TempData["ErrorMessage"] = "Certificate details not found";
+                    return RedirectToAction("Index");
+                }
+
+                // Sanitize filename
+                var safeCourseName = System.Text.RegularExpressions.Regex.Replace(certificateDetails.CourseName, @"[^\w\s-]", "");
+                var safeLearnerName = System.Text.RegularExpressions.Regex.Replace(certificateDetails.LearnerName, @"[^\w\s-]", "");
+                var fileName = $"Certificate_{safeCourseName.Replace(" ", "_")}_{safeLearnerName.Replace(" ", "_")}.pdf";
 
                 // Generate PDF using Rotativa
-                var pdfResult = new ViewAsPdf("~/Views/Certificates/CertificatePdf.cshtml", result.CertificateDetails)
+                var pdfResult = new ViewAsPdf("~/Views/Certificates/CertificatePdf.cshtml", certificateDetails)
                 {
-                    FileName = $"Certificate_{result.CertificateDetails!.CourseName.Replace(" ", "_")}_{result.CertificateDetails.LearnerName.Replace(" ", "_")}.pdf",
+                    FileName = fileName,
                     PageSize = Size.A4,
                     PageOrientation = Orientation.Landscape,
-                    PageMargins = { Top = 10, Bottom = 10, Left = 10, Right = 10 }
+                    PageMargins = { Top = 10, Bottom = 10, Left = 10, Right = 10 },
+                    CustomSwitches = "--disable-smart-shrinking --print-media-type --no-stop-slow-scripts"
                 };
 
                 return pdfResult;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating certificate PDF");
-                return Json(new { success = false, message = "An error occurred while generating the certificate" });
+                _logger.LogError(ex, "Error generating certificate PDF for course {CourseId}", courseId);
+                TempData["ErrorMessage"] = "An error occurred while generating the certificate. Please try again.";
+                return RedirectToAction("Index");
             }
+        }
+
+        [HttpGet]
+        public IActionResult TestDownload()
+        {
+            // This is a test endpoint to verify PDF generation works
+            var testModel = new CertificateDetailsViewModel
+            {
+                CourseId = "test-course-123",
+                CourseName = "Test Course",
+                CourseDescription = "This is a test course for certificate generation",
+                CourseImage = "/SharedMedia/defaults/default-course.svg",
+                LearnerName = "Test Student",
+                LearnerEmail = "test@example.com",
+                InstructorName = "Test Instructor",
+                CompletedDate = DateTime.Now,
+                EnrollmentDate = DateTime.Now.AddDays(-30),
+                CompletionDurationDays = 30,
+                FinalScore = 95,
+                CertificateCode = "TEST-12345-2024"
+            };
+
+            var pdfResult = new ViewAsPdf("~/Views/Certificates/CertificatePdf.cshtml", testModel)
+            {
+                FileName = "Test_Certificate.pdf",
+                PageSize = Size.A4,
+                PageOrientation = Orientation.Landscape,
+                PageMargins = { Top = 10, Bottom = 10, Left = 10, Right = 10 },
+                CustomSwitches = "--disable-smart-shrinking --print-media-type --no-stop-slow-scripts"
+            };
+
+            return pdfResult;
         }
 
         [HttpPost]
@@ -120,11 +176,7 @@ namespace BrainStormEra_MVC.Controllers
                     return Json(new { success = false, message = "User not authenticated" });
                 }
 
-                // Get certificate service from DI
-                using var scope = HttpContext.RequestServices.CreateScope();
-                var certificateService = scope.ServiceProvider.GetRequiredService<ICertificateService>();
-
-                var result = await certificateService.ProcessPendingCertificatesAsync(userId);
+                var result = await _certificateServiceImpl.ProcessPendingCertificatesAsync(userId);
 
                 if (result)
                 {

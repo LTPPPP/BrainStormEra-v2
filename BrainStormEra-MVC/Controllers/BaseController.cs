@@ -74,6 +74,11 @@ namespace BrainStormEra_MVC.Controllers
         protected string? CurrentUserLoginTime => User?.FindFirst("LoginTime")?.Value;
 
         /// <summary>
+        /// Get the points last refresh time from claims
+        /// </summary>
+        protected string? CurrentUserPointsLastRefresh => User?.FindFirst("PointsLastRefresh")?.Value;
+
+        /// <summary>
         /// Check if the current user has a specific role
         /// </summary>
         /// <param name="role">Role to check</param>

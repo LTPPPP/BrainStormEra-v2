@@ -127,7 +127,7 @@ namespace DataAccessLayer.Repositories
                     .ToListAsync();
 
                 // Then convert to MonthlyUserGrowth objects in memory
-                var convertedData = userGrowthData.Select(x => new MonthlyUserGrowth
+                var convertedData = userGrowthData.Select(x => new DataAccessLayer.Models.ViewModels.MonthlyUserGrowth
                 {
                     Month = new DateTime(x.Year, x.Month, 1).ToString("MMMM"),
                     NewUsers = x.NewUsers,
@@ -142,7 +142,7 @@ namespace DataAccessLayer.Repositories
                     var existingData = convertedData.FirstOrDefault(x =>
                         x.Date.Year == monthDate.Year && x.Date.Month == monthDate.Month);
 
-                    result.Add(existingData ?? new MonthlyUserGrowth
+                    result.Add(existingData ?? new DataAccessLayer.Models.ViewModels.MonthlyUserGrowth
                     {
                         Month = monthDate.ToString("MMMM"),
                         NewUsers = 0,
@@ -182,7 +182,7 @@ namespace DataAccessLayer.Repositories
                     .ToListAsync();
 
                 // Then convert to MonthlyRevenue objects in memory
-                var convertedData = revenueData.Select(x => new MonthlyRevenue
+                var convertedData = revenueData.Select(x => new DataAccessLayer.Models.ViewModels.MonthlyRevenue
                 {
                     Month = new DateTime(x.Year, x.Month, 1).ToString("MMMM"),
                     Revenue = x.Revenue,
@@ -197,7 +197,7 @@ namespace DataAccessLayer.Repositories
                     var existingData = convertedData.FirstOrDefault(x =>
                         x.Date.Year == monthDate.Year && x.Date.Month == monthDate.Month);
 
-                    result.Add(existingData ?? new MonthlyRevenue
+                    result.Add(existingData ?? new DataAccessLayer.Models.ViewModels.MonthlyRevenue
                     {
                         Month = monthDate.ToString("MMMM"),
                         Revenue = 0,
@@ -243,7 +243,7 @@ namespace DataAccessLayer.Repositories
                         .Where(up => up.CompletedAt.HasValue && up.CompletedAt >= weekStart && up.CompletedAt < weekEnd)
                         .Count();
 
-                    result.Add(new WeeklyEnrollment
+                    result.Add(new DataAccessLayer.Models.ViewModels.WeeklyEnrollment
                     {
                         Week = $"Week {7 - i}",
                         NewEnrollments = weeklyEnrollments,
@@ -1079,7 +1079,7 @@ namespace DataAccessLayer.Repositories
                     var date = DateTime.Today.AddDays(-i);
                     var existingData = conversationData.FirstOrDefault(x => x.Date == date);
 
-                    result.Add(new DailyConversationStats
+                    result.Add(new DataAccessLayer.Models.ViewModels.DailyConversationStats
                     {
                         Date = date,
                         ConversationCount = existingData?.ConversationCount ?? 0,
@@ -1104,7 +1104,7 @@ namespace DataAccessLayer.Repositories
                 var feedbackStats = await _context.ChatbotConversations
                     .Where(c => c.FeedbackRating.HasValue)
                     .GroupBy(c => c.FeedbackRating!.Value)
-                    .Select(g => new FeedbackRatingStats
+                    .Select(g => new DataAccessLayer.Models.ViewModels.FeedbackRatingStats
                     {
                         Rating = g.Key,
                         Count = g.Count()
@@ -1117,7 +1117,7 @@ namespace DataAccessLayer.Repositories
                 for (byte i = 1; i <= 5; i++)
                 {
                     var existing = feedbackStats.FirstOrDefault(x => x.Rating == i);
-                    result.Add(new FeedbackRatingStats
+                    result.Add(new DataAccessLayer.Models.ViewModels.FeedbackRatingStats
                     {
                         Rating = i,
                         Count = existing?.Count ?? 0
@@ -1153,7 +1153,7 @@ namespace DataAccessLayer.Repositories
                 for (int hour = 0; hour < 24; hour++)
                 {
                     var existing = usageData.FirstOrDefault(x => x.Hour == hour);
-                    result.Add(new HourlyUsageStats
+                    result.Add(new DataAccessLayer.Models.ViewModels.HourlyUsageStats
                     {
                         Hour = hour,
                         ConversationCount = existing?.ConversationCount ?? 0,
@@ -1232,7 +1232,7 @@ namespace DataAccessLayer.Repositories
                     })
                     .ToListAsync();
 
-                var convertedData = certificateData.Select(x => new MonthlyCertificateIssued
+                var convertedData = certificateData.Select(x => new DataAccessLayer.Models.ViewModels.MonthlyCertificateIssued
                 {
                     Month = new DateTime(x.Year, x.Month, 1).ToString("MMMM"),
                     CertificatesIssued = x.CertificatesIssued,
@@ -1247,7 +1247,7 @@ namespace DataAccessLayer.Repositories
                     var existingData = convertedData.FirstOrDefault(x =>
                         x.Date.Year == monthDate.Year && x.Date.Month == monthDate.Month);
 
-                    result.Add(existingData ?? new MonthlyCertificateIssued
+                    result.Add(existingData ?? new DataAccessLayer.Models.ViewModels.MonthlyCertificateIssued
                     {
                         Month = monthDate.ToString("MMMM"),
                         CertificatesIssued = 0,
@@ -1272,7 +1272,7 @@ namespace DataAccessLayer.Repositories
                     .Include(c => c.Enrollments)
                     .ThenInclude(e => e.Certificates)
                     .Where(c => c.ApprovalStatus == "approved")
-                    .Select(c => new CourseCompletionRate
+                    .Select(c => new DataAccessLayer.Models.ViewModels.CourseCompletionRate
                     {
                         CourseId = c.CourseId,
                         CourseName = c.CourseName ?? "Unknown Course",
@@ -1326,7 +1326,7 @@ namespace DataAccessLayer.Repositories
                             .CountAsync();
                     }
 
-                    result.Add(new PointDistribution
+                    result.Add(new DataAccessLayer.Models.ViewModels.PointDistribution
                     {
                         PointRange = range.Label,
                         UserCount = userCount
@@ -1365,7 +1365,7 @@ namespace DataAccessLayer.Repositories
                     })
                     .ToListAsync();
 
-                var convertedData = pointsData.Select(x => new MonthlyPointsEarned
+                var convertedData = pointsData.Select(x => new DataAccessLayer.Models.ViewModels.MonthlyPointsEarned
                 {
                     Month = new DateTime(x.Year, x.Month, 1).ToString("MMMM"),
                     TotalPointsEarned = x.TotalPointsEarned,
@@ -1380,7 +1380,7 @@ namespace DataAccessLayer.Repositories
                     var existingData = convertedData.FirstOrDefault(x =>
                         x.Date.Year == monthDate.Year && x.Date.Month == monthDate.Month);
 
-                    result.Add(existingData ?? new MonthlyPointsEarned
+                    result.Add(existingData ?? new DataAccessLayer.Models.ViewModels.MonthlyPointsEarned
                     {
                         Month = monthDate.ToString("MMMM"),
                         TotalPointsEarned = 0,
@@ -1422,5 +1422,237 @@ namespace DataAccessLayer.Repositories
         public Task<List<object>> GetSuspiciousActivitiesAsync(int page = 1, int pageSize = 20) => Task.FromResult(new List<object>());
         public Task<bool> LogAdminActionAsync(string adminId, string action, string details, string? targetId = null) => Task.FromResult(true);
         public Task<List<object>> GetAdminActionLogsAsync(string? adminId = null, int page = 1, int pageSize = 20) => Task.FromResult(new List<object>());
+
+        // User Ranking Methods
+        public async Task<List<UserRankingData>> GetUserRankingAsync(int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                var userRankingQuery = await _context.Accounts
+                    .Where(a => a.UserRole == "learner") // Only include learners
+                    .Select(a => new UserRankingData
+                    {
+                        UserId = a.UserId,
+                        Username = a.Username ?? "",
+                        FullName = a.FullName ?? "",
+                        Email = a.UserEmail ?? "",
+                        UserImage = a.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
+                        UserRole = a.UserRole ?? "",
+                        AccountCreatedAt = a.AccountCreatedAt,
+                        LastLoginDate = a.LastLogin,
+                        CompletedLessonsCount = a.UserProgresses.Count(up => up.IsCompleted == true),
+                        TotalEnrolledCourses = a.Enrollments.Count(),
+                        CompletedCourses = a.Enrollments.Count(e => e.ProgressPercentage >= 100),
+                        AverageProgress = a.Enrollments.Any() ? a.Enrollments.Average(e => (double)(e.ProgressPercentage ?? 0)) : 0,
+                        TotalTimeSpent = a.UserProgresses.Sum(up => up.TimeSpent ?? 0) / 60, // Convert to minutes
+                        CertificatesEarned = a.Certificates.Count(),
+                        AchievementsEarned = a.UserAchievements.Count(),
+                        LastActivityDate = a.UserProgresses.Any() ? a.UserProgresses.Max(up => up.LastAccessedAt) : null,
+                        LastAccessedCourse = null, // Will be populated after query
+                        CurrentCourse = null // Will be populated after query
+                    })
+                    .OrderByDescending(u => u.CompletedLessonsCount)
+                    .ThenByDescending(u => u.CompletedCourses)
+                    .ThenByDescending(u => u.AverageProgress)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                // Populate the course names after the query
+                foreach (var user in userRankingQuery)
+                {
+                    var account = await _context.Accounts
+                        .Include(a => a.Enrollments)
+                        .ThenInclude(e => e.Course)
+                        .FirstOrDefaultAsync(a => a.UserId == user.UserId);
+
+                    if (account != null)
+                    {
+                        var lastEnrollment = account.Enrollments.OrderByDescending(e => e.EnrollmentUpdatedAt).FirstOrDefault();
+                        user.LastAccessedCourse = lastEnrollment?.Course?.CourseName;
+
+                        var currentEnrollment = account.Enrollments
+                            .Where(e => e.ProgressPercentage > 0 && e.ProgressPercentage < 100)
+                            .OrderByDescending(e => e.EnrollmentUpdatedAt)
+                            .FirstOrDefault();
+                        user.CurrentCourse = currentEnrollment?.Course?.CourseName;
+                    }
+                }
+
+                // Add rank numbers
+                var startRank = (page - 1) * pageSize + 1;
+                for (int i = 0; i < userRankingQuery.Count; i++)
+                {
+                    userRankingQuery[i].Rank = startRank + i;
+                }
+
+                return userRankingQuery;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving user ranking data");
+                throw;
+            }
+        }
+
+        public async Task<int> GetUserRankingTotalCountAsync()
+        {
+            try
+            {
+                return await _context.Accounts
+                    .Where(a => a.UserRole == "learner")
+                    .CountAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting user ranking total count");
+                throw;
+            }
+        }
+
+        public async Task<double> GetAverageCompletedLessonsAsync()
+        {
+            try
+            {
+                var average = await _context.Accounts
+                    .Where(a => a.UserRole == "learner")
+                    .Select(a => a.UserProgresses.Count(up => up.IsCompleted == true))
+                    .AverageAsync();
+
+                return Math.Round(average, 2);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error calculating average completed lessons");
+                return 0;
+            }
+        }
+
+        // Chatbot History Methods
+        public async Task<List<ChatbotConversation>> GetChatbotHistoryAsync(string? search = null, string? userId = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                var query = _context.ChatbotConversations
+                    .Include(c => c.User)
+                    .AsQueryable();
+
+                // Apply filters
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(c =>
+                        c.UserMessage.Contains(search) ||
+                        c.BotResponse.Contains(search) ||
+                        (c.User != null && c.User.Username != null && c.User.Username.Contains(search)) ||
+                        (c.User != null && c.User.FullName != null && c.User.FullName.Contains(search)));
+                }
+
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    query = query.Where(c => c.UserId == userId);
+                }
+
+                if (fromDate.HasValue)
+                {
+                    query = query.Where(c => c.ConversationTime >= fromDate.Value);
+                }
+
+                if (toDate.HasValue)
+                {
+                    query = query.Where(c => c.ConversationTime <= toDate.Value);
+                }
+
+                return await query
+                    .OrderByDescending(c => c.ConversationTime)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving chatbot history");
+                throw;
+            }
+        }
+
+        public async Task<int> GetChatbotHistoryTotalCountAsync(string? search = null, string? userId = null, DateTime? fromDate = null, DateTime? toDate = null)
+        {
+            try
+            {
+                var query = _context.ChatbotConversations
+                    .Include(c => c.User)
+                    .AsQueryable();
+
+                // Apply filters
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(c =>
+                        c.UserMessage.Contains(search) ||
+                        c.BotResponse.Contains(search) ||
+                        (c.User != null && c.User.Username != null && c.User.Username.Contains(search)) ||
+                        (c.User != null && c.User.FullName != null && c.User.FullName.Contains(search)));
+                }
+
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    query = query.Where(c => c.UserId == userId);
+                }
+
+                if (fromDate.HasValue)
+                {
+                    query = query.Where(c => c.ConversationTime >= fromDate.Value);
+                }
+
+                if (toDate.HasValue)
+                {
+                    query = query.Where(c => c.ConversationTime <= toDate.Value);
+                }
+
+                return await query.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting chatbot history total count");
+                throw;
+            }
+        }
+
+        public async Task<Dictionary<string, object>> GetChatbotHistoryStatisticsAsync()
+        {
+            try
+            {
+                var totalConversations = await _context.ChatbotConversations.CountAsync();
+                var totalUsers = await _context.ChatbotConversations.Select(c => c.UserId).Distinct().CountAsync();
+
+                var ratingStats = await _context.ChatbotConversations
+                    .Where(c => c.FeedbackRating.HasValue)
+                    .GroupBy(c => c.FeedbackRating)
+                    .Select(g => new { Rating = g.Key, Count = g.Count() })
+                    .ToListAsync();
+
+                var averageRating = ratingStats.Any() ? ratingStats.Average(r => r.Rating!.Value) : 0;
+                var totalRatings = ratingStats.Sum(r => r.Count);
+
+                var ratingDistribution = new Dictionary<int, int>();
+                for (int i = 1; i <= 5; i++)
+                {
+                    ratingDistribution[i] = ratingStats.FirstOrDefault(r => r.Rating == i)?.Count ?? 0;
+                }
+
+                return new Dictionary<string, object>
+                {
+                    ["TotalConversations"] = totalConversations,
+                    ["TotalUsers"] = totalUsers,
+                    ["AverageRating"] = Math.Round(averageRating, 2),
+                    ["TotalRatings"] = totalRatings,
+                    ["RatingDistribution"] = ratingDistribution
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting chatbot history statistics");
+                throw;
+            }
+        }
     }
 }

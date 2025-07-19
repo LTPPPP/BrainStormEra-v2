@@ -67,13 +67,13 @@ namespace BrainStormEra_MVC.Controllers
                     try
                     {
                         using var scope = HttpContext.RequestServices.CreateScope();
-                        var userRepo = scope.ServiceProvider.GetRequiredService<DataAccessLayer.Repositories.Interfaces.IUserRepo>();
+                        var pointsService = scope.ServiceProvider.GetRequiredService<BusinessLogicLayer.Services.Interfaces.IPointsService>();
                         var userId = User.FindFirst("UserId")?.Value;
 
                         if (!string.IsNullOrEmpty(userId))
                         {
-                            var userWithPoints = await userRepo.GetUserWithPaymentPointAsync(userId);
-                            ViewBag.UserPoints = userWithPoints?.PaymentPoint ?? 0;
+                            var userPoints = await pointsService.GetUserPointsAsync(userId);
+                            ViewBag.UserPoints = userPoints;
                         }
                     }
                     catch (Exception ex)

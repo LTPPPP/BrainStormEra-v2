@@ -1,35 +1,296 @@
 using Microsoft.Extensions.Logging;
+using DataAccessLayer.Repositories.Interfaces;
 using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
+using BusinessLogicLayer.Constants;
+using Microsoft.EntityFrameworkCore;
+using DataAccessLayer.Data;
+using DataAccessLayer.Models;
+using System;
+using System.Linq;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
-    public class CertificateServiceImpl
+    public class CertificateServiceImpl : ICertificateService
     {
-        private readonly ICertificateService _certificateService;
+        private readonly ICertificateRepo _certificateRepo;
+        private readonly ICourseRepo _courseRepo;
+        private readonly IMemoryCache _cache;
+        private readonly ILogger<CertificateServiceImpl> _logger;
+        private readonly BrainStormEraContext _context;
         private readonly IUserContextService _userContextService;
         private readonly IResponseService _responseService;
-        private readonly ILogger<CertificateServiceImpl> _logger;
-        private readonly IMemoryCache _cache;
-        private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(5);
+        private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(15);
 
         public CertificateServiceImpl(
-            ICertificateService certificateService,
-            IUserContextService userContextService,
-            IResponseService responseService,
+            ICertificateRepo certificateRepo,
+            ICourseRepo courseRepo,
+            IMemoryCache cache,
             ILogger<CertificateServiceImpl> logger,
-            IMemoryCache cache)
+            BrainStormEraContext context,
+            IUserContextService userContextService,
+            IResponseService responseService)
         {
-            _certificateService = certificateService;
+            _certificateRepo = certificateRepo;
+            _courseRepo = courseRepo;
+            _cache = cache;
+            _logger = logger;
+            _context = context;
             _userContextService = userContextService;
             _responseService = responseService;
-            _logger = logger;
-            _cache = cache;
         }
 
+        public async Task<List<CertificateSummaryViewModel>> GetUserCertificatesAsync(string userId)
+        {
+            try
+            {
+                var cacheKey = $"UserCertificates_{userId}";
+                if (_cache.TryGetValue(cacheKey, out List<CertificateSummaryViewModel>? cached))
+                    return cached!;
+
+                var enrollments = await _certificateRepo.GetUserCompletedEnrollmentsAsync(userId, null, 1, int.MaxValue);
+                var result = enrollments.Select(e => new CertificateSummaryViewModel
+                {
+                    CourseId = e.CourseId,
+                    CourseName = e.Course.CourseName,
+                    CourseImage = e.Course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
+                    AuthorName = e.Course.Author.FullName ?? e.Course.Author.Username,
+                    CompletedDate = e.CertificateIssuedDate!.Value.ToDateTime(TimeOnly.MinValue),
+                    EnrollmentDate = e.EnrollmentCreatedAt,
+                    FinalScore = e.ProgressPercentage ?? 0
+                }).ToList();
+
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = CacheExpiration,
+                    Size = 1
+                };
+                _cache.Set(cacheKey, result, cacheOptions);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting certificates for user {UserId}", userId);
+                return new List<CertificateSummaryViewModel>();
+            }
+        }
+
+        public async Task<CertificateDetailsViewModel?> GetCertificateDetailsAsync(string userId, string courseId)
+        {
+            try
+            {
+                var cacheKey = $"CertificateDetails_{userId}_{courseId}";
+                if (_cache.TryGetValue(cacheKey, out CertificateDetailsViewModel? cached))
+                    return cached;
+
+                var certificateData = await _certificateRepo.GetCertificateDataAsync(userId, courseId);
+                if (certificateData == null) return null;
+
+                var completionDuration = (certificateData.CertificateIssuedDate!.Value.ToDateTime(TimeOnly.MinValue)
+                                        - certificateData.EnrollmentCreatedAt).TotalDays;
+
+                var result = new CertificateDetailsViewModel
+                {
+                    CourseId = certificateData.CourseId,
+                    CourseName = certificateData.Course.CourseName,
+                    CourseDescription = certificateData.Course.CourseDescription ?? "",
+                    CourseImage = certificateData.Course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
+                    LearnerName = certificateData.User.FullName ?? certificateData.User.Username,
+                    LearnerEmail = certificateData.User.UserEmail,
+                    InstructorName = certificateData.Course.Author.FullName ?? certificateData.Course.Author.Username,
+                    CompletedDate = certificateData.CertificateIssuedDate.Value.ToDateTime(TimeOnly.MinValue),
+                    EnrollmentDate = certificateData.EnrollmentCreatedAt,
+                    CompletionDurationDays = Math.Max(1, (int)Math.Round(completionDuration)),
+                    FinalScore = certificateData.ProgressPercentage ?? 0,
+                    CertificateCode = await GenerateCertificateCodeAsync(courseId, userId)
+                };
+
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = CacheExpiration,
+                    Size = 1
+                };
+                _cache.Set(cacheKey, result, cacheOptions);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting certificate details for user {UserId}, course {CourseId}", userId, courseId);
+                return null;
+            }
+        }
+
+        public async Task<bool> ValidateCertificateAsync(string userId, string courseId)
+        {
+            var cacheKey = $"CertificateValid_{userId}_{courseId}";
+            if (_cache.TryGetValue(cacheKey, out bool cached))
+                return cached;
+
+            var result = await _certificateRepo.HasValidCertificateAsync(userId, courseId);
+            var cacheOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = CacheExpiration,
+                Size = 1
+            };
+            _cache.Set(cacheKey, result, cacheOptions);
+            return result;
+        }
+
+        public async Task<string> GenerateCertificateCodeAsync(string courseId, string userId)
+        {
+            return await Task.FromResult($"BSE-{courseId.Substring(0, Math.Min(8, courseId.Length)).ToUpper()}-{DateTime.Now.Year}");
+        }
+
+        public async Task InvalidateCacheAsync(string userId)
+        {
+            var patterns = new[]
+            {
+                $"UserCertificates_{userId}",
+                $"CertificateDetails_{userId}_",
+                $"CertificateValid_{userId}_"
+            };
+
+            await Task.Run(() =>
+            {
+                foreach (var pattern in patterns)
+                {
+                    _cache.Remove(pattern);
+                }
+            });
+        }
+
+        public async Task<List<CertificateSummaryViewModel>> GetCachedUserCertificatesAsync(string userId)
+        {
+            var cacheKey = $"UserCertificates_{userId}";
+            if (_cache.TryGetValue(cacheKey, out List<CertificateSummaryViewModel>? cached))
+                return cached!;
+
+            return await GetUserCertificatesAsync(userId);
+        }
+
+        public async Task<CertificateListViewModel> GetUserCertificatesAsync(string userId, string? search, int page, int pageSize)
+        {
+            try
+            {
+                var cacheKey = $"UserCertificatesPaginated_{userId}_{search}_{page}_{pageSize}";
+                if (_cache.TryGetValue(cacheKey, out CertificateListViewModel? cached))
+                    return cached!;
+
+                var enrollments = await _certificateRepo.GetUserCompletedEnrollmentsAsync(userId, search, page, pageSize);
+                var totalCount = await _certificateRepo.GetUserCompletedEnrollmentsCountAsync(userId, search);
+
+                var certificates = enrollments.Select(e => new CertificateSummaryViewModel
+                {
+                    CourseId = e.CourseId,
+                    CourseName = e.Course.CourseName,
+                    CourseImage = e.Course.CourseImage ?? MediaConstants.Defaults.DefaultCoursePath,
+                    AuthorName = e.Course.Author.FullName ?? e.Course.Author.Username,
+                    CompletedDate = e.CertificateIssuedDate!.Value.ToDateTime(TimeOnly.MinValue),
+                    EnrollmentDate = e.EnrollmentCreatedAt,
+                    FinalScore = e.ProgressPercentage ?? 0
+                }).ToList();
+
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                var result = new CertificateListViewModel
+                {
+                    Certificates = certificates,
+                    SearchQuery = search,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalCertificates = totalCount,
+                    TotalPages = totalPages
+                };
+
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = CacheExpiration,
+                    Size = 1
+                };
+                _cache.Set(cacheKey, result, cacheOptions);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting paginated certificates for user {UserId}", userId);
+                return new CertificateListViewModel
+                {
+                    Certificates = new List<CertificateSummaryViewModel>(),
+                    SearchQuery = search,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalCertificates = 0,
+                    TotalPages = 0
+                };
+            }
+        }
+
+        public async Task<bool> ProcessPendingCertificatesAsync(string userId)
+        {
+            try
+            {
+                // Get all enrollments with 100% progress but no certificate
+                var pendingEnrollments = await _context.Enrollments
+                    .Include(e => e.Course)
+                    .Where(e => e.UserId == userId &&
+                               e.ProgressPercentage >= 100 &&
+                               !e.CertificateIssuedDate.HasValue)
+                    .ToListAsync();
+
+                var certificatesIssued = 0;
+
+                foreach (var enrollment in pendingEnrollments)
+                {
+                    // Update enrollment status and certificate date
+                    enrollment.EnrollmentStatus = 3; // Completed
+                    enrollment.CertificateIssuedDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+                    // Create certificate record
+                    var certificate = new Certificate
+                    {
+                        CertificateId = Guid.NewGuid().ToString(),
+                        EnrollmentId = enrollment.EnrollmentId,
+                        UserId = userId,
+                        CourseId = enrollment.CourseId,
+                        CertificateCode = GenerateCertificateCode(),
+                        CertificateName = "Certificate of Completion",
+                        IssueDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                        IsValid = true,
+                        FinalScore = enrollment.ProgressPercentage ?? 100,
+                        CertificateCreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.Certificates.Add(certificate);
+                    certificatesIssued++;
+                }
+
+                if (certificatesIssued > 0)
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Issued {Count} certificates for user {UserId}", certificatesIssued, userId);
+
+                    // Invalidate cache for this user
+                    await InvalidateCacheAsync(userId);
+                }
+
+                return certificatesIssued > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing pending certificates for user {UserId}", userId);
+                return false;
+            }
+        }
+
+        private string GenerateCertificateCode()
+        {
+            return Guid.NewGuid().ToString("N")[..8].ToUpper();
+        }
+
+        // Additional methods for the wrapper functionality
         public async Task<GetCertificatesIndexResult> GetCertificatesIndexAsync(ClaimsPrincipal user, string? search, int page, int pageSize)
         {
             try
@@ -61,7 +322,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (page < 1) page = 1;
                 if (pageSize < 1 || pageSize > 50) pageSize = 6;
 
-                var certificateList = await _certificateService.GetUserCertificatesAsync(userId, search, page, pageSize);
+                var certificateList = await GetUserCertificatesAsync(userId, search, page, pageSize);
 
                 return new GetCertificatesIndexResult
                 {
@@ -212,10 +473,15 @@ namespace BusinessLogicLayer.Services.Implementations
                 return cachedDetails;
             }
 
-            var details = await _certificateService.GetCertificateDetailsAsync(userId, courseId);
+            var details = await GetCertificateDetailsAsync(userId, courseId);
             if (details != null)
             {
-                _cache.Set(cacheKey, details, CacheExpiration);
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = CacheExpiration,
+                    Size = 1
+                };
+                _cache.Set(cacheKey, details, cacheOptions);
             }
             return details;
         }
@@ -228,8 +494,13 @@ namespace BusinessLogicLayer.Services.Implementations
                 return cachedValid;
             }
 
-            var isValid = await _certificateService.ValidateCertificateAsync(userId, courseId);
-            _cache.Set(cacheKey, isValid, CacheExpiration);
+            var isValid = await ValidateCertificateAsync(userId, courseId);
+            var cacheOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = CacheExpiration,
+                Size = 1
+            };
+            _cache.Set(cacheKey, isValid, cacheOptions);
             return isValid;
         }
     }

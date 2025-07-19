@@ -47,8 +47,17 @@
                         <div class="payment-points me-3">
                             <div class="points-container">
                                 <i class="fas fa-coins text-warning"></i>
-                                <span class="points-value" id="userPoints">@(User.FindFirst("PaymentPoint")?.Value ??
-                                                                    "0")</span>
+                                <span class="points-value" id="userPoints">@{
+                                    var pointsValue = User.FindFirst("PaymentPoint")?.Value ?? "0";
+                                    if (decimal.TryParse(pointsValue, out var points))
+                                    {
+                                        @points.ToString("N0")
+                                    }
+                                    else
+                                    {
+                                        @pointsValue
+                                    }
+                                }</span>
                             <span class="points-label">Points</span>
                         </div>
                     </div>
@@ -116,3 +125,5 @@
 
 <!-- Load header script -->
 <script src="~/js/components/header.js"></script>
+<!-- Load points updater script -->
+<script src="~/js/components/points-updater.js"></script>

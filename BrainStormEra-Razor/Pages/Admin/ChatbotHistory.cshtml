@@ -1,0 +1,647 @@
+@page "/admin/chatbothistory"
+@model BrainStormEra_Razor.Pages.Admin.ChatbotHistoryModel
+@using System.Web
+@{
+    ViewData["Title"] = "Chatbot History";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/global.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin/admin-pages.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin/chatbot-history.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            Chatbot History
+        </h1>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            @Model.ErrorMessage
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i>
+            @Model.SuccessMessage
+        </div>
+    }
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2 stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Conversations
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ChatbotHistoryData.TotalConversations</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-comments fa-2x text-gray-300 stat-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2 stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Unique Users
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ChatbotHistoryData.TotalUsers</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300 stat-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2 stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Average Rating
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ChatbotHistoryData.AverageRating.ToString("F1")/5</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-star fa-2x text-gray-300 stat-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2 stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Total Ratings
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ChatbotHistoryData.TotalRatings</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-thumbs-up fa-2x text-gray-300 stat-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Filters -->
+    <div class="card shadow mb-4 filter-section">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i>
+                Filters
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" value="@Model.Search" placeholder="Search messages, users...">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="userId" class="form-label">User ID</label>
+                    <input type="text" class="form-control" id="userId" name="userId" value="@Model.UserId" placeholder="Filter by user ID">
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="fromDate" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="fromDate" name="fromDate" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))">
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="toDate" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="toDate" name="toDate" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))">
+                </div>
+                <div class="col-md-2 mb-3 d-flex align-items-end">
+                    <div class="d-flex gap-2 w-100">
+                        <button type="submit" class="btn btn-primary flex-fill">
+                            <i class="fas fa-search"></i> Filter
+                        </button>
+                        <a href="?" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chatbot History Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list"></i>
+                Conversation History
+            </h6>
+            <div class="dropdown no-arrow">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                    <div class="dropdown-header">Page Size:</div>
+                    <a class="dropdown-item" href="?page=1&pageSize=10&search=@Model.Search&userId=@Model.UserId&fromDate=@(Model.FromDate?.ToString("yyyy-MM-dd"))&toDate=@(Model.ToDate?.ToString("yyyy-MM-dd"))">10 per page</a>
+                    <a class="dropdown-item" href="?page=1&pageSize=20&search=@Model.Search&userId=@Model.UserId&fromDate=@(Model.FromDate?.ToString("yyyy-MM-dd"))&toDate=@(Model.ToDate?.ToString("yyyy-MM-dd"))">20 per page</a>
+                    <a class="dropdown-item" href="?page=1&pageSize=50&search=@Model.Search&userId=@Model.UserId&fromDate=@(Model.FromDate?.ToString("yyyy-MM-dd"))&toDate=@(Model.ToDate?.ToString("yyyy-MM-dd"))">50 per page</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (Model.ChatbotHistoryData.Conversations.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered chatbot-history-table" id="chatbotHistoryTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">User</th>
+                                <th style="width: 150px;">Time</th>
+                                <th>User Message</th>
+                                <th>Bot Response</th>
+                                <th class="text-center" style="width: 80px;">Rating</th>
+                                <th class="text-center" style="width: 100px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var conversation in Model.ChatbotHistoryData.Conversations)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="@conversation.UserImage" alt="@conversation.FullName" class="rounded-circle mr-2 user-avatar-small" onerror="this.src='/SharedMedia/defaults/default-avatar.svg'">
+                                            <div>
+                                                <div class="font-weight-bold">@conversation.FullName</div>
+                                                <small class="text-muted">@conversation.Username</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@conversation.FormattedTime</small>
+                                    </td>
+                                    <td>
+                                        <div class="conversation-message" title="@conversation.UserMessage">
+                                            @conversation.ShortUserMessage
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="conversation-message" title="@conversation.BotResponse">
+                                            @conversation.ShortBotResponse
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (conversation.FeedbackRating.HasValue)
+                                        {
+                                            <span class="badge rating-badge rating-@conversation.FeedbackRating">
+                                                @conversation.RatingDisplay
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary rating-badge">No rating</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-primary conversation-view-btn" 
+                                                title="View conversation details"
+                                                data-conversation-id="@conversation.ConversationId"
+                                                data-user-message="@Html.Raw(HttpUtility.JavaScriptStringEncode(conversation.UserMessage))"
+                                                data-bot-response="@Html.Raw(HttpUtility.JavaScriptStringEncode(conversation.BotResponse))"
+                                                data-user-name="@Html.Raw(HttpUtility.JavaScriptStringEncode(conversation.FullName))"
+                                                data-conversation-time="@conversation.FormattedTime"
+                                                data-rating="@conversation.RatingDisplay">
+                                            <i class="fas fa-eye"></i>
+                                            <span class="d-none d-sm-inline ml-1">View</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.ChatbotHistoryData.TotalPages > 1)
+                {
+                    <nav aria-label="Chatbot history pagination">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.ChatbotHistoryData.CurrentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=@(Model.ChatbotHistoryData.CurrentPage - 1)&pageSize=@Model.ChatbotHistoryData.PageSize&search=@Model.Search&userId=@Model.UserId&fromDate=@(Model.FromDate?.ToString("yyyy-MM-dd"))&toDate=@(Model.ToDate?.ToString("yyyy-MM-dd"))">
+                                        <i class="fas fa-chevron-left"></i> Previous
+                                    </a>
+                                </li>
+                            }
+
+                            @for (int i = Math.Max(1, Model.ChatbotHistoryData.CurrentPage - 2); i <= Math.Min(Model.ChatbotHistoryData.TotalPages, Model.ChatbotHistoryData.CurrentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == Model.ChatbotHistoryData.CurrentPage ? "active" : "")">
+                                    <a class="page-link" href="?page=@i&pageSize=@Model.ChatbotHistoryData.PageSize&search=@Model.Search&userId=@Model.UserId&fromDate=@(Model.FromDate?.ToString("yyyy-MM-dd"))&toDate=@(Model.ToDate?.ToString("yyyy-MM-dd"))">@i</a>
+                                </li>
+                            }
+
+                            @if (Model.ChatbotHistoryData.CurrentPage < Model.ChatbotHistoryData.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=@(Model.ChatbotHistoryData.CurrentPage + 1)&pageSize=@Model.ChatbotHistoryData.PageSize&search=@Model.Search&userId=@Model.UserId&fromDate=@(Model.FromDate?.ToString("yyyy-MM-dd"))&toDate=@(Model.ToDate?.ToString("yyyy-MM-dd"))">
+                                        Next <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-robot"></i>
+                    <h5>No conversations found</h5>
+                    <p>There are no chatbot conversations matching your filters.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Conversation Detail Modal -->
+<div class="modal fade conversation-modal" id="conversationModal" tabindex="-1" role="dialog" aria-labelledby="conversationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="conversationModalLabel">
+                    <i class="fas fa-comments"></i>
+                    Conversation Details
+                </h5>
+                <button type="button" class="close text-white" id="closeModalXBtn" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Close button in body -->
+                <button type="button" class="btn btn-sm btn-outline-secondary position-absolute" 
+                        style="top: 1rem; right: 1rem; z-index: 1060;" id="closeModalBodyBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <!-- Conversation Info -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="info-card">
+                            <div class="info-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="info-content">
+                                <label class="info-label">User</label>
+                                <div class="info-value" id="modalUserName"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-card">
+                            <div class="info-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="info-content">
+                                <label class="info-label">Time</label>
+                                <div class="info-value" id="modalConversationTime"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-card">
+                            <div class="info-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="info-content">
+                                <label class="info-label">Rating</label>
+                                <div class="info-value" id="modalRating"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conversation Messages -->
+                <div class="conversation-container">
+                    <div class="conversation-message user-message">
+                        <div class="message-header">
+                            <div class="user-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="message-info">
+                                <div class="message-sender">User</div>
+                                <div class="message-time" id="modalUserTime"></div>
+                            </div>
+                        </div>
+                        <div class="message-content" id="modalUserMessage"></div>
+                    </div>
+
+                    <div class="conversation-message bot-message">
+                        <div class="message-header">
+                            <div class="bot-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-info">
+                                <div class="message-sender">BrainStormEra AI</div>
+                                <div class="message-time" id="modalBotTime"></div>
+                            </div>
+                        </div>
+                        <div class="message-content" id="modalBotResponse"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="closeModalBtn">
+                    <i class="fas fa-times"></i> Close
+                </button>
+                <button type="button" class="btn btn-primary" id="copyConversationBtn">
+                    <i class="fas fa-copy"></i> Copy Conversation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Debug: Check if Bootstrap and jQuery are loaded
+            console.log('jQuery version:', $.fn.jquery);
+            console.log('Bootstrap modal available:', typeof $.fn.modal !== 'undefined');
+            
+            // Initialize DataTable
+            $('#chatbotHistoryTable').DataTable({
+                "pageLength": @Model.ChatbotHistoryData.PageSize,
+                "order": [[1, "desc"]], // Sort by time descending
+                "language": {
+                    "search": "Search conversations:",
+                    "lengthMenu": "Show _MENU_ conversations per page",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ conversations",
+                    "infoEmpty": "Showing 0 to 0 of 0 conversations",
+                    "infoFiltered": "(filtered from _MAX_ total conversations)",
+                    "emptyTable": "No conversations found"
+                },
+                "dom": '<"top"lf>rt<"bottom"ip><"clear">',
+                "responsive": true
+            });
+
+            // Handle conversation view button clicks
+            $(document).on('click', '.conversation-view-btn', function() {
+                var button = $(this);
+                var conversationId = button.data('conversation-id');
+                var userMessage = button.data('user-message');
+                var botResponse = button.data('bot-response');
+                var userName = button.data('user-name');
+                var conversationTime = button.data('conversation-time');
+                var rating = button.data('rating');
+
+                // Set conversation info
+                $('#modalUserName').text(userName);
+                $('#modalConversationTime').text(conversationTime);
+                $('#modalRating').html(formatRating(rating));
+                $('#modalUserTime').text(conversationTime);
+                $('#modalBotTime').text(conversationTime);
+                
+                // Set conversation messages
+                $('#modalUserMessage').html(formatMessage(userMessage));
+                $('#modalBotResponse').html(formatMessage(botResponse));
+                
+                // Store conversation data for copy functionality
+                $('#conversationModal').data('conversation-data', {
+                    userName: userName,
+                    conversationTime: conversationTime,
+                    userMessage: userMessage,
+                    botResponse: botResponse,
+                    rating: rating
+                });
+
+                // Show the modal
+                $('#conversationModal').modal('show');
+            });
+
+            // Handle close modal buttons
+            $('#closeModalBtn, #closeModalXBtn, #closeModalBodyBtn').on('click', function() {
+                closeModal();
+            });
+
+            // Handle modal backdrop click
+            $(document).on('click', '.modal-backdrop', function() {
+                closeModal();
+            });
+
+            // Handle escape key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' && $('#conversationModal').hasClass('show')) {
+                    closeModal();
+                }
+            });
+
+            // Function to close modal with fallback
+            function closeModal() {
+                var modal = $('#conversationModal');
+                
+                // Try Bootstrap modal method first
+                try {
+                    modal.modal('hide');
+                } catch (e) {
+                    console.log('Bootstrap modal hide failed, using fallback');
+                }
+                
+                // Fallback: manually hide modal
+                setTimeout(function() {
+                    if (modal.hasClass('show')) {
+                        modal.removeClass('show');
+                        modal.removeClass('fade');
+                        $('body').removeClass('modal-open');
+                        $('.modal-backdrop').remove();
+                    }
+                }, 100);
+                
+                // Alternative: Use vanilla JavaScript
+                var modalElement = document.getElementById('conversationModal');
+                if (modalElement && typeof bootstrap !== 'undefined') {
+                    try {
+                        var bootstrapModal = new bootstrap.Modal(modalElement);
+                        bootstrapModal.hide();
+                    } catch (e) {
+                        console.log('Vanilla Bootstrap modal hide failed');
+                    }
+                }
+            }
+
+            // Handle copy conversation button
+            $('#copyConversationBtn').on('click', function() {
+                var modal = $('#conversationModal');
+                var data = modal.data('conversation-data');
+                
+                if (data) {
+                    var conversationText = formatConversationForCopy(data);
+                    copyToClipboard(conversationText);
+                    
+                    // Show success message
+                    showToast('Conversation copied to clipboard!', 'success');
+                }
+            });
+
+            // Helper function to format rating
+            function formatRating(rating) {
+                if (rating === 'No rating') {
+                    return '<span class="badge badge-secondary">No rating</span>';
+                }
+                
+                var ratingNum = parseInt(rating);
+                var stars = '';
+                var ratingClass = '';
+                
+                switch(ratingNum) {
+                    case 1:
+                        ratingClass = 'text-danger';
+                        break;
+                    case 2:
+                        ratingClass = 'text-warning';
+                        break;
+                    case 3:
+                        ratingClass = 'text-info';
+                        break;
+                    case 4:
+                        ratingClass = 'text-primary';
+                        break;
+                    case 5:
+                        ratingClass = 'text-success';
+                        break;
+                    default:
+                        ratingClass = 'text-muted';
+                }
+                
+                for (var i = 1; i <= 5; i++) {
+                    if (i <= ratingNum) {
+                        stars += '<i class="fas fa-star ' + ratingClass + '"></i>';
+                    } else {
+                        stars += '<i class="far fa-star text-muted"></i>';
+                    }
+                }
+                
+                return '<span class="rating-display">' + stars + ' (' + rating + '/5)</span>';
+            }
+
+            // Helper function to format message content
+            function formatMessage(message) {
+                // Convert line breaks to <br> tags
+                message = message.replace(/\n/g, '<br>');
+                
+                // Highlight code blocks (simple detection)
+                message = message.replace(/```([\s\S]*?)```/g, '<pre class="code-block"><code>$1</code></pre>');
+                
+                // Highlight inline code
+                message = message.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+                
+                return message;
+            }
+
+            // Helper function to format conversation for copying
+            function formatConversationForCopy(data) {
+                var text = '=== BrainStormEra Chatbot Conversation ===\n\n';
+                text += 'User: ' + data.userName + '\n';
+                text += 'Time: ' + data.conversationTime + '\n';
+                text += 'Rating: ' + data.rating + '\n\n';
+                text += '--- Conversation ---\n\n';
+                text += 'User: ' + data.userMessage + '\n\n';
+                text += 'BrainStormEra AI: ' + data.botResponse + '\n\n';
+                text += '====================';
+                
+                return text;
+            }
+
+            // Helper function to copy text to clipboard
+            function copyToClipboard(text) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    // Use modern clipboard API
+                    navigator.clipboard.writeText(text).then(function() {
+                        console.log('Text copied successfully');
+                    }).catch(function(err) {
+                        console.error('Failed to copy text: ', err);
+                        fallbackCopyTextToClipboard(text);
+                    });
+                } else {
+                    // Fallback for older browsers
+                    fallbackCopyTextToClipboard(text);
+                }
+            }
+
+            // Fallback copy function
+            function fallbackCopyTextToClipboard(text) {
+                var textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.position = "fixed";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                try {
+                    var successful = document.execCommand('copy');
+                    if (successful) {
+                        console.log('Text copied successfully');
+                    } else {
+                        console.error('Failed to copy text');
+                    }
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                }
+                
+                document.body.removeChild(textArea);
+            }
+
+            // Helper function to show toast notifications
+            function showToast(message, type = 'info') {
+                var toastClass = 'alert-' + type;
+                var iconClass = type === 'success' ? 'fas fa-check-circle' : 'fas fa-info-circle';
+                
+                var toast = $('<div class="alert ' + toastClass + ' alert-dismissible fade show position-fixed" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">' +
+                    '<i class="' + iconClass + '"></i> ' + message +
+                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                    '<span aria-hidden="true">&times;</span>' +
+                    '</button>' +
+                    '</div>');
+                
+                $('body').append(toast);
+                
+                // Auto remove after 3 seconds
+                setTimeout(function() {
+                    toast.alert('close');
+                }, 3000);
+            }
+        });
+    </script>
+} 

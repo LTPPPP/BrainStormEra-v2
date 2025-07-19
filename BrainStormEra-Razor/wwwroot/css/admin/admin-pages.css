@@ -1,0 +1,198 @@
+/* Admin Pages Styling */
+
+/* User Ranking Page */
+.user-ranking-table th {
+    background-color: #f8f9fc;
+    border-color: #e3e6f0;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+}
+
+.user-ranking-table td {
+    vertical-align: middle;
+    border-color: #e3e6f0;
+}
+
+.rank-badge {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.rank-1 {
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    color: #000;
+}
+
+.rank-2 {
+    background: linear-gradient(45deg, #c0c0c0, #e5e5e5);
+    color: #000;
+}
+
+.rank-3 {
+    background: linear-gradient(45deg, #cd7f32, #daa520);
+    color: #fff;
+}
+
+.user-avatar-small {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border: 2px solid #e3e6f0;
+}
+
+.progress-thin {
+    height: 20px;
+    font-size: 0.75rem;
+}
+
+/* Chatbot History Page */
+.chatbot-history-table th {
+    background-color: #f8f9fc;
+    border-color: #e3e6f0;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+}
+
+.chatbot-history-table td {
+    vertical-align: middle;
+    border-color: #e3e6f0;
+}
+
+.conversation-message {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rating-badge {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.rating-5 { background-color: #28a745; color: white; }
+.rating-4 { background-color: #007bff; color: white; }
+.rating-3 { background-color: #17a2b8; color: white; }
+.rating-2 { background-color: #ffc107; color: black; }
+.rating-1 { background-color: #dc3545; color: white; }
+
+/* Statistics Cards */
+.stat-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    opacity: 0.7;
+}
+
+/* Filter Section */
+.filter-section {
+    background-color: #f8f9fc;
+    border: 1px solid #e3e6f0;
+    border-radius: 0.35rem;
+}
+
+.filter-section .form-label {
+    font-weight: 600;
+    color: #5a5c69;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* Modal Styling */
+.conversation-modal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.conversation-message-display {
+    background-color: #f8f9fc;
+    border: 1px solid #e3e6f0;
+    border-radius: 0.35rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Pagination */
+.pagination .page-link {
+    color: #5a5c69;
+    border-color: #e3e6f0;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+.pagination .page-link:hover {
+    color: #4e73df;
+    background-color: #f8f9fc;
+    border-color: #e3e6f0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .user-ranking-table,
+    .chatbot-history-table {
+        font-size: 0.8rem;
+    }
+    
+    .conversation-message {
+        max-width: 150px;
+    }
+    
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Loading States */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #4e73df;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #858796;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h5 {
+    margin-bottom: 0.5rem;
+    color: #5a5c69;
+}
+
+.empty-state p {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+} 

@@ -15,18 +15,17 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<AdminCourseDetailsViewModel?> GetCourseDetailsAsync(string courseId);
         Task<bool> UpdateUserStatusAsync(string userId, bool isBanned);
         Task<bool> UpdateUserPointsAsync(string userId, decimal pointsChange);
+        Task<bool> ChangeUserRoleAsync(string userId, string newRole);
         Task<bool> DeleteUserAsync(string userId);
         Task<bool> UpdateCourseStatusAsync(string courseId, bool isApproved, string? adminId = null);
         Task<bool> RejectCourseAsync(string courseId, string reason, string? adminId = null);
         Task<bool> BanCourseAsync(string courseId, string reason, string? adminId = null);
         Task<bool> DeleteCourseAsync(string courseId);
 
-        // Achievement Management
-        Task<AdminAchievementsViewModel> GetAllAchievementsAsync(string? search = null, string? typeFilter = null, string? pointsFilter = null, int page = 1, int pageSize = 12, string? sortBy = "date_desc");
-        Task<AdminAchievementViewModel?> GetAchievementByIdAsync(string achievementId);
-        Task<(bool Success, string? AchievementId)> CreateAchievementAsync(CreateAchievementRequest request, string? adminId = null);
-        Task<bool> UpdateAchievementAsync(UpdateAchievementRequest request, string? adminId = null);
-        Task<bool> DeleteAchievementAsync(string achievementId, string? adminId = null);
-        Task<(bool Success, string? IconPath, string? ErrorMessage)> UploadAchievementIconAsync(Microsoft.AspNetCore.Http.IFormFile file, string achievementId, string? adminId = null);
+        // New methods for User Ranking
+        Task<UserRankingViewModel> GetUserRankingAsync(int page = 1, int pageSize = 20);
+
+        // New methods for Chatbot History
+        Task<ChatbotHistoryViewModel> GetChatbotHistoryAsync(string? search = null, string? userId = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 20);
     }
 }

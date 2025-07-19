@@ -10,23 +10,30 @@ namespace BusinessLogicLayer.Services
         private readonly IAdminRepo _adminRepo;
         private readonly IUserRepo _userRepo;
         private readonly ICourseRepo _courseRepo;
+        private readonly IAchievementService _achievementService;
+        private readonly ICertificateService _certificateService;
         private readonly IAchievementRepo _achievementRepo;
-        private readonly IAchievementIconService _achievementIconService;
+
         private readonly ILogger<AdminService> _logger;
+        private readonly IPointsService _pointsService;
 
         public AdminService(
             IAdminRepo adminRepo,
             IUserRepo userRepo,
             ICourseRepo courseRepo,
+            IAchievementService achievementService,
+            ICertificateService certificateService,
             IAchievementRepo achievementRepo,
-            IAchievementIconService achievementIconService,
+            IPointsService pointsService,
             ILogger<AdminService> logger)
         {
             _adminRepo = adminRepo;
             _userRepo = userRepo;
             _courseRepo = courseRepo;
+            _achievementService = achievementService;
+            _certificateService = certificateService;
             _achievementRepo = achievementRepo;
-            _achievementIconService = achievementIconService;
+            _pointsService = pointsService;
             _logger = logger;
         }
 
@@ -296,6 +303,38 @@ namespace BusinessLogicLayer.Services
                     return null;
                 }
 
+                // Get user achievements and certificates
+                var userAchievements = await _achievementService.GetUserAchievementsAsync(userId);
+                var certificates = await _certificateService.GetUserCertificatesAsync(userId);
+
+                // Convert UserAchievement to AchievementSummaryViewModel
+                var achievements = new List<AchievementSummaryViewModel>();
+                foreach (var ua in userAchievements)
+                {
+                    string? relatedCourseName = null;
+                    if (!string.IsNullOrEmpty(ua.RelatedCourseId))
+                    {
+                        relatedCourseName = await _achievementRepo.GetCourseNameAsync(ua.RelatedCourseId);
+                    }
+
+                    achievements.Add(new AchievementSummaryViewModel
+                    {
+                        AchievementId = ua.AchievementId,
+                        AchievementName = ua.Achievement.AchievementName,
+                        AchievementDescription = ua.Achievement.AchievementDescription ?? "",
+                        AchievementIcon = ua.Achievement.AchievementIcon ?? "fas fa-trophy",
+                        AchievementType = ua.Achievement.AchievementType ?? "",
+                        PointsReward = ua.Achievement.PointsReward,
+                        ReceivedDate = ua.ReceivedDate.ToDateTime(TimeOnly.MinValue),
+                        RelatedCourseName = relatedCourseName
+                    });
+                }
+
+                // Calculate totals
+                var totalAchievements = achievements.Count;
+                var totalCertificates = certificates.Count;
+                var totalPointsEarned = achievements.Sum(a => a.PointsReward ?? 0);
+
                 return new AdminUserViewModel
                 {
                     UserId = user.UserId,
@@ -315,7 +354,12 @@ namespace BusinessLogicLayer.Services
                     PaymentPoint = user.PaymentPoint,
                     BankName = user.BankName,
                     BankAccountNumber = user.BankAccountNumber,
-                    AccountHolderName = user.AccountHolderName
+                    AccountHolderName = user.AccountHolderName,
+                    Achievements = achievements,
+                    Certificates = certificates,
+                    TotalAchievements = totalAchievements,
+                    TotalCertificates = totalCertificates,
+                    TotalPointsEarned = totalPointsEarned
                 };
             }
             catch (Exception ex)
@@ -528,11 +572,76 @@ namespace BusinessLogicLayer.Services
         {
             try
             {
-                return await _adminRepo.UpdateUserPointsAsync(userId, pointsChange);
+                return await _pointsService.UpdateUserPointsAsync(userId, pointsChange);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating user points for userId: {UserId}, pointsChange: {PointsChange}", userId, pointsChange);
+                throw;
+            }
+        }
+
+        public async Task<bool> ChangeUserRoleAsync(string userId, string newRole)
+        {
+            try
+            {
+                // Validate the new role
+                var validRoles = new[] { "learner", "instructor", "admin" };
+                if (!validRoles.Contains(newRole, StringComparer.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Invalid role attempted: {NewRole} for user {UserId}", newRole, userId);
+                    return false;
+                }
+
+                // Get user details to check current role and validate promotion
+                var user = await _userRepo.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found: {UserId}", userId);
+                    return false;
+                }
+
+                // Check if user is already in the target role
+                if (string.Equals(user.UserRole, newRole, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation("User {UserId} is already in role {Role}", userId, newRole);
+                    return true; // Consider this a success
+                }
+
+                // For promoting to instructor, check if user has any content
+                if (string.Equals(newRole, "instructor", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Check if user has any courses, enrollments, or other content
+                    var hasCourses = await _courseRepo.GetInstructorCoursesAsync(userId, null, null, 1, 1);
+                    var hasEnrollments = user.Enrollments?.Any() == true;
+                    var hasProgress = user.UserProgresses?.Any() == true;
+                    var hasQuizAttempts = user.QuizAttempts?.Any() == true;
+
+                    if (hasCourses.Any() || hasEnrollments || hasProgress || hasQuizAttempts)
+                    {
+                        _logger.LogWarning("Cannot promote user {UserId} to instructor - user has existing content", userId);
+                        return false;
+                    }
+                }
+
+                // Change the user role
+                var result = await _adminRepo.ChangeUserRoleAsync(userId, newRole);
+
+                if (result)
+                {
+                    _logger.LogInformation("Successfully changed user {UserId} role from {OldRole} to {NewRole}",
+                        userId, user.UserRole, newRole);
+                }
+                else
+                {
+                    _logger.LogError("Failed to change user {UserId} role to {NewRole}", userId, newRole);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing user role for userId: {UserId}, newRole: {NewRole}", userId, newRole);
                 throw;
             }
         }
@@ -613,218 +722,101 @@ namespace BusinessLogicLayer.Services
             }
         }
 
-        // Achievement Management Methods
-        public async Task<AdminAchievementsViewModel> GetAllAchievementsAsync(string? search = null, string? typeFilter = null, string? pointsFilter = null, int page = 1, int pageSize = 12, string? sortBy = "date_desc")
+        // User Ranking Methods
+        public async Task<UserRankingViewModel> GetUserRankingAsync(int page = 1, int pageSize = 20)
         {
             try
             {
-                var allAchievements = await _achievementRepo.GetAllAchievementsAsync();
+                var userRankingData = await _adminRepo.GetUserRankingAsync(page, pageSize);
+                var totalUsers = await _adminRepo.GetUserRankingTotalCountAsync();
+                var averageCompletedLessons = await _adminRepo.GetAverageCompletedLessonsAsync();
 
-                // Apply filters
-                var filteredAchievements = allAchievements.AsQueryable();
-
-                if (!string.IsNullOrEmpty(search))
+                var userRankingItems = userRankingData.Select(u => new UserRankingItem
                 {
-                    filteredAchievements = filteredAchievements.Where(a =>
-                        a.AchievementName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                        (a.AchievementDescription != null && a.AchievementDescription.Contains(search, StringComparison.OrdinalIgnoreCase)));
-                }
+                    UserId = u.UserId,
+                    Username = u.Username,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    UserImage = u.UserImage,
+                    UserRole = u.UserRole,
+                    AccountCreatedAt = u.AccountCreatedAt,
+                    LastLoginDate = u.LastLoginDate,
+                    CompletedLessonsCount = u.CompletedLessonsCount,
+                    TotalEnrolledCourses = u.TotalEnrolledCourses,
+                    CompletedCourses = u.CompletedCourses,
+                    Rank = u.Rank,
+                    AverageProgress = u.AverageProgress,
+                    TotalTimeSpent = u.TotalTimeSpent,
+                    CertificatesEarned = u.CertificatesEarned,
+                    AchievementsEarned = u.AchievementsEarned,
+                    LastActivityDate = u.LastActivityDate,
+                    LastAccessedCourse = u.LastAccessedCourse,
+                    CurrentCourse = u.CurrentCourse
+                }).ToList();
 
-                if (!string.IsNullOrEmpty(typeFilter))
+                return new UserRankingViewModel
                 {
-                    filteredAchievements = filteredAchievements.Where(a =>
-                        a.AchievementType != null && a.AchievementType.Equals(typeFilter, StringComparison.OrdinalIgnoreCase));
-                }
-
-                var achievements = filteredAchievements.ToList();
-                var totalAchievements = achievements.Count;
-
-                // Apply sorting
-                var sortedAchievements = sortBy?.ToLower() switch
-                {
-                    "name_asc" => achievements.OrderBy(a => a.AchievementName),
-                    "name_desc" => achievements.OrderByDescending(a => a.AchievementName),
-                    "date_asc" => achievements.OrderBy(a => a.AchievementCreatedAt),
-                    "date_desc" => achievements.OrderByDescending(a => a.AchievementCreatedAt),
-                    "type_asc" => achievements.OrderBy(a => a.AchievementType),
-                    "type_desc" => achievements.OrderByDescending(a => a.AchievementType),
-                    "awarded_desc" => achievements.OrderByDescending(a => a.UserAchievements?.Count ?? 0),
-                    "awarded_asc" => achievements.OrderBy(a => a.UserAchievements?.Count ?? 0),
-                    _ => achievements.OrderByDescending(a => a.AchievementCreatedAt) // default to newest first
-                };
-
-                // Apply pagination
-                var paginatedAchievements = sortedAchievements
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
-
-                // Calculate statistics
-                var courseAchievements = allAchievements.Count(a => a.AchievementType?.Equals("course_completion", StringComparison.OrdinalIgnoreCase) == true || a.AchievementType?.Equals("first_course", StringComparison.OrdinalIgnoreCase) == true);
-                var quizAchievements = allAchievements.Count(a => a.AchievementType?.Equals("quiz_master", StringComparison.OrdinalIgnoreCase) == true);
-                var specialAchievements = allAchievements.Count(a => a.AchievementType?.Equals("instructor", StringComparison.OrdinalIgnoreCase) == true || a.AchievementType?.Equals("student_engagement", StringComparison.OrdinalIgnoreCase) == true);
-                var milestoneAchievements = allAchievements.Count(a => a.AchievementType?.Equals("streak", StringComparison.OrdinalIgnoreCase) == true);
-
-                // Calculate total times awarded (would need user achievements data, using placeholder for now)
-                var totalAwarded = 0; // This would require joining with UserAchievement table
-
-                return new AdminAchievementsViewModel
-                {
-                    Achievements = paginatedAchievements.Select(a => new AdminAchievementViewModel
-                    {
-                        AchievementId = a.AchievementId,
-                        AchievementName = a.AchievementName,
-                        AchievementDescription = a.AchievementDescription ?? "",
-                        AchievementIcon = a.AchievementIcon ?? "fas fa-trophy",
-                        AchievementType = a.AchievementType ?? "general",
-
-                        AchievementCreatedAt = a.AchievementCreatedAt,
-                        IsActive = true, // Add this field to Achievement model if needed
-                        TimesAwarded = a.UserAchievements?.Count ?? 0 // Get actual count from UserAchievements
-                    }).ToList(),
-                    SearchQuery = search,
-                    TypeFilter = typeFilter,
-                    PointsFilter = pointsFilter,
-                    SortBy = sortBy,
+                    Users = userRankingItems,
                     CurrentPage = page,
+                    TotalPages = (int)Math.Ceiling((double)totalUsers / pageSize),
                     PageSize = pageSize,
-                    TotalPages = (int)Math.Ceiling((double)totalAchievements / pageSize),
-                    TotalAchievements = allAchievements.Count,
-                    CourseAchievements = courseAchievements,
-                    QuizAchievements = quizAchievements,
-                    SpecialAchievements = specialAchievements,
-                    MilestoneAchievements = milestoneAchievements,
-                    TotalAwarded = totalAwarded
+                    TotalUsers = totalUsers,
+                    TotalCompletedLessons = userRankingItems.Sum(u => u.CompletedLessonsCount),
+                    AverageCompletedLessons = averageCompletedLessons
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting all achievements with search: {Search}, typeFilter: {TypeFilter}, pointsFilter: {PointsFilter}, page: {Page}, pageSize: {PageSize}",
-                    search, typeFilter, pointsFilter, page, pageSize);
+                _logger.LogError(ex, "Error getting user ranking data");
                 throw;
             }
         }
 
-        public async Task<AdminAchievementViewModel?> GetAchievementByIdAsync(string achievementId)
+        // Chatbot History Methods
+        public async Task<ChatbotHistoryViewModel> GetChatbotHistoryAsync(string? search = null, string? userId = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 20)
         {
             try
             {
-                var achievement = await _achievementRepo.GetByIdAsync(achievementId);
-                if (achievement == null) return null;
+                var conversations = await _adminRepo.GetChatbotHistoryAsync(search, userId, fromDate, toDate, page, pageSize);
+                var totalConversations = await _adminRepo.GetChatbotHistoryTotalCountAsync(search, userId, fromDate, toDate);
+                var statistics = await _adminRepo.GetChatbotHistoryStatisticsAsync();
 
-                return new AdminAchievementViewModel
+                var conversationItems = conversations.Select(c => new ChatbotConversationItem
                 {
-                    AchievementId = achievement.AchievementId,
-                    AchievementName = achievement.AchievementName,
-                    AchievementDescription = achievement.AchievementDescription ?? "",
-                    AchievementIcon = achievement.AchievementIcon ?? "fas fa-trophy",
-                    AchievementType = achievement.AchievementType ?? "general",
-                    AchievementCreatedAt = achievement.AchievementCreatedAt,
-                    IsActive = true,
-                    TimesAwarded = achievement.UserAchievements?.Count ?? 0
+                    ConversationId = c.ConversationId,
+                    UserId = c.UserId,
+                    Username = c.User.Username ?? "",
+                    FullName = c.User.FullName ?? "",
+                    UserEmail = c.User.UserEmail ?? "",
+                    UserImage = c.User.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
+                    ConversationTime = c.ConversationTime,
+                    UserMessage = c.UserMessage,
+                    BotResponse = c.BotResponse,
+                    ConversationContext = c.ConversationContext,
+                    FeedbackRating = c.FeedbackRating
+                }).ToList();
+
+                return new ChatbotHistoryViewModel
+                {
+                    Conversations = conversationItems,
+                    CurrentPage = page,
+                    TotalPages = (int)Math.Ceiling((double)totalConversations / pageSize),
+                    PageSize = pageSize,
+                    TotalConversations = totalConversations,
+                    SearchQuery = search,
+                    UserIdFilter = userId,
+                    FromDate = fromDate,
+                    ToDate = toDate,
+                    TotalUsers = (int)statistics["TotalUsers"],
+                    AverageRating = (double)statistics["AverageRating"],
+                    TotalRatings = (int)statistics["TotalRatings"],
+                    RatingDistribution = (Dictionary<int, int>)statistics["RatingDistribution"]
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting achievement by ID: {AchievementId}", achievementId);
+                _logger.LogError(ex, "Error getting chatbot history data");
                 throw;
-            }
-        }
-
-        public async Task<(bool Success, string? AchievementId)> CreateAchievementAsync(CreateAchievementRequest request, string? adminId = null)
-        {
-            try
-            {
-                var achievementId = Guid.NewGuid().ToString();
-                var achievement = new DataAccessLayer.Models.Achievement
-                {
-                    AchievementId = achievementId,
-                    AchievementName = request.AchievementName,
-                    AchievementDescription = request.AchievementDescription,
-                    AchievementIcon = request.AchievementIcon,
-                    AchievementType = request.AchievementType,
-                    AchievementCreatedAt = DateTime.UtcNow
-                };
-
-                var result = await _achievementRepo.CreateAchievementAsync(achievement);
-                var success = !string.IsNullOrEmpty(result);
-                return (success, success ? achievementId : null);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating achievement: {AchievementName}", request.AchievementName);
-                throw;
-            }
-        }
-
-        public async Task<bool> UpdateAchievementAsync(UpdateAchievementRequest request, string? adminId = null)
-        {
-            try
-            {
-                var existingAchievement = await _achievementRepo.GetByIdAsync(request.AchievementId);
-                if (existingAchievement == null) return false;
-
-                existingAchievement.AchievementName = request.AchievementName;
-                existingAchievement.AchievementDescription = request.AchievementDescription;
-                existingAchievement.AchievementIcon = request.AchievementIcon;
-                existingAchievement.AchievementType = request.AchievementType;
-
-                return await _achievementRepo.UpdateAchievementAsync(existingAchievement);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating achievement: {AchievementId}", request.AchievementId);
-                throw;
-            }
-        }
-
-        public async Task<bool> DeleteAchievementAsync(string achievementId, string? adminId = null)
-        {
-            try
-            {
-                return await _achievementRepo.DeleteAchievementAsync(achievementId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting achievement: {AchievementId}", achievementId);
-                throw;
-            }
-        }
-
-        public async Task<(bool Success, string? IconPath, string? ErrorMessage)> UploadAchievementIconAsync(Microsoft.AspNetCore.Http.IFormFile file, string achievementId, string? adminId = null)
-        {
-            try
-            {
-                // Check if achievement exists
-                var achievement = await _achievementRepo.GetByIdAsync(achievementId);
-                if (achievement == null)
-                {
-                    return (false, null, "Achievement not found.");
-                }
-
-                // Upload the icon
-                var uploadResult = await _achievementIconService.UploadAchievementIconAsync(file, achievementId);
-                if (!uploadResult.Success)
-                {
-                    return uploadResult;
-                }
-
-                // Update achievement with new icon path
-                var updateResult = await _achievementRepo.UpdateAchievementIconAsync(achievementId, uploadResult.IconPath!);
-                if (!updateResult)
-                {
-                    // Clean up uploaded file if database update fails
-                    await _achievementIconService.DeleteAchievementIconAsync(uploadResult.IconPath);
-                    return (false, null, "Failed to update achievement icon in database.");
-                }
-
-                _logger.LogInformation("Achievement icon uploaded successfully: {AchievementId} by admin {AdminId}", achievementId, adminId);
-                return (true, uploadResult.IconPath, null);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error uploading achievement icon: {AchievementId}", achievementId);
-                return (false, null, "An error occurred while uploading the achievement icon.");
             }
         }
     }

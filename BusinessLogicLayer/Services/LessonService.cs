@@ -3,6 +3,7 @@ using DataAccessLayer.Models;
 using DataAccessLayer.Repositories.Interfaces;
 using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -202,8 +203,8 @@ namespace BusinessLogicLayer.Services
 
                     // Parse lesson content based on lesson type
                     VideoUrl = lesson.LessonTypeId == 1 ? ExtractVideoUrl(lesson.LessonContent) : null,
-                    TextContent = lesson.LessonTypeId == 2 ? lesson.LessonContent : null,
-                    DocumentDescription = lesson.LessonTypeId == 3 ? lesson.LessonContent : null
+                    TextContent = lesson.LessonTypeId == 2 ? LessonServiceImpl.ParseLessonContentForDisplay(lesson.LessonContent, lesson.LessonTypeId ?? 0) : null,
+                    DocumentDescription = lesson.LessonTypeId == 3 ? LessonServiceImpl.ParseLessonContentForDisplay(lesson.LessonContent, lesson.LessonTypeId ?? 0) : null
                 };
 
                 return viewModel;
@@ -321,20 +322,44 @@ namespace BusinessLogicLayer.Services
 
         private string ProcessLessonContent(CreateLessonViewModel model)
         {
-            return model.LessonTypeId switch
+            // This method is used for updating lessons, so we need to use the LessonServiceImpl
+            // to process content with proper tags
+            switch (model.LessonTypeId)
             {
-                1 => model.VideoUrl ?? string.Empty, // Video lesson
-                2 => model.TextContent ?? string.Empty, // Text lesson
-                3 => model.DocumentDescription ?? string.Empty, // Document lesson
-                _ => model.Content
-            };
+                case 1: // Video lesson
+                    var videoContent = model.Content?.Trim() ?? "";
+                    if (!string.IsNullOrEmpty(model.VideoUrl))
+                    {
+                        videoContent += $"\n\n[VIDEO_URL]{model.VideoUrl}[/VIDEO_URL]";
+                    }
+                    return videoContent;
+                case 2: // Text lesson
+                    var textContent = model.Content?.Trim() ?? "";
+                    if (!string.IsNullOrEmpty(model.TextContent))
+                    {
+                        textContent += $"\n\n[TEXT_CONTENT]{model.TextContent.Trim()}[/TEXT_CONTENT]";
+                    }
+                    return textContent;
+                case 3: // Document lesson
+                    var documentContent = model.Content?.Trim() ?? "";
+                    if (!string.IsNullOrEmpty(model.DocumentDescription))
+                    {
+                        documentContent += $"\n\n[DOCUMENT_DESCRIPTION]{model.DocumentDescription.Trim()}[/DOCUMENT_DESCRIPTION]";
+                    }
+                    return documentContent;
+                default:
+                    return model.Content ?? string.Empty;
+            }
         }
 
         private string? ExtractVideoUrl(string? lessonContent)
         {
-            // For video lessons, the content is typically just the URL
-            // You might need to adjust this based on how video content is stored
-            return lessonContent;
+            if (string.IsNullOrEmpty(lessonContent))
+                return null;
+
+            // Parse video content to extract URL from tags
+            var parsedContent = LessonServiceImpl.ParseLessonContentForDisplay(lessonContent, 1);
+            return string.IsNullOrEmpty(parsedContent) ? null : parsedContent;
         }
 
         /// <summary>
@@ -549,7 +574,7 @@ namespace BusinessLogicLayer.Services
                     LessonId = lesson.LessonId,
                     LessonName = lesson.LessonName,
                     LessonDescription = lesson.LessonDescription ?? "",
-                    LessonContent = lesson.LessonContent,
+                    LessonContent = LessonServiceImpl.ParseLessonContentForDisplay(lesson.LessonContent, lesson.LessonTypeId ?? 0),
                     LessonType = lesson.LessonType?.LessonTypeName ?? "",
                     LessonTypeId = lesson.LessonTypeId ?? 0,
                     LessonTypeIcon = lessonTypeIcon,

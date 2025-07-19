@@ -265,20 +265,11 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 // If course has price, check user points and deduct
                 using var scope = _serviceProvider.CreateScope();
-                var userRepo = scope.ServiceProvider.GetRequiredService<DataAccessLayer.Repositories.Interfaces.IUserRepo>();
+                var pointsService = scope.ServiceProvider.GetRequiredService<IPointsService>();
                 var context = scope.ServiceProvider.GetRequiredService<DataAccessLayer.Data.BrainStormEraContext>();
 
-                var userWithPoints = await userRepo.GetUserWithPaymentPointAsync(userId);
-                if (userWithPoints == null)
-                {
-                    return new EnrollmentResult
-                    {
-                        Success = false,
-                        Message = "User not found"
-                    };
-                }
+                var userPoints = await pointsService.GetUserPointsAsync(userId);
 
-                var userPoints = userWithPoints.PaymentPoint ?? 0;
                 if (userPoints < course.Price)
                 {
                     return new EnrollmentResult
@@ -298,20 +289,17 @@ namespace BusinessLogicLayer.Services.Implementations
                         using var transaction = await realContext.Database.BeginTransactionAsync(cancellationToken);
                         try
                         {
-                            // Deduct points
-                            var userAccount = await realContext.Accounts.FindAsync(new object[] { userId }, cancellationToken);
-                            if (userAccount == null)
+                            // Deduct points using PointsService
+                            var pointsDeducted = await pointsService.UpdateUserPointsAsync(userId, -course.Price);
+                            if (!pointsDeducted)
                             {
                                 await transaction.RollbackAsync(cancellationToken);
                                 return new EnrollmentResult
                                 {
                                     Success = false,
-                                    Message = "User account not found"
+                                    Message = "Failed to deduct points"
                                 };
                             }
-
-                            userAccount.PaymentPoint = (userAccount.PaymentPoint ?? 0) - course.Price;
-                            userAccount.AccountUpdatedAt = DateTime.UtcNow;
 
                             // Check if already enrolled
                             var existingEnrollment = await realContext.Enrollments

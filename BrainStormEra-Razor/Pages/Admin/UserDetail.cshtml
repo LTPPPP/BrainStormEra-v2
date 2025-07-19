@@ -133,24 +133,6 @@
                     </div>
                 </div>
 
-                <!-- Point Management -->
-                <div class="info-section">
-                    <h5><i class="fas fa-coins"></i>Point Management</h5>
-                    <div class="point-actions">
-                        <div class="point-input-group">
-                            <input type="number" id="pointsAmount" min="1" step="1" value="100" class="form-control" placeholder="Enter points" />
-                        </div>
-                        <div class="point-buttons">
-                            <button type="button" class="btn btn-success btn-sm" onclick="updateUserPoints('@Model.UserId', 'add')">
-                                <i class="fas fa-plus"></i> Add Points
-                            </button>
-                            <button type="button" class="btn btn-warning btn-sm" onclick="updateUserPoints('@Model.UserId', 'subtract')">
-                                <i class="fas fa-minus"></i> Subtract Points
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Bank Information -->
                 <div class="info-section">
                     <h5><i class="fas fa-university"></i>Bank Information</h5>
@@ -186,7 +168,129 @@
                         </span>
                     </div>
                 </div>
+
+                <!-- Achievement Statistics -->
+                <div class="info-section">
+                    <h5><i class="fas fa-trophy"></i>Achievement Statistics</h5>
+                    <div class="info-item">
+                        <span class="info-label">Total Achievements:</span>
+                        <span class="info-value">
+                            <strong>@Model.UserDetail.TotalAchievements</strong>
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Total Certificates:</span>
+                        <span class="info-value">
+                            <strong>@Model.UserDetail.TotalCertificates</strong>
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Total Points Earned:</span>
+                        <span class="info-value">
+                            <strong>
+                                <i class="fas fa-coins"></i>
+                                @Model.UserDetail.TotalPointsEarned.ToString("N0")
+                            </strong>
+                        </span>
+                    </div>
+                </div>
             </div>
+
+            <!-- Achievements Section -->
+            @if (Model.UserDetail.Achievements.Any())
+            {
+                <div class="achievements-section">
+                    <h4><i class="fas fa-trophy me-2"></i>Achievements (@Model.UserDetail.TotalAchievements)</h4>
+                    <div class="achievements-grid">
+                        @foreach (var achievement in Model.UserDetail.Achievements.Take(6))
+                        {
+                            <div class="achievement-card">
+                                <div class="achievement-icon">
+                                    @if (!string.IsNullOrEmpty(achievement.AchievementIcon))
+                                    {
+                                        <img src="@achievement.AchievementIcon" alt="@achievement.AchievementName" 
+                                             onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-achievement.svg';" />
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-trophy"></i>
+                                    }
+                                </div>
+                                <div class="achievement-info">
+                                    <h6>@achievement.AchievementName</h6>
+                                    <p>@achievement.AchievementDescription</p>
+                                    <div class="achievement-meta">
+                                        <span class="achievement-date">
+                                            <i class="fas fa-calendar"></i>
+                                            @achievement.ReceivedDate.ToString("MMM dd, yyyy")
+                                        </span>
+                                        @if (achievement.PointsReward.HasValue)
+                                        {
+                                            <span class="achievement-points">
+                                                <i class="fas fa-coins"></i>
+                                                @achievement.PointsReward points
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    @if (Model.UserDetail.Achievements.Count > 6)
+                    {
+                        <div class="text-center mt-3">
+                            <small class="text-muted">Showing 6 of @Model.UserDetail.TotalAchievements achievements</small>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Certificates Section -->
+            @if (Model.UserDetail.Certificates.Any())
+            {
+                <div class="certificates-section">
+                    <h4><i class="fas fa-certificate me-2"></i>Certificates (@Model.UserDetail.TotalCertificates)</h4>
+                    <div class="certificates-grid">
+                        @foreach (var certificate in Model.UserDetail.Certificates.Take(6))
+                        {
+                            <div class="certificate-card">
+                                <div class="certificate-image">
+                                    @if (!string.IsNullOrEmpty(certificate.CourseImage))
+                                    {
+                                        <img src="@certificate.CourseImage" alt="@certificate.CourseName" 
+                                             onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';" />
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-book"></i>
+                                    }
+                                </div>
+                                <div class="certificate-info">
+                                    <h6>@certificate.CourseName</h6>
+                                    <p class="certificate-author">by @certificate.AuthorName</p>
+                                    <div class="certificate-meta">
+                                        <span class="certificate-date">
+                                            <i class="fas fa-calendar-check"></i>
+                                            @certificate.CompletedDate.ToString("MMM dd, yyyy")
+                                        </span>
+                                        <span class="certificate-score">
+                                            <i class="fas fa-star"></i>
+                                            @certificate.FinalScore.ToString("F1")%
+                                        </span>
+                                    </div>
+                                </div>
+
+                            </div>
+                        }
+                    </div>
+                    @if (Model.UserDetail.Certificates.Count > 6)
+                    {
+                        <div class="text-center mt-3">
+                            <small class="text-muted">Showing 6 of @Model.UserDetail.TotalCertificates certificates</small>
+                        </div>
+                    }
+                </div>
+            }
 
             <!-- Action Buttons -->
             <div class="action-buttons">
@@ -204,6 +308,10 @@
         </div>
     }
 </div>
+
+
+
+
 
 @section Scripts {
     <script>
@@ -266,5 +374,9 @@
                 });
             }
         }
+
+
+
+
     </script>
 }

@@ -62,6 +62,13 @@ namespace DataAccessLayer.Models.ViewModels
         public string? Timezone { get; set; }
         public string? PreferredLanguage { get; set; }
 
+        // Achievement and Certificate data
+        public List<AchievementSummaryViewModel> Achievements { get; set; } = new List<AchievementSummaryViewModel>();
+        public List<CertificateSummaryViewModel> Certificates { get; set; } = new List<CertificateSummaryViewModel>();
+        public int TotalAchievements { get; set; }
+        public int TotalCertificates { get; set; }
+        public decimal TotalPointsEarned { get; set; }
+
         // Computed properties
         public string StatusText => IsBanned ? "Banned" : (IsActive ? "Active" : "Inactive");
         public string RoleBadgeClass => UserRole.ToLower() switch
@@ -276,6 +283,16 @@ namespace DataAccessLayer.Models.ViewModels
 
         [Required]
         public bool IsBanned { get; set; }
+    }
+
+    public class ChangeUserRoleRequest
+    {
+        [Required]
+        public required string UserId { get; set; }
+
+        [Required]
+        [StringLength(20)]
+        public required string NewRole { get; set; }
     }
 
     public class UpdateCourseStatusRequest

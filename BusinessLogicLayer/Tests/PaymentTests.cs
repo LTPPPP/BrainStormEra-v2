@@ -8,6 +8,7 @@ using DataAccessLayer.Data;
 using DataAccessLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
 
 namespace BusinessLogicLayer.Tests
 {
@@ -27,7 +28,7 @@ namespace BusinessLogicLayer.Tests
             _context = new BrainStormEraContext(options);
 
             // Setup configuration
-            var configDict = new Dictionary<string, string>
+            var configDict = new Dictionary<string, string?>
             {
                 {"VNPAY_TMN_CODE", "ok"},
                 {"VNPAY_HASH_SECRET", "ok"},
@@ -38,7 +39,9 @@ namespace BusinessLogicLayer.Tests
                 .AddInMemoryCollection(configDict)
                 .Build();
 
-            _paymentService = new PaymentService(_context, _configuration);
+            // Create simple mock points service for testing
+            var mockPointsService = new SimpleMockPointsService();
+            _paymentService = new PaymentService(_context, _configuration, mockPointsService);
 
             // Initialize test data
             InitializeTestData().Wait();
@@ -133,6 +136,25 @@ namespace BusinessLogicLayer.Tests
             {
                 Console.WriteLine($"\nError during test: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
+        }
+
+        // Simple mock implementation for testing
+        public class SimpleMockPointsService : IPointsService
+        {
+            public Task<decimal> GetUserPointsAsync(string userId)
+            {
+                return Task.FromResult(0m);
+            }
+
+            public Task<bool> UpdateUserPointsAsync(string userId, decimal points)
+            {
+                return Task.FromResult(true);
+            }
+
+            public Task<bool> RefreshUserPointsClaimAsync(HttpContext httpContext, string userId)
+            {
+                return Task.FromResult(true);
             }
         }
     }

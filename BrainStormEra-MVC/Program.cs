@@ -233,13 +233,16 @@ namespace BrainStormEra_MVC
             // Register Payment Service
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPaymentService, BusinessLogicLayer.Services.Implementations.PaymentService>();
 
+            // Register Points Service
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPointsService, BusinessLogicLayer.Services.Implementations.PointsService>();
+
             // Register Recommendation Helper
             builder.Services.AddScoped<BusinessLogicLayer.Services.RecommendationHelper>();
 
             // Register Services for data access and business logic
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.EnrollmentService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementService, BusinessLogicLayer.Services.AchievementService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICertificateService, BusinessLogicLayer.Services.CertificateService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementService, BusinessLogicLayer.Services.Implementations.AchievementServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICertificateService, BusinessLogicLayer.Services.Implementations.CertificateServiceImpl>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserContextService, BusinessLogicLayer.Services.UserContextService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IResponseService, BusinessLogicLayer.Services.ResponseService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.INotificationService, BusinessLogicLayer.Services.NotificationService>();
@@ -408,6 +411,9 @@ namespace BrainStormEra_MVC
 
             // Add Security middleware for brute force protection
             app.UseSecurityMiddleware();
+
+            // Add Points refresh middleware
+            app.UsePointsRefresh();
 
             // Add Session middleware before Authentication
             app.UseSession();

@@ -663,6 +663,19 @@
   box-shadow: var(--card-shadow);
 }
 
+.btn-promote {
+  background: var(--success-color);
+  color: var(--text-light);
+  box-shadow: var(--card-shadow-light);
+}
+
+.btn-promote:hover {
+  background: var(--success-color-dark);
+  color: var(--text-light);
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow-hover);
+}
+
 /* ==============================================
    MODAL STYLES
    ============================================== */

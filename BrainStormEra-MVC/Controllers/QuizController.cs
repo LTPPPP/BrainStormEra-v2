@@ -186,6 +186,40 @@ namespace BrainStormEra_MVC.Controllers
             }
 
             return Redirect($"/Course/Details/{result.CourseId}#curriculum");
+        }
+
+        // POST: Quiz/DeleteQuiz - For JavaScript form submission
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "instructor")]
+        public async Task<IActionResult> DeleteQuiz(string quizId, string courseId)
+        {
+            // Use quizId directly without decoding
+            var result = await _quizServiceImpl.DeleteQuizAsync(User, quizId);
+
+            if (!result.Success)
+            {
+                if (result.IsNotFound)
+                {
+                    return NotFound();
+                }
+                if (result.IsForbidden)
+                {
+                    return Forbid();
+                }
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    TempData["ErrorMessage"] = result.ErrorMessage;
+                    return RedirectToAction("Details", "Course", new { id = courseId });
+                }
+            }
+
+            if (!string.IsNullOrEmpty(result.SuccessMessage))
+            {
+                TempData["SuccessMessage"] = result.SuccessMessage;
+            }
+
+            return RedirectToAction("Details", "Course", new { id = result.CourseId ?? courseId });
         }        // GET: Quiz/Details/5
         [RequireAuthentication("You need to login to view quiz details. Please login to continue.")]
         public async Task<IActionResult> Details(string id)
@@ -379,6 +413,49 @@ namespace BrainStormEra_MVC.Controllers
             }
 
             return View(result.ViewModel);
+        }
+
+        // POST: Quiz/UpdateStatus
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "instructor")]
+        public async Task<IActionResult> UpdateStatus(string quizId, int newStatus)
+        {
+            var result = await _quizServiceImpl.UpdateQuizStatusAsync(quizId, User.FindFirst("UserId")?.Value, newStatus);
+
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = result.Message;
+            }
+            else
+            {
+                TempData["SuccessMessage"] = "Quiz status updated successfully!";
+            }
+
+            return RedirectToAction("Details", "Quiz", new { id = quizId });
+        }
+
+        // GET: Quiz/Statistics/5
+        [Authorize(Roles = "instructor")]
+        public async Task<IActionResult> Statistics(string quizId)
+        {
+            var result = await _quizServiceImpl.GetQuizStatisticsAsync(quizId, User.FindFirst("UserId")?.Value);
+
+            if (!result.IsSuccess)
+            {
+                if (result.Message == "Quiz not found")
+                {
+                    return NotFound();
+                }
+                if (result.Message == "Unauthorized")
+                {
+                    return Forbid();
+                }
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction("Index", "Home");
+            }
+
+            return View(result.Data);
         }
     }
 }
