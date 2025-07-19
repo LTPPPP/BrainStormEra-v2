@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DataAccessLayer.Models;
 using DataAccessLayer.Models.ViewModels;
+using System.Linq.Expressions;
 
 namespace DataAccessLayer.Repositories.Interfaces
 {
@@ -115,6 +116,16 @@ namespace DataAccessLayer.Repositories.Interfaces
         Task<List<DailyConversationStats>> GetDailyChatbotUsageAsync(int days = 7);
         Task<List<FeedbackRatingStats>> GetChatbotFeedbackStatsAsync();
         Task<List<HourlyUsageStats>> GetChatbotHourlyUsageAsync();
+
+        // User Ranking
+        Task<List<UserRankingData>> GetUserRankingAsync(int page = 1, int pageSize = 20);
+        Task<int> GetUserRankingTotalCountAsync();
+        Task<double> GetAverageCompletedLessonsAsync();
+
+        // Chatbot History
+        Task<List<ChatbotConversation>> GetChatbotHistoryAsync(string? search = null, string? userId = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 20);
+        Task<int> GetChatbotHistoryTotalCountAsync(string? search = null, string? userId = null, DateTime? fromDate = null, DateTime? toDate = null);
+        Task<Dictionary<string, object>> GetChatbotHistoryStatisticsAsync();
     }
 
     // Supporting DTOs for Admin operations
@@ -152,26 +163,36 @@ namespace DataAccessLayer.Repositories.Interfaces
     {
         public DateTime Date { get; set; }
         public decimal Revenue { get; set; }
-        public int TransactionCount { get; set; }
-        public decimal AverageTransactionValue { get; set; }
+        public int Transactions { get; set; }
     }
 
-
-
-    public enum ExportFormat
+    public class EnrollmentStats
     {
-        CSV,
-        Excel,
-        PDF,
-        JSON
+        public DateTime Date { get; set; }
+        public int Enrollments { get; set; }
+        public int Completions { get; set; }
     }
 
-    public enum ReportType
+    public class UserRankingData
     {
-        UserActivity,
-        CoursePerformance,
-        RevenueAnalysis,
-        SystemUsage,
-        SecurityAudit
+        public int Rank { get; set; }
+        public string UserId { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string UserImage { get; set; } = string.Empty;
+        public string UserRole { get; set; } = string.Empty;
+        public DateTime AccountCreatedAt { get; set; }
+        public DateTime? LastLoginDate { get; set; }
+        public int CompletedLessonsCount { get; set; }
+        public int TotalEnrolledCourses { get; set; }
+        public int CompletedCourses { get; set; }
+        public double AverageProgress { get; set; }
+        public int TotalTimeSpent { get; set; }
+        public int CertificatesEarned { get; set; }
+        public int AchievementsEarned { get; set; }
+        public DateTime? LastActivityDate { get; set; }
+        public string? LastAccessedCourse { get; set; }
+        public string? CurrentCourse { get; set; }
     }
 }

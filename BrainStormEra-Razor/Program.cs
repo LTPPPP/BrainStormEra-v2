@@ -91,6 +91,7 @@ namespace BrainStormEra_Razor
             // Register ServiceImpls from BusinessLogicLayer  
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.NotificationServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AdminServiceImpl>();
 
             // Register Security Service for brute force protection and rate limiting
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ISecurityService, BusinessLogicLayer.Services.Implementations.SecurityServiceInMemory>();

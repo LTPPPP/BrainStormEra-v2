@@ -21,6 +21,10 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<bool> BanCourseAsync(string courseId, string reason, string? adminId = null);
         Task<bool> DeleteCourseAsync(string courseId);
 
+        // New methods for User Ranking
+        Task<UserRankingViewModel> GetUserRankingAsync(int page = 1, int pageSize = 20);
 
+        // New methods for Chatbot History
+        Task<ChatbotHistoryViewModel> GetChatbotHistoryAsync(string? search = null, string? userId = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 20);
     }
 }

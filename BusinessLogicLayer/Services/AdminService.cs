@@ -655,6 +655,102 @@ namespace BusinessLogicLayer.Services
             }
         }
 
+        // User Ranking Methods
+        public async Task<UserRankingViewModel> GetUserRankingAsync(int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                var userRankingData = await _adminRepo.GetUserRankingAsync(page, pageSize);
+                var totalUsers = await _adminRepo.GetUserRankingTotalCountAsync();
+                var averageCompletedLessons = await _adminRepo.GetAverageCompletedLessonsAsync();
 
+                var userRankingItems = userRankingData.Select(u => new UserRankingItem
+                {
+                    UserId = u.UserId,
+                    Username = u.Username,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    UserImage = u.UserImage,
+                    UserRole = u.UserRole,
+                    AccountCreatedAt = u.AccountCreatedAt,
+                    LastLoginDate = u.LastLoginDate,
+                    CompletedLessonsCount = u.CompletedLessonsCount,
+                    TotalEnrolledCourses = u.TotalEnrolledCourses,
+                    CompletedCourses = u.CompletedCourses,
+                    Rank = u.Rank,
+                    AverageProgress = u.AverageProgress,
+                    TotalTimeSpent = u.TotalTimeSpent,
+                    CertificatesEarned = u.CertificatesEarned,
+                    AchievementsEarned = u.AchievementsEarned,
+                    LastActivityDate = u.LastActivityDate,
+                    LastAccessedCourse = u.LastAccessedCourse,
+                    CurrentCourse = u.CurrentCourse
+                }).ToList();
+
+                return new UserRankingViewModel
+                {
+                    Users = userRankingItems,
+                    CurrentPage = page,
+                    TotalPages = (int)Math.Ceiling((double)totalUsers / pageSize),
+                    PageSize = pageSize,
+                    TotalUsers = totalUsers,
+                    TotalCompletedLessons = userRankingItems.Sum(u => u.CompletedLessonsCount),
+                    AverageCompletedLessons = averageCompletedLessons
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user ranking data");
+                throw;
+            }
+        }
+
+        // Chatbot History Methods
+        public async Task<ChatbotHistoryViewModel> GetChatbotHistoryAsync(string? search = null, string? userId = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                var conversations = await _adminRepo.GetChatbotHistoryAsync(search, userId, fromDate, toDate, page, pageSize);
+                var totalConversations = await _adminRepo.GetChatbotHistoryTotalCountAsync(search, userId, fromDate, toDate);
+                var statistics = await _adminRepo.GetChatbotHistoryStatisticsAsync();
+
+                var conversationItems = conversations.Select(c => new ChatbotConversationItem
+                {
+                    ConversationId = c.ConversationId,
+                    UserId = c.UserId,
+                    Username = c.User.Username ?? "",
+                    FullName = c.User.FullName ?? "",
+                    UserEmail = c.User.UserEmail ?? "",
+                    UserImage = c.User.UserImage ?? "/SharedMedia/defaults/default-avatar.svg",
+                    ConversationTime = c.ConversationTime,
+                    UserMessage = c.UserMessage,
+                    BotResponse = c.BotResponse,
+                    ConversationContext = c.ConversationContext,
+                    FeedbackRating = c.FeedbackRating
+                }).ToList();
+
+                return new ChatbotHistoryViewModel
+                {
+                    Conversations = conversationItems,
+                    CurrentPage = page,
+                    TotalPages = (int)Math.Ceiling((double)totalConversations / pageSize),
+                    PageSize = pageSize,
+                    TotalConversations = totalConversations,
+                    SearchQuery = search,
+                    UserIdFilter = userId,
+                    FromDate = fromDate,
+                    ToDate = toDate,
+                    TotalUsers = (int)statistics["TotalUsers"],
+                    AverageRating = (double)statistics["AverageRating"],
+                    TotalRatings = (int)statistics["TotalRatings"],
+                    RatingDistribution = (Dictionary<int, int>)statistics["RatingDistribution"]
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting chatbot history data");
+                throw;
+            }
+        }
     }
 }

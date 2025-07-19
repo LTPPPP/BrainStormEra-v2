@@ -1,0 +1,289 @@
+@page "/admin/userranking"
+@model BrainStormEra_Razor.Pages.Admin.UserRankingModel
+@{
+    ViewData["Title"] = "User Ranking";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/global.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin/admin-pages.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            User Ranking
+        </h1>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            @Model.ErrorMessage
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i>
+            @Model.SuccessMessage
+        </div>
+    }
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2 stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Learners
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.UserRankingData.TotalUsers</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300 stat-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2 stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Lessons Completed
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.UserRankingData.TotalCompletedLessons</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300 stat-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2 stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Average Lessons per User
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.UserRankingData.AverageCompletedLessons.ToString("F1")</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300 stat-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2 stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Active Learners
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.UserRankingData.Users.Count(u => u.LastActivityDate.HasValue && u.LastActivityDate.Value > DateTime.Now.AddDays(-30))</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-clock fa-2x text-gray-300 stat-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Ranking Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list"></i>
+                User Ranking by Completed Lessons
+            </h6>
+            <div class="dropdown no-arrow">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                    <div class="dropdown-header">Page Size:</div>
+                    <a class="dropdown-item" href="?page=1&pageSize=10">10 per page</a>
+                    <a class="dropdown-item" href="?page=1&pageSize=20">20 per page</a>
+                    <a class="dropdown-item" href="?page=1&pageSize=50">50 per page</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (Model.UserRankingData.Users.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered user-ranking-table" id="userRankingTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 60px;">Rank</th>
+                                <th style="width: 80px;">Avatar</th>
+                                <th>User</th>
+                                <th class="text-center">Completed Lessons</th>
+                                <th class="text-center">Enrolled Courses</th>
+                                <th class="text-center">Completed Courses</th>
+                                <th class="text-center">Avg Progress</th>
+                                <th class="text-center">Certificates</th>
+                                <th class="text-center">Achievements</th>
+                                <th class="text-center">Last Activity</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model.UserRankingData.Users)
+                            {
+                                <tr>
+                                    <td class="text-center">
+                                        @if (user.Rank <= 3)
+                                        {
+                                            <span class="badge rank-badge rank-@user.Rank">
+                                                <i class="fas fa-trophy"></i> @user.Rank
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-light rank-badge">@user.Rank</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <img src="@user.UserImage" alt="@user.FullName" class="rounded-circle user-avatar-small" onerror="this.src='/SharedMedia/defaults/default-avatar.svg'">
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <strong>@user.FullName</strong>
+                                            <small class="text-muted">@user.Username</small>
+                                            <small class="text-muted">@user.Email</small>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge badge-success">@user.CompletedLessonsCount</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge badge-info">@user.TotalEnrolledCourses</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge badge-primary">@user.CompletedCourses</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="progress progress-thin">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: @(user.AverageProgress)%" aria-valuenow="@user.AverageProgress" aria-valuemin="0" aria-valuemax="100">
+                                                @user.AverageProgress.ToString("F1")%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge badge-warning">@user.CertificatesEarned</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge badge-dark">@user.AchievementsEarned</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (user.LastActivityDate.HasValue)
+                                        {
+                                            <small class="text-muted">@user.LastActivityDate.Value.ToString("MM/dd/yyyy")</small>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">Never</small>
+                                        }
+                                    </td>
+
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.UserRankingData.TotalPages > 1)
+                {
+                    <nav aria-label="User ranking pagination">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.UserRankingData.CurrentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=@(Model.UserRankingData.CurrentPage - 1)&pageSize=@Model.UserRankingData.PageSize">
+                                        <i class="fas fa-chevron-left"></i> Previous
+                                    </a>
+                                </li>
+                            }
+
+                            @for (int i = Math.Max(1, Model.UserRankingData.CurrentPage - 2); i <= Math.Min(Model.UserRankingData.TotalPages, Model.UserRankingData.CurrentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == Model.UserRankingData.CurrentPage ? "active" : "")">
+                                    <a class="page-link" href="?page=@i&pageSize=@Model.UserRankingData.PageSize">@i</a>
+                                </li>
+                            }
+
+                            @if (Model.UserRankingData.CurrentPage < Model.UserRankingData.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=@(Model.UserRankingData.CurrentPage + 1)&pageSize=@Model.UserRankingData.PageSize">
+                                        Next <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <h5>No users found</h5>
+                    <p>There are no learners in the system yet.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('#userRankingTable').DataTable({
+                "pageLength": @Model.UserRankingData.PageSize,
+                "order": [[0, "asc"]], // Sort by rank
+                "language": {
+                    "search": "Search users:",
+                    "lengthMenu": "Show _MENU_ users per page",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ users",
+                    "infoEmpty": "Showing 0 to 0 of 0 users",
+                    "infoFiltered": "(filtered from _MAX_ total users)",
+                    "emptyTable": "No users found"
+                },
+                "dom": '<"top"lf>rt<"bottom"ip><"clear">',
+                "responsive": true
+            });
+        });
+    </script>
+} 
