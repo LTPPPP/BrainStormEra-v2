@@ -11,19 +11,16 @@ namespace BrainStormEra_Razor.Pages.Admin
     [Authorize(Roles = "admin,instructor")]
     public class NotificationsModel : PageModel
     {
-        private readonly NotificationService _notificationService;
-        private readonly INotificationService _notificationServiceInterface;
+        private readonly INotificationService _notificationService;
         private readonly ICourseService _courseService;
         private readonly ILogger<NotificationsModel> _logger;
 
         public NotificationsModel(
-            NotificationService notificationService,
-            INotificationService notificationServiceInterface,
+            INotificationService notificationService,
             ICourseService courseService,
             ILogger<NotificationsModel> logger)
         {
             _notificationService = notificationService;
-            _notificationServiceInterface = notificationServiceInterface;
             _courseService = courseService;
             _logger = logger;
         }
@@ -40,21 +37,24 @@ namespace BrainStormEra_Razor.Pages.Admin
         {
             try
             {
-                var result = await _notificationService.GetNotificationsAsync(User, page, pageSize);
-
-                if (!result.Success)
+                var userId = User.FindFirst("UserId")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
                 {
-                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
-                    {
-                        return RedirectToPage($"/{result.RedirectController}/{result.RedirectAction}");
-                    }
-
-                    TempData["ErrorMessage"] = result.ErrorMessage ?? "Failed to load notifications.";
+                    TempData["ErrorMessage"] = "User authentication required.";
                     NotificationData = new NotificationIndexViewModel();
                     return Page();
                 }
 
-                NotificationData = result.ViewModel ?? new NotificationIndexViewModel();
+                var notifications = await _notificationService.GetNotificationsAsync(userId, page, pageSize);
+
+                // Convert to view model
+                NotificationData = new NotificationIndexViewModel
+                {
+                    Notifications = notifications,
+                    CurrentPage = page,
+                    PageSize = pageSize
+                };
+
                 return Page();
             }
             catch (Exception ex)
@@ -76,28 +76,24 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return Page();
                 }
 
-                var result = await _notificationService.CreateNotificationAsync(User, CreateModel);
-
-                if (result.Success)
+                var userId = User.FindFirst("UserId")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
                 {
-                    TempData["SuccessMessage"] = result.SuccessMessage ?? "Notification created successfully!";
+                    TempData["ErrorMessage"] = "User authentication required.";
+                    await LoadNotificationData();
+                    return Page();
+                }
+
+                var notification = await _notificationService.CreateNotificationAsync(userId, CreateModel.Title, CreateModel.Content, CreateModel.Type, CreateModel.CourseId, userId);
+
+                if (notification != null)
+                {
+                    TempData["SuccessMessage"] = "Notification created successfully!";
                     return RedirectToPage();
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = result.ErrorMessage ?? "Failed to create notification.";
-
-                    if (result.ValidationErrors != null)
-                    {
-                        foreach (var error in result.ValidationErrors)
-                        {
-                            foreach (var message in error.Value)
-                            {
-                                ModelState.AddModelError(error.Key, message);
-                            }
-                        }
-                    }
-
+                    TempData["ErrorMessage"] = "Failed to create notification.";
                     await LoadNotificationData();
                     return Page();
                 }
@@ -121,28 +117,24 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return Page();
                 }
 
-                var result = await _notificationService.UpdateNotificationAsync(User, EditModel.NotificationId, EditModel);
-
-                if (result.Success)
+                var userId = User.FindFirst("UserId")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
                 {
-                    TempData["SuccessMessage"] = result.SuccessMessage ?? "Notification updated successfully!";
+                    TempData["ErrorMessage"] = "User authentication required.";
+                    await LoadNotificationData();
+                    return Page();
+                }
+
+                var success = await _notificationService.UpdateNotificationAsync(EditModel.NotificationId, userId, EditModel.Title, EditModel.Content, EditModel.Type);
+
+                if (success)
+                {
+                    TempData["SuccessMessage"] = "Notification updated successfully!";
                     return RedirectToPage();
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = result.ErrorMessage ?? "Failed to update notification.";
-
-                    if (result.ValidationErrors != null)
-                    {
-                        foreach (var error in result.ValidationErrors)
-                        {
-                            foreach (var message in error.Value)
-                            {
-                                ModelState.AddModelError($"EditModel.{error.Key}", message);
-                            }
-                        }
-                    }
-
+                    TempData["ErrorMessage"] = "Failed to update notification.";
                     await LoadNotificationData();
                     return Page();
                 }
@@ -218,28 +210,17 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return new JsonResult(new { success = false, message = "User authentication required" });
                 }
 
-                var result = await _notificationService.MarkAsReadAsync(User, notificationId);
+                await _notificationService.MarkAsReadAsync(notificationId, userId);
 
-                _logger.LogInformation("Mark as read result for notification {NotificationId} by user {UserId}: Success={Success}, Message={Message}",
-                    notificationId, userId, result.Success, result.Message);
+                _logger.LogInformation("Mark as read completed for notification {NotificationId} by user {UserId}",
+                    notificationId, userId);
 
-                if (result.Success)
+                return new JsonResult(new
                 {
-                    return new JsonResult(new
-                    {
-                        success = true,
-                        message = result.Message ?? "Notification marked as read successfully",
-                        notificationId = notificationId
-                    });
-                }
-                else
-                {
-                    return new JsonResult(new
-                    {
-                        success = false,
-                        message = result.Message ?? "Failed to mark notification as read"
-                    });
-                }
+                    success = true,
+                    message = "Notification marked as read successfully",
+                    notificationId = notificationId
+                });
             }
             catch (Exception ex)
             {
@@ -265,27 +246,15 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return new JsonResult(new { success = false, message = "User authentication required" });
                 }
 
-                var result = await _notificationService.MarkAllAsReadAsync(User);
+                await _notificationService.MarkAllAsReadAsync(userId);
 
-                _logger.LogInformation("Mark all as read result for user {UserId}: Success={Success}, Message={Message}",
-                    userId, result.Success, result.Message);
+                _logger.LogInformation("Mark all as read completed for user {UserId}", userId);
 
-                if (result.Success)
+                return new JsonResult(new
                 {
-                    return new JsonResult(new
-                    {
-                        success = true,
-                        message = result.Message ?? "All notifications marked as read successfully"
-                    });
-                }
-                else
-                {
-                    return new JsonResult(new
-                    {
-                        success = false,
-                        message = result.Message ?? "Failed to mark all notifications as read"
-                    });
-                }
+                    success = true,
+                    message = "All notifications marked as read successfully"
+                });
             }
             catch (Exception ex)
             {
@@ -303,8 +272,14 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return new JsonResult(new { success = false, message = "Notification ID is required" });
                 }
 
-                var result = await _notificationService.DeleteNotificationAsync(User, notificationId);
-                return new JsonResult(new { success = result.Success, message = result.Message });
+                var userId = User.FindFirst("UserId")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new JsonResult(new { success = false, message = "User authentication required" });
+                }
+
+                await _notificationService.DeleteNotificationAsync(notificationId, userId);
+                return new JsonResult(new { success = true, message = "Notification deleted successfully" });
             }
             catch (Exception ex)
             {
@@ -322,14 +297,27 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return new JsonResult(new { success = false, message = "Notification ID is required" });
                 }
 
-                var result = await _notificationService.GetNotificationForEditAsync(User, notificationId);
+                var userId = User.FindFirst("UserId")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new JsonResult(new { success = false, message = "User authentication required" });
+                }
 
-                if (result.Success && result.ViewModel != null)
+                var notification = await _notificationService.GetNotificationForEditAsync(notificationId, userId);
+
+                if (notification != null)
                 {
                     return new JsonResult(new
                     {
                         success = true,
-                        notification = result.ViewModel
+                        notification = new
+                        {
+                            notification.NotificationId,
+                            Title = notification.NotificationTitle,
+                            Content = notification.NotificationContent,
+                            Type = notification.NotificationType,
+                            notification.CourseId
+                        }
                     });
                 }
                 else
@@ -337,7 +325,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return new JsonResult(new
                     {
                         success = false,
-                        message = result.ErrorMessage ?? "Notification not found or you don't have permission to edit it."
+                        message = "Notification not found or you don't have permission to edit it."
                     });
                 }
             }
@@ -393,27 +381,33 @@ namespace BrainStormEra_Razor.Pages.Admin
         {
             try
             {
-                var result = await _notificationService.GetNotificationsAsync(User, page, pageSize);
+                var userId = User.FindFirst("UserId")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new JsonResult(new { success = false, message = "User authentication required" });
+                }
 
-                if (result.Success && result.ViewModel != null)
+                var notifications = await _notificationService.GetNotificationsAsync(userId, page, pageSize);
+                var unreadCount = await _notificationService.GetUnreadNotificationCountAsync(userId);
+
+                return new JsonResult(new
                 {
-                    return new JsonResult(new
+                    success = true,
+                    notifications = notifications.Select(n => new
                     {
-                        success = true,
-                        notifications = result.ViewModel.Notifications,
-                        unreadCount = result.ViewModel.UnreadCount,
-                        hasNextPage = result.ViewModel.HasNextPage,
-                        currentPage = result.ViewModel.CurrentPage
-                    });
-                }
-                else
-                {
-                    return new JsonResult(new
-                    {
-                        success = false,
-                        message = result.ErrorMessage ?? "Failed to load notifications"
-                    });
-                }
+                        n.NotificationId,
+                        Title = n.NotificationTitle,
+                        Content = n.NotificationContent,
+                        Type = n.NotificationType,
+                        IsRead = n.IsRead ?? false,
+                        CreatedAt = n.NotificationCreatedAt,
+                        n.CourseId,
+                        n.CreatedBy
+                    }),
+                    unreadCount = unreadCount,
+                    hasNextPage = notifications.Count == pageSize,
+                    currentPage = page
+                });
             }
             catch (Exception ex)
             {
@@ -476,15 +470,8 @@ namespace BrainStormEra_Razor.Pages.Admin
                 {
                     try
                     {
-                        var result = await _notificationService.MarkAsReadAsync(User, notificationId);
-                        if (result.Success)
-                        {
-                            successCount++;
-                        }
-                        else
-                        {
-                            errors.Add($"Failed to mark notification {notificationId}: {result.Message}");
-                        }
+                        await _notificationService.MarkAsReadAsync(notificationId, userId);
+                        successCount++;
                     }
                     catch (Exception ex)
                     {
@@ -513,8 +500,21 @@ namespace BrainStormEra_Razor.Pages.Admin
         {
             try
             {
-                var result = await _notificationService.GetNotificationsAsync(User, page, pageSize);
-                NotificationData = result.ViewModel ?? new NotificationIndexViewModel();
+                var userId = User.FindFirst("UserId")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    NotificationData = new NotificationIndexViewModel();
+                    return;
+                }
+
+                var notifications = await _notificationService.GetNotificationsAsync(userId, page, pageSize);
+
+                NotificationData = new NotificationIndexViewModel
+                {
+                    Notifications = notifications,
+                    CurrentPage = page,
+                    PageSize = pageSize
+                };
             }
             catch (Exception ex)
             {

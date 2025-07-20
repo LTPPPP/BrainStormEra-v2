@@ -88,7 +88,6 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
         }
 
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> OnPostUpdateUserStatusAsync([FromBody] UpdateUserStatusRequest request)
         {
             try
@@ -161,7 +160,6 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
         }
 
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> OnPostUpdateUserPointsAsync([FromBody] UpdateUserPointsRequest request)
         {
             try
@@ -236,7 +234,6 @@ namespace BrainStormEra_Razor.Pages.Admin
             }
         }
 
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> OnPostChangeUserRoleAsync([FromBody] ChangeUserRoleRequest request)
         {
             try

@@ -1,20 +1,19 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using DataAccessLayer.Models.ViewModels;
-using BusinessLogicLayer.Services.Implementations;
+using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using DataAccessLayer.Data;
 using Microsoft.EntityFrameworkCore;
-using BusinessLogicLayer.Services;
 
 namespace BrainStormEra_Razor.Pages.Auth
 {
     public class LoginModel : PageModel
     {
         private readonly BrainStormEraContext _context;
-        private readonly UserService _userService;
+        private readonly IUserService _userService;
         private readonly ILogger<LoginModel> _logger;
 
         [BindProperty]
@@ -27,7 +26,7 @@ namespace BrainStormEra_Razor.Pages.Auth
         public string? ErrorMessage { get; set; }
         public string? SuccessMessage { get; set; }
 
-        public LoginModel(BrainStormEraContext context, UserService userService, ILogger<LoginModel> logger)
+        public LoginModel(BrainStormEraContext context, IUserService userService, ILogger<LoginModel> logger)
         {
             _context = context;
             _userService = userService;

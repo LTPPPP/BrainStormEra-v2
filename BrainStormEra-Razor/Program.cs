@@ -109,7 +109,8 @@ namespace BrainStormEra_Razor
 
 
             // Register ServiceImpls from BusinessLogicLayer  
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAuthService, BusinessLogicLayer.Services.Implementations.AuthService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.Implementations.UserService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.NotificationService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AdminService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.LessonService>();

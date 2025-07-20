@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using DataAccessLayer.Models.ViewModels;
-using BusinessLogicLayer.Services.Implementations;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using BusinessLogicLayer.DTOs.Auth;
 
 namespace BusinessLogicLayer.Services.Interfaces
 {

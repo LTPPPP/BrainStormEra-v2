@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Authorization;
 using DataAccessLayer.Models.ViewModels;
-using BusinessLogicLayer.Services.Implementations;
+using BusinessLogicLayer.Services.Interfaces;
 using System.Security.Claims;
 
 namespace BrainStormEra_Razor.Pages.Admin
@@ -10,10 +10,10 @@ namespace BrainStormEra_Razor.Pages.Admin
     [Authorize(Roles = "admin")]
     public class ChangePasswordModel : PageModel
     {
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
         private readonly ILogger<ChangePasswordModel> _logger;
 
-        public ChangePasswordModel(AuthService authService, ILogger<ChangePasswordModel> logger)
+        public ChangePasswordModel(IAuthService authService, ILogger<ChangePasswordModel> logger)
         {
             _authService = authService;
             _logger = logger;
@@ -56,9 +56,9 @@ namespace BrainStormEra_Razor.Pages.Admin
                 // Create the view model from bound properties
                 var changePasswordViewModel = new ChangePasswordViewModel
                 {
-                    CurrentPassword = Request.Form["CurrentPassword"],
-                    NewPassword = Request.Form["NewPassword"],
-                    ConfirmPassword = Request.Form["ConfirmPassword"]
+                    CurrentPassword = Request.Form["CurrentPassword"].ToString(),
+                    NewPassword = Request.Form["NewPassword"].ToString(),
+                    ConfirmPassword = Request.Form["ConfirmPassword"].ToString()
                 };
 
                 // Validate the model

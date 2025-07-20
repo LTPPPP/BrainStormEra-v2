@@ -11,7 +11,7 @@ namespace BrainStormEra_Razor.Pages.Admin
     public class UserRankingModel : PageModel
     {
         private readonly ILogger<UserRankingModel> _logger;
-        private readonly AdminService _adminService;
+        private readonly IAdminService _adminService;
 
         public UserRankingViewModel UserRankingData { get; set; } = new UserRankingViewModel();
         public string? ErrorMessage { get; set; }
@@ -19,12 +19,12 @@ namespace BrainStormEra_Razor.Pages.Admin
 
         // Filter properties
         [BindProperty(SupportsGet = true)]
-        public int Page { get; set; } = 1;
+        public new int Page { get; set; } = 1;
 
         [BindProperty(SupportsGet = true)]
         public int PageSize { get; set; } = 20;
 
-        public UserRankingModel(ILogger<UserRankingModel> logger, AdminService adminService)
+        public UserRankingModel(ILogger<UserRankingModel> logger, IAdminService adminService)
         {
             _logger = logger;
             _adminService = adminService;
@@ -34,16 +34,16 @@ namespace BrainStormEra_Razor.Pages.Admin
         {
             try
             {
-                var result = await _adminService.GetUserRankingAsync(User, Page, PageSize);
+                var result = await _adminService.GetUserRankingAsync(Page, PageSize);
 
-                if (result.IsSuccess)
+                if (result != null)
                 {
-                    UserRankingData = result.Data ?? new UserRankingViewModel();
-                    SuccessMessage = result.Message;
+                    UserRankingData = result;
+                    SuccessMessage = "User ranking loaded successfully.";
                 }
                 else
                 {
-                    ErrorMessage = result.Message;
+                    ErrorMessage = "Failed to load user ranking data.";
                     UserRankingData = new UserRankingViewModel();
                 }
             }
