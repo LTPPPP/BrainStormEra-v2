@@ -13,16 +13,16 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class CourseController : BaseController
     {
-        private readonly CourseServiceImpl _courseServiceImpl;
+        private readonly CourseService _courseService;
         private readonly IFeedbackService _feedbackService;
         private readonly ILogger<CourseController> _logger;
 
         public CourseController(
-            CourseServiceImpl courseServiceImpl,
+            CourseService courseService,
             IFeedbackService feedbackService,
             ILogger<CourseController> logger) : base()
         {
-            _courseServiceImpl = courseServiceImpl;
+            _courseService = courseService;
             _feedbackService = feedbackService;
             _logger = logger;
         }
@@ -30,7 +30,7 @@ namespace BrainStormEra_MVC.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Index(string search = "", string category = "", int page = 1)
         {
-            var result = await _courseServiceImpl.GetCoursesAsync(User, search, category, page);
+            var result = await _courseService.GetCoursesAsync(User, search, category, page);
             if (!result.Success)
             {
                 ViewBag.Error = result.ErrorMessage;
@@ -49,7 +49,7 @@ namespace BrainStormEra_MVC.Controllers
             try
             {
                 // Use ID directly without decoding
-                var result = await _courseServiceImpl.GetCourseDetailsAsync(User, id);
+                var result = await _courseService.GetCourseDetailsAsync(User, id);
 
                 if (!result.Success)
                 {
@@ -126,7 +126,7 @@ namespace BrainStormEra_MVC.Controllers
             try
             {
                 // Use course ID directly without decoding
-                var result = await _courseServiceImpl.EnrollInCourseAsync(User, courseId);
+                var result = await _courseService.EnrollInCourseAsync(User, courseId);
                 return Json(new { success = result.Success, message = result.Message });
             }
             catch (Exception ex)
@@ -148,7 +148,7 @@ namespace BrainStormEra_MVC.Controllers
 
             try
             {
-                var result = await _courseServiceImpl.GetLearnManagementDataAsync(User, realCourseId);
+                var result = await _courseService.GetLearnManagementDataAsync(User, realCourseId);
 
                 if (!result.Success)
                 {
@@ -184,7 +184,7 @@ namespace BrainStormEra_MVC.Controllers
             string? duration = null)
         {
             // Pass user info for role-based search (instructors see denied/pending, admins see deleted)
-            var result = await _courseServiceImpl.SearchCoursesAsync(User, courseSearch, categorySearch, page, pageSize, sortBy, price, difficulty, duration);
+            var result = await _courseService.SearchCoursesAsync(User, courseSearch, categorySearch, page, pageSize, sortBy, price, difficulty, duration);
 
             if (!result.Success)
             {
@@ -209,7 +209,7 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "instructor")]
         public async Task<IActionResult> CreateCourse()
         {
-            var result = await _courseServiceImpl.GetCreateCourseViewModelAsync();
+            var result = await _courseService.GetCreateCourseViewModelAsync();
 
             if (!result.Success)
             {
@@ -227,13 +227,13 @@ namespace BrainStormEra_MVC.Controllers
         {
             if (!ModelState.IsValid)
             {
-                var viewModelResult = await _courseServiceImpl.GetCreateCourseViewModelAsync();
+                var viewModelResult = await _courseService.GetCreateCourseViewModelAsync();
                 model.AvailableCategories = viewModelResult.ViewModel?.AvailableCategories ?? new List<CourseCategoryViewModel>();
                 TempData["ErrorMessage"] = "Please correct the errors below and try again.";
                 return View("~/Views/Course/CreateCourse.cshtml", model);
             }
 
-            var result = await _courseServiceImpl.CreateCourseAsync(User, model);
+            var result = await _courseService.CreateCourseAsync(User, model);
 
             if (!result.Success)
             {
@@ -261,7 +261,7 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet]
         public async Task<IActionResult> SearchCategories(string term)
         {
-            var categories = await _courseServiceImpl.SearchCategoriesAsync(term);
+            var categories = await _courseService.SearchCategoriesAsync(term);
             return Json(categories);
         }
 
@@ -274,7 +274,7 @@ namespace BrainStormEra_MVC.Controllers
                 return NotFound();
             }
 
-            var result = await _courseServiceImpl.GetCourseForEditAsync(User, id);
+            var result = await _courseService.GetCourseForEditAsync(User, id);
 
             if (!result.Success)
             {
@@ -298,14 +298,14 @@ namespace BrainStormEra_MVC.Controllers
 
             if (!ModelState.IsValid)
             {
-                var viewModelResult = await _courseServiceImpl.GetCreateCourseViewModelAsync();
+                var viewModelResult = await _courseService.GetCreateCourseViewModelAsync();
                 model.AvailableCategories = viewModelResult.ViewModel?.AvailableCategories ?? new List<CourseCategoryViewModel>();
                 TempData["ErrorMessage"] = "Please correct the errors below and try again.";
                 ViewBag.CourseId = id;
                 return View("~/Views/Course/EditCourse.cshtml", model);
             }
 
-            var result = await _courseServiceImpl.UpdateCourseAsync(User, id, model);
+            var result = await _courseService.UpdateCourseAsync(User, id, model);
 
             if (!result.Success)
             {
@@ -341,7 +341,7 @@ namespace BrainStormEra_MVC.Controllers
                 return Json(new { success = false, message = "Invalid course ID" });
             }
 
-            var result = await _courseServiceImpl.DeleteCourseAsync(User, id);
+            var result = await _courseService.DeleteCourseAsync(User, id);
             return Json(new { success = result.Success, message = result.Message });
         }
 
@@ -350,7 +350,7 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "instructor,admin")]
         public async Task<IActionResult> GetUserCourses()
         {
-            var result = await _courseServiceImpl.GetUserCoursesAsync(User);
+            var result = await _courseService.GetUserCoursesAsync(User);
 
             if (!result.Success)
             {
@@ -371,7 +371,7 @@ namespace BrainStormEra_MVC.Controllers
                 return Json(new { success = false, message = "Invalid course ID" });
             }
 
-            var result = await _courseServiceImpl.RequestCourseApprovalAsync(User, courseId);
+            var result = await _courseService.RequestCourseApprovalAsync(User, courseId);
             return Json(new { success = result.Success, message = result.Message });
         }
 
@@ -387,7 +387,7 @@ namespace BrainStormEra_MVC.Controllers
 
             try
             {
-                var result = await _courseServiceImpl.GetLearnManagementDataAsync(User, courseId);
+                var result = await _courseService.GetLearnManagementDataAsync(User, courseId);
 
                 if (!result.Success || result.ViewModel == null)
                 {

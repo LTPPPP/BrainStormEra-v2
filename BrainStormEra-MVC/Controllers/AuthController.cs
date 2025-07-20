@@ -12,14 +12,14 @@ namespace BrainStormEra_MVC.Controllers
     /// </summary>
     public class AuthController : BaseController
     {
-        private readonly AuthServiceImpl _authServiceImpl;
+        private readonly AuthService _authService;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
-            AuthServiceImpl authServiceImpl,
+            AuthService authService,
             ILogger<AuthController> logger)
         {
-            _authServiceImpl = authServiceImpl;
+            _authService = authService;
             _logger = logger;
         }
 
@@ -31,7 +31,7 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet]
         public async Task<IActionResult> Login(string? returnUrl = null)
         {
-            var result = await _authServiceImpl.GetLoginViewModelAsync(returnUrl);
+            var result = await _authService.GetLoginViewModelAsync(returnUrl);
 
             if (!result.Success)
             {
@@ -53,7 +53,7 @@ namespace BrainStormEra_MVC.Controllers
                 return View("~/Views/Auth/Login.cshtml", model);
             }
 
-            var result = await _authServiceImpl.AuthenticateUserAsync(HttpContext, model);
+            var result = await _authService.AuthenticateUserAsync(HttpContext, model);
 
             if (!result.Success)
             {
@@ -86,7 +86,7 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet]
         public async Task<IActionResult> Register()
         {
-            var result = await _authServiceImpl.GetRegisterViewModelAsync();
+            var result = await _authService.GetRegisterViewModelAsync();
 
             if (!result.Success)
             {
@@ -108,7 +108,7 @@ namespace BrainStormEra_MVC.Controllers
                 return View("~/Views/Auth/Register.cshtml", model);
             }
 
-            var result = await _authServiceImpl.RegisterUserAsync(model);
+            var result = await _authService.RegisterUserAsync(model);
 
             if (!result.Success)
             {
@@ -139,7 +139,7 @@ namespace BrainStormEra_MVC.Controllers
         [HttpPost]
         public async Task<JsonResult> CheckUsernameAvailability(string username)
         {
-            var result = await _authServiceImpl.CheckUsernameAvailabilityAsync(username);
+            var result = await _authService.CheckUsernameAvailabilityAsync(username);
 
             return Json(new
             {
@@ -154,7 +154,7 @@ namespace BrainStormEra_MVC.Controllers
         [HttpPost]
         public async Task<JsonResult> CheckEmailAvailability(string email)
         {
-            var result = await _authServiceImpl.CheckEmailAvailabilityAsync(email);
+            var result = await _authService.CheckEmailAvailabilityAsync(email);
 
             return Json(new
             {
@@ -173,7 +173,7 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet]
         public async Task<IActionResult> ForgotPassword()
         {
-            var result = await _authServiceImpl.GetForgotPasswordViewModelAsync();
+            var result = await _authService.GetForgotPasswordViewModelAsync();
 
             if (!result.Success)
             {
@@ -195,7 +195,7 @@ namespace BrainStormEra_MVC.Controllers
                 return View("~/Views/Auth/ForgotPassword.cshtml", model);
             }
 
-            var result = await _authServiceImpl.ProcessForgotPasswordAsync(model);
+            var result = await _authService.ProcessForgotPasswordAsync(model);
 
             if (!result.Success)
             {
@@ -231,7 +231,7 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet]
         public async Task<IActionResult> VerifyOtp(string email)
         {
-            var result = await _authServiceImpl.GetVerifyOtpViewModelAsync(email);
+            var result = await _authService.GetVerifyOtpViewModelAsync(email);
 
             if (!result.Success)
             {
@@ -261,7 +261,7 @@ namespace BrainStormEra_MVC.Controllers
                 return View("~/Views/Auth/VerifyOtp.cshtml", model);
             }
 
-            var result = await _authServiceImpl.VerifyOtpAsync(model);
+            var result = await _authService.VerifyOtpAsync(model);
 
             if (!result.Success)
             {
@@ -288,7 +288,7 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet]
         public async Task<IActionResult> ResetPassword(string email, string token)
         {
-            var result = await _authServiceImpl.GetResetPasswordViewModelAsync(email, token);
+            var result = await _authService.GetResetPasswordViewModelAsync(email, token);
 
             if (!result.Success)
             {
@@ -315,7 +315,7 @@ namespace BrainStormEra_MVC.Controllers
                 return View("~/Views/Auth/ResetPassword.cshtml", model);
             }
 
-            var result = await _authServiceImpl.ResetPasswordAsync(model);
+            var result = await _authService.ResetPasswordAsync(model);
 
             if (!result.Success)
             {
@@ -353,7 +353,7 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            var result = await _authServiceImpl.LogoutUserAsync(HttpContext, User);
+            var result = await _authService.LogoutUserAsync(HttpContext, User);
 
             if (!result.Success)
             {
@@ -376,7 +376,7 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize]
         public async Task<IActionResult> LogoutConfirm()
         {
-            var result = await _authServiceImpl.LogoutUserAsync(HttpContext, User);
+            var result = await _authService.LogoutUserAsync(HttpContext, User);
 
             if (!result.Success)
             {
@@ -414,7 +414,7 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Login");
                 }
 
-                var result = await _authServiceImpl.GetProfileViewModelAsync(userId, userRole ?? "");
+                var result = await _authService.GetProfileViewModelAsync(userId, userRole ?? "");
 
                 if (!result.Success)
                 {
@@ -448,7 +448,7 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Login");
                 }
 
-                var result = await _authServiceImpl.GetEditProfileViewModelAsync(userId);
+                var result = await _authService.GetEditProfileViewModelAsync(userId);
 
                 if (!result.Success)
                 {
@@ -488,7 +488,7 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Login");
                 }
 
-                var result = await _authServiceImpl.UpdateProfileAsync(userId, model);
+                var result = await _authService.UpdateProfileAsync(userId, model);
 
                 if (!result.Success)
                 {
@@ -544,7 +544,7 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Login");
                 }
 
-                var result = await _authServiceImpl.ChangePasswordAsync(userId, model); if (!result.Success)
+                var result = await _authService.ChangePasswordAsync(userId, model); if (!result.Success)
                 {
                     if (!string.IsNullOrEmpty(result.ValidationError) && !string.IsNullOrEmpty(result.ErrorMessage))
                     {
@@ -577,14 +577,14 @@ namespace BrainStormEra_MVC.Controllers
             try
             {
                 var targetUserId = userId ?? CurrentUserId;
-                var result = await _authServiceImpl.GetUserAvatarAsync(targetUserId);
+                var result = await _authService.GetUserAvatarAsync(targetUserId);
 
                 return File(result.ImageBytes, result.ContentType);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving avatar for user: {UserId}", userId);
-                var defaultResult = await _authServiceImpl.GetUserAvatarAsync(null);
+                var defaultResult = await _authService.GetUserAvatarAsync(null);
                 return File(defaultResult.ImageBytes, defaultResult.ContentType);
             }
         }
@@ -605,7 +605,7 @@ namespace BrainStormEra_MVC.Controllers
                     return Json(new { success = false, message = "User not authenticated" });
                 }
 
-                var result = await _authServiceImpl.DeleteUserAvatarAsync(userId);
+                var result = await _authService.DeleteUserAvatarAsync(userId);
 
                 return Json(new { success = result.Success, message = result.Message });
             }
@@ -631,7 +631,7 @@ namespace BrainStormEra_MVC.Controllers
                     return Json(new { success = false, message = "User not found" });
                 }
 
-                var userInfo = await _authServiceImpl.GetUserInfoAsync(userId);
+                var userInfo = await _authService.GetUserInfoAsync(userId);
                 if (userInfo == null)
                 {
                     return Json(new { success = false, message = "User not found" });

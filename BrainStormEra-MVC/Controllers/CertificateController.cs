@@ -12,20 +12,20 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize(Roles = "learner")]
     public class CertificateController : BaseController
     {
-        private readonly CertificateServiceImpl _certificateServiceImpl;
+        private readonly CertificateService _certificateService;
         private readonly ILogger<CertificateController> _logger;
 
         public CertificateController(
-            CertificateServiceImpl certificateServiceImpl,
+            CertificateService certificateService,
             ILogger<CertificateController> logger)
         {
-            _certificateServiceImpl = certificateServiceImpl;
+            _certificateService = certificateService;
             _logger = logger;
         }
 
         public async Task<IActionResult> Index(string? search, int page = 1, int pageSize = 6)
         {
-            var result = await _certificateServiceImpl.GetCertificatesIndexAsync(User, search, page, pageSize);
+            var result = await _certificateService.GetCertificatesIndexAsync(User, search, page, pageSize);
 
             if (!result.IsSuccess)
             {
@@ -50,7 +50,7 @@ namespace BrainStormEra_MVC.Controllers
         [RequireAuthentication("You need to login to view certificate details. Please login to continue.")]
         public async Task<IActionResult> Details(string courseId)
         {
-            var result = await _certificateServiceImpl.GetCertificateDetailsAsync(User, courseId);
+            var result = await _certificateService.GetCertificateDetailsAsync(User, courseId);
 
             if (!result.IsSuccess)
             {
@@ -92,7 +92,7 @@ namespace BrainStormEra_MVC.Controllers
                 }
 
                 // Validate certificate first
-                var isValid = await _certificateServiceImpl.ValidateCertificateAsync(userId, courseId);
+                var isValid = await _certificateService.ValidateCertificateAsync(userId, courseId);
                 if (!isValid)
                 {
                     TempData["ErrorMessage"] = "Certificate not found or invalid";
@@ -100,7 +100,7 @@ namespace BrainStormEra_MVC.Controllers
                 }
 
                 // Get certificate details using the proper method
-                var certificateDetails = await _certificateServiceImpl.GetCertificateDetailsAsync(userId, courseId);
+                var certificateDetails = await _certificateService.GetCertificateDetailsAsync(userId, courseId);
                 if (certificateDetails == null)
                 {
                     TempData["ErrorMessage"] = "Certificate details not found";
@@ -176,7 +176,7 @@ namespace BrainStormEra_MVC.Controllers
                     return Json(new { success = false, message = "User not authenticated" });
                 }
 
-                var result = await _certificateServiceImpl.ProcessPendingCertificatesAsync(userId);
+                var result = await _certificateService.ProcessPendingCertificatesAsync(userId);
 
                 if (result)
                 {

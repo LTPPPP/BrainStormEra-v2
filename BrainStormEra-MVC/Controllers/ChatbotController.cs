@@ -7,17 +7,17 @@ namespace BrainStormEra_MVC.Controllers
     [Route("api/[controller]")]
     public class ChatbotController : ControllerBase
     {
-        private readonly ChatbotServiceImpl _chatbotServiceImpl;
+        private readonly ChatbotService _chatbotService;
 
-        public ChatbotController(ChatbotServiceImpl chatbotServiceImpl)
+        public ChatbotController(ChatbotService chatbotService)
         {
-            _chatbotServiceImpl = chatbotServiceImpl;
+            _chatbotService = chatbotService;
         }
 
         [HttpPost("chat")]
-        public async Task<IActionResult> Chat([FromBody] ChatbotServiceImpl.ChatRequest request)
+        public async Task<IActionResult> Chat([FromBody] ChatbotService.ChatRequest request)
         {
-            var result = await _chatbotServiceImpl.ProcessChatForControllerAsync(request);
+            var result = await _chatbotService.ProcessChatForControllerAsync(request);
 
             if (!result.IsSuccess)
             {
@@ -30,7 +30,7 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet("history")]
         public async Task<IActionResult> GetHistory([FromQuery] int limit = 20)
         {
-            var result = await _chatbotServiceImpl.GetHistoryForControllerAsync(limit);
+            var result = await _chatbotService.GetHistoryForControllerAsync(limit);
 
             if (!result.IsSuccess)
             {
@@ -41,9 +41,9 @@ namespace BrainStormEra_MVC.Controllers
         }
 
         [HttpPost("feedback")]
-        public async Task<IActionResult> SubmitFeedback([FromBody] ChatbotServiceImpl.FeedbackRequest request)
+        public async Task<IActionResult> SubmitFeedback([FromBody] ChatbotService.FeedbackRequest request)
         {
-            var result = await _chatbotServiceImpl.SubmitFeedbackForControllerAsync(request);
+            var result = await _chatbotService.SubmitFeedbackForControllerAsync(request);
 
             if (!result.IsSuccess)
             {

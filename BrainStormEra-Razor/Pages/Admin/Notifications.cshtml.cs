@@ -11,20 +11,20 @@ namespace BrainStormEra_Razor.Pages.Admin
     [Authorize(Roles = "admin,instructor")]
     public class NotificationsModel : PageModel
     {
-        private readonly NotificationServiceImpl _notificationServiceImpl;
-        private readonly INotificationService _notificationService;
-        private readonly CourseServiceImpl _courseServiceImpl; // Add CourseServiceImpl
+        private readonly NotificationService _notificationService;
+        private readonly INotificationService _notificationServiceInterface;
+        private readonly ICourseService _courseService;
         private readonly ILogger<NotificationsModel> _logger;
 
         public NotificationsModel(
-            NotificationServiceImpl notificationServiceImpl,
-            INotificationService notificationService,
-            CourseServiceImpl courseServiceImpl, // Add CourseServiceImpl parameter
+            NotificationService notificationService,
+            INotificationService notificationServiceInterface,
+            ICourseService courseService,
             ILogger<NotificationsModel> logger)
         {
-            _notificationServiceImpl = notificationServiceImpl;
             _notificationService = notificationService;
-            _courseServiceImpl = courseServiceImpl; // Initialize CourseServiceImpl
+            _notificationServiceInterface = notificationServiceInterface;
+            _courseService = courseService;
             _logger = logger;
         }
 
@@ -40,7 +40,7 @@ namespace BrainStormEra_Razor.Pages.Admin
         {
             try
             {
-                var result = await _notificationServiceImpl.GetNotificationsAsync(User, page, pageSize);
+                var result = await _notificationService.GetNotificationsAsync(User, page, pageSize);
 
                 if (!result.Success)
                 {
@@ -76,7 +76,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return Page();
                 }
 
-                var result = await _notificationServiceImpl.CreateNotificationAsync(User, CreateModel);
+                var result = await _notificationService.CreateNotificationAsync(User, CreateModel);
 
                 if (result.Success)
                 {
@@ -121,7 +121,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return Page();
                 }
 
-                var result = await _notificationServiceImpl.UpdateNotificationAsync(User, EditModel.NotificationId, EditModel);
+                var result = await _notificationService.UpdateNotificationAsync(User, EditModel.NotificationId, EditModel);
 
                 if (result.Success)
                 {
@@ -218,7 +218,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return new JsonResult(new { success = false, message = "User authentication required" });
                 }
 
-                var result = await _notificationServiceImpl.MarkAsReadAsync(User, notificationId);
+                var result = await _notificationService.MarkAsReadAsync(User, notificationId);
 
                 _logger.LogInformation("Mark as read result for notification {NotificationId} by user {UserId}: Success={Success}, Message={Message}",
                     notificationId, userId, result.Success, result.Message);
@@ -265,7 +265,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return new JsonResult(new { success = false, message = "User authentication required" });
                 }
 
-                var result = await _notificationServiceImpl.MarkAllAsReadAsync(User);
+                var result = await _notificationService.MarkAllAsReadAsync(User);
 
                 _logger.LogInformation("Mark all as read result for user {UserId}: Success={Success}, Message={Message}",
                     userId, result.Success, result.Message);
@@ -303,7 +303,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return new JsonResult(new { success = false, message = "Notification ID is required" });
                 }
 
-                var result = await _notificationServiceImpl.DeleteNotificationAsync(User, notificationId);
+                var result = await _notificationService.DeleteNotificationAsync(User, notificationId);
                 return new JsonResult(new { success = result.Success, message = result.Message });
             }
             catch (Exception ex)
@@ -322,7 +322,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                     return new JsonResult(new { success = false, message = "Notification ID is required" });
                 }
 
-                var result = await _notificationServiceImpl.GetNotificationForEditAsync(User, notificationId);
+                var result = await _notificationService.GetNotificationForEditAsync(User, notificationId);
 
                 if (result.Success && result.ViewModel != null)
                 {
@@ -393,7 +393,7 @@ namespace BrainStormEra_Razor.Pages.Admin
         {
             try
             {
-                var result = await _notificationServiceImpl.GetNotificationsAsync(User, page, pageSize);
+                var result = await _notificationService.GetNotificationsAsync(User, page, pageSize);
 
                 if (result.Success && result.ViewModel != null)
                 {
@@ -476,7 +476,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 {
                     try
                     {
-                        var result = await _notificationServiceImpl.MarkAsReadAsync(User, notificationId);
+                        var result = await _notificationService.MarkAsReadAsync(User, notificationId);
                         if (result.Success)
                         {
                             successCount++;
@@ -513,7 +513,7 @@ namespace BrainStormEra_Razor.Pages.Admin
         {
             try
             {
-                var result = await _notificationServiceImpl.GetNotificationsAsync(User, page, pageSize);
+                var result = await _notificationService.GetNotificationsAsync(User, page, pageSize);
                 NotificationData = result.ViewModel ?? new NotificationIndexViewModel();
             }
             catch (Exception ex)
@@ -541,7 +541,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 if (userRole?.Equals("admin", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     // Admin can see all courses
-                    var allCoursesResult = await _courseServiceImpl.GetCoursesAsync("", "", 1, 1000);
+                    var allCoursesResult = await _courseService.GetCoursesAsync("", "", 1, 1000);
                     courses = allCoursesResult.Courses.Select(c => new
                     {
                         courseId = c.CourseId,
@@ -552,7 +552,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 else if (userRole?.Equals("instructor", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     // Instructor can only see their own courses
-                    var instructorCoursesResult = await _courseServiceImpl.GetInstructorCoursesAsync(userId, "", "", 1, 1000);
+                    var instructorCoursesResult = await _courseService.GetInstructorCoursesAsync(userId, "", "", 1, 1000);
                     courses = instructorCoursesResult.Courses.Select(c => new
                     {
                         courseId = c.CourseId,

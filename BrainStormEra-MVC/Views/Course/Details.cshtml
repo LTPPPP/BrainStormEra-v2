@@ -690,7 +690,7 @@
                                                                 <div class="mb-2">
                                                                     @foreach (var quiz in chapter.Quizzes)
                                                                     {
-                                                                        var (statusText, statusClass, statusIcon) = BusinessLogicLayer.Services.Implementations.QuizServiceImpl.GetQuizStatusInfo(quiz.QuizStatus);
+                                                                        var (statusText, statusClass, statusIcon) = BusinessLogicLayer.Services.Implementations.QuizService.GetQuizStatusInfo(quiz.QuizStatus);
                                                                         <div class="lecture-item quiz-item @(quiz.QuizStatus == 4 ? "archived-item" : "")">
                                                                             <i class="fas fa-question-circle"></i>
                                                                             <span class="lesson-name-truncated">@quiz.QuizName</span>

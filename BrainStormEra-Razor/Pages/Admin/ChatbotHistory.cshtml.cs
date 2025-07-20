@@ -11,7 +11,7 @@ namespace BrainStormEra_Razor.Pages.Admin
     public class ChatbotHistoryModel : PageModel
     {
         private readonly ILogger<ChatbotHistoryModel> _logger;
-        private readonly AdminServiceImpl _adminServiceImpl;
+        private readonly AdminService _adminService;
 
         public ChatbotHistoryViewModel ChatbotHistoryData { get; set; } = new ChatbotHistoryViewModel();
         public string? ErrorMessage { get; set; }
@@ -36,17 +36,17 @@ namespace BrainStormEra_Razor.Pages.Admin
         [BindProperty(SupportsGet = true)]
         public int PageSize { get; set; } = 20;
 
-        public ChatbotHistoryModel(ILogger<ChatbotHistoryModel> logger, AdminServiceImpl adminServiceImpl)
+        public ChatbotHistoryModel(ILogger<ChatbotHistoryModel> logger, AdminService adminService)
         {
             _logger = logger;
-            _adminServiceImpl = adminServiceImpl;
+            _adminService = adminService;
         }
 
         public async Task OnGetAsync()
         {
             try
             {
-                var result = await _adminServiceImpl.GetChatbotHistoryAsync(User, Search, UserId, FromDate, ToDate, Page, PageSize);
+                var result = await _adminService.GetChatbotHistoryAsync(User, Search, UserId, FromDate, ToDate, Page, PageSize);
 
                 if (result.IsSuccess)
                 {

@@ -9,12 +9,12 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class ChapterController : BaseController
     {
-        private readonly ChapterServiceImpl _chapterServiceImpl;
+        private readonly ChapterService _chapterService;
         private readonly ILogger<ChapterController> _logger;
 
-        public ChapterController(ChapterServiceImpl chapterServiceImpl, ILogger<ChapterController> logger) : base()
+        public ChapterController(ChapterService chapterService, ILogger<ChapterController> logger) : base()
         {
-            _chapterServiceImpl = chapterServiceImpl;
+            _chapterService = chapterService;
             _logger = logger;
         }
 
@@ -23,7 +23,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             // Use course ID directly without decoding
             var realCourseId = courseId;
-            var result = await _chapterServiceImpl.GetCreateChapterViewModelAsync(User, realCourseId);
+            var result = await _chapterService.GetCreateChapterViewModelAsync(User, realCourseId);
 
             if (!result.Success)
             {
@@ -39,7 +39,7 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateChapter(CreateChapterViewModel model)
         {
-            var result = await _chapterServiceImpl.CreateChapterAsync(User, model);
+            var result = await _chapterService.CreateChapterAsync(User, model);
 
             if (result.Success)
             {
@@ -75,7 +75,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> DeleteChapter(string id, string courseId)
         {
             // Use IDs directly without decoding
-            var result = await _chapterServiceImpl.DeleteChapterAsync(User, id, courseId);
+            var result = await _chapterService.DeleteChapterAsync(User, id, courseId);
 
             if (result.Success)
             {
@@ -94,7 +94,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> EditChapter(string id)
         {
             // Use ID directly without decoding
-            var result = await _chapterServiceImpl.GetChapterForEditAsync(User, id);
+            var result = await _chapterService.GetChapterForEditAsync(User, id);
 
             if (!result.Success)
             {
@@ -110,7 +110,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> EditChapter(string id, CreateChapterViewModel model)
         {
             // Use ID directly without decoding
-            var result = await _chapterServiceImpl.UpdateChapterAsync(User, id, model);
+            var result = await _chapterService.UpdateChapterAsync(User, id, model);
 
             if (result.Success)
             {

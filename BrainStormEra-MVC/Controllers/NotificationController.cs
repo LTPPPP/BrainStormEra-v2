@@ -10,27 +10,27 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class NotificationController : Controller
     {
-        private readonly NotificationServiceImpl _notificationServiceImpl;
-        private readonly INotificationService _notificationService; // Keep for simple operations
-        private readonly CourseServiceImpl _courseServiceImpl; // Add CourseServiceImpl
+        private readonly NotificationService _notificationService;
+        private readonly INotificationService _notificationServiceInterface;
+        private readonly CourseService _courseService;
         private readonly ILogger<NotificationController> _logger;
 
         public NotificationController(
-            NotificationServiceImpl notificationServiceImpl,
-            INotificationService notificationService,
-            CourseServiceImpl courseServiceImpl, // Add CourseServiceImpl parameter
+            NotificationService notificationService,
+            INotificationService notificationServiceInterface,
+            CourseService courseService,
             ILogger<NotificationController> logger)
         {
-            _notificationServiceImpl = notificationServiceImpl;
             _notificationService = notificationService;
-            _courseServiceImpl = courseServiceImpl; // Initialize CourseServiceImpl
+            _notificationServiceInterface = notificationServiceInterface;
+            _courseService = courseService;
             _logger = logger;
         }// GET: Notification
         public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
         {
             try
             {
-                var result = await _notificationServiceImpl.GetNotificationsAsync(User, page, pageSize);
+                var result = await _notificationService.GetNotificationsAsync(User, page, pageSize);
 
                 if (!result.Success)
                 {
@@ -61,7 +61,7 @@ namespace BrainStormEra_MVC.Controllers
                 return Unauthorized();
             }
 
-            var notifications = await _notificationService.GetNotificationsAsync(userId, page, pageSize);
+            var notifications = await _notificationServiceInterface.GetNotificationsAsync(userId, page, pageSize);
             return Json(notifications.Select(n => new
             {
                 id = n.NotificationId,
@@ -83,7 +83,7 @@ namespace BrainStormEra_MVC.Controllers
                 return Unauthorized();
             }
 
-            var count = await _notificationService.GetUnreadNotificationCountAsync(userId);
+            var count = await _notificationServiceInterface.GetUnreadNotificationCountAsync(userId);
             return Json(new { count = count });
         }
 
@@ -99,7 +99,7 @@ namespace BrainStormEra_MVC.Controllers
                     return Json(new { success = false, message = "Notification ID is required" });
                 }
 
-                var result = await _notificationServiceImpl.MarkAsReadAsync(User, notificationId);
+                var result = await _notificationService.MarkAsReadAsync(User, notificationId);
                 return Json(new { success = result.Success, message = result.Message });
             }
             catch (Exception ex)
@@ -116,7 +116,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationServiceImpl.MarkAllAsReadAsync(User);
+                var result = await _notificationService.MarkAllAsReadAsync(User);
                 return Json(new { success = result.Success, message = result.Message });
             }
             catch (Exception ex)
@@ -136,7 +136,7 @@ namespace BrainStormEra_MVC.Controllers
                     return Json(new { success = false, message = "Notification ID is required" });
                 }
 
-                var result = await _notificationServiceImpl.DeleteNotificationAsync(User, notificationId);
+                var result = await _notificationService.DeleteNotificationAsync(User, notificationId);
                 return Json(new { success = result.Success, message = result.Message });
             }
             catch (Exception ex)
@@ -152,7 +152,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> SendToUser(string targetUserId, string title, string content, string? type = null, string? courseId = null)
         {
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var success = await _notificationService.SendToUserAsync(targetUserId, title, content, type, courseId, currentUserId);
+            var success = await _notificationServiceInterface.SendToUserAsync(targetUserId, title, content, type, courseId, currentUserId);
             return Json(new { success = success });
         }
 
@@ -162,7 +162,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> SendToCourse(string courseId, string title, string content, string? type = null)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var success = await _notificationService.SendToCourseAsync(courseId, title, content, type, userId, userId);
+            var success = await _notificationServiceInterface.SendToCourseAsync(courseId, title, content, type, userId, userId);
             return Json(new { success = success });
         }
 
@@ -172,7 +172,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> SendToRole(string role, string title, string content, string? type = null)
         {
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var success = await _notificationService.SendToRoleAsync(role, title, content, type, currentUserId);
+            var success = await _notificationServiceInterface.SendToRoleAsync(role, title, content, type, currentUserId);
             return Json(new { success = success });
         }
 
@@ -182,7 +182,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> SendToAll(string title, string content, string? type = null)
         {
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var success = await _notificationService.SendToAllAsync(title, content, type, currentUserId);
+            var success = await _notificationServiceInterface.SendToAllAsync(title, content, type, currentUserId);
             return Json(new { success = success });
         }        // GET: Create notification page (admin and instructor only)
         [HttpGet]
@@ -191,7 +191,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationServiceImpl.GetCreateNotificationViewModelAsync(User);
+                var result = await _notificationService.GetCreateNotificationViewModelAsync(User);
 
                 if (!result.Success)
                 {
@@ -219,7 +219,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationServiceImpl.CreateNotificationAsync(User, model);
+                var result = await _notificationService.CreateNotificationAsync(User, model);
 
                 if (result.Success)
                 {
@@ -279,7 +279,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationServiceImpl.GetNotificationForEditAsync(User, id);
+                var result = await _notificationService.GetNotificationForEditAsync(User, id);
 
                 if (!result.Success)
                 {
@@ -309,7 +309,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationServiceImpl.UpdateNotificationAsync(User, model.NotificationId, model);
+                var result = await _notificationService.UpdateNotificationAsync(User, model.NotificationId, model);
 
                 if (result.Success)
                 {
@@ -374,7 +374,7 @@ namespace BrainStormEra_MVC.Controllers
                     return Json(new { success = false, message = "User not authenticated" });
                 }
 
-                var success = await _notificationService.RestoreNotificationAsync(notificationId, userId);
+                var success = await _notificationServiceInterface.RestoreNotificationAsync(notificationId, userId);
 
                 if (success)
                 {
@@ -410,7 +410,7 @@ namespace BrainStormEra_MVC.Controllers
                     return Json(new { exists = false, message = "User not authenticated", userId = "null" });
                 }
 
-                var notification = await _notificationService.GetNotificationForEditAsync(notificationId, userId);
+                var notification = await _notificationServiceInterface.GetNotificationForEditAsync(notificationId, userId);
 
                 _logger.LogInformation("CheckNotification - Notification found: {Found}", notification != null);
 
@@ -450,7 +450,7 @@ namespace BrainStormEra_MVC.Controllers
                 }
 
                 // Direct database check
-                var allNotifications = await _notificationService.GetNotificationsAsync(userId, 1, 100);
+                var allNotifications = await _notificationServiceInterface.GetNotificationsAsync(userId, 1, 100);
                 var targetNotification = allNotifications.FirstOrDefault(n => n.NotificationId == notificationId);
 
                 return Json(new
@@ -489,7 +489,7 @@ namespace BrainStormEra_MVC.Controllers
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
                 // Test GetNotificationForEditAsync
-                var notification = await _notificationService.GetNotificationForEditAsync(notificationId, userId);
+                var notification = await _notificationServiceInterface.GetNotificationForEditAsync(notificationId, userId);
 
                 return Json(new
                 {
@@ -526,7 +526,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationServiceImpl.SearchUsersAsync(User, searchTerm);
+                var result = await _notificationService.SearchUsersAsync(User, searchTerm);
 
                 if (result.Success)
                 {
@@ -564,7 +564,7 @@ namespace BrainStormEra_MVC.Controllers
                 if (userRole?.Equals("admin", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     // Admin can see all courses
-                    var allCoursesResult = await _courseServiceImpl.GetCoursesAsync("", "", 1, 1000);
+                    var allCoursesResult = await _courseService.GetCoursesAsync("", "", 1, 1000);
                     courses = allCoursesResult.Courses.Select(c => new
                     {
                         courseId = c.CourseId,
@@ -575,7 +575,7 @@ namespace BrainStormEra_MVC.Controllers
                 else if (userRole?.Equals("instructor", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     // Instructor can only see their own courses
-                    var instructorCoursesResult = await _courseServiceImpl.GetInstructorCoursesAsync(userId, "", "", 1, 1000);
+                    var instructorCoursesResult = await _courseService.GetInstructorCoursesAsync(userId, "", "", 1, 1000);
                     courses = instructorCoursesResult.Courses.Select(c => new
                     {
                         courseId = c.CourseId,
@@ -600,7 +600,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationServiceImpl.SearchUsersAsync(User, "");
+                var result = await _notificationService.SearchUsersAsync(User, "");
 
                 if (result.Success)
                 {
@@ -625,7 +625,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationServiceImpl.GetEnrolledUsersAsync(User, courseId, searchTerm);
+                var result = await _notificationService.GetEnrolledUsersAsync(User, courseId, searchTerm);
 
                 if (result.Success)
                 {

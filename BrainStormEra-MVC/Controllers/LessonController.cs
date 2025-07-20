@@ -11,12 +11,12 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class LessonController : BaseController
     {
-        private readonly LessonServiceImpl _lessonServiceImpl;
+        private readonly LessonService _lessonService;
         private readonly ILogger<LessonController> _logger;
 
-        public LessonController(LessonServiceImpl lessonServiceImpl, ILogger<LessonController> logger) : base()
+        public LessonController(LessonService lessonService, ILogger<LessonController> logger) : base()
         {
-            _lessonServiceImpl = lessonServiceImpl;
+            _lessonService = lessonService;
             _logger = logger;
         }
 
@@ -33,7 +33,7 @@ namespace BrainStormEra_MVC.Controllers
                 return NotFound();
             }
 
-            var result = await _lessonServiceImpl.GetSelectLessonTypeViewModelAsync(realChapterId);
+            var result = await _lessonService.GetSelectLessonTypeViewModelAsync(realChapterId);
 
             if (!result.Success)
             {
@@ -49,7 +49,7 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SelectLessonType(SelectLessonTypeViewModel model)
         {
-            var result = await _lessonServiceImpl.ProcessSelectLessonTypeAsync(model, ModelState);
+            var result = await _lessonService.ProcessSelectLessonTypeAsync(model, ModelState);
 
             if (result.Success && result.RedirectAction != null)
             {
@@ -70,7 +70,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             // Decode hash ID to real ID
             var realChapterId = chapterId;
-            var result = await _lessonServiceImpl.GetCreateLessonViewModelAsync(realChapterId, 1); // Video type
+            var result = await _lessonService.GetCreateLessonViewModelAsync(realChapterId, 1); // Video type
 
             if (!result.Success)
             {
@@ -89,7 +89,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             // Decode hash ID to real ID
             var realChapterId = chapterId;
-            var result = await _lessonServiceImpl.GetCreateLessonViewModelAsync(realChapterId, 2); // Text type
+            var result = await _lessonService.GetCreateLessonViewModelAsync(realChapterId, 2); // Text type
 
             if (!result.Success)
             {
@@ -108,7 +108,7 @@ namespace BrainStormEra_MVC.Controllers
         {
             // Decode hash ID to real ID
             var realChapterId = chapterId;
-            var result = await _lessonServiceImpl.GetCreateLessonViewModelAsync(realChapterId, 3); // Interactive type
+            var result = await _lessonService.GetCreateLessonViewModelAsync(realChapterId, 3); // Interactive type
 
             if (!result.Success)
             {
@@ -133,7 +133,7 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateLesson(CreateLessonViewModel model)
         {
-            var result = await _lessonServiceImpl.ProcessCreateLessonAsync(model, ModelState);
+            var result = await _lessonService.ProcessCreateLessonAsync(model, ModelState);
 
             if (result.Success)
             {
@@ -173,7 +173,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> CreateVideoLesson(CreateLessonViewModel model)
         {
             model.LessonTypeId = 1; // Ensure video type
-            var result = await _lessonServiceImpl.ProcessCreateLessonAsync(model, ModelState);
+            var result = await _lessonService.ProcessCreateLessonAsync(model, ModelState);
 
             if (result.Success)
             {
@@ -202,7 +202,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> CreateTextLesson(CreateLessonViewModel model)
         {
             model.LessonTypeId = 2; // Ensure text type
-            var result = await _lessonServiceImpl.ProcessCreateLessonAsync(model, ModelState);
+            var result = await _lessonService.ProcessCreateLessonAsync(model, ModelState);
 
             if (result.Success)
             {
@@ -231,7 +231,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> CreateInteractiveLesson(CreateLessonViewModel model)
         {
             model.LessonTypeId = 3; // Ensure interactive type
-            var result = await _lessonServiceImpl.ProcessCreateLessonAsync(model, ModelState);
+            var result = await _lessonService.ProcessCreateLessonAsync(model, ModelState);
 
             if (result.Success)
             {
@@ -266,7 +266,7 @@ namespace BrainStormEra_MVC.Controllers
 
             // Decode hash ID to real ID
             var realId = id;
-            var result = await _lessonServiceImpl.GetEditLessonViewModelAsync(realId, userId);
+            var result = await _lessonService.GetEditLessonViewModelAsync(realId, userId);
 
             if (!result.Success)
             {
@@ -292,7 +292,7 @@ namespace BrainStormEra_MVC.Controllers
 
             // Decode hash ID to real ID
             var realId = id;
-            var result = await _lessonServiceImpl.ProcessUpdateLessonAsync(realId, model, ModelState, userId);
+            var result = await _lessonService.ProcessUpdateLessonAsync(realId, model, ModelState, userId);
 
             if (result.Success)
             {
@@ -335,7 +335,7 @@ namespace BrainStormEra_MVC.Controllers
             // Decode hash IDs to real IDs
             var realId = id;
             var realCourseId = courseId;
-            var result = await _lessonServiceImpl.ProcessDeleteLessonAsync(realId, userId, realCourseId);
+            var result = await _lessonService.ProcessDeleteLessonAsync(realId, userId, realCourseId);
 
             if (result.Success)
             {
@@ -365,7 +365,7 @@ namespace BrainStormEra_MVC.Controllers
                 return NotFound();
             }
 
-            var result = await _lessonServiceImpl.GetLessonLearningDataAsync(id, userId);
+            var result = await _lessonService.GetLessonLearningDataAsync(id, userId);
 
             if (!result.Success)
             {
@@ -410,7 +410,7 @@ namespace BrainStormEra_MVC.Controllers
 
             try
             {
-                var result = await _lessonServiceImpl.MarkLessonAsCompletedAsync(userId, lessonId);
+                var result = await _lessonService.MarkLessonAsCompletedAsync(userId, lessonId);
 
                 if (result)
                 {
@@ -418,12 +418,12 @@ namespace BrainStormEra_MVC.Controllers
                     try
                     {
                         // Get the course ID from the lesson
-                        var lesson = await _lessonServiceImpl.GetLessonWithDetailsAsync(lessonId);
+                        var lesson = await _lessonService.GetLessonWithDetailsAsync(lessonId);
                         if (lesson?.Chapter?.CourseId != null)
                         {
                             var courseId = lesson.Chapter.CourseId;
-                            var progressPercentage = await _lessonServiceImpl.GetLessonCompletionPercentageAsync(userId, courseId);
-                            await _lessonServiceImpl.UpdateEnrollmentProgressAsync(userId, courseId, progressPercentage, lessonId);
+                            var progressPercentage = await _lessonService.GetLessonCompletionPercentageAsync(userId, courseId);
+                            await _lessonService.UpdateEnrollmentProgressAsync(userId, courseId, progressPercentage, lessonId);
                         }
                     }
                     catch (Exception ex)
@@ -457,7 +457,7 @@ namespace BrainStormEra_MVC.Controllers
 
             try
             {
-                var result = await _lessonServiceImpl.GetLessonLearningDataAsync(lessonId, CurrentUserId);
+                var result = await _lessonService.GetLessonLearningDataAsync(lessonId, CurrentUserId);
 
                 if (!result.Success || result.ViewModel == null)
                 {
@@ -465,7 +465,7 @@ namespace BrainStormEra_MVC.Controllers
                 }
 
                 // Get course progress
-                var courseProgress = await _lessonServiceImpl.GetLessonCompletionPercentageAsync(CurrentUserId, result.ViewModel.CourseId);
+                var courseProgress = await _lessonService.GetLessonCompletionPercentageAsync(CurrentUserId, result.ViewModel.CourseId);
 
                 return Json(new
                 {

@@ -10,12 +10,12 @@ namespace BrainStormEra_MVC.Controllers
     public class PaymentController : BaseController
     {
         private readonly IPaymentService _paymentService;
-        private readonly CourseServiceImpl _courseServiceImpl;
+        private readonly CourseService _courseService;
 
-        public PaymentController(IPaymentService paymentService, CourseServiceImpl courseServiceImpl)
+        public PaymentController(IPaymentService paymentService, CourseService courseService)
         {
             _paymentService = paymentService;
-            _courseServiceImpl = courseServiceImpl;
+            _courseService = courseService;
         }
         [HttpGet]
         public async Task<IActionResult> Index()
@@ -41,7 +41,7 @@ namespace BrainStormEra_MVC.Controllers
                 }
 
                 // Validate course exists
-                var course = await _courseServiceImpl.GetCourseByIdAsync(courseId);
+                var course = await _courseService.GetCourseByIdAsync(courseId);
                 if (course == null)
                 {
                     return Json(new { success = false, message = "Course does not exist" });

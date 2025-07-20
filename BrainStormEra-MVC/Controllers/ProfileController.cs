@@ -9,14 +9,14 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class ProfileController : BaseController
     {
-        private readonly AuthServiceImpl _authServiceImpl;
+        private readonly AuthService _authService;
         private readonly ILogger<ProfileController> _logger;
 
         public ProfileController(
-            AuthServiceImpl authServiceImpl,
+            AuthService authService,
             ILogger<ProfileController> logger)
         {
-            _authServiceImpl = authServiceImpl;
+            _authService = authService;
             _logger = logger;
         }
 
@@ -32,7 +32,7 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                var result = await _authServiceImpl.GetProfileViewModelAsync(userId, CurrentUserRole ?? "");
+                var result = await _authService.GetProfileViewModelAsync(userId, CurrentUserRole ?? "");
 
                 if (!result.Success)
                 {
@@ -62,7 +62,7 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                var result = await _authServiceImpl.GetEditProfileViewModelAsync(userId);
+                var result = await _authService.GetEditProfileViewModelAsync(userId);
 
                 if (!result.Success)
                 {
@@ -98,7 +98,7 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                var result = await _authServiceImpl.UpdateProfileAsync(userId, model);
+                var result = await _authService.UpdateProfileAsync(userId, model);
 
                 if (!result.Success)
                 {
@@ -146,7 +146,7 @@ namespace BrainStormEra_MVC.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                var result = await _authServiceImpl.ChangePasswordAsync(userId, model);
+                var result = await _authService.ChangePasswordAsync(userId, model);
 
                 if (!result.Success)
                 {
@@ -178,14 +178,14 @@ namespace BrainStormEra_MVC.Controllers
             try
             {
                 var targetUserId = userId ?? CurrentUserId;
-                var result = await _authServiceImpl.GetUserAvatarAsync(targetUserId);
+                var result = await _authService.GetUserAvatarAsync(targetUserId);
 
                 return File(result.ImageBytes, result.ContentType);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving avatar for user: {UserId}", userId);
-                var defaultResult = await _authServiceImpl.GetUserAvatarAsync(null);
+                var defaultResult = await _authService.GetUserAvatarAsync(null);
                 return File(defaultResult.ImageBytes, defaultResult.ContentType);
             }
         }
@@ -202,7 +202,7 @@ namespace BrainStormEra_MVC.Controllers
                     return Json(new { success = false, message = "User not authenticated" });
                 }
 
-                var result = await _authServiceImpl.DeleteUserAvatarAsync(userId);
+                var result = await _authService.DeleteUserAvatarAsync(userId);
 
                 return Json(new { success = result.Success, message = result.Message });
             }

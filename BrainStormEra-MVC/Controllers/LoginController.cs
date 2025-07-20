@@ -21,16 +21,16 @@ namespace BrainStormEra_MVC.Controllers
         private readonly IConfiguration _configuration;
         private readonly IUserService _userService;
         private readonly IEmailService _emailService;
-        private readonly AuthServiceImpl _authServiceImpl;
+        private readonly AuthService _authService;
 
-        public LoginController(BrainStormEraContext context, ILogger<LoginController> logger, IConfiguration configuration, IUserService userService, IEmailService emailService, AuthServiceImpl authServiceImpl)
+        public LoginController(BrainStormEraContext context, ILogger<LoginController> logger, IConfiguration configuration, IUserService userService, IEmailService emailService, AuthService authService)
         {
             _context = context;
             _logger = logger;
             _configuration = configuration;
             _userService = userService;
             _emailService = emailService;
-            _authServiceImpl = authServiceImpl;
+            _authService = authService;
         }
         [HttpGet]
         public IActionResult Index(string? returnUrl = null)
@@ -208,7 +208,7 @@ namespace BrainStormEra_MVC.Controllers
                 return View("~/Views/Auth/ForgotPassword.cshtml", model);
             }
 
-            var result = await _authServiceImpl.ProcessForgotPasswordAsync(model);
+            var result = await _authService.ProcessForgotPasswordAsync(model);
 
             if (!result.Success)
             {
@@ -262,7 +262,7 @@ namespace BrainStormEra_MVC.Controllers
                 return View("~/Views/Auth/VerifyOtp.cshtml", model);
             }
 
-            var result = await _authServiceImpl.VerifyOtpAsync(model);
+            var result = await _authService.VerifyOtpAsync(model);
 
             if (!result.Success)
             {
@@ -286,7 +286,7 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet]
         public async Task<IActionResult> ResetPassword(string email, string token)
         {
-            var result = await _authServiceImpl.GetResetPasswordViewModelAsync(email, token);
+            var result = await _authService.GetResetPasswordViewModelAsync(email, token);
 
             if (!result.Success)
             {
@@ -310,7 +310,7 @@ namespace BrainStormEra_MVC.Controllers
                 return View("~/Views/Auth/ResetPassword.cshtml", model);
             }
 
-            var result = await _authServiceImpl.ResetPasswordAsync(model);
+            var result = await _authService.ResetPasswordAsync(model);
 
             if (!result.Success)
             {

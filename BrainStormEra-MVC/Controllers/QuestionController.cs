@@ -8,9 +8,9 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class QuestionController : Controller
     {
-        private readonly QuestionServiceImpl _questionService;
+        private readonly QuestionService _questionService;
 
-        public QuestionController(QuestionServiceImpl questionService)
+        public QuestionController(QuestionService questionService)
         {
             _questionService = questionService;
         }

@@ -10,12 +10,12 @@ namespace BrainStormEra_Razor.Pages.Admin
     [Authorize(Roles = "admin")]
     public class ChangePasswordModel : PageModel
     {
-        private readonly AuthServiceImpl _authServiceImpl;
+        private readonly AuthService _authService;
         private readonly ILogger<ChangePasswordModel> _logger;
 
-        public ChangePasswordModel(AuthServiceImpl authServiceImpl, ILogger<ChangePasswordModel> logger)
+        public ChangePasswordModel(AuthService authService, ILogger<ChangePasswordModel> logger)
         {
-            _authServiceImpl = authServiceImpl;
+            _authService = authService;
             _logger = logger;
         }
 
@@ -88,7 +88,7 @@ namespace BrainStormEra_Razor.Pages.Admin
                 }
 
                 // Call the auth service to change password
-                var result = await _authServiceImpl.ChangePasswordAsync(userId, changePasswordViewModel);
+                var result = await _authService.ChangePasswordAsync(userId, changePasswordViewModel);
 
                 if (!result.Success)
                 {
