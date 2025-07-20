@@ -559,7 +559,8 @@ namespace BusinessLogicLayer.Services.Implementations
                     .ToListAsync();
 
                 var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetAbsoluteExpiration(CacheExpiration);
+                    .SetAbsoluteExpiration(CacheExpiration)
+                    .SetSize(1); // Set size for cache entry when SizeLimit is configured
                 _cache.Set(cacheKey, categories, cacheOptions);
 
                 return categories;

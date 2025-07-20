@@ -33,6 +33,7 @@
     <link rel="stylesheet" href="~/css/components/toast-notifications.css">
     <!-- Chatbot CSS -->
     <link rel="stylesheet" href="~/css/components/chatbot.css">
+    <link rel="stylesheet" href="~/css/pages/Course/courses-lazy-loading.css">
     
     @* User authentication meta tags for JavaScript access *@
     @if (User.Identity?.IsAuthenticated == true)
@@ -293,9 +294,9 @@
                                             </button>
                                         }
                                     }
-                                    else if (ViewBag.IsAuthenticated == true && (ViewBag.UserRole == "Instructor" || ViewBag.UserRole == "Admin"))
+                                    else if (ViewBag.IsAuthenticated == true && ViewBag.UserRole == "Instructor")
                                     {
-                                        @* Show status and edit button for instructor and admin roles *@
+                                        @* Show status and edit button for instructor role only *@
                                         @if (course.ApprovalStatus?.ToLower() == "draft" || course.CourseStatus == 5) // Assuming 5 is inactive status
                                         {
                                             <div class="d-flex gap-2">
@@ -394,12 +395,6 @@
                 </div>
             }
             </div>
-            <div id="lazyLoadingIndicator" class="loading-indicator" style="display: none;">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <span class="loading-text">Loading more courses...</span>
-            </div>
         </div>
     </div>    
     <!-- Footer -->
@@ -412,111 +407,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" defer></script>
     <!-- Include toast notifications script -->
     <script src="~/js/shared/toast-notifications.js"></script>
-    <!-- Custom JS -->
     <script src="~/js/components/loader.js"></script>
     <script src="~/js/pages/Course/courses.js"></script>
     <script src="~/js/pages/Course/course-search.js"></script>
-    <script>
-        // Infinite scroll variables
-        let currentPage = 1;
-        let isLoading = false;
-        let hasNextPage = true;
-        const pageSize = 12;
-
-        function appendCourses(courses) {
-            const grid = document.getElementById('coursesGrid');
-            courses.forEach(course => {
-                const col = document.createElement('div');
-                col.className = 'col-lg-4 col-md-6 col-sm-12 mb-4';
-                col.innerHTML = `
-                <div class="course-card" data-course-id="${course.courseId}">
-                    <div class="course-image">
-                        <img src="${course.coursePicture}" alt="${course.courseName}" loading="lazy" onerror="this.onerror=null; this.src='/SharedMedia/defaults/default-course.svg';">
-                        ${course.price > 0 ? `<div class="course-price">$${course.price.toLocaleString()}</div>` : `<div class="course-price free">Free</div>`}
-                    </div>
-                    <div class="course-details">
-                        <div class="course-categories">
-                            ${(course.courseCategories || []).slice(0,2).map(cat => `<span class="category-badge">${cat}</span>`).join('')}
-                        </div>
-                        <h3 class="course-title">${course.courseName}</h3>
-                        <p class="course-description">${course.description && course.description.length > 100 ? course.description.substring(0, 100) + '...' : course.description || ''}</p>
-                        <div class="course-meta">
-                            <div class="instructor">
-                                <i class="fas fa-user"></i>
-                                <span>${course.createdBy}</span>
-                            </div>
-                            <div class="rating">
-                                <span class="rating-text">(${Number(course.starRating).toFixed(1)})</span>
-                            </div>
-                        </div>
-                        <p class="course-students">${course.enrollmentCount} enrolled</p>
-                        <div class="course-actions">
-                            <a href="/Course/Details/${course.courseId}" class="btn btn-sm btn-outline-info" title="View Course Details">
-                                <i class="fas fa-eye"></i> Details
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                `;
-                grid.appendChild(col);
-            });
-        }
-
-        function loadMoreCourses() {
-            if (isLoading || !hasNextPage) return;
-            isLoading = true;
-            document.getElementById('lazyLoadingIndicator').style.display = 'block';
-            currentPage++;
-            const search = document.getElementById('courseSearchInput')?.value || '';
-            const category = document.getElementById('categoryFilter')?.value || '';
-            const price = document.getElementById('priceFilter')?.value || '';
-            const difficulty = document.getElementById('difficultyFilter')?.value || '';
-            const sortBy = document.getElementById('sortSelect')?.value || 'newest';
-            fetch(`/Course/SearchCourses?courseSearch=${encodeURIComponent(search)}&categorySearch=${encodeURIComponent(category)}&page=${currentPage}&pageSize=${pageSize}&sortBy=${sortBy}&price=${price}&difficulty=${difficulty}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success && data.courses && data.courses.length > 0) {
-                        appendCourses(data.courses);
-                        hasNextPage = data.hasNextPage;
-                    } else {
-                        hasNextPage = false;
-                    }
-                })
-                .finally(() => {
-                    isLoading = false;
-                    document.getElementById('lazyLoadingIndicator').style.display = 'none';
-                });
-        }
-
-        window.addEventListener('scroll', function() {
-            if (!hasNextPage || isLoading) return;
-            const scrollY = window.scrollY || window.pageYOffset;
-            const viewportHeight = window.innerHeight;
-            const fullHeight = document.body.offsetHeight;
-            if (scrollY + viewportHeight + 200 >= fullHeight) {
-                loadMoreCourses();
-            }
-        });
-
-        // Reset grid and reload when filter/search changes
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('courseSearchInput');
-            const categoryFilter = document.getElementById('categoryFilter');
-            const priceFilter = document.getElementById('priceFilter');
-            const difficultyFilter = document.getElementById('difficultyFilter');
-            const sortSelect = document.getElementById('sortSelect');
-            [searchInput, categoryFilter, priceFilter, difficultyFilter, sortSelect].forEach(el => {
-                if (el) {
-                    el.addEventListener('change', function() {
-                        currentPage = 1;
-                        hasNextPage = true;
-                        document.getElementById('coursesGrid').innerHTML = '';
-                        loadMoreCourses();
-                    });
-                }
-            });
-        });
-    </script>
+    <script src="~/js/pages/Course/courses-lazy-loading.js"></script>
 
     @* Chatbot Script for authenticated users *@
     @if (User.Identity?.IsAuthenticated == true)
@@ -531,9 +425,6 @@
             userRole: '@(ViewBag.UserRole ?? "")'
         };
         
-        // Initialize Course Search Manager
-        let courseSearchManager;
-        
         // Hide preloader when page is loaded
         window.addEventListener('load', function() {
             document.querySelector('.page-loader').classList.add('loaded');
@@ -541,16 +432,9 @@
                 document.querySelector('.page-loader').style.display = 'none';
             }, 500);
             
-            // Initialize search manager after page load
-            courseSearchManager = new CourseSearchManager();
-        });
-        
-        // Change header style on scroll
-        window.addEventListener('scroll', function () {
-            if (window.scrollY > 50) {
-                document.querySelector('.bse-sticky-header').classList.add('scrolled');
-            } else {
-                document.querySelector('.bse-sticky-header').classList.remove('scrolled');
+            // Load all courses on page load
+            if (typeof loadAllCourses === 'function') {
+                loadAllCourses();
             }
         });
 
@@ -615,36 +499,6 @@
                 </text>
             }
         }
-
-        // Enhanced course card interactions
-        document.addEventListener('DOMContentLoaded', function() {
-            const courseCards = document.querySelectorAll('.course-card');
-            
-            courseCards.forEach(card => {
-                card.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-8px) scale(1.02)';
-                });
-                
-                card.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0) scale(1)';
-                });
-            });
-
-            // Add animation classes to elements when they come into view
-            const animateElements = document.querySelectorAll('.course-card');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('animated');
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.1 });
-
-            animateElements.forEach(element => {
-                observer.observe(element);
-            });
-        });
     </script>
 </body>
 </html>

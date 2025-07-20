@@ -37,7 +37,8 @@ namespace BusinessLogicLayer.Filters
                 var cacheOptions = new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_durationInMinutes),
-                    Priority = CacheItemPriority.Normal
+                    Priority = CacheItemPriority.Normal,
+                    Size = 1 // Set size for cache entry when SizeLimit is configured
                 };
 
                 cache.Set(cacheKey, viewResult, cacheOptions);

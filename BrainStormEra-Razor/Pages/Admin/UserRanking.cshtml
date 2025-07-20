@@ -8,6 +8,7 @@
 @section Styles {
     <link rel="stylesheet" href="~/css/global.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin/admin-pages.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin/user-ranking.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
 }
@@ -118,7 +119,7 @@
     <!-- User Ranking Table -->
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class="m-0 font-weight-bold text-primary">
+            <h6 class="m-0 font-weight-bold text-dark">
                 <i class="fas fa-list"></i>
                 User Ranking by Completed Lessons
             </h6>
@@ -138,7 +139,7 @@
             @if (Model.UserRankingData.Users.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-bordered user-ranking-table" id="userRankingTable" width="100%" cellspacing="0">
+                    <table class="table table-bordered user-ranking-table" id="userRankingTable" width="100%" cellspacing="0" >
                         <thead>
                             <tr>
                                 <th class="text-center" style="width: 60px;">Rank</th>
