@@ -57,50 +57,78 @@ namespace BrainStormEra_Razor
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.INotificationRepo, DataAccessLayer.Repositories.NotificationRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IQuestionRepo, DataAccessLayer.Repositories.QuestionRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IQuizRepo, DataAccessLayer.Repositories.QuizRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IFeedbackRepo, DataAccessLayer.Repositories.FeedbackRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatRepo, DataAccessLayer.Repositories.ChatRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ISafeDeleteRepo, DataAccessLayer.Repositories.SafeDeleteRepo>();
 
             // Register Service Interfaces and Implementations
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.UserService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAvatarService, BusinessLogicLayer.Services.AvatarService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementService, BusinessLogicLayer.Services.Implementations.AchievementServiceImpl>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementUnlockService, BusinessLogicLayer.Services.Implementations.AchievementUnlockServiceImpl>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementNotificationService, BusinessLogicLayer.Services.Implementations.AchievementNotificationServiceImpl>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementIconService, BusinessLogicLayer.Services.AchievementIconService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.MediaPathService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAdminService, BusinessLogicLayer.Services.AdminService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEmailService, BusinessLogicLayer.Services.EmailService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.INotificationService, BusinessLogicLayer.Services.NotificationService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseService, BusinessLogicLayer.Services.CourseService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.EnrollmentService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserContextService, BusinessLogicLayer.Services.UserContextService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IResponseService, BusinessLogicLayer.Services.ResponseService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICertificateService, BusinessLogicLayer.Services.Implementations.CertificateServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.Implementations.UserService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAvatarService, BusinessLogicLayer.Services.Implementations.AvatarService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementService, BusinessLogicLayer.Services.Implementations.AchievementService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementUnlockService, BusinessLogicLayer.Services.Implementations.AchievementUnlockService>();
+
+            // Register Achievement Mediator Service to break circular dependency
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementMediatorService, BusinessLogicLayer.Services.Implementations.AchievementMediatorService>();
+
+            // Register Lazy Achievement Service for additional circular dependency resolution
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ILazyAchievementService, BusinessLogicLayer.Services.Implementations.LazyAchievementService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementNotificationService, BusinessLogicLayer.Services.Implementations.AchievementNotificationService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementIconService, BusinessLogicLayer.Services.Implementations.AchievementIconService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseImageService, BusinessLogicLayer.Services.Implementations.CourseImageService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IMediaPathService, BusinessLogicLayer.Services.Implementations.MediaPathService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAdminService, BusinessLogicLayer.Services.Implementations.AdminService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEmailService, BusinessLogicLayer.Services.Implementations.EmailService>();
+            // This line is redundant since we already registered NotificationServiceImpl above
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseService, BusinessLogicLayer.Services.Implementations.CourseService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ILessonService, BusinessLogicLayer.Services.Implementations.LessonService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IQuizService, BusinessLogicLayer.Services.Implementations.QuizService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IChapterService, BusinessLogicLayer.Services.Implementations.ChapterService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IQuestionService, BusinessLogicLayer.Services.Implementations.QuestionService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IFeedbackService, BusinessLogicLayer.Services.Implementations.FeedbackService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPaymentService, BusinessLogicLayer.Services.Implementations.PaymentService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IHomeService, BusinessLogicLayer.Services.Implementations.HomeService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IEnrollmentService, BusinessLogicLayer.Services.Implementations.EnrollmentService>();
+            builder.Services.AddSingleton<BusinessLogicLayer.Services.Interfaces.ICacheService, BusinessLogicLayer.Services.Implementations.CacheService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserContextService, BusinessLogicLayer.Services.Implementations.UserContextService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IResponseService, BusinessLogicLayer.Services.Implementations.ResponseService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICertificateService, BusinessLogicLayer.Services.Implementations.CertificateService>();
 
             // Register Points Service
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IPointsService, BusinessLogicLayer.Services.Implementations.PointsService>();
 
             // Register other Services from BusinessLogicLayer
-            builder.Services.AddScoped<BusinessLogicLayer.Services.UserService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.AvatarService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IVnPayTestHelper, BusinessLogicLayer.Services.Implementations.VnPayTestHelper>();
 
-            builder.Services.AddScoped<BusinessLogicLayer.Services.AchievementIconService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.MediaPathService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.AdminService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.EmailService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.NotificationService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.CourseService>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.EnrollmentService>();
+
+
+
+            // This line is redundant since we already registered AdminServiceImpl above
+
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.INotificationService, BusinessLogicLayer.Services.Implementations.NotificationService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.CourseService>();
+
 
             // Register ServiceImpls from BusinessLogicLayer  
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthServiceImpl>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.NotificationServiceImpl>();
-            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AdminServiceImpl>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAuthService, BusinessLogicLayer.Services.Implementations.AuthService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IUserService, BusinessLogicLayer.Services.Implementations.UserService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.NotificationService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AdminService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.LessonService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.ChapterService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.QuizService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.QuestionService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.FeedbackService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.HomeService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.PaymentService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.RecommendationHelper>();
 
             // Register Security Service for brute force protection and rate limiting
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ISecurityService, BusinessLogicLayer.Services.Implementations.SecurityServiceInMemory>();
 
             // Register Security Cleanup Background Service
             builder.Services.AddHostedService<BrainStormEra_Razor.Services.SecurityCleanupService>();
+
+            builder.Services.AddScoped<Func<BusinessLogicLayer.Services.Interfaces.ILessonService>>(sp => () => sp.GetRequiredService<BusinessLogicLayer.Services.Interfaces.ILessonService>());
 
 
             var app = builder.Build();

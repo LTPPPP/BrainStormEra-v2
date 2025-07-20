@@ -14,12 +14,12 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class QuizController : BaseController
     {
-        private readonly QuizServiceImpl _quizServiceImpl;
+        private readonly QuizService _quizService;
         private readonly ILogger<QuizController> _logger;
 
-        public QuizController(QuizServiceImpl quizServiceImpl, ILogger<QuizController> logger) : base()
+        public QuizController(QuizService quizService, ILogger<QuizController> logger) : base()
         {
-            _quizServiceImpl = quizServiceImpl;
+            _quizService = quizService;
             _logger = logger;
         }
 
@@ -30,7 +30,7 @@ namespace BrainStormEra_MVC.Controllers
             // Use chapter ID directly without decoding
             var realChapterId = chapterId;
 
-            var result = await _quizServiceImpl.GetCreateQuizAsync(User, realChapterId);
+            var result = await _quizService.GetCreateQuizAsync(User, realChapterId);
 
             // Clear ModelState to ensure no validation errors show on initial load
             ModelState.Clear();
@@ -49,7 +49,7 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateQuizViewModel model)
         {
-            var result = await _quizServiceImpl.CreateQuizAsync(User, model, ModelState);
+            var result = await _quizService.CreateQuizAsync(User, model, ModelState);
 
             if (!result.Success)
             {
@@ -89,7 +89,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> Edit(string id)
         {
             // Use ID directly without decoding
-            var result = await _quizServiceImpl.GetEditQuizAsync(User, id);
+            var result = await _quizService.GetEditQuizAsync(User, id);
 
             if (!result.Success)
             {
@@ -120,7 +120,7 @@ namespace BrainStormEra_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(CreateQuizViewModel model)
         {
-            var result = await _quizServiceImpl.UpdateQuizAsync(User, model, ModelState);
+            var result = await _quizService.UpdateQuizAsync(User, model, ModelState);
 
             if (!result.Success)
             {
@@ -161,7 +161,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> Delete(string id)
         {
             // Use ID directly without decoding
-            var result = await _quizServiceImpl.DeleteQuizAsync(User, id);
+            var result = await _quizService.DeleteQuizAsync(User, id);
 
             if (!result.Success)
             {
@@ -195,7 +195,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> DeleteQuiz(string quizId, string courseId)
         {
             // Use quizId directly without decoding
-            var result = await _quizServiceImpl.DeleteQuizAsync(User, quizId);
+            var result = await _quizService.DeleteQuizAsync(User, quizId);
 
             if (!result.Success)
             {
@@ -225,7 +225,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> Details(string id)
         {
             // Use ID directly without decoding
-            var result = await _quizServiceImpl.GetQuizDetailsAsync(User, id);
+            var result = await _quizService.GetQuizDetailsAsync(User, id);
 
             if (!result.Success)
             {
@@ -255,7 +255,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> Preview(string id)
         {
             // Use ID directly without decoding
-            var result = await _quizServiceImpl.GetQuizPreviewAsync(User, id);
+            var result = await _quizService.GetQuizPreviewAsync(User, id);
 
             if (!result.Success)
             {
@@ -287,7 +287,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> Take(string id)
         {
             // Use ID directly without decoding
-            var result = await _quizServiceImpl.GetQuizTakeAsync(User, id);
+            var result = await _quizService.GetQuizTakeAsync(User, id);
 
             if (!result.Success)
             {
@@ -320,7 +320,7 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "learner")]
         public async Task<IActionResult> Submit(QuizTakeSubmitViewModel model)
         {
-            var result = await _quizServiceImpl.SubmitQuizAsync(User, model, ModelState);
+            var result = await _quizService.SubmitQuizAsync(User, model, ModelState);
 
             if (!result.Success)
             {
@@ -335,7 +335,7 @@ namespace BrainStormEra_MVC.Controllers
                 if (result.ReturnView)
                 {
                     // Return to take quiz view with errors
-                    var takeResult = await _quizServiceImpl.GetQuizTakeAsync(User, model.QuizId);
+                    var takeResult = await _quizService.GetQuizTakeAsync(User, model.QuizId);
                     if (takeResult.Success)
                     {
                         return View("Take", takeResult.ViewModel);
@@ -362,7 +362,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> Result(string id)
         {
             // Use ID directly without decoding (attempt ID)
-            var result = await _quizServiceImpl.GetQuizResultAsync(User, id);
+            var result = await _quizService.GetQuizResultAsync(User, id);
 
             if (!result.Success)
             {
@@ -393,7 +393,7 @@ namespace BrainStormEra_MVC.Controllers
         public async Task<IActionResult> ManageQuestions(string quizId)
         {
             // Use quiz ID directly without decoding
-            var result = await _quizServiceImpl.GetQuizQuestionsAsync(User, quizId);
+            var result = await _quizService.GetQuizQuestionsAsync(User, quizId);
 
             if (!result.Success)
             {
@@ -421,7 +421,7 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "instructor")]
         public async Task<IActionResult> UpdateStatus(string quizId, int newStatus)
         {
-            var result = await _quizServiceImpl.UpdateQuizStatusAsync(quizId, User.FindFirst("UserId")?.Value, newStatus);
+            var result = await _quizService.UpdateQuizStatusAsync(quizId, User.FindFirst("UserId")?.Value, newStatus);
 
             if (!result.IsSuccess)
             {
@@ -439,7 +439,7 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "instructor")]
         public async Task<IActionResult> Statistics(string quizId)
         {
-            var result = await _quizServiceImpl.GetQuizStatisticsAsync(quizId, User.FindFirst("UserId")?.Value);
+            var result = await _quizService.GetQuizStatisticsAsync(quizId, User.FindFirst("UserId")?.Value);
 
             if (!result.IsSuccess)
             {

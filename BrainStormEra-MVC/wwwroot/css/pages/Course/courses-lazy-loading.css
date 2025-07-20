@@ -1,0 +1,89 @@
+/* Lazy loading optimizations */
+.lazy-image {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+.lazy-image.loaded {
+    opacity: 1;
+    animation: none;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Performance optimizations */
+.course-card {
+    will-change: transform, opacity;
+    contain: layout style paint;
+    transform: translateZ(0); /* Force GPU acceleration */
+    backface-visibility: hidden; /* Reduce repaints */
+}
+
+.course-image img {
+    object-fit: cover;
+    width: 100%;
+    height: 200px;
+    transform: translateZ(0); /* Force GPU acceleration */
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Optimize animations */
+@media (prefers-reduced-motion: reduce) {
+    .course-card {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* Virtual scrolling optimizations */
+.courses-section {
+    contain: layout style;
+    position: relative;
+}
+
+.course-card.animated {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+/* Loading state optimizations */
+.loading-indicator {
+    contain: layout style;
+    will-change: opacity;
+}
+
+/* Filter optimizations */
+.simple-filters-section {
+    contain: layout style;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+}
+
+/* Reduce layout thrashing */
+.course-details {
+    contain: layout style;
+}
+
+.course-actions {
+    contain: layout style;
+}
+
+/* Optimize text rendering */
+.course-title, .course-description {
+    text-rendering: optimizeSpeed;
+    font-smooth: never;
+    -webkit-font-smoothing: subpixel-antialiased;
+} 

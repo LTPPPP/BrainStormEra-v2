@@ -11,7 +11,7 @@ namespace BrainStormEra_Razor.Pages.Admin
     public class ChatbotHistoryModel : PageModel
     {
         private readonly ILogger<ChatbotHistoryModel> _logger;
-        private readonly AdminServiceImpl _adminServiceImpl;
+        private readonly IAdminService _adminService;
 
         public ChatbotHistoryViewModel ChatbotHistoryData { get; set; } = new ChatbotHistoryViewModel();
         public string? ErrorMessage { get; set; }
@@ -31,31 +31,31 @@ namespace BrainStormEra_Razor.Pages.Admin
         public DateTime? ToDate { get; set; }
 
         [BindProperty(SupportsGet = true)]
-        public int Page { get; set; } = 1;
+        public new int Page { get; set; } = 1;
 
         [BindProperty(SupportsGet = true)]
         public int PageSize { get; set; } = 20;
 
-        public ChatbotHistoryModel(ILogger<ChatbotHistoryModel> logger, AdminServiceImpl adminServiceImpl)
+        public ChatbotHistoryModel(ILogger<ChatbotHistoryModel> logger, IAdminService adminService)
         {
             _logger = logger;
-            _adminServiceImpl = adminServiceImpl;
+            _adminService = adminService;
         }
 
         public async Task OnGetAsync()
         {
             try
             {
-                var result = await _adminServiceImpl.GetChatbotHistoryAsync(User, Search, UserId, FromDate, ToDate, Page, PageSize);
+                var result = await _adminService.GetChatbotHistoryAsync(Search, UserId, FromDate, ToDate, Page, PageSize);
 
-                if (result.IsSuccess)
+                if (result != null)
                 {
-                    ChatbotHistoryData = result.Data ?? new ChatbotHistoryViewModel();
-                    SuccessMessage = result.Message;
+                    ChatbotHistoryData = result;
+                    SuccessMessage = "Chatbot history loaded successfully.";
                 }
                 else
                 {
-                    ErrorMessage = result.Message;
+                    ErrorMessage = "Failed to load chatbot history data.";
                     ChatbotHistoryData = new ChatbotHistoryViewModel();
                 }
             }

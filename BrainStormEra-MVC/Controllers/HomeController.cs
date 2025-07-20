@@ -13,33 +13,32 @@ namespace BrainStormEra_MVC.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly HomeServiceImpl _homeServiceImpl;
+        private readonly HomeService _homeService;
 
-        public HomeController(HomeServiceImpl homeServiceImpl)
+        public HomeController(HomeService homeService)
         {
-            _homeServiceImpl = homeServiceImpl;
+            _homeService = homeService;
         }
 
         public async Task<IActionResult> Index()
         {
-            var result = await _homeServiceImpl.HandleIndexAsync(User);
-
-            if (result.ShouldRedirect)
+            if (User.Identity?.IsAuthenticated == true)
             {
-                if (!string.IsNullOrEmpty(result.TempDataMessage))
+                // Redirect authenticated users to their dashboard
+                var userRole = User.FindFirst("UserRole")?.Value;
+                if (userRole == "learner")
                 {
-                    TempData["ErrorMessage"] = result.TempDataMessage;
+                    return RedirectToAction("LearnerDashboard");
                 }
-                return RedirectToAction(result.RedirectAction, result.RedirectController);
+                else if (userRole == "instructor")
+                {
+                    return RedirectToAction("InstructorDashboard");
+                }
             }
 
-            if (!string.IsNullOrEmpty(result.ViewBagError))
-            {
-                ViewBag.Error = result.ViewBagError;
-            }
-
-            ViewBag.IsAuthenticated = result.ViewBagIsAuthenticated;
-            return View(result.ViewModel);
+            var result = await _homeService.GetGuestHomePageAsync();
+            ViewBag.IsAuthenticated = false;
+            return View(result);
         }
 
         public IActionResult Privacy()
@@ -56,65 +55,43 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "learner")]
         public async Task<IActionResult> LearnerDashboard()
         {
-            var result = await _homeServiceImpl.HandleLearnerDashboardAsync(User);
-
-            if (!result.IsSuccess)
+            var userId = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userId))
             {
-                if (!string.IsNullOrEmpty(result.TempDataErrorMessage))
-                {
-                    TempData["ErrorMessage"] = result.TempDataErrorMessage;
-                }
-
-                if (result.ShouldRedirect && !string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
-                {
-                    return RedirectToAction(result.RedirectAction, result.RedirectController);
-                }
-
-                if (result.ShouldRedirectToUserDashboard)
-                {
-                    return await RedirectToUserDashboard();
-                }
-
-                return RedirectToAction("Index", "Home");
+                TempData["ErrorMessage"] = "User not authenticated";
+                return RedirectToAction("Index", "Login");
             }
 
-            return View(result.ViewModel);
+            var result = await _homeService.GetLearnerDashboardAsync(userId);
+            return View(result);
         }
 
         [Authorize(Roles = "instructor")]
         public async Task<IActionResult> InstructorDashboard()
         {
-            var result = await _homeServiceImpl.HandleInstructorDashboardAsync(User);
-
-            if (!result.IsSuccess)
+            var userId = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userId))
             {
-                if (!string.IsNullOrEmpty(result.TempDataErrorMessage))
-                {
-                    TempData["ErrorMessage"] = result.TempDataErrorMessage;
-                }
-
-                if (result.ShouldRedirect && !string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
-                {
-                    return RedirectToAction(result.RedirectAction, result.RedirectController);
-                }
-
-                if (result.ShouldRedirectToUserDashboard)
-                {
-                    return await RedirectToUserDashboard();
-                }
-
-                return RedirectToAction("Index", "Home");
+                TempData["ErrorMessage"] = "User not authenticated";
+                return RedirectToAction("Index", "Login");
             }
 
-            return View(result.ViewModel);
+            var result = await _homeService.GetInstructorDashboardAsync(userId);
+            return View(result);
         }
 
         [HttpGet]
         [Authorize(Roles = "instructor")]
         public async Task<IActionResult> GetIncomeData(int days = 30)
         {
-            var result = await _homeServiceImpl.HandleGetIncomeDataAsync(User, days);
-            return Json(result.JsonResponse);
+            var userId = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new { success = false, message = "User not authenticated" });
+            }
+
+            var result = await _homeService.GetIncomeDataAsync(userId, days);
+            return Json(result);
         }
 
         [HttpPost]
@@ -169,16 +146,21 @@ namespace BrainStormEra_MVC.Controllers
 
         private async Task<IActionResult> RedirectToUserDashboard()
         {
-            var result = _homeServiceImpl.GetUserDashboardRedirect(User);
-
-            if (result.HasError)
+            var userRole = User.FindFirst("UserRole")?.Value;
+            if (userRole == "learner")
             {
-                TempData["ErrorMessage"] = result.ErrorMessage;
+                return RedirectToAction("LearnerDashboard");
+            }
+            else if (userRole == "instructor")
+            {
+                return RedirectToAction("InstructorDashboard");
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Invalid user role";
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 return RedirectToAction("Index", "Login");
             }
-
-            return RedirectToAction(result.RedirectAction, result.RedirectController);
         }
     }
 }

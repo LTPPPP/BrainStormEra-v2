@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using BusinessLogicLayer.Services.Interfaces;
+using BusinessLogicLayer.Services.Implementations;
 using DataAccessLayer.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
 
@@ -9,9 +10,9 @@ namespace BrainStormEra_MVC.Controllers
     public class PaymentController : BaseController
     {
         private readonly IPaymentService _paymentService;
-        private readonly ICourseService _courseService;
+        private readonly CourseService _courseService;
 
-        public PaymentController(IPaymentService paymentService, ICourseService courseService)
+        public PaymentController(IPaymentService paymentService, CourseService courseService)
         {
             _paymentService = paymentService;
             _courseService = courseService;

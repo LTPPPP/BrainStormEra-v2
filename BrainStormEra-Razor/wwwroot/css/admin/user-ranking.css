@@ -1,0 +1,264 @@
+/* User Ranking Page Styles */
+
+/* Statistics Cards */
+.stat-card {
+    /* Basic styling only */
+}
+
+/* User Ranking Table */
+.user-ranking-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.user-ranking-table thead th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 12px 8px;
+    border-bottom: 2px solid #dee2e6;
+    text-align: left;
+}
+
+.user-ranking-table tbody tr {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.user-ranking-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.user-ranking-table tbody td {
+    padding: 12px 8px;
+    vertical-align: middle;
+}
+
+/* Rank Badges */
+.rank-badge {
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    text-align: center;
+}
+
+.rank-1 {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.rank-2 {
+    background-color: #6c757d;
+    color: white;
+}
+
+.rank-3 {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.rank-badge i {
+    margin-right: 4px;
+}
+
+/* User Avatar */
+.user-avatar-small {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1px solid #dee2e6;
+}
+
+/* Progress Bar */
+.progress-thin {
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-thin .progress-bar {
+    border-radius: 4px;
+    font-size: 0.7rem;
+    line-height: 8px;
+    color: white;
+    font-weight: 600;
+}
+
+/* Badge Styles */
+.badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.badge-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.badge-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-dark {
+    background-color: #343a40;
+    color: white;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.empty-state h5 {
+    font-size: 1.25rem;
+    margin-bottom: 10px;
+    color: #495057;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    margin-bottom: 0;
+}
+
+/* Pagination */
+.pagination .page-link {
+    color: #007bff;
+    border: 1px solid #dee2e6;
+    padding: 8px 12px;
+}
+
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+    color: #007bff;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+/* Card Header */
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.card-header h6 {
+    color: #495057;
+    font-weight: 600;
+}
+
+.card-header h6 i {
+    margin-right: 8px;
+    color: #6c757d;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+    padding: 8px 16px;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-header {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.85rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .user-ranking-table {
+        font-size: 0.85rem;
+    }
+    
+    .user-ranking-table thead th,
+    .user-ranking-table tbody td {
+        padding: 8px 6px;
+    }
+    
+    .user-avatar-small {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .rank-badge {
+        font-size: 0.8rem;
+        padding: 6px 8px;
+    }
+    
+    .badge {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+    }
+    
+    .progress-thin {
+        height: 6px;
+    }
+    
+    .progress-thin .progress-bar {
+        font-size: 0.6rem;
+        line-height: 6px;
+    }
+}
+
+@media (max-width: 576px) {
+    .stat-card .card-body {
+        padding: 1rem;
+    }
+    
+    .stat-card .h5 {
+        font-size: 1.25rem;
+    }
+    
+    .stat-card .text-xs {
+        font-size: 0.7rem;
+    }
+    
+    .empty-state {
+        padding: 40px 15px;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+    }
+    
+    .empty-state h5 {
+        font-size: 1.25rem;
+    }
+}
+
+ 

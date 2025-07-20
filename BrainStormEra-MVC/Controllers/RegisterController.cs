@@ -13,19 +13,19 @@ namespace BrainStormEra_MVC.Controllers
         private readonly BrainStormEraContext _context;
         private readonly ILogger<RegisterController> _logger;
         private readonly IUserService _userService;
-        private readonly AuthServiceImpl _authServiceImpl;
+        private readonly AuthService _authService;
 
-        public RegisterController(BrainStormEraContext context, ILogger<RegisterController> logger, IUserService userService, AuthServiceImpl authServiceImpl)
+        public RegisterController(BrainStormEraContext context, ILogger<RegisterController> logger, IUserService userService, AuthService authService)
         {
             _context = context;
             _logger = logger;
             _userService = userService;
-            _authServiceImpl = authServiceImpl;
+            _authService = authService;
         }
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var result = await _authServiceImpl.GetRegisterViewModelAsync();
+            var result = await _authService.GetRegisterViewModelAsync();
 
             if (!result.Success)
             {
@@ -47,7 +47,7 @@ namespace BrainStormEra_MVC.Controllers
 
             try
             {
-                var result = await _authServiceImpl.RegisterUserAsync(model);
+                var result = await _authService.RegisterUserAsync(model);
 
                 if (!result.Success)
                 {
@@ -92,14 +92,14 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet]
         public async Task<IActionResult> CheckUsername(string username)
         {
-            var result = await _authServiceImpl.CheckUsernameAvailabilityAsync(username);
+            var result = await _authService.CheckUsernameAvailabilityAsync(username);
             return Json(new { valid = result.IsValid, message = result.Message });
         }
 
         [HttpGet]
         public async Task<IActionResult> CheckEmail(string email)
         {
-            var result = await _authServiceImpl.CheckEmailAvailabilityAsync(email);
+            var result = await _authService.CheckEmailAvailabilityAsync(email);
             return Json(new { valid = result.IsValid, message = result.Message });
         }
     }
