@@ -66,6 +66,12 @@ namespace BrainStormEra_Razor
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAvatarService, BusinessLogicLayer.Services.Implementations.AvatarService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementService, BusinessLogicLayer.Services.Implementations.AchievementService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementUnlockService, BusinessLogicLayer.Services.Implementations.AchievementUnlockService>();
+
+            // Register Achievement Mediator Service to break circular dependency
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementMediatorService, BusinessLogicLayer.Services.Implementations.AchievementMediatorService>();
+
+            // Register Lazy Achievement Service for additional circular dependency resolution
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ILazyAchievementService, BusinessLogicLayer.Services.Implementations.LazyAchievementService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementNotificationService, BusinessLogicLayer.Services.Implementations.AchievementNotificationService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementIconService, BusinessLogicLayer.Services.Implementations.AchievementIconService>();
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ICourseImageService, BusinessLogicLayer.Services.Implementations.CourseImageService>();
@@ -120,6 +126,8 @@ namespace BrainStormEra_Razor
 
             // Register Security Cleanup Background Service
             builder.Services.AddHostedService<BrainStormEra_Razor.Services.SecurityCleanupService>();
+
+            builder.Services.AddScoped<Func<BusinessLogicLayer.Services.Interfaces.ILessonService>>(sp => () => sp.GetRequiredService<BusinessLogicLayer.Services.Interfaces.ILessonService>());
 
 
             var app = builder.Build();

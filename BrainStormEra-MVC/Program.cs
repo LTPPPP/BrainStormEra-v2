@@ -172,6 +172,7 @@ namespace BrainStormEra_MVC
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAchievementRepo, DataAccessLayer.Repositories.AchievementRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.ICertificateRepo, DataAccessLayer.Repositories.CertificateRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IFeedbackRepo, DataAccessLayer.Repositories.FeedbackRepo>();
+            builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IAdminRepo, DataAccessLayer.Repositories.AdminRepo>();
 
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatbotRepo, DataAccessLayer.Repositories.ChatbotRepo>();
             builder.Services.AddScoped<DataAccessLayer.Repositories.Interfaces.IChatRepo, DataAccessLayer.Repositories.ChatRepo>();
@@ -190,6 +191,10 @@ namespace BrainStormEra_MVC
 
             // Register Lesson Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.LessonService>();
+
+            // Register factory for ILessonService to avoid circular dependencies
+            builder.Services.AddScoped<Func<BusinessLogicLayer.Services.Interfaces.ILessonService>>(sp => () => sp.GetRequiredService<BusinessLogicLayer.Services.Interfaces.ILessonService>());
+
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IQuestionService, BusinessLogicLayer.Services.Implementations.QuestionService>();
 
             // Register Question Service Implementation for business logic layer  
@@ -204,6 +209,12 @@ namespace BrainStormEra_MVC
 
             // Register Achievement Unlock Service for automatic achievement unlocking
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementUnlockService, BusinessLogicLayer.Services.Implementations.AchievementUnlockService>();
+
+            // Register Achievement Mediator Service to break circular dependency
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementMediatorService, BusinessLogicLayer.Services.Implementations.AchievementMediatorService>();
+
+            // Register Lazy Achievement Service for additional circular dependency resolution
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.ILazyAchievementService, BusinessLogicLayer.Services.Implementations.LazyAchievementService>();
 
             // Register Achievement Notification Service for achievement notifications
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAchievementNotificationService, BusinessLogicLayer.Services.Implementations.AchievementNotificationService>();

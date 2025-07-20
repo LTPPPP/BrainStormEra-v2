@@ -31,7 +31,7 @@ namespace BusinessLogicLayer.Services.Implementations
         private readonly BrainStormEraContext _context;
         private readonly IMemoryCache _cache;
         private readonly ICourseImageService _courseImageService;
-        private readonly LessonService _lessonService;
+        private readonly Func<ILessonService> _lessonServiceFactory;
         private readonly ILogger<CourseService> _logger;
         private readonly IServiceProvider _serviceProvider;
         private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(10);
@@ -43,7 +43,7 @@ namespace BusinessLogicLayer.Services.Implementations
             BrainStormEraContext context,
             IMemoryCache cache,
             ICourseImageService courseImageService,
-            LessonService lessonService,
+            Func<ILessonService> lessonServiceFactory,
             ILogger<CourseService> logger,
             IServiceProvider serviceProvider)
         {
@@ -53,7 +53,7 @@ namespace BusinessLogicLayer.Services.Implementations
             _context = context;
             _cache = cache;
             _courseImageService = courseImageService;
-            _lessonService = lessonService;
+            _lessonServiceFactory = lessonServiceFactory;
             _logger = logger;
             _serviceProvider = serviceProvider;
 
@@ -1776,7 +1776,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     foreach (var lesson in lessons.OrderBy(l => l.LessonOrder))
                     {
                         // Check if lesson is completed
-                        var isCompleted = await _lessonService.IsLessonCompletedAsync(userId, lesson.LessonId);
+                        var isCompleted = await _lessonServiceFactory().IsLessonCompletedAsync(userId, lesson.LessonId);
 
                         lessonViewModels.Add(new LearnLessonViewModel
                         {
@@ -1851,7 +1851,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
 
                 // Calculate overall course progress
-                var courseProgress = await _lessonService.GetLessonCompletionPercentageAsync(userId, courseId);
+                var courseProgress = await _lessonServiceFactory().GetLessonCompletionPercentageAsync(userId, courseId);
 
                 var viewModel = new LearnManagementViewModel
                 {
@@ -1909,7 +1909,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 // If lesson requires a specific lesson to be completed first
                 if (!string.IsNullOrEmpty(lesson.UnlockAfterLessonId))
                 {
-                    var isPrerequisiteCompleted = await _lessonService.IsLessonCompletedAsync(userId, lesson.UnlockAfterLessonId);
+                    var isPrerequisiteCompleted = await _lessonServiceFactory().IsLessonCompletedAsync(userId, lesson.UnlockAfterLessonId);
                     return !isPrerequisiteCompleted;
                 }
 
@@ -1923,7 +1923,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 if (previousLessonInOrder != null)
                 {
-                    var isPreviousCompleted = await _lessonService.IsLessonCompletedAsync(userId, previousLessonInOrder.LessonId);
+                    var isPreviousCompleted = await _lessonServiceFactory().IsLessonCompletedAsync(userId, previousLessonInOrder.LessonId);
                     return !isPreviousCompleted;
                 }
 

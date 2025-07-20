@@ -16,20 +16,20 @@ namespace BusinessLogicLayer.Services.Implementations
         private readonly ILessonRepo _lessonRepo;
         private readonly IChapterRepo _chapterRepo;
         private readonly BrainStormEraContext _context;
-        private readonly IAchievementUnlockService _achievementUnlockService;
+        private readonly IAchievementMediatorService _achievementMediatorService;
         private readonly ILogger<LessonService> _logger;
 
         public LessonService(
             ILessonRepo lessonRepo,
             IChapterRepo chapterRepo,
             BrainStormEraContext context,
-            IAchievementUnlockService achievementUnlockService,
+            IAchievementMediatorService achievementMediatorService,
             ILogger<LessonService> logger)
         {
             _lessonRepo = lessonRepo;
             _chapterRepo = chapterRepo;
             _context = context;
-            _achievementUnlockService = achievementUnlockService;
+            _achievementMediatorService = achievementMediatorService;
             _logger = logger;
         }
 
@@ -702,7 +702,7 @@ namespace BusinessLogicLayer.Services.Implementations
                         // Check and unlock course completion achievements
                         try
                         {
-                            var unlockedAchievements = await _achievementUnlockService.CheckCourseCompletionAchievementsAsync(userId, courseId);
+                            var unlockedAchievements = await _achievementMediatorService.CheckCourseCompletionAchievementsAsync(userId, courseId);
                             if (unlockedAchievements.Any())
                             {
                                 _logger.LogInformation("Unlocked {AchievementCount} achievements for user {UserId} completing course {CourseId}",
