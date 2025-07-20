@@ -1528,3 +1528,205 @@
 .course-list li:last-child {
   border-bottom: none;
 }
+
+/* =============================
+   COURSE DETAILS MODAL STYLES
+   ============================= */
+
+.course-details-modal .modal-dialog {
+  max-width: 800px;
+  width: 95vw;
+  margin: 2rem auto;
+}
+
+.course-details-modal .modal-content {
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  background: var(--bg-white, #fff);
+}
+
+.course-details-modal .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 2rem 1.5rem;
+}
+
+.course-details-modal .course-details-header {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.course-details-modal .course-details-image {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  flex-shrink: 0;
+}
+
+.course-details-modal .course-details-info {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.course-details-modal .course-details-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  word-break: break-word;
+}
+
+.course-details-modal .course-details-instructor {
+  color: var(--text-muted, #888);
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.course-details-modal .course-details-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem 2.2rem;
+  margin-bottom: 1rem;
+}
+
+.course-details-modal .stat-item {
+  min-width: 90px;
+  font-size: 0.98rem;
+}
+
+.course-details-modal .stat-item-value {
+  font-weight: 600;
+  display: block;
+}
+
+.course-details-modal .stat-item-label {
+  color: var(--text-muted, #888);
+  font-size: 0.85rem;
+}
+
+.course-details-modal .course-details-section {
+  margin-top: 2rem;
+}
+
+.course-details-modal .section-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+}
+
+.course-details-modal .course-description {
+  font-size: 1rem;
+  color: var(--text-color, #222);
+  line-height: 1.6;
+  background: var(--bg-light, #f8f9fa);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.course-details-modal .chapters-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.course-details-modal .chapter-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg-light, #f8f9fa);
+  border-radius: 7px;
+  padding: 0.7rem 1rem;
+}
+
+.course-details-modal .chapter-order {
+  font-weight: 700;
+  color: var(--primary-color, #007bff);
+  margin-right: 0.5rem;
+}
+
+.course-details-modal .chapter-name {
+  font-weight: 500;
+}
+
+.course-details-modal .chapter-stats {
+  color: var(--text-muted, #888);
+  font-size: 0.92rem;
+}
+
+.course-details-modal .reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.course-details-modal .review-item {
+  background: var(--bg-light, #f8f9fa);
+  border-radius: 7px;
+  padding: 0.8rem 1rem;
+}
+
+.course-details-modal .review-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.course-details-modal .review-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.course-details-modal .review-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #eee;
+}
+
+.course-details-modal .review-rating {
+  color: #f7b731;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.course-details-modal .review-comment {
+  color: var(--text-color, #222);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .course-details-modal .modal-dialog {
+    max-width: 98vw;
+  }
+  .course-details-modal .course-details-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.2rem;
+  }
+  .course-details-modal .course-details-image {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .course-details-modal .modal-body {
+    padding: 1rem 0.5rem;
+    max-height: 60vh;
+  }
+  .course-details-modal .course-details-title {
+    font-size: 1.1rem;
+  }
+  .course-details-modal .section-title {
+    font-size: 1rem;
+  }
+}
