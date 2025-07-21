@@ -22,6 +22,56 @@ namespace BusinessLogicLayer.Services.Implementations
             _logger = logger;
         }
 
+        // Hàm dùng chung lấy danh sách chat users theo role
+        private async Task<List<Account>> GetAvailableChatUsersAsync(string currentUserId)
+        {
+            var currentUser = await _userRepo.GetByIdAsync(currentUserId);
+            List<Account> allUsers = new List<Account>();
+            if (currentUser != null && currentUser.UserRole == "instructor")
+            {
+                // Lấy tất cả course mà instructor là tác giả
+                var instructorCourses = await _courseRepo.GetInstructorCoursesAsync(currentUserId, null, null, 1, int.MaxValue);
+                // Lấy tất cả userId đã enroll vào các course này
+                var enrolledStudentIds = new HashSet<string>();
+                foreach (var course in instructorCourses)
+                {
+                    var userIds = await _courseRepo.GetEnrolledUserIdsAsync(course.CourseId);
+                    foreach (var id in userIds)
+                        enrolledStudentIds.Add(id);
+                }
+                // Lấy thông tin account của các học viên này
+                var allUsersList = await _userRepo.GetAllUsersAsync(null, null, 1, int.MaxValue);
+                var enrolledStudents = allUsersList.Where(u => enrolledStudentIds.Contains(u.UserId)).ToList();
+                // Lấy users đã từng chat
+                var users = await _chatService.GetChatUsersAsync(currentUserId);
+                // Hợp nhất
+                allUsers = users.Union(enrolledStudents).GroupBy(u => u.UserId).Select(g => g.First()).ToList();
+            }
+            else if (currentUser != null && currentUser.UserRole == "learner")
+            {
+                // Lấy tất cả course mà learner đã enroll
+                var enrollments = await _courseRepo.GetUserEnrollmentsAsync(currentUserId);
+                var instructorIds = enrollments
+                    .Select(e => e.Course.AuthorId)
+                    .Where(id => !string.IsNullOrEmpty(id) && id != currentUserId)
+                    .Distinct()
+                    .ToList();
+                // Lấy thông tin account của các instructor này
+                var allUsersList = await _userRepo.GetAllUsersAsync(null, null, 1, int.MaxValue);
+                var instructors = allUsersList.Where(u => instructorIds.Contains(u.UserId)).ToList();
+                // Lấy users đã từng chat
+                var users = await _chatService.GetChatUsersAsync(currentUserId);
+                // Hợp nhất
+                allUsers = users.Union(instructors).GroupBy(u => u.UserId).Select(g => g.First()).ToList();
+            }
+            else
+            {
+                // Giữ nguyên logic cũ cho các role khác
+                allUsers = await _chatService.GetChatUsersAsync(currentUserId);
+            }
+            return allUsers;
+        }
+
         public async Task<ServiceResult<ChatIndexViewModel>> GetChatIndexViewModelAsync(string currentUserId)
         {
             try
@@ -31,8 +81,9 @@ namespace BusinessLogicLayer.Services.Implementations
                     return ServiceResult<ChatIndexViewModel>.Failure("User not authenticated");
                 }
 
-                var users = await _chatService.GetChatUsersAsync(currentUserId);
-                var chatUsers = await MapToChatUserDTOsAsync(users, currentUserId);
+                var allUsers = await GetAvailableChatUsersAsync(currentUserId);
+
+                var chatUsers = await MapToChatUserDTOsAsync(allUsers, currentUserId);
 
                 var viewModel = new ChatIndexViewModel
                 {
@@ -63,9 +114,9 @@ namespace BusinessLogicLayer.Services.Implementations
                     return ServiceResult<ConversationViewModel>.Failure("Receiver ID is required");
                 }
 
-                // Get chat users for sidebar
-                var users = await _chatService.GetChatUsersAsync(currentUserId);
-                var chatUsers = await MapToChatUserDTOsAsync(users, currentUserId);
+                // Get chat users for sidebar (dùng logic giống trang Index)
+                var allUsers = await GetAvailableChatUsersAsync(currentUserId);
+                var chatUsers = await MapToChatUserDTOsAsync(allUsers, currentUserId);
 
                 // Get messages
                 var messages = await _chatService.GetConversationMessagesAsync(currentUserId, receiverId);
