@@ -1,4 +1,5 @@
 using BusinessLogicLayer.Services.Implementations;
+using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BrainStormEra_MVC.Controllers
@@ -7,9 +8,9 @@ namespace BrainStormEra_MVC.Controllers
     [Route("api/[controller]")]
     public class ChatbotController : ControllerBase
     {
-        private readonly ChatbotService _chatbotService;
+        private readonly IChatbotService _chatbotService;
 
-        public ChatbotController(ChatbotService chatbotService)
+        public ChatbotController(IChatbotService chatbotService)
         {
             _chatbotService = chatbotService;
         }
