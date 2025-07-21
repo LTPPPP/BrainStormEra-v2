@@ -1,16 +1,16 @@
 using DataAccessLayer.Models;
 using DataAccessLayer.Models.DTOs;
 using BusinessLogicLayer.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
+using DataAccessLayer.Repositories.Interfaces;
 using Microsoft.Extensions.Configuration;
-using DataAccessLayer.Data;
 using BusinessLogicLayer.Utilities;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
     public class PaymentService : IPaymentService
     {
-        private readonly BrainStormEraContext _context;
+        private readonly IBaseRepo<PaymentTransaction> _paymentRepo;
+        private readonly ICourseRepo _courseRepo;
         private readonly IConfiguration _configuration;
         private readonly IPointsService _pointsService;
 
@@ -19,9 +19,10 @@ namespace BusinessLogicLayer.Services.Implementations
         private readonly string _vnp_HashSecret;
         private readonly string _vnp_Url;
 
-        public PaymentService(BrainStormEraContext context, IConfiguration configuration, IPointsService pointsService)
+        public PaymentService(IBaseRepo<PaymentTransaction> paymentRepo, ICourseRepo courseRepo, IConfiguration configuration, IPointsService pointsService)
         {
-            _context = context;
+            _paymentRepo = paymentRepo;
+            _courseRepo = courseRepo;
             _configuration = configuration;
             _pointsService = pointsService;
 
@@ -54,12 +55,12 @@ namespace BusinessLogicLayer.Services.Implementations
                     TransactionUpdatedAt = DateTime.Now
                 };
 
-                _context.PaymentTransactions.Add(transaction);
-                await _context.SaveChangesAsync();
+                await _paymentRepo.AddAsync(transaction);
+                await _paymentRepo.SaveChangesAsync();
                 Console.WriteLine($"Created transaction record in database: {transactionId}");
 
                 // Get course info for description
-                var course = await _context.Courses.FindAsync(courseId);
+                var course = await _courseRepo.GetCourseByIdAsync(courseId);
                 Console.WriteLine($"Found course: {course?.CourseName ?? "Course not found"}");
 
                 var orderInfo = $"Course payment: {course?.CourseName ?? "Course"}";
@@ -133,8 +134,8 @@ namespace BusinessLogicLayer.Services.Implementations
                     TransactionUpdatedAt = DateTime.Now
                 };
 
-                _context.PaymentTransactions.Add(transaction);
-                await _context.SaveChangesAsync();
+                await _paymentRepo.AddAsync(transaction);
+                await _paymentRepo.SaveChangesAsync();
                 Console.WriteLine($"Created top-up transaction record in database: {transactionId}");
 
                 var orderInfo = $"Account top up - {amount:N0} VND";
@@ -220,8 +221,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 Console.WriteLine($"Processing transaction: {vnp_TxnRef}, Response Code: {vnp_ResponseCode}");
 
                 // Find transaction
-                var transaction = await _context.PaymentTransactions
-                    .FirstOrDefaultAsync(t => t.TransactionId == vnp_TxnRef);
+                var transaction = await _paymentRepo.SingleOrDefaultAsync(t => t.TransactionId == vnp_TxnRef);
 
                 if (transaction == null)
                 {
@@ -243,7 +243,8 @@ namespace BusinessLogicLayer.Services.Implementations
                     // Update user points (1 VND = 1 point)
                     await _pointsService.UpdateUserPointsAsync(transaction.UserId, transaction.Amount);
 
-                    await _context.SaveChangesAsync();
+                    await _paymentRepo.UpdateAsync(transaction);
+                    await _paymentRepo.SaveChangesAsync();
 
                     return new PaymentResponseDto
                     {
@@ -263,7 +264,8 @@ namespace BusinessLogicLayer.Services.Implementations
                     transaction.TransactionStatus = "FAILED";
                     transaction.TransactionUpdatedAt = DateTime.Now;
 
-                    await _context.SaveChangesAsync();
+                    await _paymentRepo.UpdateAsync(transaction);
+                    await _paymentRepo.SaveChangesAsync();
 
                     return new PaymentResponseDto
                     {
@@ -288,17 +290,14 @@ namespace BusinessLogicLayer.Services.Implementations
 
         public async Task<PaymentTransaction?> GetTransactionByIdAsync(string transactionId)
         {
-            return await _context.PaymentTransactions
-                .Include(t => t.User)
-                .FirstOrDefaultAsync(t => t.TransactionId == transactionId);
+            var transaction = await _paymentRepo.GetByIdAsync(transactionId);
+            return transaction;
         }
 
         public async Task<List<PaymentTransaction>> GetUserTransactionsAsync(string userId)
         {
-            return await _context.PaymentTransactions
-                .Where(t => t.UserId == userId)
-                .OrderByDescending(t => t.TransactionCreatedAt)
-                .ToListAsync();
+            var transactions = await _paymentRepo.FindAsync(t => t.UserId == userId);
+            return transactions.OrderByDescending(t => t.TransactionCreatedAt).ToList();
         }
 
         public async Task<bool> UpdateUserPointsAsync(string userId, decimal points)

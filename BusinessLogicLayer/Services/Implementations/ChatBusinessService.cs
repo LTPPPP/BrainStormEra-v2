@@ -2,6 +2,7 @@ using BusinessLogicLayer.DTOs.Chat;
 using BusinessLogicLayer.DTOs.Common;
 using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Models;
+using DataAccessLayer.Repositories.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace BusinessLogicLayer.Services.Implementations
@@ -9,11 +10,15 @@ namespace BusinessLogicLayer.Services.Implementations
     public class ChatBusinessService : IChatBusinessService
     {
         private readonly IChatService _chatService;
+        private readonly ICourseRepo _courseRepo;
+        private readonly IUserRepo _userRepo;
         private readonly ILogger<ChatBusinessService> _logger;
 
-        public ChatBusinessService(IChatService chatService, ILogger<ChatBusinessService> logger)
+        public ChatBusinessService(IChatService chatService, ICourseRepo courseRepo, IUserRepo userRepo, ILogger<ChatBusinessService> logger)
         {
             _chatService = chatService;
+            _courseRepo = courseRepo;
+            _userRepo = userRepo;
             _logger = logger;
         }
 
@@ -309,6 +314,9 @@ namespace BusinessLogicLayer.Services.Implementations
                 var lastMessage = await _chatService.GetLastMessageBetweenUsersAsync(currentUserId, user.UserId);
                 var unreadCount = await _chatService.GetUnreadMessageCountAsync(currentUserId, user.UserId);
 
+                // Get course relationships
+                var courseRelationships = await GetCourseRelationshipsAsync(currentUserId, user.UserId);
+
                 chatUsers.Add(new ChatUserDTO
                 {
                     UserId = user.UserId,
@@ -318,11 +326,71 @@ namespace BusinessLogicLayer.Services.Implementations
                     IsOnline = false, // Default to false, can be updated with real-time status
                     LastMessage = lastMessage?.MessageContent,
                     LastMessageTime = lastMessage?.MessageCreatedAt,
-                    UnreadCount = unreadCount
+                    UnreadCount = unreadCount,
+                    UserRole = user.UserRole,
+                    CourseRelationships = courseRelationships
                 });
             }
 
             return chatUsers.OrderByDescending(u => u.LastMessageTime).ToList();
+        }
+
+        private async Task<List<CourseRelationshipInfo>> GetCourseRelationshipsAsync(string currentUserId, string otherUserId)
+        {
+            try
+            {
+                var relationships = new List<CourseRelationshipInfo>();
+
+                // Get current user's role
+                var currentUser = await _userRepo.GetByIdAsync(currentUserId);
+                if (currentUser == null) return relationships;
+
+                if (currentUser.UserRole == "LEARNER")
+                {
+                    // Current user is a learner, so other user is an instructor
+                    // Get courses where current user is enrolled and other user is the instructor
+                    var enrollments = await _courseRepo.GetUserEnrollmentsAsync(currentUserId);
+                    var instructorCourses = enrollments
+                        .Where(e => e.Course.AuthorId == otherUserId)
+                        .Select(e => new CourseRelationshipInfo
+                        {
+                            CourseId = e.CourseId,
+                            CourseName = e.Course.CourseName,
+                            RelationshipType = "Enrolled",
+                            EnrollmentDate = e.EnrollmentCreatedAt,
+                            ProgressPercentage = e.ProgressPercentage ?? 0
+                        })
+                        .ToList();
+
+                    relationships.AddRange(instructorCourses);
+                }
+                else if (currentUser.UserRole == "INSTRUCTOR")
+                {
+                    // Current user is an instructor, so other user is a learner
+                    // Get courses where other user is enrolled and current user is the instructor
+                    var otherUserEnrollments = await _courseRepo.GetUserEnrollmentsAsync(otherUserId);
+                    var teachingCourses = otherUserEnrollments
+                        .Where(e => e.Course.AuthorId == currentUserId)
+                        .Select(e => new CourseRelationshipInfo
+                        {
+                            CourseId = e.CourseId,
+                            CourseName = e.Course.CourseName,
+                            RelationshipType = "Teaching",
+                            EnrollmentDate = e.EnrollmentCreatedAt,
+                            ProgressPercentage = e.ProgressPercentage ?? 0
+                        })
+                        .ToList();
+
+                    relationships.AddRange(teachingCourses);
+                }
+
+                return relationships;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting course relationships between {CurrentUserId} and {OtherUserId}", currentUserId, otherUserId);
+                return new List<CourseRelationshipInfo>();
+            }
         }
 
         public async Task<ServiceResult<string?>> GetMostRecentConversationUserIdAsync(string currentUserId)

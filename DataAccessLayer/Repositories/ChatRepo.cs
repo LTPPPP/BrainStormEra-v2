@@ -165,24 +165,66 @@ namespace DataAccessLayer.Repositories
         }
         public async Task<List<Account>> GetChatUsersAsync(string currentUserId)
         {
-            // Get all users that the current user has enrolled courses with (instructors)
-            // or users who have enrolled in courses created by current user (learners)
-            var instructors = await _context.Accounts
-                .Where(a => a.UserId != currentUserId && a.UserRole == "INSTRUCTOR")
-                .Where(a => _context.Enrollments.Any(e =>
-                    e.UserId == currentUserId &&
-                    e.Course.AuthorId == a.UserId))
-                .ToListAsync();
+            try
+            {
+                // Get current user to determine their role
+                var currentUser = await _context.Accounts
+                    .FirstOrDefaultAsync(a => a.UserId == currentUserId);
 
-            var learners = await _context.Accounts
-                .Where(a => a.UserId != currentUserId && a.UserRole == "LEARNER")
-                .Where(a => _context.Enrollments.Any(e =>
-                    e.UserId == a.UserId &&
-                    e.Course.AuthorId == currentUserId))
-                .ToListAsync();
+                if (currentUser == null)
+                    return new List<Account>();
 
-            var allUsers = instructors.Concat(learners).Distinct().ToList();
-            return allUsers;
+                var allUsers = new List<Account>();
+
+                if (currentUser.UserRole == "LEARNER")
+                {
+                    // For learners: Get instructors whose courses they have enrolled in
+                    var instructors = await _context.Accounts
+                        .Where(a => a.UserId != currentUserId && a.UserRole == "INSTRUCTOR")
+                        .Where(a => _context.Enrollments.Any(e =>
+                            e.UserId == currentUserId &&
+                            e.Course.AuthorId == a.UserId &&
+                            e.EnrollmentStatus == 1)) // Only active enrollments
+                        .ToListAsync();
+
+                    allUsers.AddRange(instructors);
+                }
+                else if (currentUser.UserRole == "INSTRUCTOR")
+                {
+                    // For instructors: Get learners who have enrolled in their courses
+                    var learners = await _context.Accounts
+                        .Where(a => a.UserId != currentUserId && a.UserRole == "LEARNER")
+                        .Where(a => _context.Enrollments.Any(e =>
+                            e.UserId == a.UserId &&
+                            e.Course.AuthorId == currentUserId &&
+                            e.EnrollmentStatus == 1)) // Only active enrollments
+                        .ToListAsync();
+
+                    allUsers.AddRange(learners);
+                }
+                else if (currentUser.UserRole == "ADMIN")
+                {
+                    // For admins: Get all users (both instructors and learners)
+                    var instructors = await _context.Accounts
+                        .Where(a => a.UserId != currentUserId && a.UserRole == "INSTRUCTOR")
+                        .ToListAsync();
+
+                    var learners = await _context.Accounts
+                        .Where(a => a.UserId != currentUserId && a.UserRole == "LEARNER")
+                        .ToListAsync();
+
+                    allUsers.AddRange(instructors);
+                    allUsers.AddRange(learners);
+                }
+
+                // Remove duplicates and order by last login
+                return allUsers.Distinct().OrderByDescending(u => u.LastLogin).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting chat users for user {UserId}", currentUserId);
+                return new List<Account>();
+            }
         }
         public async Task<MessageEntity?> GetLastMessageBetweenUsersAsync(string userId1, string userId2)
         {

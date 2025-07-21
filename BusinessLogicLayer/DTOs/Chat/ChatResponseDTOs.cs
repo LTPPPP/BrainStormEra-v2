@@ -27,6 +27,19 @@ namespace BusinessLogicLayer.DTOs.Chat
         public string? LastMessage { get; set; }
         public DateTime? LastMessageTime { get; set; }
         public int UnreadCount { get; set; }
+
+        // Course relationship information
+        public string UserRole { get; set; } = string.Empty;
+        public List<CourseRelationshipInfo> CourseRelationships { get; set; } = new();
+    }
+
+    public class CourseRelationshipInfo
+    {
+        public string CourseId { get; set; } = string.Empty;
+        public string CourseName { get; set; } = string.Empty;
+        public string RelationshipType { get; set; } = string.Empty; // "Enrolled" or "Teaching"
+        public DateTime EnrollmentDate { get; set; }
+        public decimal ProgressPercentage { get; set; }
     }
 
     public class ConversationViewModel
