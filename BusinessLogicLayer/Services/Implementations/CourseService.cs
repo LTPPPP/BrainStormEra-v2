@@ -33,7 +33,7 @@ namespace BusinessLogicLayer.Services.Implementations
         private readonly Func<ILessonService> _lessonServiceFactory;
         private readonly ILogger<CourseService> _logger;
         private readonly IServiceProvider _serviceProvider;
-        private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(10);
+        // Removed CacheExpiration and any IMemoryCache fields
 
         public CourseService(
             ICourseRepo courseRepo,
