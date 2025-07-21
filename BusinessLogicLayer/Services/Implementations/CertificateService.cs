@@ -18,17 +18,14 @@ namespace BusinessLogicLayer.Services.Implementations
     {
         private readonly ICertificateRepo _certificateRepo;
         private readonly ICourseRepo _courseRepo;
-        private readonly IMemoryCache _cache;
         private readonly ILogger<CertificateService> _logger;
         private readonly BrainStormEraContext _context;
         private readonly IUserContextService _userContextService;
         private readonly IResponseService _responseService;
-        private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(15);
 
         public CertificateService(
             ICertificateRepo certificateRepo,
             ICourseRepo courseRepo,
-            IMemoryCache cache,
             ILogger<CertificateService> logger,
             BrainStormEraContext context,
             IUserContextService userContextService,
@@ -36,7 +33,6 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             _certificateRepo = certificateRepo;
             _courseRepo = courseRepo;
-            _cache = cache;
             _logger = logger;
             _context = context;
             _userContextService = userContextService;
@@ -47,10 +43,6 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                var cacheKey = $"UserCertificates_{userId}";
-                if (_cache.TryGetValue(cacheKey, out List<CertificateSummaryViewModel>? cached))
-                    return cached!;
-
                 var enrollments = await _certificateRepo.GetUserCompletedEnrollmentsAsync(userId, null, 1, int.MaxValue);
                 var result = enrollments.Select(e => new CertificateSummaryViewModel
                 {
@@ -62,13 +54,6 @@ namespace BusinessLogicLayer.Services.Implementations
                     EnrollmentDate = e.EnrollmentCreatedAt,
                     FinalScore = e.ProgressPercentage ?? 0
                 }).ToList();
-
-                var cacheOptions = new MemoryCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = CacheExpiration,
-                    Size = 1
-                };
-                _cache.Set(cacheKey, result, cacheOptions);
                 return result;
             }
             catch (Exception ex)
@@ -82,10 +67,6 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                var cacheKey = $"CertificateDetails_{userId}_{courseId}";
-                if (_cache.TryGetValue(cacheKey, out CertificateDetailsViewModel? cached))
-                    return cached;
-
                 var certificateData = await _certificateRepo.GetCertificateDataAsync(userId, courseId);
                 if (certificateData == null) return null;
 
@@ -107,13 +88,6 @@ namespace BusinessLogicLayer.Services.Implementations
                     FinalScore = certificateData.ProgressPercentage ?? 0,
                     CertificateCode = await GenerateCertificateCodeAsync(courseId, userId)
                 };
-
-                var cacheOptions = new MemoryCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = CacheExpiration,
-                    Size = 1
-                };
-                _cache.Set(cacheKey, result, cacheOptions);
                 return result;
             }
             catch (Exception ex)
@@ -125,17 +99,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
         public async Task<bool> ValidateCertificateAsync(string userId, string courseId)
         {
-            var cacheKey = $"CertificateValid_{userId}_{courseId}";
-            if (_cache.TryGetValue(cacheKey, out bool cached))
-                return cached;
-
             var result = await _certificateRepo.HasValidCertificateAsync(userId, courseId);
-            var cacheOptions = new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = CacheExpiration,
-                Size = 1
-            };
-            _cache.Set(cacheKey, result, cacheOptions);
             return result;
         }
 
@@ -146,28 +110,12 @@ namespace BusinessLogicLayer.Services.Implementations
 
         public async Task InvalidateCacheAsync(string userId)
         {
-            var patterns = new[]
-            {
-                $"UserCertificates_{userId}",
-                $"CertificateDetails_{userId}_",
-                $"CertificateValid_{userId}_"
-            };
-
-            await Task.Run(() =>
-            {
-                foreach (var pattern in patterns)
-                {
-                    _cache.Remove(pattern);
-                }
-            });
+            // Method removed: no longer needed
         }
 
         public async Task<List<CertificateSummaryViewModel>> GetCachedUserCertificatesAsync(string userId)
         {
-            var cacheKey = $"UserCertificates_{userId}";
-            if (_cache.TryGetValue(cacheKey, out List<CertificateSummaryViewModel>? cached))
-                return cached!;
-
+            // Method removed: no longer needed
             return await GetUserCertificatesAsync(userId);
         }
 
@@ -175,10 +123,6 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                var cacheKey = $"UserCertificatesPaginated_{userId}_{search}_{page}_{pageSize}";
-                if (_cache.TryGetValue(cacheKey, out CertificateListViewModel? cached))
-                    return cached!;
-
                 var enrollments = await _certificateRepo.GetUserCompletedEnrollmentsAsync(userId, search, page, pageSize);
                 var totalCount = await _certificateRepo.GetUserCompletedEnrollmentsCountAsync(userId, search);
 
@@ -204,13 +148,6 @@ namespace BusinessLogicLayer.Services.Implementations
                     TotalCertificates = totalCount,
                     TotalPages = totalPages
                 };
-
-                var cacheOptions = new MemoryCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = CacheExpiration,
-                    Size = 1
-                };
-                _cache.Set(cacheKey, result, cacheOptions);
                 return result;
             }
             catch (Exception ex)
@@ -381,7 +318,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var certificateDetails = await GetCachedCertificateDetails(courseId, userId);
+                var certificateDetails = await GetCertificateDetailsAsync(userId, courseId);
                 if (certificateDetails == null)
                 {
                     _logger.LogWarning("Certificate not found for course {CourseId} and user {UserId}", courseId, userId);
@@ -436,7 +373,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                var isValid = await GetCachedCertificateValidation(courseId, userId);
+                var isValid = await ValidateCertificateAsync(userId, courseId);
                 if (!isValid)
                 {
                     _logger.LogWarning("Certificate validation failed for course {CourseId} and user {UserId}", courseId, userId);
@@ -467,41 +404,14 @@ namespace BusinessLogicLayer.Services.Implementations
 
         private async Task<CertificateDetailsViewModel?> GetCachedCertificateDetails(string courseId, string userId)
         {
-            var cacheKey = $"CertificateDetails_{userId}_{courseId}";
-            if (_cache.TryGetValue(cacheKey, out CertificateDetailsViewModel? cachedDetails))
-            {
-                return cachedDetails;
-            }
-
-            var details = await GetCertificateDetailsAsync(userId, courseId);
-            if (details != null)
-            {
-                var cacheOptions = new MemoryCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = CacheExpiration,
-                    Size = 1
-                };
-                _cache.Set(cacheKey, details, cacheOptions);
-            }
-            return details;
+            // Method removed: no longer needed
+            return await GetCertificateDetailsAsync(userId, courseId);
         }
 
         private async Task<bool> GetCachedCertificateValidation(string courseId, string userId)
         {
-            var cacheKey = $"CertificateValid_{userId}_{courseId}";
-            if (_cache.TryGetValue(cacheKey, out bool cachedValid))
-            {
-                return cachedValid;
-            }
-
-            var isValid = await ValidateCertificateAsync(userId, courseId);
-            var cacheOptions = new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = CacheExpiration,
-                Size = 1
-            };
-            _cache.Set(cacheKey, isValid, cacheOptions);
-            return isValid;
+            // Method removed: no longer needed
+            return await ValidateCertificateAsync(userId, courseId);
         }
     }
 
