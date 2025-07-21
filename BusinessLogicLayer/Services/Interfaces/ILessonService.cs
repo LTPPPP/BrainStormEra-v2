@@ -1,6 +1,7 @@
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
 using DataAccessLayer.Models.ViewModels;
+using BusinessLogicLayer.Services.Implementations;
 
 namespace BusinessLogicLayer.Services.Interfaces
 {
@@ -25,6 +26,14 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<Lesson?> GetLessonWithDetailsAsync(string lessonId);
         Task<decimal> GetLessonCompletionPercentageAsync(string userId, string courseId);
         Task<bool> UpdateEnrollmentProgressAsync(string userId, string courseId, decimal progressPercentage, string? currentLessonId = null);
+        // Controller-facing methods
+        Task<LessonService.SelectLessonTypeResult> GetSelectLessonTypeViewModelAsync(string chapterId);
+        Task<LessonService.SelectLessonTypeResult> ProcessSelectLessonTypeAsync(SelectLessonTypeViewModel model, Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary modelState);
+        Task<LessonService.CreateLessonViewResult> GetCreateLessonViewModelAsync(string chapterId, int lessonTypeId);
+        Task<LessonService.CreateLessonResult> ProcessCreateLessonAsync(CreateLessonViewModel model, Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary modelState);
+        Task<LessonService.EditLessonResult> GetEditLessonViewModelAsync(string lessonId, string userId);
+        Task<LessonService.UpdateLessonResult> ProcessUpdateLessonAsync(string lessonId, CreateLessonViewModel model, Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary modelState, string userId);
+        Task<LessonService.DeleteLessonResult> ProcessDeleteLessonAsync(string lessonId, string userId, string courseId);
     }
 }
 

@@ -11,10 +11,10 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class LessonController : BaseController
     {
-        private readonly LessonService _lessonService;
+        private readonly ILessonService _lessonService;
         private readonly ILogger<LessonController> _logger;
 
-        public LessonController(LessonService lessonService, ILogger<LessonController> logger) : base()
+        public LessonController(ILessonService lessonService, ILogger<LessonController> logger) : base()
         {
             _lessonService = lessonService;
             _logger = logger;
