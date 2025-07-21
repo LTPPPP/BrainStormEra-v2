@@ -59,6 +59,16 @@
     @if (User.Identity?.IsAuthenticated == true)
     {
         <script src="~/js/shared/notification-system.js" asp-append-version="true"></script>
+    }
+
+    @{
+        var userRole = User.FindFirst("UserRole")?.Value?.ToLower();
+        var isAdmin = userRole == "admin";
+    }
+    
+    @* Only load chatbot script for admin (Razor Pages are admin-only) *@
+    @if (User.Identity?.IsAuthenticated == true && isAdmin)
+    {
         <script src="~/js/components/chatbot.js" asp-append-version="true"></script>
     }
 

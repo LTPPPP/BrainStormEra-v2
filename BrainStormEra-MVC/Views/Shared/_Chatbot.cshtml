@@ -1,4 +1,21 @@
-@if (User.Identity?.IsAuthenticated == true)
+@{
+    var userRole = User.FindFirst("UserRole")?.Value?.ToLower();
+    var isAdmin = userRole == "admin";
+    var isInstructor = userRole == "instructor";
+    var isLearner = userRole == "learner";
+    
+    // Check if current page is a lesson page for learner
+    var isLessonPage = false;
+    if (isLearner)
+    {
+        var controller = ViewContext.RouteData.Values["controller"]?.ToString()?.ToLower();
+        var action = ViewContext.RouteData.Values["action"]?.ToString()?.ToLower();
+        isLessonPage = controller == "lesson" && (action == "learn" || action == "index");
+    }
+}
+
+@if (User.Identity?.IsAuthenticated == true && 
+     ((isAdmin) || (isLearner && isLessonPage)))
 {
     <!-- Chatbot will be initialized by JavaScript -->
     <div id="chatbot-root"></div>

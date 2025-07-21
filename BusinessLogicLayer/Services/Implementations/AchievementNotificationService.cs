@@ -1,9 +1,8 @@
 using Microsoft.Extensions.Logging;
-using DataAccessLayer.Data;
+using DataAccessLayer.Repositories.Interfaces;
 using DataAccessLayer.Models;
 using BusinessLogicLayer.Services.Interfaces;
 using BusinessLogicLayer.DTOs.Common;
-using Microsoft.EntityFrameworkCore;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
@@ -12,16 +11,25 @@ namespace BusinessLogicLayer.Services.Implementations
     /// </summary>
     public class AchievementNotificationService : IAchievementNotificationService
     {
-        private readonly BrainStormEraContext _context;
+        private readonly IAchievementRepo _achievementRepo;
+        private readonly INotificationRepo _notificationRepo;
+        private readonly IUserRepo _userRepo;
+        private readonly ICourseRepo _courseRepo;
         private readonly INotificationService _notificationService;
         private readonly ILogger<AchievementNotificationService> _logger;
 
         public AchievementNotificationService(
-            BrainStormEraContext context,
+            IAchievementRepo achievementRepo,
+            INotificationRepo notificationRepo,
+            IUserRepo userRepo,
+            ICourseRepo courseRepo,
             INotificationService notificationService,
             ILogger<AchievementNotificationService> logger)
         {
-            _context = context;
+            _achievementRepo = achievementRepo;
+            _notificationRepo = notificationRepo;
+            _userRepo = userRepo;
+            _courseRepo = courseRepo;
             _notificationService = notificationService;
             _logger = logger;
         }
@@ -30,8 +38,7 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                var achievement = await _context.Achievements
-                    .FirstOrDefaultAsync(a => a.AchievementId == achievementId);
+                var achievement = await _achievementRepo.GetByIdAsync(achievementId);
 
                 if (achievement == null)
                 {
@@ -39,8 +46,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     return ServiceResult<bool>.Failure("Achievement not found");
                 }
 
-                var user = await _context.Accounts
-                    .FirstOrDefaultAsync(u => u.UserId == userId);
+                var user = await _userRepo.GetByIdAsync(userId);
 
                 if (user == null)
                 {
@@ -61,8 +67,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     CreatedBy = "system"
                 };
 
-                _context.Notifications.Add(notification);
-                await _context.SaveChangesAsync();
+                await _notificationRepo.CreateNotificationAsync(notification);
 
                 // Send real-time notification via SignalR
                 var notificationResult = await _notificationService.CreateNotificationAsync(
@@ -96,8 +101,7 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                var achievement = await _context.Achievements
-                    .FirstOrDefaultAsync(a => a.AchievementId == achievementId);
+                var achievement = await _achievementRepo.GetByIdAsync(achievementId);
 
                 if (achievement == null)
                 {
@@ -105,8 +109,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     return ServiceResult<bool>.Failure("Achievement not found");
                 }
 
-                var user = await _context.Accounts
-                    .FirstOrDefaultAsync(u => u.UserId == userId);
+                var user = await _userRepo.GetByIdAsync(userId);
 
                 if (user == null)
                 {
@@ -127,8 +130,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     CreatedBy = "system"
                 };
 
-                _context.Notifications.Add(notification);
-                await _context.SaveChangesAsync();
+                await _notificationRepo.CreateNotificationAsync(notification);
 
                 // Send real-time notification via SignalR
                 var notificationResult = await _notificationService.CreateNotificationAsync(
@@ -162,8 +164,7 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                var achievement = await _context.Achievements
-                    .FirstOrDefaultAsync(a => a.AchievementId == achievementId);
+                var achievement = await _achievementRepo.GetByIdAsync(achievementId);
 
                 if (achievement == null)
                 {
@@ -171,8 +172,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     return ServiceResult<bool>.Failure("Achievement not found");
                 }
 
-                var user = await _context.Accounts
-                    .FirstOrDefaultAsync(u => u.UserId == userId);
+                var user = await _userRepo.GetByIdAsync(userId);
 
                 if (user == null)
                 {
@@ -193,8 +193,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     CreatedBy = "system"
                 };
 
-                _context.Notifications.Add(notification);
-                await _context.SaveChangesAsync();
+                await _notificationRepo.CreateNotificationAsync(notification);
 
                 // Send real-time notification via SignalR
                 var notificationResult = await _notificationService.CreateNotificationAsync(
@@ -228,8 +227,7 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                var user = await _context.Accounts
-                    .FirstOrDefaultAsync(u => u.UserId == userId);
+                var user = await _userRepo.GetByIdAsync(userId);
 
                 if (user == null)
                 {
@@ -250,8 +248,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     CreatedBy = "system"
                 };
 
-                _context.Notifications.Add(notification);
-                await _context.SaveChangesAsync();
+                await _notificationRepo.CreateNotificationAsync(notification);
 
                 // Send real-time notification via SignalR
                 var notificationResult = await _notificationService.CreateNotificationAsync(
@@ -293,8 +290,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 string? courseName = null;
                 if (!string.IsNullOrEmpty(relatedCourseId))
                 {
-                    var course = await _context.Courses
-                        .FirstOrDefaultAsync(c => c.CourseId == relatedCourseId);
+                    var course = await _courseRepo.GetCourseByIdAsync(relatedCourseId);
                     courseName = course?.CourseName;
                 }
 
@@ -314,8 +310,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     CreatedBy = "system"
                 };
 
-                _context.Notifications.Add(notification);
-                await _context.SaveChangesAsync();
+                await _notificationRepo.CreateNotificationAsync(notification);
 
                 // Send real-time notification via SignalR
                 var notificationResult = await _notificationService.CreateNotificationAsync(
@@ -378,8 +373,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     notifications.Add(notification);
                 }
 
-                _context.Notifications.AddRange(notifications);
-                await _context.SaveChangesAsync();
+                await _notificationRepo.CreateBulkNotificationsAsync(notifications);
 
                 // Send real-time notifications
                 foreach (var notification in notifications)

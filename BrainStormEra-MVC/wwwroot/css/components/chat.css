@@ -473,3 +473,92 @@
     transform: translateX(0);
   }
 }
+
+/* Course Relationships Styles */
+.course-relationships {
+  margin-top: 0.5rem;
+}
+
+.course-badge {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background-color: #f8f9fa;
+  border-radius: 0.375rem;
+  border: 1px solid #e9ecef;
+}
+
+.course-badge:last-child {
+  margin-bottom: 0;
+}
+
+.course-badge .badge {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.4rem;
+  font-weight: 500;
+}
+
+.course-badge .text-muted {
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  flex-grow: 1;
+}
+
+.course-badge .text-info {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* User Role and Course Count */
+.chat-user-item .text-muted .badge {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.4rem;
+}
+
+.chat-user-item .text-success {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.chat-user-item .text-success i {
+  font-size: 0.7rem;
+}
+
+/* Enhanced user item styling */
+.chat-user-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-user-item .flex-grow-1 {
+  min-width: 0; /* Allow text truncation */
+}
+
+.chat-user-item h6 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.chat-user-item .text-muted {
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+/* Responsive adjustments for course relationships */
+@media (max-width: 768px) {
+  .course-badge {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .course-badge .text-muted {
+    margin-left: 0;
+  }
+  
+  .chat-user-item .text-muted {
+    font-size: 0.7rem;
+  }
+}

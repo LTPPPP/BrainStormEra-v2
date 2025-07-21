@@ -584,13 +584,7 @@ Be specific and clear to guide students through the interactive experience." max
         });
     </script>
 
-    <!-- Chatbot for authenticated users -->
-    @if (Context.Session.GetString("UserId") != null)
-    {
-        @await Html.PartialAsync("~/Views/Shared/_Chatbot.cshtml")
-        @Html.AntiForgeryToken()
-        <script src="~/js/components/chatbot.js"></script>
-    }
+
 </body>
 
 </html>

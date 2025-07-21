@@ -1,19 +1,18 @@
 using Microsoft.Extensions.Logging;
-using DataAccessLayer.Data;
+using DataAccessLayer.Repositories.Interfaces;
 using DataAccessLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using BusinessLogicLayer.Services.Interfaces;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
     public class StatusSeedService : IStatusSeedService
     {
-        private readonly BrainStormEraContext _context;
+        private readonly IBaseRepo<Status> _statusRepo;
         private readonly ILogger<StatusSeedService> _logger;
 
-        public StatusSeedService(BrainStormEraContext context, ILogger<StatusSeedService> logger)
+        public StatusSeedService(IBaseRepo<Status> statusRepo, ILogger<StatusSeedService> logger)
         {
-            _context = context;
+            _statusRepo = statusRepo;
             _logger = logger;
         }
 
@@ -22,7 +21,7 @@ namespace BusinessLogicLayer.Services.Implementations
             try
             {
                 // Check if statuses already exist
-                var existingStatuses = await _context.Statuses.CountAsync();
+                var existingStatuses = await _statusRepo.CountAsync();
                 if (existingStatuses > 0)
                 {
                     return;
@@ -72,8 +71,8 @@ namespace BusinessLogicLayer.Services.Implementations
                     }
                 };
 
-                await _context.Statuses.AddRangeAsync(statuses);
-                await _context.SaveChangesAsync();
+                await _statusRepo.AddRangeAsync(statuses);
+                await _statusRepo.SaveChangesAsync();
 
                 _logger.LogInformation("Seeded {Count} statuses successfully", statuses.Count);
             }

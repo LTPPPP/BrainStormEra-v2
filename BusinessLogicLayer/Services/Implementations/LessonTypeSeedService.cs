@@ -1,19 +1,18 @@
 using Microsoft.Extensions.Logging;
-using DataAccessLayer.Data;
+using DataAccessLayer.Repositories.Interfaces;
 using DataAccessLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using BusinessLogicLayer.Services.Interfaces;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
     public class LessonTypeSeedService : ILessonTypeSeedService
     {
-        private readonly BrainStormEraContext _context;
+        private readonly IBaseRepo<LessonType> _lessonTypeRepo;
         private readonly ILogger<LessonTypeSeedService> _logger;
 
-        public LessonTypeSeedService(BrainStormEraContext context, ILogger<LessonTypeSeedService> logger)
+        public LessonTypeSeedService(IBaseRepo<LessonType> lessonTypeRepo, ILogger<LessonTypeSeedService> logger)
         {
-            _context = context;
+            _lessonTypeRepo = lessonTypeRepo;
             _logger = logger;
         }
 
@@ -22,7 +21,7 @@ namespace BusinessLogicLayer.Services.Implementations
             try
             {
                 // Check if lesson types already exist
-                if (await _context.LessonTypes.AnyAsync())
+                if (await _lessonTypeRepo.AnyAsync(lt => true))
                 {
                     return;
                 }
@@ -55,8 +54,8 @@ namespace BusinessLogicLayer.Services.Implementations
                     }
                 };
 
-                await _context.LessonTypes.AddRangeAsync(lessonTypes);
-                await _context.SaveChangesAsync();
+                await _lessonTypeRepo.AddRangeAsync(lessonTypes);
+                await _lessonTypeRepo.SaveChangesAsync();
 
                 _logger.LogInformation("Successfully seeded {Count} lesson types", lessonTypes.Count);
             }

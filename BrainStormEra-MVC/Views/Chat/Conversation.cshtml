@@ -198,8 +198,7 @@
     <!-- Include Footer partial view -->
     @await Html.PartialAsync("~/Views/Shared/Footer/_Footer.cshtml")
 
-    @* Include Chatbot for authenticated users *@
-    @await Html.PartialAsync("_Chatbot")
+
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -215,7 +214,7 @@
     @if (User.Identity?.IsAuthenticated == true)
     {
         <script src="~/js/shared/notification-system.js" asp-append-version="true"></script>
-        <script src="~/js/components/chatbot.js" asp-append-version="true"></script>
+
         @await Html.PartialAsync("_ChatSignalR")
     }
 

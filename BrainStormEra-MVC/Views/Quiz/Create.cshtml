@@ -371,23 +371,14 @@
         });
     </script>
 
-    <!-- Chatbot for authenticated users -->
-    @if (Context.Session.GetString("UserId") != null)
-    {
-        @await Html.PartialAsync("~/Views/Shared/_Chatbot.cshtml")
-        @Html.AntiForgeryToken()
-    }
+
 
     @section Scripts {
         @{
             await Html.RenderPartialAsync("_ValidationScriptsPartial");
         }
 
-        <!-- Chatbot JavaScript for authenticated users -->
-        @if (Context.Session.GetString("UserId") != null)
-        {
-            <script src="~/js/components/chatbot.js"></script>
-        }
+
     }
 </body>
 

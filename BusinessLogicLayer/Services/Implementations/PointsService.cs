@@ -1,10 +1,9 @@
 using BusinessLogicLayer.Services.Interfaces;
-using DataAccessLayer.Data;
+using DataAccessLayer.Repositories.Interfaces;
 using DataAccessLayer.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
@@ -12,12 +11,12 @@ namespace BusinessLogicLayer.Services.Implementations
 {
     public class PointsService : IPointsService
     {
-        private readonly BrainStormEraContext _context;
+        private readonly IUserRepo _userRepo;
         private readonly ILogger<PointsService> _logger;
 
-        public PointsService(BrainStormEraContext context, ILogger<PointsService> logger)
+        public PointsService(IUserRepo userRepo, ILogger<PointsService> logger)
         {
-            _context = context;
+            _userRepo = userRepo;
             _logger = logger;
         }
 
@@ -25,12 +24,8 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                var user = await _context.Accounts
-                    .Where(u => u.UserId == userId)
-                    .Select(u => u.PaymentPoint)
-                    .FirstOrDefaultAsync();
-
-                return user ?? 0;
+                var user = await _userRepo.GetUserWithPaymentPointAsync(userId);
+                return user?.PaymentPoint ?? 0;
             }
             catch (Exception ex)
             {
@@ -45,7 +40,7 @@ namespace BusinessLogicLayer.Services.Implementations
             {
                 _logger.LogInformation("Updating points for user: {UserId}, points change: {Points}", userId, points);
 
-                var user = await _context.Accounts.FindAsync(userId);
+                var user = await _userRepo.GetByIdAsync(userId);
                 if (user == null)
                 {
                     _logger.LogWarning("User not found: {UserId}", userId);
@@ -59,8 +54,8 @@ namespace BusinessLogicLayer.Services.Implementations
                 _logger.LogInformation("User points updated: {UserId}, old: {OldPoints}, new: {NewPoints}",
                     userId, currentPoints, user.PaymentPoint);
 
-                await _context.SaveChangesAsync();
-                return true;
+                var result = await _userRepo.UpdateUserAsync(user);
+                return result;
             }
             catch (Exception ex)
             {
