@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using DataAccessLayer.Models;
 using DataAccessLayer.Repositories.Interfaces;
 using BusinessLogicLayer.Services.Interfaces;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace BusinessLogicLayer.Services.Implementations
 {
@@ -10,19 +9,15 @@ namespace BusinessLogicLayer.Services.Implementations
     {
         private readonly ICourseRepo _courseRepo;
         private readonly IUserRepo _userRepo;
-        private readonly IMemoryCache _cache;
         private readonly ILogger<EnrollmentService> _logger;
-        private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(5);
 
         public EnrollmentService(
             ICourseRepo courseRepo,
             IUserRepo userRepo,
-            IMemoryCache cache,
             ILogger<EnrollmentService> logger)
         {
             _courseRepo = courseRepo;
             _userRepo = userRepo;
-            _cache = cache;
             _logger = logger;
         }
 
@@ -31,14 +26,6 @@ namespace BusinessLogicLayer.Services.Implementations
             try
             {
                 var result = await _courseRepo.EnrollUserAsync(userId, courseId);
-
-                if (result)
-                {
-                    _cache.Remove($"UserEnrollments_{userId}");
-                    _cache.Remove($"CourseEnrollmentCount_{courseId}");
-                    _cache.Remove($"IsEnrolled_{userId}_{courseId}");
-                }
-
                 return result;
             }
             catch (Exception ex)
@@ -50,62 +37,17 @@ namespace BusinessLogicLayer.Services.Implementations
 
         public async Task<bool> IsEnrolledAsync(string userId, string courseId)
         {
-            var cacheKey = $"IsEnrolled_{userId}_{courseId}";
-
-            if (_cache.TryGetValue(cacheKey, out bool isEnrolled))
-            {
-                return isEnrolled;
-            }
-
-            isEnrolled = await _courseRepo.IsUserEnrolledAsync(userId, courseId);
-
-            var cacheOptions = new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = CacheExpiration,
-                Size = 1
-            };
-            _cache.Set(cacheKey, isEnrolled, cacheOptions);
-            return isEnrolled;
+            return await _courseRepo.IsUserEnrolledAsync(userId, courseId);
         }
 
         public async Task<List<Enrollment>> GetUserEnrollmentsAsync(string userId)
         {
-            var cacheKey = $"UserEnrollments_{userId}";
-
-            if (_cache.TryGetValue(cacheKey, out List<Enrollment>? cachedEnrollments))
-            {
-                return cachedEnrollments!;
-            }
-
-            var enrollments = await _courseRepo.GetUserEnrollmentsAsync(userId);
-
-            var cacheOptions = new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
-                Size = 1
-            };
-            _cache.Set(cacheKey, enrollments, cacheOptions);
-            return enrollments;
+            return await _courseRepo.GetUserEnrollmentsAsync(userId);
         }
 
         public async Task<int> GetCourseEnrollmentCountAsync(string courseId)
         {
-            var cacheKey = $"CourseEnrollmentCount_{courseId}";
-
-            if (_cache.TryGetValue(cacheKey, out int count))
-            {
-                return count;
-            }
-
-            count = await _courseRepo.GetCourseEnrollmentCountAsync(courseId);
-
-            var cacheOptions = new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = CacheExpiration,
-                Size = 1
-            };
-            _cache.Set(cacheKey, count, cacheOptions);
-            return count;
+            return await _courseRepo.GetCourseEnrollmentCountAsync(courseId);
         }
     }
 }

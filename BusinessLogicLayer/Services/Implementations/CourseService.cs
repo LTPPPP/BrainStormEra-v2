@@ -29,7 +29,6 @@ namespace BusinessLogicLayer.Services.Implementations
         private readonly IUserRepo _userRepo;
         private readonly IEnrollmentService _enrollmentService;
         private readonly BrainStormEraContext _context;
-        private readonly IMemoryCache _cache;
         private readonly ICourseImageService _courseImageService;
         private readonly Func<ILessonService> _lessonServiceFactory;
         private readonly ILogger<CourseService> _logger;
@@ -41,7 +40,6 @@ namespace BusinessLogicLayer.Services.Implementations
             IUserRepo userRepo,
             IEnrollmentService enrollmentService,
             BrainStormEraContext context,
-            IMemoryCache cache,
             ICourseImageService courseImageService,
             Func<ILessonService> lessonServiceFactory,
             ILogger<CourseService> logger,
@@ -51,14 +49,10 @@ namespace BusinessLogicLayer.Services.Implementations
             _userRepo = userRepo;
             _enrollmentService = enrollmentService;
             _context = context;
-            _cache = cache;
             _courseImageService = courseImageService;
             _lessonServiceFactory = lessonServiceFactory;
             _logger = logger;
             _serviceProvider = serviceProvider;
-
-            // Clear category cache to ensure updated counts
-            RefreshCategoryCache();
         }
 
         #region ICourseService Implementation
@@ -539,12 +533,6 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                var cacheKey = "course_categories";
-                if (_cache.TryGetValue(cacheKey, out List<CourseCategoryViewModel>? cachedCategories))
-                {
-                    return cachedCategories ?? new List<CourseCategoryViewModel>();
-                }
-
                 var categories = await _context.CourseCategories
                     .Include(cc => cc.Courses)
                     .Where(cc => cc.Courses.Any(c => (c.CourseStatus == 1 || c.CourseStatus == 2) && c.ApprovalStatus == "Approved"))
@@ -557,12 +545,6 @@ namespace BusinessLogicLayer.Services.Implementations
                     .Where(cc => cc.CourseCount > 0)
                     .OrderBy(cc => cc.CategoryName)
                     .ToListAsync();
-
-                var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetAbsoluteExpiration(CacheExpiration)
-                    .SetSize(1); // Set size for cache entry when SizeLimit is configured
-                _cache.Set(cacheKey, categories, cacheOptions);
-
                 return categories;
             }
             catch (Exception ex)
@@ -904,7 +886,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
         public void RefreshCategoryCache()
         {
-            _cache.Remove("course_categories");
+            // No cache to refresh
         }
 
         private string GetDifficultyLevelText(byte? level)
@@ -1202,7 +1184,8 @@ namespace BusinessLogicLayer.Services.Implementations
                                 EnrollmentCreatedAt = DateTime.UtcNow,
                                 EnrollmentUpdatedAt = DateTime.UtcNow,
                                 EnrollmentStatus = 1, // Active status
-                                ProgressPercentage = 0
+                                ProgressPercentage = 0,
+                                Approved = true // Set approved = true when user enrolls
                             };
 
                             realContext.Enrollments.Add(enrollment);

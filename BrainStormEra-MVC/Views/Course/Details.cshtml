@@ -1506,28 +1506,17 @@
             })
             .then(response => {
                 if (response.redirected) {
-                    // If response is a redirect, follow it
                     window.location.href = response.url;
                     return;
                 }
                 return response.json();
             })
             .then(data => {
-                if (data && !data.success) {
-                    // Show error message
-                    if (window.showToast) {
-                        if (data.message.includes('Insufficient points')) {
-                            window.showToast('warning', data.message);
-                        } else if (data.message.includes('Already enrolled')) {
-                            window.showToast('info', data.message);
-                        } else {
-                            window.showToast('error', data.message);
-                        }
-                    } else {
-                        alert(data.message);
-                    }
-                    
-                    // Re-enable button
+                // Hiển thị modal enroll
+                showEnrollmentModal(data && data.success, data && data.message);
+
+                // Nếu enroll thất bại, re-enable button
+                if (!data || !data.success) {
                     if (enrollBtn) {
                         enrollBtn.disabled = false;
                         if (@Model.Price == 0) {
@@ -1536,26 +1525,10 @@
                             enrollBtn.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>Enroll Now - @Model.Price.ToString("N0") Points';
                         }
                     }
-                } else if (data && data.success) {
-                    // Show success message and refresh page
-                    if (window.showToast) {
-                        window.showToast('success', data.message);
-                    }
-                    
-                    // Refresh page after short delay to show updated enrollment status
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
                 }
             })
             .catch(error => {
-                if (window.showToast) {
-                    window.showToast('error', 'An error occurred while enrolling');
-                } else {
-                    alert('An error occurred while enrolling');
-                }
-                
-                // Re-enable button
+                showEnrollmentModal(false, 'An error occurred while enrolling');
                 if (enrollBtn) {
                     enrollBtn.disabled = false;
                     if (@Model.Price == 0) {
@@ -1565,6 +1538,27 @@
                     }
                 }
             });
+        }
+
+        // Hàm show modal enroll
+        function showEnrollmentModal(success, message) {
+            const modal = new bootstrap.Modal(document.getElementById('enrollmentModal'));
+            document.getElementById('enrollmentMessage').innerHTML = message || '';
+            const continueBtn = document.getElementById('continueLearning');
+            if (success) {
+                continueBtn.style.display = 'inline-block';
+                continueBtn.onclick = function() {
+                    window.location.href = '@Url.Action("Learn", "Course", new { courseId = Model.CourseId })';
+                };
+                // Reload lại trang sau khi enroll thành công để đồng bộ trạng thái
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1200);
+            } else {
+                continueBtn.style.display = 'none';
+                continueBtn.onclick = null;
+            }
+            modal.show();
         }
     </script>
 
@@ -1593,8 +1587,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="continueLearning" style="display: none;">Continue
-                        Learning</button>
+                    <button type="button" class="btn btn-primary" id="continueLearning" style="display: none;">Done</button>
                 </div>
             </div>
         </div>

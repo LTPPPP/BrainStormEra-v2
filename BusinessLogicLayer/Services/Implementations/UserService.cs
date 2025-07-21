@@ -4,7 +4,6 @@ using DataAccessLayer.Models;
 using DataAccessLayer.Models.ViewModels;
 using BusinessLogicLayer.Services.Interfaces;
 using BusinessLogicLayer.Utilities;
-using Microsoft.Extensions.Caching.Memory;
 using BusinessLogicLayer.Constants;
 
 namespace BusinessLogicLayer.Services.Implementations
@@ -14,7 +13,6 @@ namespace BusinessLogicLayer.Services.Implementations
         private readonly IUserRepo _userRepo;
         private readonly ICourseRepo _courseRepo;
         private readonly IAuthRepo _authRepo; // Added for authentication operations
-        private readonly IMemoryCache _cache;
         private readonly ILogger<UserService> _logger;
         private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(10);
 
@@ -22,13 +20,11 @@ namespace BusinessLogicLayer.Services.Implementations
             IUserRepo userRepo,
             ICourseRepo courseRepo,
             IAuthRepo authRepo,
-            IMemoryCache cache,
             ILogger<UserService> logger)
         {
             _userRepo = userRepo;
             _courseRepo = courseRepo;
             _authRepo = authRepo;
-            _cache = cache;
             _logger = logger;
         }
 
@@ -189,7 +185,8 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                return await _userRepo.UpdateUserEnrollmentProgressAsync(instructorId, userId, courseId, progressPercentage, currentLessonId);
+                var result = await _userRepo.UpdateUserEnrollmentProgressAsync(instructorId, userId, courseId, progressPercentage, currentLessonId);
+                return result;
             }
             catch (Exception ex)
             {
@@ -202,7 +199,8 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                return await _userRepo.UpdateUserEnrollmentStatusAsync(instructorId, userId, courseId, status);
+                var result = await _userRepo.UpdateUserEnrollmentStatusAsync(instructorId, userId, courseId, status);
+                return result;
             }
             catch (Exception ex)
             {
@@ -277,7 +275,8 @@ namespace BusinessLogicLayer.Services.Implementations
         {
             try
             {
-                return await _userRepo.UnenrollUserFromCourseAsync(instructorId, userId, courseId);
+                var result = await _userRepo.UnenrollUserFromCourseAsync(instructorId, userId, courseId);
+                return result;
             }
             catch (Exception ex)
             {
