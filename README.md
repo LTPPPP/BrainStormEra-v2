@@ -4,13 +4,15 @@
   <img src="Main_Logo.jpg" alt="BrainStormEra Logo" width="100"/>
   
   <p align="center">
-    <strong>A Comprehensive Web-Based Educational Platform with Interactive Learning Experience</strong>
+    <strong>A Comprehensive Web-Based Educational Platform with Interactive Learning Experience & AI-Powered Features</strong>
   </p>
   
   <p align="center">
     <img src="https://img.shields.io/badge/.NET-6.0+-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 6.0+"/>
     <img src="https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white" alt="C#"/>
     <img src="https://img.shields.io/badge/SQL%20Server-CC2927?style=for-the-badge&logo=microsoft-sql-server&logoColor=white" alt="SQL Server"/>
+    <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
+    <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"/>
     <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
     <img src="https://img.shields.io/badge/SignalR-000000?style=for-the-badge&logo=microsoft&logoColor=white" alt="SignalR"/>
     <img src="https://img.shields.io/badge/Entity%20Framework-1BA5E1?style=for-the-badge&logo=microsoft&logoColor=white" alt="Entity Framework"/>
@@ -19,22 +21,24 @@
   <p align="center">
     <img src="https://img.shields.io/badge/Status-Active%20Development-green?style=flat-square" alt="Status"/>
     <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License"/>
-    <img src="https://img.shields.io/badge/Version-1.0.0-orange?style=flat-square" alt="Version"/>
+    <img src="https://img.shields.io/badge/Version-2.0.0-orange?style=flat-square" alt="Version"/>
   </p>
 </div>
 
 ## 📋 Project Overview
 
-**BrainStormEra** is a sophisticated web-based educational platform developed using modern .NET technologies, designed to deliver comprehensive learning experiences for students, instructors, and administrators. The system implements a robust multi-layered architecture pattern, incorporating ASP.NET Core MVC, Razor Pages, Entity Framework Core, and SQL Server to provide scalable and maintainable e-learning solutions.
+**BrainStormEra** is a sophisticated web-based educational platform developed using modern .NET and Python technologies, designed to deliver comprehensive learning experiences for students, instructors, and administrators. The system implements a robust multi-layered architecture pattern, incorporating ASP.NET Core MVC, Razor Pages, Entity Framework Core, SQL Server, and AI-powered microservices to provide scalable and maintainable e-learning solutions.
 
 ### 🎯 Project Objectives
 
 - **Educational Excellence**: Develop a modern, user-centric online learning platform that enhances educational accessibility and engagement
 - **Scalable Architecture**: Implement enterprise-level software architecture patterns ensuring maintainability, testability, and scalability
 - **Interactive Learning**: Provide dynamic course management, interactive lessons, and real-time assessment capabilities
-- **AI Integration**: Incorporate intelligent chatbot assistance for 24/7 student support and personalized learning recommendations
+- **AI Integration**: Incorporate intelligent chatbot assistance, course suggestions, and multimedia content analysis for 24/7 student support
 - **Achievement System**: Design comprehensive progress tracking, certification management, and gamification elements
 - **Real-time Communication**: Enable live notifications and interactive features using SignalR technology
+- **Payment Processing**: Implement secure payment gateway integration with VNPay and points-based system
+- **Multimedia Intelligence**: Provide OCR, video processing, and intelligent content analysis capabilities
 
 ### 🏗️ Academic Context
 
@@ -42,9 +46,11 @@ This project serves as a comprehensive demonstration of modern web application d
 
 - **Software Engineering Best Practices**: Clean code architecture, SOLID principles, and design patterns
 - **Full-Stack Development**: Integration of frontend and backend technologies in a cohesive system
+- **Microservices Architecture**: Python FastAPI services for AI-powered features
 - **Database Design**: Normalized relational database schema with Entity Framework Code-First approach
 - **API Development**: RESTful services and real-time communication protocols
 - **DevOps Practices**: Containerization, automated deployment, and continuous integration workflows
+- **AI/ML Integration**: Natural language processing, computer vision, and intelligent recommendations
 
 ## ✨ Core Features & Functionality
 
@@ -55,6 +61,8 @@ This project serves as a comprehensive demonstration of modern web application d
 - **Structured Learning Paths**: Hierarchical chapter-lesson organization with dependency management
 - **Assessment Engine**: Comprehensive quiz system with multiple question types, auto-grading, and detailed analytics
 - **Progress Tracking**: Real-time learning analytics with completion rates and performance metrics
+- **Sequential Learning**: Enforce lesson prerequisites and sequential access control
+- **Course Approval Workflow**: Admin review and approval system for course publication
 
 ### 👥 **User Management & Authentication**
 
@@ -63,13 +71,50 @@ This project serves as a comprehensive demonstration of modern web application d
 - **Profile Management**: Comprehensive user profiles with learning history and preferences
 - **Real-time Notifications**: SignalR-powered instant messaging and system notifications
 - **Session Management**: Secure session handling with automatic timeout and refresh mechanisms
+- **Points System**: Real-time points tracking with automatic refresh and transaction management
+- **Account Security**: Brute force protection, password policies, and account lockout mechanisms
 
-### 🤖 **AI-Powered Virtual Assistant**
+### 🤖 **AI-Powered Services & Virtual Assistant**
 
-- **Intelligent Learning Support**: 24/7 chatbot assistance with natural language processing
-- **Personalized Recommendations**: AI-driven course suggestions based on learning patterns
-- **Interactive Guidance**: Context-aware help system for platform navigation
-- **Learning Analytics**: AI analysis of user behavior for performance optimization
+#### **Intelligent Chatbot Service** (FastAPI - Port 8000)
+- **Google AI Integration**: Powered by Gemini Pro for natural language processing
+- **Real-time Chat**: WebSocket-based communication with typing indicators and read receipts
+- **Context-Aware Responses**: AI understands current page, course context, and user history
+- **Conversation History**: Persistent chat history with feedback collection
+- **Educational Optimization**: Tailored responses for learning assistance and course guidance
+- **Multi-language Support**: Vietnamese and English language processing
+
+#### **Course Suggestion AI** (FastAPI - Port 7000)
+- **Gemini AI Analysis**: Deep user intent analysis and learning goal extraction
+- **Smart Query Generation**: AI-enhanced keyword processing and search optimization
+- **Dual Scoring System**: Combines traditional similarity + AI relevance scoring
+- **Personalized Recommendations**: Skill level detection and technology mapping
+- **Enhanced Analytics**: Detailed user analysis and course matching insights
+
+#### **RAG Image Processing** (FastAPI - Port 8000)
+- **OCR Text Extraction**: Vietnamese and English text recognition from images
+- **Intelligent Q&A**: Ask questions about image content using natural language
+- **Vector Search**: ChromaDB-powered similarity search for image content
+- **Multi-format Support**: JPG, PNG, BMP, GIF, TIFF, WebP image processing
+- **Semantic Understanding**: Sentence Transformers for intelligent content analysis
+
+#### **RAG Video Processing** (FastAPI - Port 6767)
+- **Local Video Processing**: Download and process YouTube videos locally
+- **Whisper Integration**: OpenAI Whisper for high-accuracy transcription
+- **Multi-language Support**: Vietnamese, English, and 50+ languages
+- **Intelligent Q&A**: Ask questions about video content with source references
+- **Storage Management**: Automatic cleanup and disk space monitoring
+- **Processing Modes**: Local processing vs. transcript API fallback
+
+### 💳 **Payment & E-commerce System**
+
+- **VNPay Integration**: Secure payment gateway with PCI DSS compliance
+- **Points-Based System**: Internal currency system for course enrollment
+- **Transaction Management**: Comprehensive payment tracking and history
+- **Top-up Functionality**: Account balance management with payment processing
+- **Refund Processing**: Automated refund handling and transaction reversal
+- **Payment Analytics**: Revenue tracking, transaction reporting, and financial insights
+- **Multiple Payment Types**: Course enrollment, account top-up, and point purchases
 
 ### 🏆 **Achievement & Certification System**
 
@@ -77,6 +122,9 @@ This project serves as a comprehensive demonstration of modern web application d
 - **Digital Certificates**: Automated certificate generation upon course completion
 - **Progress Dashboard**: Comprehensive analytics dashboard with visual progress indicators
 - **Performance Analytics**: Detailed reporting on learning outcomes and skill development
+- **Streak Tracking**: Continuous learning rewards and motivation system
+- **Achievement Sharing**: Social media integration for achievement sharing
+- **Custom Achievement Creation**: Admin-configurable achievement criteria
 
 ### 📊 **Administrative Features**
 
@@ -84,6 +132,28 @@ This project serves as a comprehensive demonstration of modern web application d
 - **User Analytics**: Comprehensive reporting on user engagement and platform usage
 - **System Configuration**: Flexible platform settings and customization options
 - **Data Export**: Reporting capabilities with multiple export formats (PDF, Excel, CSV)
+- **Security Dashboard**: Real-time security monitoring and threat detection
+- **Course Moderation**: Content review, approval, and quality control
+- **Financial Management**: Revenue tracking, payout processing, and financial reporting
+
+### 🔄 **Real-time Communication & Collaboration**
+
+- **SignalR Hubs**: Real-time messaging, notifications, and live updates
+- **Chat System**: User-to-user messaging with file sharing capabilities
+- **Course Chat Rooms**: Course-specific discussion forums and Q&A sessions
+- **Notification System**: Multi-channel notifications (in-app, email, real-time)
+- **Online Status**: Real-time user presence and activity indicators
+- **Message History**: Persistent chat history with search functionality
+- **Moderation Tools**: Content filtering and user management features
+
+### 📈 **Analytics & Reporting**
+
+- **Learning Analytics**: Detailed progress tracking and performance metrics
+- **User Engagement**: Comprehensive user behavior analysis and insights
+- **Course Performance**: Instructor analytics and course effectiveness metrics
+- **Financial Reports**: Revenue analysis, transaction reporting, and financial insights
+- **System Monitoring**: Performance metrics, error tracking, and health monitoring
+- **Custom Dashboards**: Role-specific analytics and reporting interfaces
 
 ## 🛠️ Technology Stack & Architecture
 
@@ -96,6 +166,16 @@ This project serves as a comprehensive demonstration of modern web application d
 - **AutoMapper**: Object-to-object mapping for clean data transformation
 - **FluentValidation**: Business rule validation with fluent interface
 - **Serilog**: Structured logging with multiple sinks and enrichers
+
+### **AI Services (Python FastAPI)**
+
+- **FastAPI**: High-performance Python web framework for AI services
+- **Google AI (Gemini)**: Advanced language model for natural language processing
+- **OpenAI Whisper**: Speech-to-text transcription for video processing
+- **EasyOCR**: Optical Character Recognition for image text extraction
+- **Sentence Transformers**: Semantic text embedding and similarity search
+- **ChromaDB**: Vector database for similarity search and content retrieval
+- **PyTorch**: Deep learning framework for AI model inference
 
 ### **Frontend Technologies**
 
@@ -121,6 +201,7 @@ This project serves as a comprehensive demonstration of modern web application d
 - **Role-Based Access Control (RBAC)**: Granular permission system
 - **Data Protection API**: Secure data encryption and key management
 - **HTTPS/TLS**: Encrypted communication protocols
+- **VNPay Security**: PCI DSS compliant payment processing
 
 ### **DevOps & Deployment**
 
@@ -137,6 +218,7 @@ This project serves as a comprehensive demonstration of modern web application d
 - **CQRS Pattern**: Command Query Responsibility Segregation for complex operations
 - **Builder Pattern**: Complex object construction with fluent interface
 - **Factory Pattern**: Object creation with abstraction layer
+- **Microservices**: Decoupled AI services for scalability and maintainability
 
 ## 📁 Project Architecture & Structure
 
@@ -167,6 +249,16 @@ This project serves as a comprehensive demonstration of modern web application d
 ├─────────────────────────────────────────────────────────────┤
 │              SQL Server 2019 (Port 1433)                    │
 └─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                    AI Services Layer                        │
+├─────────────────────┬───────────────────────────────────────┤
+│   Chat Service      │      Suggestion AI Service            │
+│   (Port 8000)       │         (Port 7000)                   │
+├─────────────────────┼───────────────────────────────────────┤
+│   RAG Image Service │      RAG Video Service                │
+│   (Port 8000)       │         (Port 6767)                   │
+└─────────────────────┴───────────────────────────────────────┘
 ```
 
 ### **Directory Structure**
@@ -182,24 +274,51 @@ BrainStormEra/
 │   │   ├── ❓ QuizController.cs       # Assessment and evaluation
 │   │   ├── 👤 ProfileController.cs    # User profile management
 │   │   ├── 🤖 ChatbotController.cs    # AI assistant integration
+│   │   ├── 💳 PaymentController.cs    # Payment processing
+│   │   ├── 🏆 AchievementController.cs # Achievement system
+│   │   └── 📊 AdminController.cs      # Administrative functions
 │   ├── 📂 Models/                     # ViewModels and DTOs
 │   ├── 📂 Views/                      # Razor view templates
 │   ├── 📂 Filters/                    # Action and authorization filters
+│   ├── 📂 Middlewares/                # Custom middleware components
 │   └── 📂 wwwroot/                    # Static assets (CSS, JS, images)
 ├── 📂 BrainStormEra-Razor/            # Alternative Razor Pages Implementation
 ├── 📂 BusinessLogicLayer/             # Domain Logic and Business Rules
 │   ├── 📂 Services/                   # Business service implementations
-│   ├── 📂 Interfaces/                 # Service contracts and abstractions
+│   │   ├── 📂 Implementations/        # Service implementations
+│   │   └── 📂 Interfaces/             # Service contracts and abstractions
 │   ├── 📂 Validators/                 # Business rule validation
-│   └── 📂 DTOs/                       # Data Transfer Objects
+│   ├── 📂 DTOs/                       # Data Transfer Objects
+│   ├── 📂 Hubs/                       # SignalR hubs for real-time communication
+│   └── 📂 Utilities/                  # Helper classes and utilities
 ├── 📂 DataAccessLayer/                # Data Persistence Layer
-│   ├── 📂 Entities/                   # Entity Framework models
-│   ├── 📂 DbContexts/                 # Database context configurations
+│   ├── 📂 Models/                     # Entity Framework models
+│   ├── 📂 Data/                       # Database context configurations
 │   ├── 📂 Repositories/               # Data access repositories
-│   ├── 📂 Migrations/                 # Database schema migrations
-│   └── 📂 Configurations/             # Entity configurations
+│   │   ├── 📂 Interfaces/             # Repository contracts
+│   │   └── 📂 Implementations/        # Repository implementations
+│   └── 📂 Migrations/                 # Database schema migrations
+├── 📂 ai-services/                    # AI-Powered Microservices
+│   ├── 📂 chat/                       # AI Chatbot Service (FastAPI)
+│   │   ├── 📂 app/                    # FastAPI application structure
+│   │   ├── 📂 services/               # Chat and chatbot services
+│   │   ├── 📂 websockets/             # Real-time communication
+│   │   └── 📂 models/                 # Pydantic models
+│   ├── 📂 suggestionAI/               # Course Suggestion AI (FastAPI)
+│   │   ├── 📂 app/                    # FastAPI application
+│   │   ├── 📂 services/               # AI suggestion services
+│   │   └── 📂 models/                 # Data models
+│   ├── 📂 RAG-img/                    # Image Processing RAG (FastAPI)
+│   │   ├── 📂 services/               # OCR and embedding services
+│   │   ├── 📂 utils/                  # Utility functions
+│   │   └── 📂 uploads/                # Image storage
+│   └── 📂 RAG-vid/                    # Video Processing RAG (FastAPI)
+│       ├── 📂 services/               # Video processing services
+│       ├── 📂 downloads/              # Video storage
+│       └── 📂 data/                   # Processed data
 ├── 📂 init_script/                    # Database initialization scripts
-├── 📂 .github/workflows/              # CI/CD automation workflows
+├── 📂 docs/                           # Project documentation
+├── 📂 SharedMedia/                    # Shared media assets
 ├── 📄 docker-compose.yml             # Multi-container orchestration
 ├── 📄 BrainStormEra.sln              # Visual Studio solution file
 └── 📄 README.md                      # Project documentation
@@ -212,10 +331,12 @@ BrainStormEra/
 - **Operating System**: Windows 10/11, macOS 10.15+, or Linux Ubuntu 18.04+
 - **Docker Desktop**: Latest stable version (4.0+)
 - **.NET 6.0 SDK**: Long-term support version
+- **Python 3.8+**: For AI services
 - **SQL Server**: 2019 or later (Express/Developer/Standard editions)
 - **IDE**: Visual Studio 2022, JetBrains Rider, or Visual Studio Code
 - **Memory**: Minimum 8GB RAM (16GB recommended for optimal performance)
-- **Storage**: At least 5GB free disk space
+- **Storage**: At least 10GB free disk space (for video processing)
+- **Network**: Stable internet connection for AI model downloads
 
 ### **Development Environment Setup**
 
@@ -228,6 +349,9 @@ cd BrainStormEra
 
 # Verify .NET SDK installation
 dotnet --version
+
+# Verify Python installation
+python --version
 
 # Restore NuGet packages for all projects
 dotnet restore BrainStormEra.sln
@@ -244,6 +368,10 @@ docker-compose up -d --build
 
 # View logs for specific service
 docker-compose logs -f mvc
+docker-compose logs -f chat-service
+docker-compose logs -f suggestion-service
+docker-compose logs -f rag-img-service
+docker-compose logs -f rag-vid-service
 
 # Stop all services
 docker-compose down
@@ -277,12 +405,29 @@ dotnet run --urls="https://localhost:5001;http://localhost:5000"
 # In a new terminal, start Razor application
 cd BrainStormEra-Razor
 dotnet run --urls="https://localhost:5003;http://localhost:5002"
+
+# Start AI Services (in separate terminals)
+cd ai-services/chat
+python main.py
+
+cd ai-services/suggestionAI
+python run.py
+
+cd ai-services/RAG-img
+python main.py
+
+cd ai-services/RAG-vid
+python main.py
 ```
 
 ### **Application Access Points**
 
 - **🌐 MVC Application**: [https://localhost:5216](https://localhost:5216) (HTTPS) | [http://localhost:5000](http://localhost:5000) (HTTP)
 - **🌐 Razor Application**: [https://localhost:5274](https://localhost:5274) (HTTPS) | [http://localhost:5002](http://localhost:5002) (HTTP)
+- **🤖 AI Chat Service**: [http://localhost:8000](http://localhost:8000) | [http://localhost:8000/docs](http://localhost:8000/docs) (Swagger)
+- **🎯 Suggestion AI Service**: [http://localhost:7000](http://localhost:7000) | [http://localhost:7000/docs](http://localhost:7000/docs) (Swagger)
+- **🖼️ RAG Image Service**: [http://localhost:8000](http://localhost:8000) | [http://localhost:8000/docs](http://localhost:8000/docs) (Swagger)
+- **🎥 RAG Video Service**: [http://localhost:6767](http://localhost:6767) | [http://localhost:6767/docs](http://localhost:6767/docs) (Swagger)
 - **🗄️ SQL Server**: `localhost:1433` (Docker) | `(localdb)\MSSQLLocalDB` (Local)
 - **📊 Database Management**: Use SQL Server Management Studio (SSMS) or Azure Data Studio
 
@@ -316,11 +461,50 @@ JWT_SECRET_KEY=your-super-secure-secret-key-here-with-at-least-32-characters
 JWT_EXPIRE_HOURS=24
 ENCRYPTION_KEY=your-encryption-key-for-sensitive-data
 
+# Payment Gateway (VNPay)
+VNPAY_TMN_CODE=your_vnpay_tmn_code
+VNPAY_HASH_SECRET=your_vnpay_hash_secret
+VNPAY_BASE_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+
+# AI Services Configuration
+GOOGLE_AI_API_KEY=your_google_ai_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+
 # External Services
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
+```
+
+### **AI Services Configuration**
+
+#### **Chat Service Configuration**
+```python
+# ai-services/chat/config.py
+DATABASE_URL = "mssql+aiodbc://sa:YourPassword@localhost/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server"
+GOOGLE_AI_API_KEY = "your_google_ai_api_key_here"
+SECRET_KEY = "your_secret_key_here"
+```
+
+#### **Suggestion AI Configuration**
+```python
+# ai-services/suggestionAI/.env
+DATABASE_URL=mssql+pyodbc://sa:YourPassword@localhost/BrainStormEra?driver=ODBC+Driver+17+for+SQL+Server
+GEMINI_API_KEY=your_gemini_api_key_here
+USE_GEMINI=true
+```
+
+#### **RAG Services Configuration**
+```json
+// ai-services/RAG-img/config.json
+{
+  "upload_dir": "uploads",
+  "max_file_size": 10485760,
+  "supported_formats": [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp"],
+  "ocr_languages": ["vi", "en"],
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+}
 ```
 
 ### **Configuration Files Structure**
@@ -337,6 +521,11 @@ SMTP_PASSWORD=your-app-password
     "Issuer": "BrainStormEra",
     "Audience": "BrainStormEra-Users",
     "ExpiryInHours": 24
+  },
+  "VNPaySettings": {
+    "TmnCode": "your_vnpay_tmn_code",
+    "HashSecret": "your_vnpay_hash_secret",
+    "BaseUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"
   },
   "Logging": {
     "LogLevel": {
@@ -358,15 +547,18 @@ SMTP_PASSWORD=your-app-password
    - Initial skills assessment and learning preferences
 2. **Course Discovery**:
    - Browse categorized course catalog with filtering options
+   - Use AI-powered course suggestions based on interests
    - View course previews, syllabi, and instructor profiles
    - Read reviews and ratings from other students
 3. **Enrollment Process**:
    - Select desired courses and add to learning path
    - Configure learning schedule and notification preferences
+   - Process payment using VNPay or points system
    - Access course materials and supplementary resources
 4. **Learning Experience**:
    - Progress through structured lessons and chapters
    - Participate in interactive content and multimedia lessons
+   - Use AI chatbot for real-time learning assistance
    - Track learning analytics and performance metrics
 5. **Assessment & Evaluation**:
    - Complete chapter quizzes and comprehensive exams
@@ -376,6 +568,7 @@ SMTP_PASSWORD=your-app-password
    - Earn digital badges for completed milestones
    - Generate completion certificates with verification codes
    - Build comprehensive learning portfolio
+   - Share achievements on social media
 
 ### **🧑‍🏫 Instructor Workflow**
 
@@ -387,10 +580,12 @@ SMTP_PASSWORD=your-app-password
    - Create comprehensive course outlines and learning objectives
    - Develop multimedia content using integrated authoring tools
    - Organize content into logical chapters and learning modules
+   - Use AI tools for content optimization and suggestions
 3. **Content Management**:
    - Upload and organize diverse learning materials (videos, documents, presentations)
    - Create interactive elements and knowledge check points
    - Configure course prerequisites and learning paths
+   - Use RAG services for content analysis and enhancement
 4. **Assessment Creation**:
    - Design varied assessment types (multiple choice, essay, practical)
    - Set up automated grading rules and rubrics
@@ -399,10 +594,12 @@ SMTP_PASSWORD=your-app-password
    - Monitor student progress through analytics dashboard
    - Provide personalized feedback and guidance
    - Conduct virtual office hours and Q&A sessions
+   - Use AI chatbot for automated student support
 6. **Performance Analysis**:
    - Analyze course effectiveness through detailed metrics
    - Generate reports on student outcomes and engagement
    - Continuously improve content based on feedback
+   - Track revenue and financial performance
 
 ### **🔧 Administrator Workflow**
 
@@ -410,22 +607,48 @@ SMTP_PASSWORD=your-app-password
    - Manage user accounts, roles, and permissions
    - Configure system-wide settings and policies
    - Monitor platform performance and resource utilization
+   - Manage AI services and external integrations
 2. **Content Governance**:
    - Review and approve course content before publication
    - Ensure quality standards and educational guidelines compliance
    - Manage content libraries and shared resources
+   - Monitor AI-generated content and suggestions
 3. **Analytics & Reporting**:
    - Generate comprehensive platform usage reports
    - Analyze user engagement and learning outcomes
    - Monitor financial metrics and enrollment trends
+   - Track AI service performance and usage
 4. **Technical Maintenance**:
    - Perform regular system backups and data integrity checks
    - Manage database optimization and performance tuning
    - Coordinate with development team for updates and enhancements
+   - Monitor AI model performance and updates
 5. **Support & Communication**:
    - Handle escalated user support requests
    - Communicate platform updates and announcements
    - Manage stakeholder relationships and feedback integration
+   - Oversee AI chatbot training and optimization
+
+### **🤖 AI Services Usage**
+
+#### **Chatbot Interaction**
+- **24/7 Support**: Access AI assistant anytime for learning help
+- **Context Awareness**: AI understands current course and page context
+- **Natural Language**: Ask questions in natural language
+- **Learning Guidance**: Get personalized study recommendations
+- **Feedback System**: Rate AI responses to improve accuracy
+
+#### **Course Suggestions**
+- **Smart Recommendations**: AI analyzes user interests and goals
+- **Skill Level Detection**: Automatic identification of user expertise level
+- **Technology Mapping**: AI suggests relevant technologies and frameworks
+- **Enhanced Search**: Improved course discovery with AI-powered keywords
+
+#### **Content Analysis**
+- **Image Processing**: Upload images and ask questions about content
+- **Video Analysis**: Process YouTube videos and extract key information
+- **Document Understanding**: OCR and text extraction from various formats
+- **Semantic Search**: Find relevant content using natural language queries
 
 ## 🔧 Development Guide & Best Practices
 
@@ -442,6 +665,30 @@ dotnet run --project BrainStormEra-MVC --seed-data
 
 # Generate SQL Scripts
 dotnet ef migrations script --project DataAccessLayer --startup-project BrainStormEra-MVC
+```
+
+### **AI Services Development**
+
+```bash
+# Chat Service Development
+cd ai-services/chat
+pip install -r requirements.txt
+python main.py
+
+# Suggestion AI Development
+cd ai-services/suggestionAI
+pip install -r requirements.txt
+python run.py
+
+# RAG Image Service Development
+cd ai-services/RAG-img
+pip install -r requirements.txt
+python main.py
+
+# RAG Video Service Development
+cd ai-services/RAG-vid
+pip install -r requirements.txt
+python main.py
 ```
 
 ### **Build & Testing Commands**
@@ -486,6 +733,7 @@ dotnet run --project BrainStormEra-MVC --configuration Release --no-build
 ### **Coding Standards & Best Practices**
 
 - **C# Conventions**: Follow Microsoft C# Coding Conventions and StyleCop rules
+- **Python Conventions**: Follow PEP 8 style guide for Python code
 - **Naming Standards**: Use PascalCase for public members, camelCase for private fields
 - **Documentation**: XML documentation comments for public APIs
 - **Testing**: Minimum 80% code coverage with unit and integration tests
@@ -500,6 +748,7 @@ dotnet run --project BrainStormEra-MVC --configuration Release --no-build
 - Database migrations with both up and down methods
 - API documentation using Swagger/OpenAPI specifications
 - Performance benchmarks for critical path operations
+- AI service integration testing and validation
 
 ## 📄 License & Legal Information
 
@@ -509,6 +758,9 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 - ASP.NET Core (Apache 2.0)
 - Entity Framework Core (Apache 2.0)
+- FastAPI (MIT)
+- Google AI (Gemini) (Google Terms of Service)
+- OpenAI Whisper (MIT)
 - Bootstrap (MIT)
 - jQuery (MIT)
 - Chart.js (MIT)
@@ -548,7 +800,7 @@ This project is developed for educational purposes and academic research. Commer
 
 <div align="center">
   <h3>🎓 Academic Project - BrainStormEra E-Learning Platform</h3>
-  <p><strong>Demonstrating Modern Web Development Practices & Educational Technology Innovation</strong></p>
+  <p><strong>Demonstrating Modern Web Development Practices & Educational Technology Innovation with AI Integration</strong></p>
   
 <p>
    <a href="https://github.com/LTPPPP/BrainStormEra-v2/stargazers">
@@ -562,5 +814,5 @@ This project is developed for educational purposes and academic research. Commer
    </a>
 </p>
   <p>🌟 <strong>If this project helps your learning journey, please give us a star!</strong> 🌟</p>
-  <p>Built with ❤️ by Computer Science Students | Powered by .NET 6.0 & Modern Web Technologies</p>
+  <p>Built with ❤️ by Computer Science Students | Powered by .NET 6.0, Python FastAPI & Modern AI Technologies</p>
 </div>
