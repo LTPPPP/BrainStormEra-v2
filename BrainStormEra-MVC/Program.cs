@@ -237,6 +237,7 @@ namespace BrainStormEra_MVC
 
             // Register Auth Service Implementation for business logic layer
             builder.Services.AddScoped<BusinessLogicLayer.Services.Implementations.AuthService>();
+            builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IAuthService, BusinessLogicLayer.Services.Implementations.AuthService>();
 
             // Register Home Services for data access and business logic
             builder.Services.AddScoped<BusinessLogicLayer.Services.Interfaces.IHomeService, BusinessLogicLayer.Services.Implementations.HomeService>();

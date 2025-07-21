@@ -3,6 +3,7 @@ using DataAccessLayer.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using BusinessLogicLayer.DTOs.Auth;
+using DataAccessLayer.Models;
 
 namespace BusinessLogicLayer.Services.Interfaces
 {
@@ -44,6 +45,7 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<ChangePasswordResult> ChangePasswordAsync(string userId, ChangePasswordViewModel model);
         Task<AvatarResult> GetUserAvatarAsync(string? userId = null);
         Task<DeleteAvatarResult> DeleteUserAvatarAsync(string userId);
+        Task<Account?> GetUserInfoAsync(string userId);
         #endregion
     }
 }
