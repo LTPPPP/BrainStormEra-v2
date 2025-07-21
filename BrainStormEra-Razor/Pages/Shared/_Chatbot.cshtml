@@ -1,11 +1,13 @@
 @{
-    // Chatbot partial view - placeholder for now
+    var userRole = User.FindFirst("UserRole")?.Value?.ToLower();
+    var isAdmin = userRole == "admin";
 }
 
-@if (User.Identity?.IsAuthenticated == true)
+@if (User.Identity?.IsAuthenticated == true && isAdmin)
 {
-    <!-- Chatbot will be implemented here when needed -->
-    <div id="chatbot-container" style="display: none;">
-        <!-- Chatbot UI will be added here -->
-    </div>
+    <!-- Chatbot will be initialized by JavaScript -->
+    <div id="chatbot-root"></div>
+    
+    @* Add anti-forgery token for AJAX requests *@
+    @Html.AntiForgeryToken()
 }

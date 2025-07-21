@@ -63,10 +63,28 @@
     @if (User.Identity?.IsAuthenticated == true)
     {
         <script src="~/js/shared/notification-system.js" asp-append-version="true"></script>
-        <script src="~/js/components/chatbot.js" asp-append-version="true"></script>
-
-        @* Include Chat SignalR for global chat notifications *@
         @await Html.PartialAsync("_ChatSignalR")
+    }
+
+    @{
+        var userRole = User.FindFirst("UserRole")?.Value?.ToLower();
+        var isAdmin = userRole == "admin";
+        var isLearner = userRole == "learner";
+        
+        // Check if current page is a lesson page for learner
+        var isLessonPage = false;
+        if (isLearner)
+        {
+            var controller = ViewContext.RouteData.Values["controller"]?.ToString()?.ToLower();
+            var action = ViewContext.RouteData.Values["action"]?.ToString()?.ToLower();
+            isLessonPage = controller == "lesson" && (action == "learn" || action == "index");
+        }
+    }
+    
+    @* Only load chatbot script for admin or learner on lesson pages *@
+    @if (User.Identity?.IsAuthenticated == true && (isAdmin || (isLearner && isLessonPage)))
+    {
+        <script src="~/js/components/chatbot.js" asp-append-version="true"></script>
     }
 
     @await RenderSectionAsync("Scripts", required: false)

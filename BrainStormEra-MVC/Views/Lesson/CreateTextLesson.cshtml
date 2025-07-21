@@ -340,13 +340,7 @@ Write in a clear, educational format that helps students understand the topic th
         });
     </script>
 
-    <!-- Chatbot for authenticated users -->
-    @if (Context.Session.GetString("UserId") != null)
-    {
-        @await Html.PartialAsync("~/Views/Shared/_Chatbot.cshtml")
-        @Html.AntiForgeryToken()
-        <script src="~/js/components/chatbot.js"></script>
-    }
+
 </body>
 
 </html>

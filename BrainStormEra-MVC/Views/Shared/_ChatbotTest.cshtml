@@ -1,0 +1,27 @@
+@{
+    var userRole = User.FindFirst("UserRole")?.Value?.ToLower();
+    var isAdmin = userRole == "admin";
+    var isInstructor = userRole == "instructor";
+    var isLearner = userRole == "learner";
+    
+    // Check if current page is a lesson page for learner
+    var isLessonPage = false;
+    if (isLearner)
+    {
+        var controller = ViewContext.RouteData.Values["controller"]?.ToString()?.ToLower();
+        var action = ViewContext.RouteData.Values["action"]?.ToString()?.ToLower();
+        isLessonPage = controller == "lesson" && (action == "learn" || action == "index");
+    }
+}
+
+<div style="background: #f8f9fa; padding: 10px; margin: 10px; border-radius: 5px; font-family: monospace;">
+    <h5>Chatbot Test Info:</h5>
+    <p><strong>User Role:</strong> @userRole</p>
+    <p><strong>Is Admin:</strong> @isAdmin</p>
+    <p><strong>Is Instructor:</strong> @isInstructor</p>
+    <p><strong>Is Learner:</strong> @isLearner</p>
+    <p><strong>Is Lesson Page:</strong> @isLessonPage</p>
+    <p><strong>Controller:</strong> @ViewContext.RouteData.Values["controller"]</p>
+    <p><strong>Action:</strong> @ViewContext.RouteData.Values["action"]</p>
+    <p><strong>Should Show Chatbot:</strong> @(User.Identity?.IsAuthenticated == true && ((isAdmin) || (isLearner && isLessonPage)))</p>
+</div> 
