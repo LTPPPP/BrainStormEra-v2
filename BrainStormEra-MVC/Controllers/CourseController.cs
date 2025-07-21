@@ -13,12 +13,12 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class CourseController : BaseController
     {
-        private readonly CourseService _courseService;
+        private readonly ICourseService _courseService;
         private readonly IFeedbackService _feedbackService;
         private readonly ILogger<CourseController> _logger;
 
         public CourseController(
-            CourseService courseService,
+            ICourseService courseService,
             IFeedbackService feedbackService,
             ILogger<CourseController> logger) : base()
         {
