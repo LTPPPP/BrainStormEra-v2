@@ -8,14 +8,15 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using BusinessLogicLayer.Services.Interfaces;
 
 namespace BrainStormEra_MVC.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly HomeService _homeService;
+        private readonly IHomeService _homeService;
 
-        public HomeController(HomeService homeService)
+        public HomeController(IHomeService homeService)
         {
             _homeService = homeService;
         }
