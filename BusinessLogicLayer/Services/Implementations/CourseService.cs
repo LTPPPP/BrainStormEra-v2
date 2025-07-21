@@ -1202,7 +1202,8 @@ namespace BusinessLogicLayer.Services.Implementations
                                 EnrollmentCreatedAt = DateTime.UtcNow,
                                 EnrollmentUpdatedAt = DateTime.UtcNow,
                                 EnrollmentStatus = 1, // Active status
-                                ProgressPercentage = 0
+                                ProgressPercentage = 0,
+                                Approved = true // Set approved = true when user enrolls
                             };
 
                             realContext.Enrollments.Add(enrollment);
