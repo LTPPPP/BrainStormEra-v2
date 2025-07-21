@@ -1,16 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using DataAccessLayer.Models.ViewModels;
-using BusinessLogicLayer.Services.Implementations;
+using BusinessLogicLayer.Services.Interfaces;
 
 namespace BrainStormEra_MVC.Controllers
 {
     [Authorize]
     public class QuestionController : Controller
     {
-        private readonly QuestionService _questionService;
+        private readonly IQuestionService _questionService;
 
-        public QuestionController(QuestionService questionService)
+        public QuestionController(IQuestionService questionService)
         {
             _questionService = questionService;
         }
