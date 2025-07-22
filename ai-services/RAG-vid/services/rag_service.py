@@ -30,7 +30,7 @@ class RAGService:
         gemini_api_key = os.getenv("GEMINI_API_KEY")
         if gemini_api_key:
             genai.configure(api_key=gemini_api_key)
-            self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+            self.gemini_model = genai.GenerativeModel('gemini-2.5-flash')
         
     async def initialize(self):
         """Initialize the RAG service with models"""
