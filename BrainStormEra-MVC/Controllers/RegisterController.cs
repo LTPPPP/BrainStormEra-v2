@@ -13,9 +13,9 @@ namespace BrainStormEra_MVC.Controllers
         private readonly BrainStormEraContext _context;
         private readonly ILogger<RegisterController> _logger;
         private readonly IUserService _userService;
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
 
-        public RegisterController(BrainStormEraContext context, ILogger<RegisterController> logger, IUserService userService, AuthService authService)
+        public RegisterController(BrainStormEraContext context, ILogger<RegisterController> logger, IUserService userService, IAuthService authService)
         {
             _context = context;
             _logger = logger;
