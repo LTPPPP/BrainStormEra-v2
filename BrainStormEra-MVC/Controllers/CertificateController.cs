@@ -12,11 +12,11 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize(Roles = "learner")]
     public class CertificateController : BaseController
     {
-        private readonly CertificateService _certificateService;
+        private readonly ICertificateService _certificateService;
         private readonly ILogger<CertificateController> _logger;
 
         public CertificateController(
-            CertificateService certificateService,
+            ICertificateService certificateService,
             ILogger<CertificateController> logger)
         {
             _certificateService = certificateService;

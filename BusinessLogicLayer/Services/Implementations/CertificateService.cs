@@ -228,14 +228,14 @@ namespace BusinessLogicLayer.Services.Implementations
         }
 
         // Additional methods for the wrapper functionality
-        public async Task<GetCertificatesIndexResult> GetCertificatesIndexAsync(ClaimsPrincipal user, string? search, int page, int pageSize)
+        public async Task<BusinessLogicLayer.Services.Interfaces.GetCertificatesIndexResult> GetCertificatesIndexAsync(System.Security.Claims.ClaimsPrincipal user, string? search, int page, int pageSize)
         {
             try
             {
                 if (!_userContextService.IsAuthenticated(user))
                 {
                     _logger.LogWarning("Unauthenticated user attempted to access certificates");
-                    return new GetCertificatesIndexResult
+                    return new BusinessLogicLayer.Services.Interfaces.GetCertificatesIndexResult
                     {
                         IsSuccess = false,
                         RedirectToLogin = true,
@@ -247,7 +247,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (string.IsNullOrEmpty(userId))
                 {
                     _logger.LogWarning("User ID not found in claims for certificates request");
-                    return new GetCertificatesIndexResult
+                    return new BusinessLogicLayer.Services.Interfaces.GetCertificatesIndexResult
                     {
                         IsSuccess = false,
                         RedirectToLogin = true,
@@ -261,7 +261,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 var certificateList = await GetUserCertificatesAsync(userId, search, page, pageSize);
 
-                return new GetCertificatesIndexResult
+                return new BusinessLogicLayer.Services.Interfaces.GetCertificatesIndexResult
                 {
                     IsSuccess = true,
                     CertificateList = certificateList,
@@ -271,7 +271,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading certificates for user");
-                return new GetCertificatesIndexResult
+                return new BusinessLogicLayer.Services.Interfaces.GetCertificatesIndexResult
                 {
                     IsSuccess = false,
                     ErrorMessage = "An error occurred while loading your certificates. Please try again.",
@@ -280,14 +280,14 @@ namespace BusinessLogicLayer.Services.Implementations
             }
         }
 
-        public async Task<GetCertificateDetailsResult> GetCertificateDetailsAsync(ClaimsPrincipal user, string courseId)
+        public async Task<BusinessLogicLayer.Services.Interfaces.GetCertificateDetailsResult> GetCertificateDetailsAsync(System.Security.Claims.ClaimsPrincipal user, string courseId)
         {
             try
             {
                 if (string.IsNullOrEmpty(courseId))
                 {
                     _logger.LogWarning("Course ID is required for certificate details");
-                    return new GetCertificateDetailsResult
+                    return new BusinessLogicLayer.Services.Interfaces.GetCertificateDetailsResult
                     {
                         IsSuccess = false,
                         ErrorMessage = "Course ID is required.",
@@ -298,7 +298,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (!_userContextService.IsAuthenticated(user))
                 {
                     _logger.LogWarning("Unauthenticated user attempted to access certificate details for course {CourseId}", courseId);
-                    return new GetCertificateDetailsResult
+                    return new BusinessLogicLayer.Services.Interfaces.GetCertificateDetailsResult
                     {
                         IsSuccess = false,
                         RedirectToLogin = true,
@@ -310,7 +310,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (string.IsNullOrEmpty(userId))
                 {
                     _logger.LogWarning("User ID not found in claims for certificate details request");
-                    return new GetCertificateDetailsResult
+                    return new BusinessLogicLayer.Services.Interfaces.GetCertificateDetailsResult
                     {
                         IsSuccess = false,
                         RedirectToLogin = true,
@@ -322,7 +322,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (certificateDetails == null)
                 {
                     _logger.LogWarning("Certificate not found for course {CourseId} and user {UserId}", courseId, userId);
-                    return new GetCertificateDetailsResult
+                    return new BusinessLogicLayer.Services.Interfaces.GetCertificateDetailsResult
                     {
                         IsSuccess = false,
                         ErrorMessage = "Certificate not found or course not completed.",
@@ -330,7 +330,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                return new GetCertificateDetailsResult
+                return new BusinessLogicLayer.Services.Interfaces.GetCertificateDetailsResult
                 {
                     IsSuccess = true,
                     CertificateDetails = certificateDetails
@@ -339,7 +339,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading certificate details for course {CourseId}", courseId);
-                return new GetCertificateDetailsResult
+                return new BusinessLogicLayer.Services.Interfaces.GetCertificateDetailsResult
                 {
                     IsSuccess = false,
                     ErrorMessage = "An error occurred while loading the certificate details.",
@@ -348,14 +348,14 @@ namespace BusinessLogicLayer.Services.Implementations
             }
         }
 
-        public async Task<DownloadCertificateResult> DownloadCertificateAsync(ClaimsPrincipal user, string courseId, Microsoft.AspNetCore.Mvc.IUrlHelper urlHelper)
+        public async Task<BusinessLogicLayer.Services.Interfaces.DownloadCertificateResult> DownloadCertificateAsync(System.Security.Claims.ClaimsPrincipal user, string courseId, Microsoft.AspNetCore.Mvc.IUrlHelper urlHelper)
         {
             try
             {
                 if (!_userContextService.IsAuthenticated(user) || string.IsNullOrEmpty(courseId))
                 {
                     _logger.LogWarning("Invalid request parameters for certificate download: CourseId={CourseId}", courseId);
-                    return new DownloadCertificateResult
+                    return new BusinessLogicLayer.Services.Interfaces.DownloadCertificateResult
                     {
                         IsSuccess = false,
                         JsonResult = _responseService.HandleJsonError("Invalid request parameters.")
@@ -366,7 +366,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (string.IsNullOrEmpty(userId))
                 {
                     _logger.LogWarning("User ID not found in claims for certificate download request");
-                    return new DownloadCertificateResult
+                    return new BusinessLogicLayer.Services.Interfaces.DownloadCertificateResult
                     {
                         IsSuccess = false,
                         JsonResult = _responseService.HandleJsonError("Invalid request parameters.")
@@ -377,7 +377,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (!isValid)
                 {
                     _logger.LogWarning("Certificate validation failed for course {CourseId} and user {UserId}", courseId, userId);
-                    return new DownloadCertificateResult
+                    return new BusinessLogicLayer.Services.Interfaces.DownloadCertificateResult
                     {
                         IsSuccess = false,
                         JsonResult = _responseService.HandleJsonError("Certificate not found.")
@@ -385,7 +385,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
 
                 var printUrl = urlHelper.Action("Details", new { courseId });
-                return new DownloadCertificateResult
+                return new BusinessLogicLayer.Services.Interfaces.DownloadCertificateResult
                 {
                     IsSuccess = true,
                     JsonResult = _responseService.HandleJsonSuccess(new { printUrl }, "Certificate ready for printing.")
@@ -394,7 +394,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error downloading certificate for course {CourseId}", courseId);
-                return new DownloadCertificateResult
+                return new BusinessLogicLayer.Services.Interfaces.DownloadCertificateResult
                 {
                     IsSuccess = false,
                     JsonResult = _responseService.HandleJsonError("An error occurred while preparing the certificate.")

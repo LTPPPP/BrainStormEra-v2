@@ -536,7 +536,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Get create question view model with authorization and validation
         /// </summary>
-        public async Task<CreateQuestionResult> GetCreateQuestionViewModelAsync(ClaimsPrincipal user, string quizId)
+        public async Task<BusinessLogicLayer.Services.Interfaces.CreateQuestionResult> GetCreateQuestionViewModelAsync(ClaimsPrincipal user, string quizId)
         {
             try
             {
@@ -545,7 +545,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (string.IsNullOrEmpty(quizId))
                 {
                     _logger.LogWarning("Quiz ID is null or empty");
-                    return new CreateQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.CreateQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Quiz ID is required"
@@ -556,7 +556,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (string.IsNullOrEmpty(userId))
                 {
                     _logger.LogWarning("User ID not found in claims");
-                    return new CreateQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.CreateQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "User authentication required",
@@ -569,7 +569,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (quiz == null)
                 {
                     _logger.LogWarning("Quiz {QuizId} not found or user {UserId} not authorized", quizId, userId);
-                    return new CreateQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.CreateQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Quiz not found or you are not authorized to create questions for this quiz"
@@ -578,7 +578,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 var viewModel = await GetCreateQuestionViewModelAsync(quizId);
 
-                return new CreateQuestionResult
+                return new BusinessLogicLayer.Services.Interfaces.CreateQuestionResult
                 {
                     Success = true,
                     ViewModel = viewModel
@@ -587,7 +587,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting create question view model for quiz {QuizId}", quizId);
-                return new CreateQuestionResult
+                return new BusinessLogicLayer.Services.Interfaces.CreateQuestionResult
                 {
                     Success = false,
                     ErrorMessage = "An error occurred while loading the question creation form"
@@ -598,7 +598,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Create a new question with validation and authorization
         /// </summary>
-        public async Task<CreateQuestionResult> CreateQuestionAsync(
+        public async Task<BusinessLogicLayer.Services.Interfaces.CreateQuestionResult> CreateQuestionAsync(
             ClaimsPrincipal user,
             CreateQuestionViewModel model,
             ModelStateDictionary modelState)
@@ -609,7 +609,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 if (model == null)
                 {
-                    return new CreateQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.CreateQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Invalid question data"
@@ -619,7 +619,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var userId = user.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return new CreateQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.CreateQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "User authentication required",
@@ -638,7 +638,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     // Copy the submitted data back to the view model
                     CopyModelData(model, viewModel);
 
-                    return new CreateQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.CreateQuestionResult
                     {
                         Success = false,
                         ViewModel = viewModel,
@@ -651,7 +651,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var quiz = await GetQuizWithAuthorizationAsync(model.QuizId, userId);
                 if (quiz == null)
                 {
-                    return new CreateQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.CreateQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Quiz not found or you are not authorized to create questions for this quiz"
@@ -665,7 +665,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     var viewModel = await GetCreateQuestionViewModelAsync(model.QuizId);
                     CopyModelData(model, viewModel);
 
-                    return new CreateQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.CreateQuestionResult
                     {
                         Success = false,
                         ViewModel = viewModel,
@@ -680,7 +680,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 _logger.LogInformation("Question {QuestionId} created successfully for quiz {QuizId}",
                     question.QuestionId, model.QuizId);
 
-                return new CreateQuestionResult
+                return new BusinessLogicLayer.Services.Interfaces.CreateQuestionResult
                 {
                     Success = true,
                     SuccessMessage = "Question created successfully!",
@@ -692,7 +692,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating question for quiz {QuizId}", model?.QuizId);
-                return new CreateQuestionResult
+                return new BusinessLogicLayer.Services.Interfaces.CreateQuestionResult
                 {
                     Success = false,
                     ErrorMessage = "An error occurred while creating the question. Please try again."
@@ -707,7 +707,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Get edit question view model with authorization and validation
         /// </summary>
-        public async Task<EditQuestionResult> GetEditQuestionViewModelAsync(ClaimsPrincipal user, string questionId)
+        public async Task<BusinessLogicLayer.Services.Interfaces.EditQuestionResult> GetEditQuestionViewModelAsync(ClaimsPrincipal user, string questionId)
         {
             try
             {
@@ -715,7 +715,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 if (string.IsNullOrEmpty(questionId))
                 {
-                    return new EditQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Question ID is required"
@@ -725,7 +725,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var userId = user.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return new EditQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "User authentication required",
@@ -737,7 +737,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var question = await GetQuestionWithAuthorizationAsync(questionId, userId);
                 if (question == null)
                 {
-                    return new EditQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Question not found or you are not authorized to edit this question"
@@ -747,14 +747,14 @@ namespace BusinessLogicLayer.Services.Implementations
                 var viewModel = await GetEditQuestionViewModelAsync(questionId);
                 if (viewModel == null)
                 {
-                    return new EditQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Question not found"
                     };
                 }
 
-                return new EditQuestionResult
+                return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                 {
                     Success = true,
                     ViewModel = viewModel
@@ -763,7 +763,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting edit question view model for question {QuestionId}", questionId);
-                return new EditQuestionResult
+                return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                 {
                     Success = false,
                     ErrorMessage = "An error occurred while loading the question for editing"
@@ -774,7 +774,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Update question with validation and authorization
         /// </summary>
-        public async Task<EditQuestionResult> UpdateQuestionAsync(
+        public async Task<BusinessLogicLayer.Services.Interfaces.EditQuestionResult> UpdateQuestionAsync(
             ClaimsPrincipal user,
             CreateQuestionViewModel model,
             ModelStateDictionary modelState)
@@ -785,7 +785,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 if (model?.QuestionId == null)
                 {
-                    return new EditQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Question ID is required"
@@ -795,7 +795,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var userId = user.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return new EditQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "User authentication required",
@@ -807,7 +807,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 if (!modelState.IsValid)
                 {
                     var validationErrors = GetValidationErrors(modelState);
-                    return new EditQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                     {
                         Success = false,
                         ViewModel = model,
@@ -820,7 +820,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var question = await GetQuestionWithAuthorizationAsync(model.QuestionId, userId);
                 if (question == null)
                 {
-                    return new EditQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Question not found or you are not authorized to edit this question"
@@ -831,7 +831,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var businessValidationResult = await ValidateQuestionBusinessRules(model);
                 if (!businessValidationResult.IsValid)
                 {
-                    return new EditQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                     {
                         Success = false,
                         ViewModel = model,
@@ -844,7 +844,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var success = await UpdateQuestionAsync(model);
                 if (!success)
                 {
-                    return new EditQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Failed to update question"
@@ -853,7 +853,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 _logger.LogInformation("Question {QuestionId} updated successfully", model.QuestionId);
 
-                return new EditQuestionResult
+                return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                 {
                     Success = true,
                     SuccessMessage = "Question updated successfully!",
@@ -865,7 +865,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating question {QuestionId}", model?.QuestionId);
-                return new EditQuestionResult
+                return new BusinessLogicLayer.Services.Interfaces.EditQuestionResult
                 {
                     Success = false,
                     ErrorMessage = "An error occurred while updating the question. Please try again."
@@ -880,7 +880,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Delete question with authorization
         /// </summary>
-        public async Task<DeleteQuestionResult> DeleteQuestionAsync(ClaimsPrincipal user, string questionId)
+        public async Task<BusinessLogicLayer.Services.Interfaces.DeleteQuestionResult> DeleteQuestionAsync(ClaimsPrincipal user, string questionId)
         {
             try
             {
@@ -888,7 +888,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 if (string.IsNullOrEmpty(questionId))
                 {
-                    return new DeleteQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.DeleteQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Question ID is required"
@@ -898,7 +898,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var userId = user.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return new DeleteQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.DeleteQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "User authentication required",
@@ -910,7 +910,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var question = await GetQuestionWithAuthorizationAsync(questionId, userId);
                 if (question == null)
                 {
-                    return new DeleteQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.DeleteQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Question not found or you are not authorized to delete this question"
@@ -923,7 +923,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var success = await DeleteQuestionAsync(questionId);
                 if (!success)
                 {
-                    return new DeleteQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.DeleteQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Failed to delete question"
@@ -932,7 +932,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 _logger.LogInformation("Question {QuestionId} deleted successfully", questionId);
 
-                return new DeleteQuestionResult
+                return new BusinessLogicLayer.Services.Interfaces.DeleteQuestionResult
                 {
                     Success = true,
                     SuccessMessage = "Question deleted successfully!",
@@ -944,7 +944,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting question {QuestionId}", questionId);
-                return new DeleteQuestionResult
+                return new BusinessLogicLayer.Services.Interfaces.DeleteQuestionResult
                 {
                     Success = false,
                     ErrorMessage = "An error occurred while deleting the question. Please try again."
@@ -959,7 +959,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Duplicate question with authorization
         /// </summary>
-        public async Task<DuplicateQuestionResult> DuplicateQuestionAsync(ClaimsPrincipal user, string questionId)
+        public async Task<BusinessLogicLayer.Services.Interfaces.DuplicateQuestionResult> DuplicateQuestionAsync(ClaimsPrincipal user, string questionId)
         {
             try
             {
@@ -967,7 +967,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 if (string.IsNullOrEmpty(questionId))
                 {
-                    return new DuplicateQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.DuplicateQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Question ID is required"
@@ -977,7 +977,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var userId = user.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return new DuplicateQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.DuplicateQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "User authentication required"
@@ -988,7 +988,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var question = await GetQuestionWithAuthorizationAsync(questionId, userId);
                 if (question == null)
                 {
-                    return new DuplicateQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.DuplicateQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Question not found or you are not authorized to duplicate this question"
@@ -1001,7 +1001,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var success = await DuplicateQuestionAsync(questionId);
                 if (!success)
                 {
-                    return new DuplicateQuestionResult
+                    return new BusinessLogicLayer.Services.Interfaces.DuplicateQuestionResult
                     {
                         Success = false,
                         ErrorMessage = "Failed to duplicate question"
@@ -1010,7 +1010,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 _logger.LogInformation("Question {QuestionId} duplicated successfully", questionId);
 
-                return new DuplicateQuestionResult
+                return new BusinessLogicLayer.Services.Interfaces.DuplicateQuestionResult
                 {
                     Success = true,
                     SuccessMessage = "Question duplicated successfully!",
@@ -1022,7 +1022,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error duplicating question {QuestionId}", questionId);
-                return new DuplicateQuestionResult
+                return new BusinessLogicLayer.Services.Interfaces.DuplicateQuestionResult
                 {
                     Success = false,
                     ErrorMessage = "An error occurred while duplicating the question. Please try again."
@@ -1037,7 +1037,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Reorder questions with authorization
         /// </summary>
-        public async Task<ReorderQuestionsResult> ReorderQuestionsAsync(
+        public async Task<BusinessLogicLayer.Services.Interfaces.ReorderQuestionsResult> ReorderQuestionsAsync(
             ClaimsPrincipal user,
             string quizId,
             List<string> questionIds)
@@ -1048,7 +1048,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 if (string.IsNullOrEmpty(quizId) || questionIds == null || !questionIds.Any())
                 {
-                    return new ReorderQuestionsResult
+                    return new BusinessLogicLayer.Services.Interfaces.ReorderQuestionsResult
                     {
                         Success = false,
                         ErrorMessage = "Invalid data provided"
@@ -1058,7 +1058,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var userId = user.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return new ReorderQuestionsResult
+                    return new BusinessLogicLayer.Services.Interfaces.ReorderQuestionsResult
                     {
                         Success = false,
                         ErrorMessage = "User authentication required"
@@ -1069,7 +1069,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var quiz = await GetQuizWithAuthorizationAsync(quizId, userId);
                 if (quiz == null)
                 {
-                    return new ReorderQuestionsResult
+                    return new BusinessLogicLayer.Services.Interfaces.ReorderQuestionsResult
                     {
                         Success = false,
                         ErrorMessage = "Quiz not found or you are not authorized to reorder questions for this quiz"
@@ -1080,7 +1080,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var success = await ReorderQuestionsAsync(quizId, questionIds);
                 if (!success)
                 {
-                    return new ReorderQuestionsResult
+                    return new BusinessLogicLayer.Services.Interfaces.ReorderQuestionsResult
                     {
                         Success = false,
                         ErrorMessage = "Failed to reorder questions"
@@ -1089,7 +1089,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 _logger.LogInformation("Questions reordered successfully for quiz {QuizId}", quizId);
 
-                return new ReorderQuestionsResult
+                return new BusinessLogicLayer.Services.Interfaces.ReorderQuestionsResult
                 {
                     Success = true,
                     SuccessMessage = "Question order updated successfully!"
@@ -1098,7 +1098,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error reordering questions for quiz {QuizId}", quizId);
-                return new ReorderQuestionsResult
+                return new BusinessLogicLayer.Services.Interfaces.ReorderQuestionsResult
                 {
                     Success = false,
                     ErrorMessage = "An error occurred while reordering questions. Please try again."
@@ -1113,7 +1113,7 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Validate business rules for question creation/editing
         /// </summary>
-        private async Task<BusinessValidationResult> ValidateQuestionBusinessRules(CreateQuestionViewModel model)
+        private async Task<BusinessLogicLayer.Services.Interfaces.BusinessValidationResult> ValidateQuestionBusinessRules(CreateQuestionViewModel model)
         {
             var errors = new Dictionary<string, List<string>>();
 
@@ -1186,7 +1186,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 errors.Add("General", new List<string> { "An error occurred during validation" });
             }
 
-            return new BusinessValidationResult
+            return new BusinessLogicLayer.Services.Interfaces.BusinessValidationResult
             {
                 IsValid = !errors.Any(),
                 Errors = errors

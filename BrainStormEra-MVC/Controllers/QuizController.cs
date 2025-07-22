@@ -14,10 +14,10 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class QuizController : BaseController
     {
-        private readonly QuizService _quizService;
+        private readonly IQuizService _quizService;
         private readonly ILogger<QuizController> _logger;
 
-        public QuizController(QuizService quizService, ILogger<QuizController> logger) : base()
+        public QuizController(IQuizService quizService, ILogger<QuizController> logger) : base()
         {
             _quizService = quizService;
             _logger = logger;

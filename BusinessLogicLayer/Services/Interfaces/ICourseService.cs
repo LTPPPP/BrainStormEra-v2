@@ -1,6 +1,7 @@
 using DataAccessLayer.Data;
 using DataAccessLayer.Models;
 using DataAccessLayer.Models.ViewModels;
+using BusinessLogicLayer.Services.Implementations;
 
 namespace BusinessLogicLayer.Services.Interfaces
 {
@@ -33,6 +34,19 @@ namespace BusinessLogicLayer.Services.Interfaces
         Task<Course?> GetCourseByIdAsync(string courseId);
         Task<List<Chapter>> GetChaptersByCourseIdAsync(string courseId);
         Task<List<Lesson>> GetLessonsByChapterIdAsync(string chapterId);
+        // Controller-facing methods
+        Task<CourseIndexResult> GetCoursesAsync(System.Security.Claims.ClaimsPrincipal user, string? search, string? category, int page = 1, int pageSize = 50);
+        Task<CourseSearchResult> SearchCoursesAsync(System.Security.Claims.ClaimsPrincipal user, string? courseSearch, string? categorySearch, int page = 1, int pageSize = 50, string? sortBy = "newest", string? price = null, string? difficulty = null, string? duration = null);
+        Task<CourseDetailResult> GetCourseDetailsAsync(System.Security.Claims.ClaimsPrincipal user, string courseId, string? tab = null);
+        Task<EnrollmentResult> EnrollInCourseAsync(System.Security.Claims.ClaimsPrincipal user, string courseId);
+        Task<CreateCourseResult> GetCreateCourseViewModelAsync();
+        Task<CreateCourseResult> CreateCourseAsync(System.Security.Claims.ClaimsPrincipal user, CreateCourseViewModel model);
+        Task<EditCourseResult> GetCourseForEditAsync(System.Security.Claims.ClaimsPrincipal user, string courseId);
+        Task<EditCourseResult> UpdateCourseAsync(System.Security.Claims.ClaimsPrincipal user, string courseId, CreateCourseViewModel model);
+        Task<DeleteCourseResult> DeleteCourseAsync(System.Security.Claims.ClaimsPrincipal user, string courseId);
+        Task<InstructorCoursesResult> GetUserCoursesAsync(System.Security.Claims.ClaimsPrincipal user);
+        Task<CourseApprovalResult> RequestCourseApprovalAsync(System.Security.Claims.ClaimsPrincipal user, string courseId);
+        Task<LearnManagementResult> GetLearnManagementDataAsync(System.Security.Claims.ClaimsPrincipal user, string courseId);
     }
 }
 

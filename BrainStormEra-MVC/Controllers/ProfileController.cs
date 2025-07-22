@@ -1,5 +1,5 @@
 using DataAccessLayer.Models.ViewModels;
-using BusinessLogicLayer.Services.Implementations;
+using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
@@ -9,11 +9,11 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class ProfileController : BaseController
     {
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
         private readonly ILogger<ProfileController> _logger;
 
         public ProfileController(
-            AuthService authService,
+            IAuthService authService,
             ILogger<ProfileController> logger)
         {
             _authService = authService;

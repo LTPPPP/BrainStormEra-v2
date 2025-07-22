@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using BusinessLogicLayer.Services.Implementations;
+using BusinessLogicLayer.Services.Interfaces;
 using DataAccessLayer.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
@@ -12,11 +12,11 @@ namespace BrainStormEra_MVC.Controllers
     /// </summary>
     public class AuthController : BaseController
     {
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
-            AuthService authService,
+            IAuthService authService,
             ILogger<AuthController> logger)
         {
             _authService = authService;

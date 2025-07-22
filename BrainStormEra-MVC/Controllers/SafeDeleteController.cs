@@ -1,4 +1,5 @@
 using BusinessLogicLayer.Services.Implementations;
+using BusinessLogicLayer.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,9 +34,9 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class SafeDeleteController : BaseController
     {
-        private readonly SafeDeleteService _safeDeleteService;
+        private readonly ISafeDeleteService _safeDeleteService;
 
-        public SafeDeleteController(SafeDeleteService safeDeleteService)
+        public SafeDeleteController(ISafeDeleteService safeDeleteService)
         {
             _safeDeleteService = safeDeleteService;
         }                /// <summary>
