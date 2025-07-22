@@ -6,6 +6,7 @@ namespace BrainStormEra_MVC.Controllers
     /// <summary>
     /// Base controller to provide common functionality for accessing user information from authentication cookies
     /// </summary>
+    [BrainStormEra_MVC.Filters.CheckBanStatus]
     public class BaseController : Controller
     {
         public BaseController()
