@@ -302,14 +302,14 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Get create chapter view model with authorization check
         /// </summary>
-        public async Task<CreateChapterResult> GetCreateChapterViewModelAsync(ClaimsPrincipal user, string courseId)
+        public async Task<BusinessLogicLayer.Services.Interfaces.CreateChapterResult> GetCreateChapterViewModelAsync(System.Security.Claims.ClaimsPrincipal user, string courseId)
         {
             try
             {
                 var userId = user.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return new CreateChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.CreateChapterResult
                     {
                         Success = false,
                         ErrorMessage = "User not authenticated",
@@ -321,7 +321,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var viewModel = await GetCreateChapterViewModelAsync(courseId, userId);
                 if (viewModel == null)
                 {
-                    return new CreateChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.CreateChapterResult
                     {
                         Success = false,
                         ErrorMessage = "Course not found or you are not authorized to add chapters to this course.",
@@ -330,7 +330,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                return new CreateChapterResult
+                return new BusinessLogicLayer.Services.Interfaces.CreateChapterResult
                 {
                     Success = true,
                     ViewModel = viewModel
@@ -339,7 +339,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while loading create chapter page for course {CourseId}", courseId);
-                return new CreateChapterResult
+                return new BusinessLogicLayer.Services.Interfaces.CreateChapterResult
                 {
                     Success = false,
                     ErrorMessage = "An error occurred while loading the create chapter page.",
@@ -352,14 +352,14 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Create a new chapter with comprehensive validation
         /// </summary>
-        public async Task<CreateChapterResult> CreateChapterAsync(ClaimsPrincipal user, CreateChapterViewModel model)
+        public async Task<BusinessLogicLayer.Services.Interfaces.CreateChapterResult> CreateChapterAsync(System.Security.Claims.ClaimsPrincipal user, CreateChapterViewModel model)
         {
             try
             {
                 var userId = user.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return new CreateChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.CreateChapterResult
                     {
                         Success = false,
                         ErrorMessage = "User not authenticated",
@@ -375,7 +375,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     // Reload the view model with existing data
                     await ReloadCreateChapterViewModel(model, userId);
 
-                    return new CreateChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.CreateChapterResult
                     {
                         Success = false,
                         ErrorMessage = "Please correct the validation errors.",
@@ -387,7 +387,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 var chapterId = await CreateChapterAsync(model, userId);
 
-                return new CreateChapterResult
+                return new BusinessLogicLayer.Services.Interfaces.CreateChapterResult
                 {
                     Success = true,
                     SuccessMessage = $"Chapter '{model.ChapterName}' has been successfully created!",
@@ -399,7 +399,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (UnauthorizedAccessException ex)
             {
                 _logger.LogWarning("Unauthorized access attempt: {Message} by user {UserId}", ex.Message, user.FindFirst("UserId")?.Value);
-                return new CreateChapterResult
+                return new BusinessLogicLayer.Services.Interfaces.CreateChapterResult
                 {
                     Success = false,
                     ErrorMessage = "You are not authorized to add chapters to this course.",
@@ -418,7 +418,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     await ReloadCreateChapterViewModel(model, userId);
                 }
 
-                return new CreateChapterResult
+                return new BusinessLogicLayer.Services.Interfaces.CreateChapterResult
                 {
                     Success = false,
                     ErrorMessage = ex.Message,
@@ -429,7 +429,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating chapter for course {CourseId} by user {UserId}", model.CourseId, user.FindFirst("UserId")?.Value);
-                return new CreateChapterResult
+                return new BusinessLogicLayer.Services.Interfaces.CreateChapterResult
                 {
                     Success = false,
                     ErrorMessage = "An unexpected error occurred while creating the chapter. Please try again.",
@@ -447,14 +447,14 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Get chapter for editing with authorization check
         /// </summary>
-        public async Task<EditChapterResult> GetChapterForEditAsync(ClaimsPrincipal user, string chapterId)
+        public async Task<BusinessLogicLayer.Services.Interfaces.EditChapterResult> GetChapterForEditAsync(System.Security.Claims.ClaimsPrincipal user, string chapterId)
         {
             try
             {
                 var userId = user.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return new EditChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditChapterResult
                     {
                         Success = false,
                         ErrorMessage = "User not authenticated",
@@ -466,7 +466,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 var chapter = await GetChapterForEditAsync(chapterId, userId);
                 if (chapter == null)
                 {
-                    return new EditChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditChapterResult
                     {
                         Success = false,
                         ErrorMessage = "Chapter not found or you are not authorized to edit this chapter.",
@@ -475,7 +475,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     };
                 }
 
-                return new EditChapterResult
+                return new BusinessLogicLayer.Services.Interfaces.EditChapterResult
                 {
                     Success = true,
                     ViewModel = chapter,
@@ -485,7 +485,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting chapter for edit: {ChapterId}", chapterId);
-                return new EditChapterResult
+                return new BusinessLogicLayer.Services.Interfaces.EditChapterResult
                 {
                     Success = false,
                     ErrorMessage = "An error occurred while loading the edit chapter page.",
@@ -498,14 +498,14 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Update chapter with comprehensive validation
         /// </summary>
-        public async Task<EditChapterResult> UpdateChapterAsync(ClaimsPrincipal user, string chapterId, CreateChapterViewModel model)
+        public async Task<BusinessLogicLayer.Services.Interfaces.EditChapterResult> UpdateChapterAsync(System.Security.Claims.ClaimsPrincipal user, string chapterId, CreateChapterViewModel model)
         {
             try
             {
                 var userId = user.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return new EditChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditChapterResult
                     {
                         Success = false,
                         ErrorMessage = "User not authenticated",
@@ -521,7 +521,7 @@ namespace BusinessLogicLayer.Services.Implementations
                     // Reload the view model with existing data
                     await ReloadEditChapterViewModel(model, userId, chapterId);
 
-                    return new EditChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditChapterResult
                     {
                         Success = false,
                         ErrorMessage = "Please correct the validation errors.",
@@ -536,7 +536,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 if (success)
                 {
-                    return new EditChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditChapterResult
                     {
                         Success = true,
                         SuccessMessage = $"Chapter '{model.ChapterName}' has been successfully updated!",
@@ -547,7 +547,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
                 else
                 {
-                    return new EditChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.EditChapterResult
                     {
                         Success = false,
                         ErrorMessage = "Failed to update the chapter. Please try again.",
@@ -560,7 +560,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating chapter {ChapterId} by user {UserId}", chapterId, user.FindFirst("UserId")?.Value);
-                return new EditChapterResult
+                return new BusinessLogicLayer.Services.Interfaces.EditChapterResult
                 {
                     Success = false,
                     ErrorMessage = "An unexpected error occurred while updating the chapter. Please try again.",
@@ -578,14 +578,14 @@ namespace BusinessLogicLayer.Services.Implementations
         /// <summary>
         /// Delete chapter with authorization check
         /// </summary>
-        public async Task<DeleteChapterResult> DeleteChapterAsync(ClaimsPrincipal user, string chapterId, string courseId)
+        public async Task<BusinessLogicLayer.Services.Interfaces.DeleteChapterResult> DeleteChapterAsync(System.Security.Claims.ClaimsPrincipal user, string chapterId, string courseId)
         {
             try
             {
                 var userId = user.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return new DeleteChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.DeleteChapterResult
                     {
                         Success = false,
                         Message = "User not authenticated"
@@ -596,7 +596,7 @@ namespace BusinessLogicLayer.Services.Implementations
 
                 if (success)
                 {
-                    return new DeleteChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.DeleteChapterResult
                     {
                         Success = true,
                         Message = "Chapter deleted successfully!"
@@ -604,7 +604,7 @@ namespace BusinessLogicLayer.Services.Implementations
                 }
                 else
                 {
-                    return new DeleteChapterResult
+                    return new BusinessLogicLayer.Services.Interfaces.DeleteChapterResult
                     {
                         Success = false,
                         Message = "Chapter not found or you are not authorized to delete this chapter."
@@ -614,7 +614,7 @@ namespace BusinessLogicLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting chapter {ChapterId} by user {UserId}", chapterId, user.FindFirst("UserId")?.Value);
-                return new DeleteChapterResult
+                return new BusinessLogicLayer.Services.Interfaces.DeleteChapterResult
                 {
                     Success = false,
                     Message = "An error occurred while deleting the chapter. Please try again."

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using BusinessLogicLayer.Services.Interfaces;
-using BusinessLogicLayer.Services.Implementations;
 using System.Security.Claims;
 using DataAccessLayer.Models.ViewModels;
 
@@ -10,19 +9,16 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class NotificationController : Controller
     {
-        private readonly NotificationService _notificationService;
-        private readonly INotificationService _notificationServiceInterface;
-        private readonly CourseService _courseService;
+        private readonly INotificationService _notificationService;
+        private readonly ICourseService _courseService;
         private readonly ILogger<NotificationController> _logger;
 
         public NotificationController(
-            NotificationService notificationService,
-            INotificationService notificationServiceInterface,
-            CourseService courseService,
+            INotificationService notificationService,
+            ICourseService courseService,
             ILogger<NotificationController> logger)
         {
             _notificationService = notificationService;
-            _notificationServiceInterface = notificationServiceInterface;
             _courseService = courseService;
             _logger = logger;
         }// GET: Notification
@@ -30,20 +26,15 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationService.GetNotificationsAsync(User, page, pageSize);
-
-                if (!result.Success)
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
                 {
-                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
-                    {
-                        return RedirectToAction(result.RedirectAction, result.RedirectController);
-                    }
-
-                    TempData["ErrorMessage"] = result.ErrorMessage ?? "Failed to load notifications.";
+                    TempData["ErrorMessage"] = "User not authenticated.";
                     return View(new NotificationIndexViewModel());
                 }
-
-                return View(result.ViewModel);
+                var notifications = await _notificationService.GetNotificationsAsync(userId, page, pageSize);
+                // You may need to map Notification to NotificationIndexViewModel if required
+                return View(notifications);
             }
             catch (Exception ex)
             {
@@ -55,13 +46,12 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet]
         public async Task<IActionResult> GetNotifications(int page = 1, int pageSize = 10)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
             {
                 return Unauthorized();
             }
-
-            var notifications = await _notificationServiceInterface.GetNotificationsAsync(userId, page, pageSize);
+            var notifications = await _notificationService.GetNotificationsAsync(userId, page, pageSize);
             return Json(notifications.Select(n => new
             {
                 id = n.NotificationId,
@@ -77,13 +67,12 @@ namespace BrainStormEra_MVC.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUnreadCount()
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
             {
                 return Unauthorized();
             }
-
-            var count = await _notificationServiceInterface.GetUnreadNotificationCountAsync(userId);
+            var count = await _notificationService.GetUnreadNotificationCountAsync(userId);
             return Json(new { count = count });
         }
 
@@ -94,13 +83,13 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                if (string.IsNullOrEmpty(notificationId))
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(notificationId) || string.IsNullOrEmpty(userId))
                 {
-                    return Json(new { success = false, message = "Notification ID is required" });
+                    return Json(new { success = false, message = "Notification ID and User ID are required" });
                 }
-
-                var result = await _notificationService.MarkAsReadAsync(User, notificationId);
-                return Json(new { success = result.Success, message = result.Message });
+                await _notificationService.MarkAsReadAsync(notificationId, userId);
+                return Json(new { success = true, message = "Notification marked as read" });
             }
             catch (Exception ex)
             {
@@ -116,8 +105,13 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationService.MarkAllAsReadAsync(User);
-                return Json(new { success = result.Success, message = result.Message });
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new { success = false, message = "User ID is required" });
+                }
+                await _notificationService.MarkAllAsReadAsync(userId);
+                return Json(new { success = true, message = "All notifications marked as read" });
             }
             catch (Exception ex)
             {
@@ -131,13 +125,13 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                if (string.IsNullOrEmpty(notificationId))
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(notificationId) || string.IsNullOrEmpty(userId))
                 {
-                    return Json(new { success = false, message = "Notification ID is required" });
+                    return Json(new { success = false, message = "Notification ID and User ID are required" });
                 }
-
-                var result = await _notificationService.DeleteNotificationAsync(User, notificationId);
-                return Json(new { success = result.Success, message = result.Message });
+                await _notificationService.DeleteNotificationAsync(notificationId, userId);
+                return Json(new { success = true, message = "Notification deleted" });
             }
             catch (Exception ex)
             {
@@ -151,8 +145,8 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> SendToUser(string targetUserId, string title, string content, string? type = null, string? courseId = null)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var success = await _notificationServiceInterface.SendToUserAsync(targetUserId, title, content, type, courseId, currentUserId);
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var success = await _notificationService.SendToUserAsync(targetUserId, title, content, type, courseId, currentUserId);
             return Json(new { success = success });
         }
 
@@ -161,8 +155,8 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "admin,instructor")]
         public async Task<IActionResult> SendToCourse(string courseId, string title, string content, string? type = null)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var success = await _notificationServiceInterface.SendToCourseAsync(courseId, title, content, type, userId, userId);
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var success = await _notificationService.SendToCourseAsync(courseId, title, content, type, userId, userId);
             return Json(new { success = success });
         }
 
@@ -171,8 +165,8 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> SendToRole(string role, string title, string content, string? type = null)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var success = await _notificationServiceInterface.SendToRoleAsync(role, title, content, type, currentUserId);
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var success = await _notificationService.SendToRoleAsync(role, title, content, type, currentUserId);
             return Json(new { success = success });
         }
 
@@ -181,37 +175,19 @@ namespace BrainStormEra_MVC.Controllers
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> SendToAll(string title, string content, string? type = null)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var success = await _notificationServiceInterface.SendToAllAsync(title, content, type, currentUserId);
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var success = await _notificationService.SendToAllAsync(title, content, type, currentUserId);
             return Json(new { success = success });
         }        // GET: Create notification page (admin and instructor only)
         [HttpGet]
         [Authorize(Roles = "admin,instructor")]
-        public async Task<IActionResult> Create()
+        public IActionResult Create()
         {
-            try
-            {
-                var result = await _notificationService.GetCreateNotificationViewModelAsync(User);
+            // No GetCreateNotificationViewModelAsync in interface; just return the view
+            return View();
+        }
 
-                if (!result.Success)
-                {
-                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
-                    {
-                        return RedirectToAction(result.RedirectAction, result.RedirectController);
-                    }
-                    TempData["ErrorMessage"] = result.ErrorMessage;
-                    return RedirectToAction("Index");
-                }
-
-                return View(result.ViewModel);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading create notification page");
-                TempData["ErrorMessage"] = "An error occurred while loading the create notification page.";
-                return RedirectToAction("Index");
-            }
-        }        // POST: Create notification
+        // POST: Create notification
         [HttpPost]
         [Authorize(Roles = "admin,instructor")]
         [ValidateAntiForgeryToken]
@@ -219,52 +195,24 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationService.CreateNotificationAsync(User, model);
-
-                if (result.Success)
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
                 {
-                    if (!string.IsNullOrEmpty(result.SuccessMessage))
-                    {
-                        TempData["SuccessMessage"] = result.SuccessMessage;
-                    }
-
-                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
-                    {
-                        return RedirectToAction(result.RedirectAction, result.RedirectController);
-                    }
-
+                    TempData["ErrorMessage"] = "User not authenticated.";
+                    return View(model);
+                }
+                // Use the interface method signature
+                var notification = await _notificationService.CreateNotificationAsync(userId, model.Title, model.Content, model.Type, model.CourseId, userId);
+                if (notification != null)
+                {
+                    TempData["SuccessMessage"] = "Notification created successfully.";
                     return RedirectToAction("Index");
                 }
                 else
                 {
-                    if (!string.IsNullOrEmpty(result.ErrorMessage))
-                    {
-                        TempData["ErrorMessage"] = result.ErrorMessage;
-                    }
-
-                    if (result.ValidationErrors != null)
-                    {
-                        foreach (var error in result.ValidationErrors)
-                        {
-                            foreach (var message in error.Value)
-                            {
-                                ModelState.AddModelError(error.Key, message);
-                            }
-                        }
-                    }
-
-                    if (result.ReturnView && result.ViewModel != null)
-                    {
-                        return View(result.ViewModel);
-                    }
-
-                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
-                    {
-                        return RedirectToAction(result.RedirectAction, result.RedirectController);
-                    }
+                    TempData["ErrorMessage"] = "Failed to create notification.";
+                    return View(model);
                 }
-
-                return View(model);
             }
             catch (Exception ex)
             {
@@ -279,21 +227,28 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationService.GetNotificationForEditAsync(User, id);
-
-                if (!result.Success)
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
                 {
-                    TempData["ErrorMessage"] = result.ErrorMessage ?? "Notification not found or you don't have permission to edit it.";
-
-                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
-                    {
-                        return RedirectToAction(result.RedirectAction, result.RedirectController);
-                    }
-
+                    TempData["ErrorMessage"] = "User not authenticated.";
                     return RedirectToAction("Index");
                 }
-
-                return View(result.ViewModel);
+                var notification = await _notificationService.GetNotificationForEditAsync(id, userId);
+                if (notification == null)
+                {
+                    TempData["ErrorMessage"] = "Notification not found or you don't have permission to edit it.";
+                    return RedirectToAction("Index");
+                }
+                // Map notification to NotificationEditViewModel if needed
+                var model = new NotificationEditViewModel
+                {
+                    NotificationId = notification.NotificationId,
+                    Title = notification.NotificationTitle,
+                    Content = notification.NotificationContent,
+                    Type = notification.NotificationType,
+                    CourseId = notification.CourseId
+                };
+                return View(model);
             }
             catch (Exception ex)
             {
@@ -309,52 +264,24 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationService.UpdateNotificationAsync(User, model.NotificationId, model);
-
-                if (result.Success)
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
                 {
-                    if (!string.IsNullOrEmpty(result.SuccessMessage))
-                    {
-                        TempData["SuccessMessage"] = result.SuccessMessage;
-                    }
-
-                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
-                    {
-                        return RedirectToAction(result.RedirectAction, result.RedirectController);
-                    }
-
+                    TempData["ErrorMessage"] = "User not authenticated.";
+                    return View(model);
+                }
+                // Use the interface method signature
+                var success = await _notificationService.UpdateNotificationAsync(model.NotificationId, userId, model.Title, model.Content, model.Type);
+                if (success)
+                {
+                    TempData["SuccessMessage"] = "Notification updated successfully.";
                     return RedirectToAction("Index");
                 }
                 else
                 {
-                    if (!string.IsNullOrEmpty(result.ErrorMessage))
-                    {
-                        TempData["ErrorMessage"] = result.ErrorMessage;
-                    }
-
-                    if (result.ValidationErrors != null)
-                    {
-                        foreach (var error in result.ValidationErrors)
-                        {
-                            foreach (var message in error.Value)
-                            {
-                                ModelState.AddModelError(error.Key, message);
-                            }
-                        }
-                    }
-
-                    if (result.ReturnView && result.ViewModel != null)
-                    {
-                        return View(result.ViewModel);
-                    }
-
-                    if (!string.IsNullOrEmpty(result.RedirectAction) && !string.IsNullOrEmpty(result.RedirectController))
-                    {
-                        return RedirectToAction(result.RedirectAction, result.RedirectController);
-                    }
+                    TempData["ErrorMessage"] = "Failed to update notification.";
+                    return View(model);
                 }
-
-                return View(model);
             }
             catch (Exception ex)
             {
@@ -368,14 +295,12 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (userId == null)
                 {
                     return Json(new { success = false, message = "User not authenticated" });
                 }
-
-                var success = await _notificationServiceInterface.RestoreNotificationAsync(notificationId, userId);
-
+                var success = await _notificationService.RestoreNotificationAsync(notificationId, userId);
                 if (success)
                 {
                     return Json(new { success = true, message = "Notification restored successfully" });
@@ -396,24 +321,18 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                // Try different ways to get user ID
                 var userId = User.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 }
-
                 _logger.LogInformation("CheckNotification - NotificationId: {NotificationId}, UserId: {UserId}", notificationId, userId);
-
                 if (userId == null)
                 {
                     return Json(new { exists = false, message = "User not authenticated", userId = "null" });
                 }
-
-                var notification = await _notificationServiceInterface.GetNotificationForEditAsync(notificationId, userId);
-
+                var notification = await _notificationService.GetNotificationForEditAsync(notificationId, userId);
                 _logger.LogInformation("CheckNotification - Notification found: {Found}", notification != null);
-
                 return Json(new
                 {
                     exists = notification != null,
@@ -441,18 +360,14 @@ namespace BrainStormEra_MVC.Controllers
                 var userId = User.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 }
-
                 if (string.IsNullOrEmpty(userId))
                 {
                     return Json(new { exists = false, message = "User ID not found in claims" });
                 }
-
-                // Direct database check
-                var allNotifications = await _notificationServiceInterface.GetNotificationsAsync(userId, 1, 100);
+                var allNotifications = await _notificationService.GetNotificationsAsync(userId, 1, 100);
                 var targetNotification = allNotifications.FirstOrDefault(n => n.NotificationId == notificationId);
-
                 return Json(new
                 {
                     exists = targetNotification != null,
@@ -478,19 +393,14 @@ namespace BrainStormEra_MVC.Controllers
                 var userId = User.FindFirst("UserId")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 }
-
                 if (string.IsNullOrEmpty(userId))
                 {
                     return Json(new { error = "User ID not found in claims" });
                 }
-
-                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-
-                // Test GetNotificationForEditAsync
-                var notification = await _notificationServiceInterface.GetNotificationForEditAsync(notificationId, userId);
-
+                var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                var notification = await _notificationService.GetNotificationForEditAsync(notificationId, userId);
                 return Json(new
                 {
                     notificationId = notificationId,
@@ -526,16 +436,8 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationService.SearchUsersAsync(User, searchTerm);
-
-                if (result.Success)
-                {
-                    return Json(new { success = true, users = result.Users });
-                }
-                else
-                {
-                    return Json(new { success = false, message = result.ErrorMessage });
-                }
+                var users = await _notificationService.SearchUsersAsync(searchTerm);
+                return Json(new { success = true, users = users });
             }
             catch (Exception ex)
             {
@@ -551,8 +453,8 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
 
                 if (string.IsNullOrEmpty(userId))
                 {
@@ -600,16 +502,8 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationService.SearchUsersAsync(User, "");
-
-                if (result.Success)
-                {
-                    return Json(result.Users);
-                }
-                else
-                {
-                    return Json(new { success = false, message = result.ErrorMessage });
-                }
+                var users = await _notificationService.SearchUsersAsync("");
+                return Json(users);
             }
             catch (Exception ex)
             {
@@ -625,16 +519,9 @@ namespace BrainStormEra_MVC.Controllers
         {
             try
             {
-                var result = await _notificationService.GetEnrolledUsersAsync(User, courseId, searchTerm);
-
-                if (result.Success)
-                {
-                    return Json(result.Users);
-                }
-                else
-                {
-                    return Json(new { success = false, message = result.ErrorMessage });
-                }
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var users = await _notificationService.GetEnrolledUsersAsync(userId, courseId, searchTerm);
+                return Json(users);
             }
             catch (Exception ex)
             {
@@ -644,4 +531,5 @@ namespace BrainStormEra_MVC.Controllers
         }
     }
 }
+
 

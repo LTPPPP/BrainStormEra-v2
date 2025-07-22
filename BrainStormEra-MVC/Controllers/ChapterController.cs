@@ -9,10 +9,10 @@ namespace BrainStormEra_MVC.Controllers
     [Authorize]
     public class ChapterController : BaseController
     {
-        private readonly ChapterService _chapterService;
+        private readonly IChapterService _chapterService;
         private readonly ILogger<ChapterController> _logger;
 
-        public ChapterController(ChapterService chapterService, ILogger<ChapterController> logger) : base()
+        public ChapterController(IChapterService chapterService, ILogger<ChapterController> logger) : base()
         {
             _chapterService = chapterService;
             _logger = logger;

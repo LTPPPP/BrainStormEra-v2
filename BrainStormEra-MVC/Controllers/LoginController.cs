@@ -21,9 +21,9 @@ namespace BrainStormEra_MVC.Controllers
         private readonly IConfiguration _configuration;
         private readonly IUserService _userService;
         private readonly IEmailService _emailService;
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
 
-        public LoginController(BrainStormEraContext context, ILogger<LoginController> logger, IConfiguration configuration, IUserService userService, IEmailService emailService, AuthService authService)
+        public LoginController(BrainStormEraContext context, ILogger<LoginController> logger, IConfiguration configuration, IUserService userService, IEmailService emailService, IAuthService authService)
         {
             _context = context;
             _logger = logger;
