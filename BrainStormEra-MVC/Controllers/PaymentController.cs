@@ -10,9 +10,9 @@ namespace BrainStormEra_MVC.Controllers
     public class PaymentController : BaseController
     {
         private readonly IPaymentService _paymentService;
-        private readonly CourseService _courseService;
+        private readonly ICourseService _courseService;
 
-        public PaymentController(IPaymentService paymentService, CourseService courseService)
+        public PaymentController(IPaymentService paymentService, ICourseService courseService)
         {
             _paymentService = paymentService;
             _courseService = courseService;
